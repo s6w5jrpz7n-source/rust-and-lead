@@ -63,6 +63,13 @@
   const COL_LIFE = 0x22c55e, COL_BOSS = 0xf97316;
   const POST_COL = 0x7a5636, POST_DARK = 0x4a3620;   // Palisade
 
+  // Loot: Schrott & Steampunk-Bauteile (spaeter im Store verkaufbar / fuer Upgrades)
+  const ITEMS = {
+    schrott:   { name: 'Schrott',   icon: '🔩', color: 0x9ca3af, value: 2 },
+    zahnrad:   { name: 'Zahnrad',   icon: '⚙️', color: 0xb08d57, value: 8 },
+    dampfkern: { name: 'Dampfkern', icon: '♨️', color: 0x38bdf8, value: 25 }
+  };
+
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
     overworld: {
@@ -121,7 +128,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
-    gold: 0, saloonOwned: false,
+    gold: 0, saloonOwned: false, inventory: {},
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
@@ -256,14 +263,14 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
       const s = JSON.parse(raw);
-      state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0;
+      state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0; state.inventory = s.inv || {};
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       if (state.saloonOwned && s.t) {
@@ -529,6 +536,15 @@
       const sx = x0 + c * (slot + gap) + slot / 2, sy = y0 + r * (slot + gap) + slot / 2;
       invSlots.push(sceneRef.add.rectangle(sx, sy, slot, slot, 0x334155, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.35).setScrollFactor(0).setDepth(52));
     }
+    // gesammelte Items in die Slots legen
+    const slotCount = invSlots.length; let idx = 0;
+    for (const id in ITEMS) {
+      const cnt = state.inventory[id] || 0; if (cnt <= 0 || idx >= slotCount) continue;
+      const sl = invSlots[idx];
+      invSlots.push(sceneRef.add.text(sl.x, sl.y - 6, ITEMS[id].icon, { fontSize: '22px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      invSlots.push(sceneRef.add.text(sl.x, sl.y + 16, '×' + cnt, { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      idx++;
+    }
   }
   function closeInventory() { state.inventoryOpen = false; invSlots.forEach(s => s.destroy()); invSlots = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
 
@@ -691,12 +707,20 @@
     if (e.isBoss) updateBossBar();
     if (e.hp <= 0) {
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
-      dropGold(e.c.x, e.c.y, e.gold); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
+      dropGold(e.c.x, e.c.y, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
       if (e.isBoss) { state.boss = null; hideBossBar(); toast('Boss besiegt! +' + e.gold + ' Gold'); }
       else { state.killsSinceBoss++; if (state.killsSinceBoss >= BOSS_KILLS_TRIGGER && !state.boss && MAPS[state.map].enemies) { state.killsSinceBoss = 0; spawnBoss(); } }
     }
   }
-  function dropGold(x, y, n) { for (let i = 0; i < n; i++) coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 5, COL_GOLD).setStrokeStyle(1.5, COL_GOLD_S).setDepth(3) }); }
+  function dropGold(x, y, n) { for (let i = 0; i < n; i++) coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 5, COL_GOLD).setStrokeStyle(1.5, COL_GOLD_S).setDepth(3), item: null }); }
+  function dropLoot(x, y, id) { const it = ITEMS[id]; coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-14, 14), y + Phaser.Math.Between(-14, 14), 5, it.color).setStrokeStyle(1.5, 0x1f2937).setDepth(3), item: id }); }
+  function dropLootFor(e) {
+    const base = e.isBoss ? 4 : 1 + (Math.random() < 0.5 ? 1 : 0);
+    for (let i = 0; i < base; i++) dropLoot(e.c.x, e.c.y, 'schrott');
+    if (Math.random() < (e.isBoss ? 1 : 0.18)) dropLoot(e.c.x, e.c.y, 'zahnrad');
+    if (e.isBoss || Math.random() < 0.04) dropLoot(e.c.x, e.c.y, 'dampfkern');
+  }
+  function popLoot(x, y, icon) { const t = sceneRef.add.text(x, y - 8, icon, { fontSize: '15px' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 550, onComplete: () => t.destroy() }); }
   function popDamage(x, y, dmg) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
   function popGold(x, y) { const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() }); }
   function buyShop(sh) {
@@ -779,7 +803,11 @@
     // Gold-Münzen
     for (let i = coins.length - 1; i >= 0; i--) {
       const co = coins[i], dx = player.x - co.s.x, dy = player.y - co.s.y, d = Math.hypot(dx, dy) || 1;
-      if (d < PICKUP_DIST) { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
+      if (d < PICKUP_DIST) {
+        if (co.item) { state.inventory[co.item] = (state.inventory[co.item] || 0) + 1; popLoot(co.s.x, co.s.y, ITEMS[co.item].icon); }
+        else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); }
+        co.s.destroy(); coins.splice(i, 1); continue;
+      }
       if (d < MAGNET_DIST) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
     }
 
