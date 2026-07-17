@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Mobile-First: Fullscreen, kein Zoom, Notch-sicher -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Rust &amp; Lead</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #2b2b2b;
+      color: #e0c9a6;
+      font-family: system-ui, sans-serif;
+    }
+    #placeholder {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+    #placeholder h1 { margin: 0; font-size: 1.6rem; letter-spacing: 0.05em; }
+    #placeholder p  { margin: 0; opacity: 0.7; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <!--
+    ============================================================
+    RUST & LEAD – Web-Prototyp (Phase 1)   |  Single-File Setup
+    ============================================================
+
+    STATUS: Gerüst / Platzhalter. Die Spiel-Programmierung wird
+    hier eingefügt (mit Fable). Details siehe docs/GDD.md.
+
+    Umsetzung als EINZELDATEI: Phaser.js via CDN einbinden, dann
+    HTML + CSS + JS komplett in dieser Datei halten (CodePen-fähig).
+
+    ----- ROADMAP (Web-Prototyp) -------------------------------
+    Schritt 1  Grundgerüst
+               - Phaser.js via CDN (<script src="...phaser.min.js">)
+               - Mobile-Viewport + Auto-Resize (Phaser.Scale.RESIZE)
+               - Sandfarbenes isometrisches Boden-Grid
+               - Blauer Kreis als Spieler (mit Nase = Blickrichtung)
+    Schritt 2  Touch-Steuerung
+               - Dynamischer virtueller Joystick unten links
+               - Flüssige isometrische Bewegung (8 Richtungen)
+    Schritt 3  Gegner & Kampf
+               - Rote Gegner spawnen, Schuss-Button rechts
+               - Projektile, Lebensbalken, Schadenszahlen
+    Schritt 4  Rustwater-Wirtschaft
+               - Tab-Wechsel Dungeon <-> Rustwater
+               - "Gatling-Saloon" (100 Gold) -> +1 Gold/Sekunde
+    ------------------------------------------------------------
+
+    Diesen Platzhalter-Block (#placeholder) entfernen, sobald das
+    Phaser-Canvas gerendert wird.
+  -->
+
+  <div id="placeholder">
+    <h1>RUST &amp; LEAD</h1>
+    <p>Web-Prototyp – Gerüst bereit.</p>
+    <p>Spiel-Code folgt in dieser Datei (siehe docs/GDD.md).</p>
+  </div>
+
+  <!-- TODO (Fable): Phaser.js via CDN einbinden und Spiel-Code hier ergänzen. -->
+
+</body>
+</html>
