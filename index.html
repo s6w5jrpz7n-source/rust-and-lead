@@ -78,6 +78,17 @@
     heal:    ['verarzten', 'Chassis flicken']
   };
 
+  // Werkstatt-Upgrades. Waffen-Tuning ist immer erlaubt; Körper-Mods (bodyMod) erst nach dem Reveal.
+  // name: [vor Reveal, nach Reveal]
+  const UPGRADES = {
+    damage:   { name: ['Revolver-Kaliber', 'Ballistische Kalibrierung'], icon: '🔫', desc: 'Schaden', base: 40, max: 6, bodyMod: false },
+    firerate: { name: ['Schneller Hahn', 'Kolben-Frequenz'], icon: '⚡', desc: 'Feuerrate', base: 50, max: 5, bodyMod: false },
+    hp:       { name: ['—', 'T-4 Torso-Panzerung'], icon: '🛡️', desc: 'Panzerung (Leben)', base: 60, max: 6, bodyMod: true },
+    speed:    { name: ['—', 'Hydraulik-Laufbeine'], icon: '🦿', desc: 'Tempo', base: 60, max: 5, bodyMod: true },
+    regen:    { name: ['—', 'Kühlsystem'], icon: '❄️', desc: 'Regeneration', base: 50, max: 5, bodyMod: true },
+    magnet:   { name: ['—', 'Magnet-Spule'], icon: '🧲', desc: 'Loot-Magnet', base: 40, max: 4, bodyMod: true }
+  };
+
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
     overworld: {
@@ -97,9 +108,14 @@
       decor: [
         { tx: 5, ty: 8, w: 70, h: 46, color: 0x6b5b4a, label: 'SALOON' },
         { tx: 16, ty: 9, w: 60, h: 40, color: 0x5c5148, label: 'STORE' },
-        { tx: 11, ty: 14, w: 64, h: 44, color: 0x6b5b4a, label: 'BANK' }
+        { tx: 11, ty: 14, w: 64, h: 44, color: 0x6b5b4a, label: 'BANK' },
+        { tx: 6, ty: 16, w: 68, h: 44, color: 0x4b5563, label: 'WERKSTATT' }
       ],
-      shops: [ { id: 'saloon', tx: 5, ty: 8, name: 'Gatling-Saloon', cost: 100, income: SALOON_INCOME }, { id: 'store', tx: 16, ty: 9, name: 'Store' } ]
+      shops: [
+        { id: 'saloon', tx: 5, ty: 8, name: 'Gatling-Saloon', cost: 100, income: SALOON_INCOME },
+        { id: 'store', tx: 16, ty: 9, name: 'Store' },
+        { id: 'werkstatt', tx: 6, ty: 16, name: 'Werkstatt' }
+      ]
     },
     dungeon1: {
       name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
@@ -119,6 +135,7 @@
   let ctxBg, ctxText;
   let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
   let storeUI = [], storeButtons = [], storeCloseRef = null, storePanelRef = null;
+  let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
@@ -137,7 +154,8 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
-    gold: 0, saloonOwned: false, inventory: {}, isRevealed: false, storeOpen: false,
+    gold: 0, saloonOwned: false, inventory: {}, isRevealed: false, storeOpen: false, workshopOpen: false,
+    upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
@@ -260,6 +278,7 @@
     scene.scale.on('resize', (size) => layoutUI(size));
 
     load();
+    applyUpgrades();
     state.hp = state.maxHp; state.potions = POTION_START;
     updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
@@ -271,10 +290,18 @@
   // ---- Wirtschaft: Speichern / Laden / Einkommen -------------
   function incomeTick() { if (state.saloonOwned) { state.gold += SALOON_INCOME; updateGold(); } save(); }
   function updateGold() { if (goldText) goldText.setText('💰 ' + state.gold); }
+
+  // Werte aus Upgrades (Basis + Level-Bonus)
+  function dmgPerBullet() { return BULLET_DMG + state.upgrades.damage * 6; }
+  function fireMs() { return Math.max(80, FIRE_MS - state.upgrades.firerate * 22); }
+  function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30; }
+  function regenRate() { return REGEN_RATE + state.upgrades.regen * 4; }
+  function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45; }
+  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25; if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, revealed: state.isRevealed, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, revealed: state.isRevealed, upgrades: state.upgrades, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
@@ -282,6 +309,7 @@
       const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
       const s = JSON.parse(raw);
       state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed;
+      state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       if (state.saloonOwned && s.t) {
@@ -330,6 +358,10 @@
       const w = tileToWorld(sh.tx, sh.ty);
       if (sh.id === 'store') {   // Verkaufs-Laden: nur Markierung, kein Kauf-Ring
         mapObjects.push(sceneRef.add.text(w.x, w.y - 30, '🛒', { fontSize: '16px' }).setOrigin(0.5).setDepth(2));
+        return;
+      }
+      if (sh.id === 'werkstatt') {
+        mapObjects.push(sceneRef.add.text(w.x, w.y - 30, state.isRevealed ? '🔧' : '🔧🔒', { fontSize: '15px' }).setOrigin(0.5).setDepth(2));
         return;
       }
       mapObjects.push(sceneRef.add.circle(w.x, w.y, 16, COL_GOLD, 0.25).setStrokeStyle(3, COL_GOLD, 0.9).setDepth(2));
@@ -606,6 +638,12 @@
       if (storePanelRef && !inRect(p, storePanelRef.x - storePanelRef.width / 2, storePanelRef.y, storePanelRef.width, storePanelRef.height)) closeStore();
       return;
     }
+    if (state.workshopOpen) {
+      if (wsCloseRef && Phaser.Math.Distance.Between(p.x, p.y, wsCloseRef.x, wsCloseRef.y) <= 24) { closeWorkshop(); return; }
+      for (const b of wsButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { buyUpgrade(b.id); return; }
+      if (wsPanelRef && !inRect(p, wsPanelRef.x - wsPanelRef.width / 2, wsPanelRef.y, wsPanelRef.width, wsPanelRef.height)) closeWorkshop();
+      return;
+    }
     if (state.inventoryOpen) { closeInventory(); return; }
     if (state.travelOpen) {
       if (hit(ftClose, p, 26)) { closeTravel(); return; }
@@ -620,7 +658,7 @@
       if (hit(miniCollapse, p, 18)) { state.miniCollapsed = true; setMiniVisible(false); return; }
       if (inRect(p, miniBg.x, miniBg.y, miniBg.width, miniBg.height)) { openFullMap(); return; }
     }
-    if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) { shooting = true; shootId = p.id; shootBtn.setScale(0.92); fireBullet(); fireTimer = FIRE_MS; return; }
+    if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) { shooting = true; shootId = p.id; shootBtn.setScale(0.92); fireBullet(); fireTimer = fireMs(); return; }
     for (const ab of abilities) if (Phaser.Math.Distance.Between(p.x, p.y, ab.btn.x, ab.btn.y) <= 34) { useAbility(ab.id); return; }
     if (!stick.active && p.x < sceneRef.scale.width / 2) {
       stick.active = true; stick.id = p.id; stick.baseX = p.x; stick.baseY = p.y;
@@ -636,7 +674,55 @@
     if (!state.ctx) return;
     if (state.ctx.type === 'portal') { const p = state.ctx.target; transitionTo(p.to, p.spawn); }
     else if (state.ctx.type === 'station') { const d = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)); if (d.length >= 2) openTravel(); else toast('Bahnhof entdeckt – finde weitere für Zugreisen'); }
-    else if (state.ctx.type === 'shop') { if (state.ctx.target.id === 'store') openStore(); else buyShop(state.ctx.target); }
+    else if (state.ctx.type === 'shop') {
+      const id = state.ctx.target.id;
+      if (id === 'store') openStore(); else if (id === 'werkstatt') openWorkshop(); else buyShop(state.ctx.target);
+    }
+  }
+
+  // ---- Werkstatt (Upgrade-Baum, gesperrt bis Reveal) ---------
+  function openWorkshop() {
+    if (state.storeOpen || state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
+    state.workshopOpen = true; hideContext();
+    const size = sceneRef.scale.gameSize, ids = Object.keys(UPGRADES);
+    const pw = Math.min(360, size.width * 0.94), rowH = 46, headH = 66, footH = 38;
+    const ph = headH + ids.length * (rowH + 6) + footH;
+    const px = size.width / 2, py = (size.height - ph) / 2;
+    const add = o => { wsUI.push(o); return o; };
+    add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
+    wsPanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
+    add(sceneRef.add.text(px, py + 10, '🔧  Werkstatt', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 34, state.isRevealed ? 'Android-Modifikationen' : 'Nur Waffen-Tuning · Körper-Mods gesperrt', { fontFamily: 'system-ui', fontSize: '12px', color: state.isRevealed ? '#7dd3fc' : '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    wsCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 12, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+    let y = py + headH;
+    ids.forEach(id => {
+      const up = UPGRADES[id], lvl = state.upgrades[id], locked = up.bodyMod && !state.isRevealed, maxed = lvl >= up.max;
+      const nm = up.name[state.isRevealed ? 1 : 0], cost = up.base * (lvl + 1);
+      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 - 7, up.icon + '  ' + (locked ? up.desc : nm), { fontFamily: 'system-ui', fontSize: '14px', color: locked ? '#8a8172' : '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 + 10, locked ? '🔒 nach dem Erwachen' : ('Stufe ' + lvl + '/' + up.max), { fontFamily: 'system-ui', fontSize: '11px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      if (!locked && !maxed) {
+        const can = state.gold >= cost;
+        const btn = add(sceneRef.add.rectangle(px + pw / 2 - 58, y + rowH / 2, 96, 34, can ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+        add(sceneRef.add.text(btn.x, btn.y, cost + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        storeButtonsPush(btn, id);
+      } else {
+        add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, maxed ? 'MAX' : '🔒', { fontFamily: 'system-ui', fontSize: '13px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+      }
+      y += rowH + 6;
+    });
+    add(sceneRef.add.text(px, py + ph - 26, '💰 ' + state.gold, { fontFamily: 'system-ui', fontSize: '14px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+  }
+  function storeButtonsPush(btn, id) { wsButtons.push({ rect: btn, id }); }
+  function closeWorkshop() { state.workshopOpen = false; wsUI.forEach(o => o.destroy()); wsUI = []; wsButtons = []; wsCloseRef = null; wsPanelRef = null; }
+  function buyUpgrade(id) {
+    const up = UPGRADES[id], lvl = state.upgrades[id];
+    if (up.bodyMod && !state.isRevealed) { toast('🔒 Erst nach dem Erwachen'); return; }
+    if (lvl >= up.max) { toast('Bereits max'); return; }
+    const cost = up.base * (lvl + 1);
+    if (state.gold < cost) { toast('Nicht genug Gold (' + state.gold + '/' + cost + ')'); return; }
+    state.gold -= cost; state.upgrades[id]++; applyUpgrades(); updateGold();
+    toast(up.name[state.isRevealed ? 1 : 0] + ' → Stufe ' + state.upgrades[id]); save();
+    closeWorkshop(); openWorkshop();
   }
 
   // ---- Store (verkaufen & kaufen) ----------------------------
@@ -804,7 +890,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen;
 
     // Bewegung
     let vx = 0, vy = 0;
@@ -818,8 +904,8 @@
     let mag = Math.hypot(vx, vy);
     if (mag >= STICK_DEADZONE) {
       if (mag > 1) { vx /= mag; vy /= mag; }
-      player.x = Phaser.Math.Clamp(player.x + vx * PLAYER_SPEED * dt, state.bounds.minX, state.bounds.maxX);
-      player.y = Phaser.Math.Clamp(player.y + vy * PLAYER_SPEED * dt, state.bounds.minY, state.bounds.maxY);
+      player.x = Phaser.Math.Clamp(player.x + vx * moveSpeed() * dt, state.bounds.minX, state.bounds.maxX);
+      player.y = Phaser.Math.Clamp(player.y + vy * moveSpeed() * dt, state.bounds.minY, state.bounds.maxY);
       player.facing = Math.atan2(vy, vx); player.rotation = player.facing;
     }
     if (colliders.length) resolveCollision();   // solide Wände/Gebäude
@@ -833,7 +919,7 @@
     // Beim Angreifen automatisch zum nächsten Gegner ausrichten (kein Zielen per Bewegung nötig)
     if (!uiBlocked && shooting) { const t = nearestEnemy(AIM_RANGE); if (t) { const a = Math.atan2(t.c.y - player.y, t.c.x - player.x); player.facing = a; player.rotation = a; } }
     fireTimer -= delta;
-    if (!uiBlocked && shooting && fireTimer <= 0) { fireBullet(); fireTimer = FIRE_MS; }
+    if (!uiBlocked && shooting && fireTimer <= 0) { fireBullet(); fireTimer = fireMs(); }
 
     // Cooldowns
     state.cd.spread = Math.max(0, state.cd.spread - delta);
@@ -850,14 +936,14 @@
       else if (!uiBlocked && now > state.invulnUntil) { state.hp -= e.contact * dt; state.lastDamage = now; touched = true; }
     }
     if (touched) { updateLife(); if (state.hp <= 0) respawnPlayer(); }
-    else if (now - state.lastDamage > REGEN_DELAY && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + REGEN_RATE * dt); updateLife(); }
+    else if (now - state.lastDamage > REGEN_DELAY && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + regenRate() * dt); updateLife(); }
     if (state.boss) updateBossBar();
 
     // Projektile
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
       let hitE = false;
-      for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) { damageEnemy(e, BULLET_DMG); hitE = true; break; }
+      for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) { damageEnemy(e, dmgPerBullet()); hitE = true; break; }
       if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
     }
 
@@ -869,7 +955,7 @@
         else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); }
         co.s.destroy(); coins.splice(i, 1); continue;
       }
-      if (d < MAGNET_DIST) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
+      if (d < magnetDist()) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
     }
 
     if (!uiBlocked && !state.transitioning) updateContext();
@@ -894,6 +980,7 @@
       state.ctx = { type: bestType, target: best };
       if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
       else if (best.id === 'store') showContext('🛒  Store — kaufen & verkaufen');
+      else if (best.id === 'werkstatt') showContext(state.isRevealed ? '🔧  Werkstatt — Modifikationen' : '🔧  Werkstatt — Waffen-Tuning');
       else showContext(best.id === 'saloon' && state.saloonOwned ? '🍺  ' + best.name + ': +' + best.income + ' Gold/Sek (aktiv)' : '🍺  ' + best.name + ' kaufen — ' + best.cost + ' Gold');
     } else { state.ctx = null; hideContext(); }
   }
