@@ -115,6 +115,17 @@
         { id: 'saloon', tx: 5, ty: 8, name: 'Gatling-Saloon', cost: 100, income: SALOON_INCOME },
         { id: 'store', tx: 16, ty: 9, name: 'Store' },
         { id: 'werkstatt', tx: 6, ty: 16, name: 'Werkstatt' }
+      ],
+      npcs: [
+        { id: 'mabel', name: 'Mamma „Rusty" Mabel', short: 'Mabel', tx: 8, ty: 9, color: 0xd97706,
+          linesPre: ['„Na, Fremder. Setz dich an die Bar."', 'Sie schiebt dir ein Glas hin: „Kaktus-Schnaps aufs Haus — den ersten geb ich jedem Neuen."', '„Pass auf dich auf da draußen. Die Wüste frisst Männer wie dich zum Frühstück."'],
+          linesPost: ['Mabel starrt dich an, flucht kurz — dann lacht sie rau.', '„Hätte mir gleich auffallen müssen, dass du keinen Kater kriegst, Kleiner!"', 'Sie schiebt dir statt Schnaps eine Dose Schmieröl rüber: „Trink aus. Geht aufs Haus."'] },
+        { id: 'silas', name: 'Silas „Kupferauge" Finch', short: 'Silas', tx: 8, ty: 16, color: 0x9ca3af,
+          linesPre: ['Der einäugige Schmied mustert dich durch seine Kupferlinse.', '„Ich brauch seltene Erze aus den Minen, sonst wächst diese Stadt nie."', '„Bring mir was Brauchbares — dann schmied ich dir was Brauchbares."'],
+          linesPost: ['„Ah. Einer von den Eisernen." Er grinst schief. „Erklärt so einiges."', '„Bring mir Spezial-Zahnräder vom Kessel-Friedhof — dann bau ich dir Chassis-Panzerplatten."'] },
+        { id: 'doc', name: 'Doktor „Doc" Aris', short: 'Doc Aris', tx: 13, ty: 13, color: 0xe5e7eb,
+          linesPre: ['„Zu viele Verletzte da draußen und viel zu wenig Hände."', '„Hol mir Heilkräuter aus der Alchemistischen Oase, dann reden wir weiter."'],
+          linesPost: ['„Bei dir kann ich mir das Verarzten sparen." Er klopft auf dein Stahl-Chassis.', '„Aber ich weiß, wie man so ein Ding wieder flickt. Bring mir Material."'] }
       ]
     },
     dungeon1: {
@@ -136,6 +147,7 @@
   let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
   let storeUI = [], storeButtons = [], storeCloseRef = null, storePanelRef = null;
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
+  let dlgBg, dlgName, dlgText, dlgHint, npcSprites = [];
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
@@ -156,6 +168,7 @@
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, saloonOwned: false, inventory: {}, isRevealed: false, storeOpen: false, workshopOpen: false,
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
+    dialogueOpen: false, dlg: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
@@ -252,6 +265,12 @@
     ftPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(58).setOrigin(0.5, 0).setVisible(false);
     ftTitle = scene.add.text(0, 0, '🚂  Zugreise', { fontFamily: 'system-ui', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(59).setVisible(false);
     ftClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(59).setVisible(false);
+
+    // Dialog-Box (unten), versteckt
+    dlgBg = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.97).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(62).setOrigin(0.5, 1).setVisible(false);
+    dlgName = scene.add.text(0, 0, '', { fontFamily: '"Courier New", monospace', fontSize: '15px', fontStyle: 'bold', color: '#fcd34d' }).setScrollFactor(0).setDepth(63).setOrigin(0, 0).setVisible(false);
+    dlgText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2', wordWrap: { width: 320 } }).setScrollFactor(0).setDepth(63).setOrigin(0, 0).setVisible(false);
+    dlgHint = scene.add.text(0, 0, '▶ Weiter', { fontFamily: 'system-ui', fontSize: '12px', color: '#a8a090' }).setScrollFactor(0).setDepth(63).setOrigin(1, 1).setVisible(false);
 
     // Haupt-Angriff-Icon merken (für Reposition)
     shootBtn.icon = scene.children.getByName('mainIcon');
@@ -373,6 +392,19 @@
     // Palisaden: Stadt-Mauer + befestigte Überwelt-Eingänge
     if (m.walled) buildCityWall(m);
     m.portals.forEach(p => { if (p.compound) buildCompound(p); });
+
+    // NPCs (Namensschild + Quest-Zahnrad)
+    npcSprites = [];
+    (m.npcs || []).forEach(n => {
+      const w = tileToWorld(n.tx, n.ty);
+      const body = sceneRef.add.ellipse(w.x, w.y, 26, 34, n.color).setStrokeStyle(3, 0x1f2937).setDepth(4);
+      const head = sceneRef.add.circle(w.x, w.y - 15, 8, n.color).setStrokeStyle(2, 0x1f2937).setDepth(4);
+      const label = sceneRef.add.text(w.x, w.y - 34, n.short || n.name, { fontFamily: '"Courier New", monospace', fontSize: '12px', fontStyle: 'bold', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(4);
+      const gear = sceneRef.add.text(w.x, w.y - 50, '⚙️', { fontSize: '14px' }).setOrigin(0.5).setDepth(4);
+      sceneRef.tweens.add({ targets: gear, y: w.y - 54, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
+      mapObjects.push(body, head, label, gear);
+      npcSprites.push({ def: n, x: w.x, y: w.y });
+    });
 
     sceneRef.cameras.main.setBounds(state.bounds.minX - HALF_W, state.bounds.minY - HALF_H, (state.bounds.maxX - state.bounds.minX) + TILE_W, (state.bounds.maxY - state.bounds.minY) + TILE_H);
     sceneRef.cameras.main.setBackgroundColor(m.bg);
@@ -627,11 +659,21 @@
     miniCollapse.setPosition(x + P - 12, y + 9); miniExpand.setPosition(w - 24, y + 16);
 
     if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); }
+
+    // Dialog-Box (unten)
+    if (dlgBg && dlgBg.visible) {
+      const dw = Math.min(w - 24, 560), dh = 150, dx = w / 2, dy = h - 10;
+      dlgBg.setPosition(dx, dy).setSize(dw, dh);
+      dlgName.setPosition(dx - dw / 2 + 16, dy - dh + 12);
+      dlgText.setPosition(dx - dw / 2 + 16, dy - dh + 42); dlgText.setWordWrapWidth(dw - 32);
+      dlgHint.setPosition(dx + dw / 2 - 14, dy - 10);
+    }
     if (state.fullMapOpen) refreshMaps();
   }
 
   // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
+    if (state.dialogueOpen) { advanceDialogue(); return; }   // Tippen = weiter/schließen
     if (state.storeOpen) {
       if (storeCloseRef && Phaser.Math.Distance.Between(p.x, p.y, storeCloseRef.x, storeCloseRef.y) <= 24) { closeStore(); return; }
       for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else buyPotion(); return; }
@@ -660,6 +702,11 @@
     }
     if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) { shooting = true; shootId = p.id; shootBtn.setScale(0.92); fireBullet(); fireTimer = fireMs(); return; }
     for (const ab of abilities) if (Phaser.Math.Distance.Between(p.x, p.y, ab.btn.x, ab.btn.y) <= 34) { useAbility(ab.id); return; }
+    // NPC direkt antippen (Weltkoordinaten, da im Weltraum)
+    if (npcSprites.length) {
+      const wp = sceneRef.cameras.main.getWorldPoint(p.x, p.y);
+      for (const n of npcSprites) if (Phaser.Math.Distance.Between(wp.x, wp.y, n.x, n.y) < 42) { openDialogue(n.def); return; }
+    }
     if (!stick.active && p.x < sceneRef.scale.width / 2) {
       stick.active = true; stick.id = p.id; stick.baseX = p.x; stick.baseY = p.y;
       stickBase.setPosition(p.x, p.y).setVisible(true); stickThumb.setPosition(p.x, p.y).setVisible(true); updateStick(p.x, p.y);
@@ -723,6 +770,31 @@
     state.gold -= cost; state.upgrades[id]++; applyUpgrades(); updateGold();
     toast(up.name[state.isRevealed ? 1 : 0] + ' → Stufe ' + state.upgrades[id]); save();
     closeWorkshop(); openWorkshop();
+  }
+
+  // ---- NPC-Dialog (mit Anti-Doppeltipp) ----------------------
+  function openDialogue(def) {
+    if (state.dialogueOpen) return;                 // Anti-Doppeltipp
+    state.dialogueOpen = true;
+    const lines = (state.isRevealed ? def.linesPost : def.linesPre) || def.linesPre;
+    state.dlg = { def, lines, i: 0 };
+    hideContext(); renderDialogue();
+  }
+  function renderDialogue() {
+    const d = state.dlg; if (!d) return;
+    dlgName.setText(d.def.name); dlgText.setText(d.lines[d.i]);
+    dlgHint.setText(d.i >= d.lines.length - 1 ? '▶ Schließen' : '▶ Weiter');
+    [dlgBg, dlgName, dlgText, dlgHint].forEach(o => o.setVisible(true));
+    layoutUI(sceneRef.scale.gameSize);
+  }
+  function advanceDialogue() {
+    const d = state.dlg; if (!d) { closeDialogue(); return; }
+    if (d.i >= d.lines.length - 1) { closeDialogue(); return; }
+    d.i++; renderDialogue();
+  }
+  function closeDialogue() {
+    state.dialogueOpen = false; state.dlg = null;
+    [dlgBg, dlgName, dlgText, dlgHint].forEach(o => o.setVisible(false));
   }
 
   // ---- Store (verkaufen & kaufen) ----------------------------
@@ -890,7 +962,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.dialogueOpen;
 
     // Bewegung
     let vx = 0, vy = 0;
