@@ -106,6 +106,8 @@
     distillery: { name: 'Mondschein-Destille', icon: '🥃', baseCost: 400, incomePer: 4, max: 5 }
   };
 
+  const GUILDS = { rebels: { name: 'Rebellengilde' }, corp: { name: 'Eiserne Gilde' }, smugglers: { name: 'Schmugglergilde' } };
+
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
     overworld: {
@@ -113,7 +115,10 @@
       floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f, mini: 0xcda877, bg: 0x2b2620,
       portals: [
         { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 11, r: 3 }, short: 'Rustwater', label: '🏙️  Rustwater', mini: 0x22c55e, compound: { c0: 23, r0: 12, c1: 29, r1: 18 } },
-        { tx: 60, ty: 58, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 }
+        { tx: 60, ty: 58, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 },
+        { tx: 14, ty: 30, to: 'fort_freedom', spawn: { c: 9, r: 3 }, short: 'Fort Freedom', label: '🏴  Fort Freedom', mini: 0x9a3b2f },
+        { tx: 64, ty: 20, to: 'sektor01', spawn: { c: 9, r: 3 }, short: 'Sektor 01', label: '🏭  Sektor 01', mini: 0x60a5fa },
+        { tx: 40, ty: 66, to: 'rogues_landing', spawn: { c: 9, r: 3 }, short: "Rogue's Landing", label: "🎲  Rogue's Landing", mini: 0xeab308 }
       ],
       stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: []
     },
@@ -168,6 +173,57 @@
       floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
       portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
       stations: [], decor: []
+    },
+    fort_freedom: {
+      name: 'Fort Freedom', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
+      floorA: 0x8a6a4a, floorB: 0x7a5a3a, grid: 0x5a4128, mini: 0x8a6a4a, bg: 0x1c140c,
+      portals: [ { tx: 9, ty: 0, to: 'overworld', spawn: { c: 14, r: 28 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
+      stations: [ { id: 'st_fort', tx: 9, ty: 9, name: 'Fort Freedom' } ],
+      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x5c4632, label: 'HÄNDLER' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x6b4f2a, label: 'FUNK' } ],
+      shops: [ { id: 'store', tx: 5, ty: 6 } ],
+      npcs: [ { id: 'gideon', name: 'Gideon Cross', short: 'Gideon', tx: 12, ty: 8, color: 0x9a3b2f, guild: 'rebels',
+        linesPre: ['Ein narbiger Mann mit kaltem Blick mustert dich.', '„Neu hier? Wir brechen das Monopol des Konzerns — oder sterben beim Versuch."'],
+        linesPost: ['„Ein wandelnder Stahlkessel. Genau sowas brauchen wir gegen die Iron Rail."'],
+        joinText: '„Kämpf für die Freiheit der Arbeiter. Trittst du der Rebellengilde bei?"',
+        quest: { id: 'q_rebels5', title: 'Sand im Getriebe', kind: 'kill', count: 12, rewardGold: 250, rewardItem: 'dampfkern',
+          offerText: '„Sabotier die Konzern-Patrouillen — leg 12 ihrer Schergen um, dann stockt ihre Kriegsmaschine."',
+          activeText: '„Die Patrouillen rollen noch. Mach weiter."',
+          completeText: '„Sand im Getriebe. Perfekt. Hier, dein Anteil."',
+          doneText: '„Die Ölpipeline brennt. Gut gemacht, Genosse."' } } ]
+    },
+    sektor01: {
+      name: 'Sektor 01', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
+      floorA: 0x9aa0a6, floorB: 0x868c92, grid: 0x5b6167, mini: 0x9aa0a6, bg: 0x14171b,
+      portals: [ { tx: 9, ty: 0, to: 'overworld', spawn: { c: 64, r: 18 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
+      stations: [ { id: 'st_sektor', tx: 9, ty: 9, name: 'Sektor 01' } ],
+      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x4b5563, label: 'AUSGABE' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x374151, label: 'KONTROLLE' } ],
+      shops: [ { id: 'store', tx: 5, ty: 6 } ],
+      npcs: [ { id: 'quentin', name: 'Aufseher Quentin', short: 'Quentin', tx: 12, ty: 8, color: 0x60a5fa, guild: 'corp',
+        linesPre: ['Ein kalter Mann in makelloser Uniform.', '„Ordnung ist Profit. Profit ist Ordnung. Stör keins von beidem."'],
+        linesPost: ['„Ein Firmen-Automat, der frei herumläuft. Faszinierend. Und nützlich."'],
+        joinText: '„Dien dem Konzern. Die Eiserne Gilde belohnt Effizienz. Beitreten?"',
+        quest: { id: 'q_corp5', title: 'Streikbrecher', kind: 'kill', count: 12, rewardGold: 250, rewardItem: 'dampfkern',
+          offerText: '„Eliminiere 12 Rebellen-Saboteure. Der Ölfluss darf nie stocken."',
+          activeText: '„Es laufen noch Saboteure frei herum. Beende das."',
+          completeText: '„Effizient. Der Konzern vergisst treue Werkzeuge nicht."',
+          doneText: '„Die Produktion läuft ununterbrochen. Vorbildlich."' } } ]
+    },
+    rogues_landing: {
+      name: "Rogue's Landing", cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
+      floorA: 0x4a3b52, floorB: 0x3e3146, grid: 0x2a2130, mini: 0x4a3b52, bg: 0x120c17,
+      portals: [ { tx: 9, ty: 0, to: 'overworld', spawn: { c: 40, r: 68 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
+      stations: [ { id: 'st_rogue', tx: 9, ty: 9, name: "Rogue's Landing" } ],
+      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x6d4b2f, label: 'HEHLER' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x5a3b6b, label: 'WETTEN' } ],
+      shops: [ { id: 'store', tx: 5, ty: 6 } ],
+      npcs: [ { id: 'slick', name: '„Slick" Sterling', short: 'Slick', tx: 12, ty: 8, color: 0xeab308, guild: 'smugglers',
+        linesPre: ['Ein Grinsen unter einer breiten Gaslampe.', '„Alles hat seinen Preis, Freund. Auch Schweigen."'],
+        linesPost: ['„Ein unaufhaltsamer Stahlkoloss? Weißt du, was so einer auf dem Schwarzmarkt wert ist?"'],
+        joinText: '„Reichtum kennt keine Fahnen. Machst du Geschäfte mit der Schmugglergilde?"',
+        quest: { id: 'q_smug5', title: 'Das Sumpf-Gold', kind: 'collect', item: 'dampfkern', count: 3, rewardGold: 300, rewardItem: null,
+          offerText: '„Besorg mir 3 Dampfkerne — blaues Alchemie-Öl. Nutz das Chaos, keiner merkt\'s."',
+          activeText: '„Noch nicht genug Kerne. Der Markt wartet nicht ewig."',
+          completeText: '„Heißes Zeug. Verkauft sich von selbst. Dein Schnitt."',
+          doneText: '„Sauberes Geschäft. Man sieht sich, Freund."' } } ]
     }
   };
   const STATION_INDEX = {};
@@ -207,7 +263,7 @@
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
-    currentChapter: 1, revealPlaying: false, revealSeq: null,
+    currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
@@ -369,14 +425,14 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
       const s = JSON.parse(raw);
-      state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1;
+      state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1; state.chosenGuild = s.guild || null;
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
@@ -862,17 +918,29 @@
     if (d.i < flavorN) {
       dlgText.setText(d.lines[d.i]);
       dlgHint.setText((d.i === flavorN - 1 && !q) ? '▶ Schließen' : '▶ Weiter');
-    } else {   // Quest-Seite
-      const st = questStateOf(q.id);
-      if (st === 'available') { dlgText.setText(q.offerText + '\n\nBelohnung: ' + rewardStr(q)); showDlgBtn('📜 Auftrag annehmen', () => acceptQuest(q)); dlgHint.setText('▶ ablehnen'); }
-      else if (st === 'active') {
-        if (questComplete(q)) { dlgText.setText(q.completeText + '\n\nBelohnung: ' + rewardStr(q)); showDlgBtn('✅ Abgeben', () => turnInQuest(q)); dlgHint.setText(''); }
-        else { dlgText.setText(q.activeText + '\n\nFortschritt: ' + questProgress(q)); dlgHint.setText('▶ Schließen'); }
-      } else { dlgText.setText(q.doneText); dlgHint.setText('▶ Schließen'); }
+    } else {   // Quest-Seite (bei Gilden-NPCs erst nach Beitritt)
+      if (d.def.guild && !guildQuestUnlocked(d.def)) renderGuildGate(d.def);
+      else renderQuestPage(q);
     }
     [dlgBg, dlgName, dlgText, dlgHint].forEach(o => o.setVisible(true));
     layoutUI(sceneRef.scale.gameSize);
   }
+  function renderQuestPage(q) {
+    const st = questStateOf(q.id);
+    if (st === 'available') { dlgText.setText(q.offerText + '\n\nBelohnung: ' + rewardStr(q)); showDlgBtn('📜 Auftrag annehmen', () => acceptQuest(q)); dlgHint.setText('▶ ablehnen'); }
+    else if (st === 'active') {
+      if (questComplete(q)) { dlgText.setText(q.completeText + '\n\nBelohnung: ' + rewardStr(q)); showDlgBtn('✅ Abgeben', () => turnInQuest(q)); dlgHint.setText(''); }
+      else { dlgText.setText(q.activeText + '\n\nFortschritt: ' + questProgress(q)); dlgHint.setText('▶ Schließen'); }
+    } else { dlgText.setText(q.doneText); dlgHint.setText('▶ Schließen'); }
+  }
+  function guildQuestUnlocked(def) { return state.isRevealed && state.chosenGuild === def.guild; }
+  function renderGuildGate(def) {
+    const g = def.guild;
+    if (!state.isRevealed) { dlgText.setText('Der Botschafter mustert dich lange. „Komm wieder, wenn du weißt, wer — oder was — du bist."'); dlgHint.setText('▶ Schließen'); }
+    else if (state.chosenGuild && state.chosenGuild !== g) { dlgText.setText('„Du trägst schon die Farben einer anderen Gilde. Verschwinde."'); dlgHint.setText('▶ Schließen'); }
+    else { dlgText.setText(def.joinText || ('Schließ dich an: ' + GUILDS[g].name)); showDlgBtn('🤝 ' + GUILDS[g].name + ' beitreten', () => joinGuild(g)); dlgHint.setText('▶ später'); }
+  }
+  function joinGuild(g) { state.chosenGuild = g; toast('🤝 Beigetreten: ' + GUILDS[g].name); save(); updateNpcIndicators(); renderDialogue(); }
   function advanceDialogue() {
     const d = state.dlg; if (!d) { closeDialogue(); return; }
     const total = d.lines.length + (d.def.quest ? 1 : 0);
@@ -918,6 +986,12 @@
     for (const n of npcSprites) {
       if (!n.gear) continue; const q = n.def.quest;
       if (!q) { n.gear.setVisible(false); continue; }
+      if (n.def.guild && !guildQuestUnlocked(n.def)) {   // Gilden-NPC: nur Beitritts-Marker
+        const g = n.def.guild;
+        if (state.isRevealed && (!state.chosenGuild || state.chosenGuild === g)) { n.gear.setVisible(true); n.gear.setText('🤝'); }
+        else n.gear.setVisible(false);
+        continue;
+      }
       const st = questStateOf(q.id);
       if (st === 'done') n.gear.setVisible(false);
       else { n.gear.setVisible(true); n.gear.setText(st === 'available' ? '⚙️' : (questComplete(q) ? '❗' : '⏳')); }
@@ -981,7 +1055,7 @@
     const add = o => { storeUI.push(o); return o; };
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
     storePanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
-    add(sceneRef.add.text(px, py + 12, '🛒  Store — Rustwater', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 12, '🛒  Händler — ' + MAPS[state.map].name, { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
     storeCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 14, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
     let y = py + headH;
     ids.forEach(id => {
