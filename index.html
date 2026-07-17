@@ -67,7 +67,7 @@
       name: 'Wüste', cols: 40, rows: 40, enemies: true, minimap: 'full',
       floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f, mini: 0xcda877, bg: 0x2b2620,
       portals: [
-        { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 10, r: 18 }, short: 'Rustwater', label: '🏙️  Rustwater', mini: 0x22c55e, compound: { c0: 23, r0: 12, c1: 29, r1: 18 } },
+        { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 11, r: 3 }, short: 'Rustwater', label: '🏙️  Rustwater', mini: 0x22c55e, compound: { c0: 23, r0: 12, c1: 29, r1: 18 } },
         { tx: 31, ty: 30, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 }
       ],
       stations: [ { id: 'st_desert', tx: 9, ty: 9, name: 'Wüsten-Halt' } ], decor: []
@@ -75,7 +75,7 @@
     rustwater: {
       name: 'Rustwater', cols: 22, rows: 22, enemies: false, walled: true, minimap: 'full',
       floorA: 0x9aa0a6, floorB: 0x878d93, grid: 0x656b71, mini: 0x9aa0a6, bg: 0x20242a,
-      portals: [ { tx: 10, ty: 21, to: 'overworld', spawn: { c: 26, r: 10 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
+      portals: [ { tx: 11, ty: 0, to: 'overworld', spawn: { c: 26, r: 10 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
       stations: [ { id: 'st_rustwater', tx: 11, ty: 3, name: 'Rustwater Bahnhof' } ],
       decor: [
         { tx: 5, ty: 8, w: 70, h: 46, color: 0x6b5b4a, label: 'SALOON' },
@@ -272,7 +272,7 @@
   }
 
   // ---- Karte laden -------------------------------------------
-  function loadMap(id, spawn) {
+  function loadMap(id, spawn, keepFacing) {
     const m = MAPS[id];
     state.map = id; state.cols = m.cols; state.rows = m.rows;
     if (!state.explored[id]) state.explored[id] = new Set();
@@ -317,7 +317,8 @@
     sceneRef.cameras.main.setBounds(state.bounds.minX - HALF_W, state.bounds.minY - HALF_H, (state.bounds.maxX - state.bounds.minX) + TILE_W, (state.bounds.maxY - state.bounds.minY) + TILE_H);
     sceneRef.cameras.main.setBackgroundColor(m.bg);
     const wp = tileToWorld(spawn.c, spawn.r);
-    player.x = wp.x; player.y = wp.y; player.facing = 0; player.rotation = 0;
+    player.x = wp.x; player.y = wp.y;
+    player.facing = (keepFacing !== undefined) ? keepFacing : 0; player.rotation = player.facing;   // Orientierung beibehalten
     shadow.setPosition(wp.x, wp.y + 14);
     sceneRef.cameras.main.centerOn(wp.x, wp.y);
     state.playerTile = { c: spawn.c, r: spawn.r };
@@ -454,8 +455,9 @@
   function transitionTo(mapId, spawn) {
     if (state.transitioning) return;
     state.transitioning = true; hideContext();
-    sceneRef.cameras.main.fadeOut(180, 0, 0, 0);
-    sceneRef.cameras.main.once('camerafadeoutcomplete', () => { loadMap(mapId, spawn); sceneRef.cameras.main.fadeIn(180, 0, 0, 0); state.transitioning = false; });
+    const keepFacing = player.facing;                    // Laufrichtung übernehmen
+    sceneRef.cameras.main.fadeOut(90, 0, 0, 0);           // kurzer "durch die Tür"-Moment, kein Ladegefühl
+    sceneRef.cameras.main.once('camerafadeoutcomplete', () => { loadMap(mapId, spawn, keepFacing); sceneRef.cameras.main.fadeIn(110, 0, 0, 0); state.transitioning = false; });
   }
 
   // ---- Layout ------------------------------------------------
