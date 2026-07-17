@@ -41,7 +41,7 @@
 
   <script>
   // ============================================================
-  //  RUST & LEAD – Web-Prototyp (Phase 1) · Schritt 1
+  //  RUST & LEAD – Web-Prototyp (Phase 1) · Schritt 1–3
   //  Single-File Setup · Details siehe docs/GDD.md
   //
   //  Enthalten:
@@ -49,6 +49,9 @@
   //   (2) Blauer Kreis als Spieler (mit Nase = Blickrichtung)
   //   (3) Virtueller Touch-Joystick (unten links, dynamisch)
   //   (4) Auto-Resize auf die Displaygröße (Phaser.Scale.RESIZE)
+  //   (5) Rote Gegner (spawnen + verfolgen, mit Lebensbalken)
+  //   (6) Roter Schuss-Button rechts -> gelbe Projektile in Blickrichtung
+  //   (7) Schadenszahlen, die hochploppen
   // ============================================================
 
   // ---- Konfiguration -----------------------------------------
@@ -64,6 +67,18 @@
   const STICK_RADIUS   = 60;      // max. Auslenkung des Joysticks
   const STICK_DEADZONE = 0.12;    // ignoriert Mikro-Wackler
 
+  const ENEMY_R        = 15;      // Gegner-Radius
+  const ENEMY_HP       = 60;      // Gegner-Lebenspunkte
+  const ENEMY_SPEED    = 70;      // Gegner-Tempo (px/s) – langsamer als Spieler
+  const ENEMY_MAX      = 12;      // max. gleichzeitige Gegner
+  const SPAWN_MS       = 1400;    // Spawn-Intervall
+
+  const BULLET_R       = 5;       // Projektil-Radius
+  const BULLET_SPEED   = 560;     // Projektil-Tempo (px/s)
+  const BULLET_DMG     = 20;      // Schaden pro Treffer
+  const BULLET_LIFE    = 1.1;     // Lebensdauer (s)
+  const FIRE_MS        = 200;     // Feuer-Intervall bei gehaltenem Button
+
   // Farben
   const COL_SAND_A   = 0xd9b38c;  // Sand hell
   const COL_SAND_B   = 0xcda877;  // Sand dunkel (Schachbrett-Effekt)
@@ -71,17 +86,29 @@
   const COL_PLAYER   = 0x3b82f6;  // Spieler blau
   const COL_PLAYER_S = 0x1e3a8a;  // Spieler Rand
   const COL_NOSE     = 0x93c5fd;  // Nase hellblau
+  const COL_ENEMY    = 0xef4444;  // Gegner rot
+  const COL_ENEMY_S  = 0x7f1d1d;  // Gegner Rand
+  const COL_BULLET   = 0xfacc15;  // Projektil gelb
+  const COL_HP       = 0xff3b30;  // Lebensbalken
+
+  // Grid-Grenzen (Weltkoordinaten)
+  const MAX_X = GRID_N * HALF_W - HALF_W, MIN_X = -MAX_X;
+  const MIN_Y = 0, MAX_Y = GRID_N * TILE_H;
 
   // ---- Laufzeit-Zustand --------------------------------------
-  let player, shadow;
-  let stickBase, stickThumb, hint;
+  let sceneRef, player, shadow;
+  let stickBase, stickThumb, hint, shootBtn, killText;
   let cursors, wasd;
 
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
+  const enemies = [];
+  const bullets = [];
+  let shooting = false, shootId = null, fireTimer = 0, kills = 0;
 
   // ---- Szene: create -----------------------------------------
   function create() {
     const scene = this;
+    sceneRef = scene;
 
     drawFloor(scene);
 
@@ -89,7 +116,6 @@
     const startX = 0;
     const startY = GRID_N * HALF_H;
 
-    // Schatten (bleibt flach, dreht sich nicht mit)
     shadow = scene.add.ellipse(startX, startY + 14, PLAYER_R * 2.2, PLAYER_R * 1.1, 0x000000, 0.25)
       .setDepth(1);
 
@@ -97,7 +123,7 @@
     const body = scene.add.circle(0, 0, PLAYER_R, COL_PLAYER).setStrokeStyle(3, COL_PLAYER_S);
     const nose = scene.add.triangle(0, 0, PLAYER_R - 2, -6, PLAYER_R + 12, 0, PLAYER_R - 2, 6, COL_NOSE)
       .setStrokeStyle(2, COL_PLAYER_S);
-    player = scene.add.container(startX, startY, [body, nose]).setDepth(2);
+    player = scene.add.container(startX, startY, [body, nose]).setDepth(5);
     player.facing = 0; // 0 rad = nach rechts (Ost)
 
     // Kamera folgt dem Spieler weich
@@ -108,20 +134,28 @@
 
     // ---- Virtueller Joystick (fix am Bildschirm) ----
     stickBase = scene.add.circle(0, 0, STICK_RADIUS, 0xffffff, 0.10)
-      .setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(10).setVisible(false);
+      .setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(20).setVisible(false);
     stickThumb = scene.add.circle(0, 0, 28, 0xffffff, 0.35)
-      .setStrokeStyle(2, 0xffffff, 0.55).setScrollFactor(0).setDepth(11).setVisible(false);
+      .setStrokeStyle(2, 0xffffff, 0.55).setScrollFactor(0).setDepth(21).setVisible(false);
 
-    // Mehrfinger-Eingabe erlauben (rechte Seite bleibt für spätere Buttons frei)
+    // ---- Großer roter Schuss-Button (rechts unten) ----
+    shootBtn = scene.add.circle(0, 0, 46, COL_ENEMY, 0.85)
+      .setStrokeStyle(3, 0xffffff, 0.55).setScrollFactor(0).setDepth(20);
+
+    // Mehrfinger-Eingabe erlauben (Joystick links + Button rechts gleichzeitig)
     scene.input.addPointer(3);
 
     scene.input.on('pointerdown', (p) => {
+      // Schuss-Button (rechts unten)? -> Dauerfeuer starten
+      if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) {
+        shooting = true; shootId = p.id; shootBtn.setScale(0.92);
+        fireBullet(); fireTimer = FIRE_MS;
+        return;
+      }
       // Joystick nur auf der linken Bildschirmhälfte aktivieren
       if (!stick.active && p.x < scene.scale.width / 2) {
-        stick.active = true;
-        stick.id = p.id;
-        stick.baseX = p.x;
-        stick.baseY = p.y;
+        stick.active = true; stick.id = p.id;
+        stick.baseX = p.x; stick.baseY = p.y;
         stickBase.setPosition(p.x, p.y).setVisible(true);
         stickThumb.setPosition(p.x, p.y).setVisible(true);
         updateStick(p.x, p.y);
@@ -130,22 +164,41 @@
     scene.input.on('pointermove', (p) => {
       if (stick.active && p.id === stick.id) updateStick(p.x, p.y);
     });
-    const release = (p) => { if (stick.active && p.id === stick.id) resetStick(); };
+    const release = (p) => {
+      if (stick.active && p.id === stick.id) resetStick();
+      if (p.id === shootId) { shooting = false; shootId = null; shootBtn.setScale(1); }
+    };
     scene.input.on('pointerup', release);
     scene.input.on('pointerupoutside', release);
 
     // ---- Tastatur als Desktop-Fallback zum Testen ----
     cursors = scene.input.keyboard.createCursorKeys();
     wasd = scene.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
+    scene.input.keyboard.on('keydown-SPACE', () => { fireBullet(); });
 
-    // ---- Kurzer Hinweis (blendet aus) ----
-    hint = scene.add.text(scene.scale.width / 2, 28, 'Links ziehen zum Bewegen', {
+    // ---- HUD ----
+    hint = scene.add.text(scene.scale.width / 2, 28, 'Links ziehen · rechts schießen', {
       fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2'
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(20).setAlpha(0.9);
-    scene.tweens.add({ targets: hint, alpha: 0, delay: 3200, duration: 1000 });
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setAlpha(0.9);
+    scene.tweens.add({ targets: hint, alpha: 0, delay: 3500, duration: 1000 });
 
-    // Hinweis bei Größenänderung mittig halten
-    scene.scale.on('resize', (size) => { if (hint) hint.setX(size.width / 2); });
+    killText = scene.add.text(14, 22, 'Besiegt: 0', {
+      fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2',
+      stroke: '#000000', strokeThickness: 3
+    }).setScrollFactor(0).setDepth(30);
+
+    layoutUI(scene.scale.gameSize);
+    scene.scale.on('resize', (size) => layoutUI(size));
+
+    // ---- Gegner regelmäßig spawnen ----
+    scene.time.addEvent({ delay: SPAWN_MS, loop: true, callback: spawnEnemy });
+    for (let i = 0; i < 3; i++) spawnEnemy(); // Startgegner
+  }
+
+  // ---- HUD-Positionen (auch bei Resize) ----------------------
+  function layoutUI(size) {
+    if (hint) hint.setX(size.width / 2);
+    if (shootBtn) shootBtn.setPosition(size.width - 78, size.height - 92);
   }
 
   // ---- Isometrische Boden-Fläche zeichnen --------------------
@@ -155,13 +208,12 @@
       for (let row = 0; row < GRID_N; row++) {
         const cx = (col - row) * HALF_W;
         const cy = (col + row) * HALF_H;
-        // Schachbrett-Schattierung -> klar als isometrische Kacheln lesbar
         g.fillStyle((col + row) % 2 === 0 ? COL_SAND_A : COL_SAND_B, 1);
         g.beginPath();
-        g.moveTo(cx, cy - HALF_H);       // oben
-        g.lineTo(cx + HALF_W, cy);        // rechts
-        g.lineTo(cx, cy + HALF_H);        // unten
-        g.lineTo(cx - HALF_W, cy);        // links
+        g.moveTo(cx, cy - HALF_H);
+        g.lineTo(cx + HALF_W, cy);
+        g.lineTo(cx, cy + HALF_H);
+        g.lineTo(cx - HALF_W, cy);
         g.closePath();
         g.fillPath();
         g.lineStyle(1, COL_GRID, 0.45);
@@ -170,63 +222,131 @@
     }
   }
 
-  // ---- Joystick-Vektor berechnen -----------------------------
+  // ---- Gegner spawnen ----------------------------------------
+  function spawnEnemy() {
+    if (!sceneRef || !player || enemies.length >= ENEMY_MAX) return;
+    // an zufälligem Winkel in einiger Entfernung zum Spieler (außerhalb des Sichtfelds)
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 380 + Math.random() * 160;
+    let ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, MIN_X, MAX_X);
+    let ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, MIN_Y, MAX_Y);
+
+    const body = sceneRef.add.circle(0, 0, ENEMY_R, COL_ENEMY).setStrokeStyle(3, COL_ENEMY_S);
+    const hpBg = sceneRef.add.rectangle(-16, -ENEMY_R - 9, 32, 5, 0x000000, 0.6).setOrigin(0, 0.5);
+    const hpFill = sceneRef.add.rectangle(-16, -ENEMY_R - 9, 32, 5, COL_HP).setOrigin(0, 0.5);
+    const c = sceneRef.add.container(ex, ey, [body, hpBg, hpFill]).setDepth(4);
+
+    enemies.push({ c, hp: ENEMY_HP, maxHp: ENEMY_HP, hpFill });
+  }
+
+  // ---- Schuss abgeben ----------------------------------------
+  function fireBullet() {
+    if (!sceneRef || !player) return;
+    const a = player.facing;
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6),
+                                       BULLET_R, COL_BULLET).setStrokeStyle(2, 0xb45309).setDepth(6);
+    bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE });
+  }
+
+  // ---- Schaden + Schadenszahl --------------------------------
+  function damageEnemy(e, dmg) {
+    e.hp -= dmg;
+    e.hpFill.width = 32 * Math.max(e.hp, 0) / e.maxHp;
+    popDamage(e.c.x, e.c.y - ENEMY_R - 4, dmg);
+    if (e.hp <= 0) killEnemy(e);
+  }
+
+  function killEnemy(e) {
+    const idx = enemies.indexOf(e);
+    if (idx !== -1) enemies.splice(idx, 1);
+    e.c.destroy();
+    kills++;
+    if (killText) killText.setText('Besiegt: ' + kills);
+  }
+
+  function popDamage(x, y, dmg) {
+    const t = sceneRef.add.text(x, y, '' + dmg, {
+      fontFamily: 'system-ui, sans-serif', fontSize: '20px', color: '#fde68a',
+      stroke: '#000000', strokeThickness: 4, fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(40);
+    sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out',
+      onComplete: () => t.destroy() });
+  }
+
+  // ---- Joystick ----------------------------------------------
   function updateStick(px, py) {
     let dx = px - stick.baseX;
     let dy = py - stick.baseY;
     const len = Math.hypot(dx, dy);
     if (len > STICK_RADIUS) { dx = dx / len * STICK_RADIUS; dy = dy / len * STICK_RADIUS; }
     stickThumb.setPosition(stick.baseX + dx, stick.baseY + dy);
-    // normiert auf -1..1 (Länge = analoge Stärke 0..1)
     stick.vx = dx / STICK_RADIUS;
     stick.vy = dy / STICK_RADIUS;
   }
 
   function resetStick() {
-    stick.active = false;
-    stick.id = null;
-    stick.vx = 0;
-    stick.vy = 0;
-    stickBase.setVisible(false);
-    stickThumb.setVisible(false);
+    stick.active = false; stick.id = null; stick.vx = 0; stick.vy = 0;
+    stickBase.setVisible(false); stickThumb.setVisible(false);
   }
 
-  // ---- Szene: update (Bewegung) ------------------------------
+  // ---- Szene: update -----------------------------------------
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000;
 
+    // --- Spieler-Bewegung ---
     let vx = 0, vy = 0;
     if (stick.active) { vx = stick.vx; vy = stick.vy; }
-
-    // Tastatur-Fallback (Desktop)
     if (cursors.left.isDown  || wasd.left.isDown)  vx = -1;
     if (cursors.right.isDown || wasd.right.isDown) vx = 1;
     if (cursors.up.isDown    || wasd.up.isDown)    vy = -1;
     if (cursors.down.isDown  || wasd.down.isDown)  vy = 1;
 
     let mag = Math.hypot(vx, vy);
-    if (mag < STICK_DEADZONE) return;                 // keine Bewegung
-    if (mag > 1) { vx /= mag; vy /= mag; mag = 1; }    // Diagonale nicht schneller
-
-    // flüssige Bewegung in alle Richtungen
-    player.x += vx * PLAYER_SPEED * dt;
-    player.y += vy * PLAYER_SPEED * dt;
-
-    // innerhalb des Grids halten
-    const maxX = GRID_N * HALF_W - HALF_W;
-    const minX = -maxX;
-    const minY = 0;
-    const maxY = GRID_N * TILE_H;
-    player.x = Phaser.Math.Clamp(player.x, minX, maxX);
-    player.y = Phaser.Math.Clamp(player.y, minY, maxY);
-
-    // Blickrichtung = Bewegungsrichtung (Nase dreht mit)
-    player.facing = Math.atan2(vy, vx);
-    player.rotation = player.facing;
-
-    // Schatten folgt (bleibt flach)
+    if (mag >= STICK_DEADZONE) {
+      if (mag > 1) { vx /= mag; vy /= mag; }
+      player.x = Phaser.Math.Clamp(player.x + vx * PLAYER_SPEED * dt, MIN_X, MAX_X);
+      player.y = Phaser.Math.Clamp(player.y + vy * PLAYER_SPEED * dt, MIN_Y, MAX_Y);
+      player.facing = Math.atan2(vy, vx);
+      player.rotation = player.facing;
+    }
     shadow.setPosition(player.x, player.y + 14);
+
+    // --- Dauerfeuer bei gehaltenem Button ---
+    fireTimer -= delta;
+    if (shooting && fireTimer <= 0) { fireBullet(); fireTimer = FIRE_MS; }
+
+    // --- Gegner verfolgen den Spieler ---
+    for (const e of enemies) {
+      const ex = player.x - e.c.x, ey = player.y - e.c.y;
+      const d = Math.hypot(ex, ey) || 1;
+      if (d > PLAYER_R + ENEMY_R) {
+        e.c.x += (ex / d) * ENEMY_SPEED * dt;
+        e.c.y += (ey / d) * ENEMY_SPEED * dt;
+      }
+    }
+
+    // --- Projektile bewegen + Treffer prüfen ---
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      b.sprite.x += b.vx * dt;
+      b.sprite.y += b.vy * dt;
+      b.life -= dt;
+
+      let hit = false;
+      for (const e of enemies) {
+        if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < ENEMY_R + BULLET_R) {
+          damageEnemy(e, BULLET_DMG);
+          hit = true;
+          break;
+        }
+      }
+      if (hit || b.life <= 0) {
+        b.sprite.destroy();
+        bullets.splice(i, 1);
+      }
+    }
   }
 
   // ---- Phaser-Konfiguration ----------------------------------
