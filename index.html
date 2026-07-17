@@ -8,28 +8,13 @@
 
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #2b2620;
-      /* Touch-Gesten (Scroll/Zoom) unterbinden – wir wollen reine Spiel-Steuerung */
-      touch-action: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      overscroll-behavior: none;
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden; background: #2b2620;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+      -webkit-tap-highlight-color: transparent; overscroll-behavior: none;
       font-family: system-ui, sans-serif;
     }
-    /* Spiel füllt den kompletten Viewport (dvh-Fallback für mobile Browserleisten) */
-    #game {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
-    }
+    #game { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; }
     #game canvas { display: block; }
   </style>
 </head>
@@ -41,329 +26,557 @@
 
   <script>
   // ============================================================
-  //  RUST & LEAD – Web-Prototyp (Phase 1) · Schritt 1–3
+  //  RUST & LEAD – Web-Prototyp (Phase 1) · Schritt 1–4+
   //  Single-File Setup · Details siehe docs/GDD.md
   //
   //  Enthalten:
-  //   (1) Sandfarbene isometrische Boden-Grid-Fläche
-  //   (2) Blauer Kreis als Spieler (mit Nase = Blickrichtung)
-  //   (3) Virtueller Touch-Joystick (unten links, dynamisch)
-  //   (4) Auto-Resize auf die Displaygröße (Phaser.Scale.RESIZE)
-  //   (5) Rote Gegner (spawnen + verfolgen, mit Lebensbalken)
-  //   (6) Roter Schuss-Button rechts -> gelbe Projektile in Blickrichtung
-  //   (7) Schadenszahlen, die hochploppen
+  //   - Sandfarbenes isometrisches Grid, blauer Spieler (Nase = Blick)
+  //   - Touch-Joystick (links), Schuss-Button (rechts), Auto-Resize
+  //   - Rote Gegner (spawnen/verfolgen), Lebensbalken, Schadenszahlen
+  //   - Mehrere Karten: Wüste (Überwelt) / Stadt Rustwater / Mine (Dungeon)
+  //   - Betreten/Verlassen über Marker + Kontext-Button
+  //   - Fog of War: Karten zeigen nur Erkundetes
+  //   - Ausklappbare Minimap (rechts oben), Antippen -> Vollbild-Karte
+  //   - Bahnhöfe + Schnellreise (Zugreise) zwischen entdeckten Bahnhöfen
   // ============================================================
 
-  // ---- Konfiguration -----------------------------------------
-  const TILE_W = 64;              // Kachelbreite (isometrisch)
-  const TILE_H = 32;              // Kachelhöhe  (isometrisch)
-  const HALF_W = TILE_W / 2;
-  const HALF_H = TILE_H / 2;
-  const GRID_N = 32;              // Grid = GRID_N x GRID_N Kacheln
-
-  const PLAYER_SPEED = 240;       // Pixel pro Sekunde
-  const PLAYER_R     = 16;        // Spieler-Radius
-
-  const STICK_RADIUS   = 60;      // max. Auslenkung des Joysticks
-  const STICK_DEADZONE = 0.12;    // ignoriert Mikro-Wackler
-
-  const ENEMY_R        = 15;      // Gegner-Radius
-  const ENEMY_HP       = 60;      // Gegner-Lebenspunkte
-  const ENEMY_SPEED    = 70;      // Gegner-Tempo (px/s) – langsamer als Spieler
-  const ENEMY_MAX      = 12;      // max. gleichzeitige Gegner
-  const SPAWN_MS       = 1400;    // Spawn-Intervall
-
-  const BULLET_R       = 5;       // Projektil-Radius
-  const BULLET_SPEED   = 560;     // Projektil-Tempo (px/s)
-  const BULLET_DMG     = 20;      // Schaden pro Treffer
-  const BULLET_LIFE    = 1.1;     // Lebensdauer (s)
-  const FIRE_MS        = 200;     // Feuer-Intervall bei gehaltenem Button
+  // ---- Grund-Konfiguration -----------------------------------
+  const TILE_W = 64, TILE_H = 32, HALF_W = TILE_W / 2, HALF_H = TILE_H / 2;
+  const PLAYER_SPEED = 240, PLAYER_R = 16;
+  const STICK_RADIUS = 60, STICK_DEADZONE = 0.12;
+  const ENEMY_R = 15, ENEMY_HP = 60, ENEMY_SPEED = 70, ENEMY_MAX = 10, SPAWN_MS = 1500;
+  const BULLET_R = 5, BULLET_SPEED = 560, BULLET_DMG = 20, BULLET_LIFE = 1.1, FIRE_MS = 200;
+  const REVEAL_R = 3;              // Erkundungs-Radius in Kacheln
+  const INTERACT_DIST = 46;        // Reichweite für Betreten/Verlassen
+  const DISCOVER_DIST = 90;        // Reichweite, um einen Bahnhof zu entdecken
 
   // Farben
-  const COL_SAND_A   = 0xd9b38c;  // Sand hell
-  const COL_SAND_B   = 0xcda877;  // Sand dunkel (Schachbrett-Effekt)
-  const COL_GRID     = 0xb8935f;  // Gitterlinien
-  const COL_PLAYER   = 0x3b82f6;  // Spieler blau
-  const COL_PLAYER_S = 0x1e3a8a;  // Spieler Rand
-  const COL_NOSE     = 0x93c5fd;  // Nase hellblau
-  const COL_ENEMY    = 0xef4444;  // Gegner rot
-  const COL_ENEMY_S  = 0x7f1d1d;  // Gegner Rand
-  const COL_BULLET   = 0xfacc15;  // Projektil gelb
-  const COL_HP       = 0xff3b30;  // Lebensbalken
+  const COL_PLAYER = 0x3b82f6, COL_PLAYER_S = 0x1e3a8a, COL_NOSE = 0x93c5fd;
+  const COL_ENEMY = 0xef4444, COL_ENEMY_S = 0x7f1d1d;
+  const COL_BULLET = 0xfacc15, COL_HP = 0xff3b30, COL_STATION = 0xfacc15;
 
-  // Grid-Grenzen (Weltkoordinaten)
-  const MAX_X = GRID_N * HALF_W - HALF_W, MIN_X = -MAX_X;
-  const MIN_Y = 0, MAX_Y = GRID_N * TILE_H;
+  // ---- Karten-Definitionen -----------------------------------
+  // tx,ty = Kachel-Koordinaten. spawn = Zielkachel beim Betreten der Zielkarte.
+  const MAPS = {
+    overworld: {
+      name: 'Wüste', cols: 40, rows: 40, enemies: true, minimap: 'full',
+      floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f, mini: 0xcda877, bg: 0x2b2620,
+      portals: [
+        { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 10, r: 17 }, short: 'Rustwater', label: '🏙️  Rustwater betreten', mini: 0x22c55e },
+        { tx: 31, ty: 30, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine betreten', mini: 0x8b5cf6 }
+      ],
+      stations: [ { id: 'st_desert', tx: 9, ty: 9, name: 'Wüsten-Halt' } ],
+      decor: []
+    },
+    rustwater: {
+      name: 'Rustwater', cols: 22, rows: 22, enemies: false, minimap: 'full',
+      floorA: 0x9aa0a6, floorB: 0x878d93, grid: 0x656b71, mini: 0x9aa0a6, bg: 0x20242a,
+      portals: [
+        { tx: 10, ty: 19, to: 'overworld', spawn: { c: 26, r: 14 }, short: 'Wüste', label: '🚪  Wüste (verlassen)', mini: 0x38bdf8 }
+      ],
+      stations: [ { id: 'st_rustwater', tx: 11, ty: 3, name: 'Rustwater Bahnhof' } ],
+      decor: [
+        { tx: 5, ty: 8, w: 70, h: 46, color: 0x6b5b4a, label: 'SALOON' },
+        { tx: 16, ty: 9, w: 60, h: 40, color: 0x5c5148, label: 'STORE' },
+        { tx: 11, ty: 14, w: 64, h: 44, color: 0x6b5b4a, label: 'BANK' }
+      ]
+    },
+    dungeon1: {
+      name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
+      floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
+      portals: [
+        { tx: 12, ty: 23, to: 'overworld', spawn: { c: 31, r: 32 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 }
+      ],
+      stations: [],
+      decor: []
+    }
+  };
+
+  // Globaler Bahnhof-Index (id -> {mapId, tx, ty, name}) für Schnellreise
+  const STATION_INDEX = {};
+  for (const id in MAPS) MAPS[id].stations.forEach(s => STATION_INDEX[s.id] = { mapId: id, tx: s.tx, ty: s.ty, name: s.name });
 
   // ---- Laufzeit-Zustand --------------------------------------
   let sceneRef, player, shadow;
-  let stickBase, stickThumb, hint, shootBtn, killText;
+  let stickBase, stickThumb, hint, shootBtn, killText, mapNameText;
+  let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;              // Minimap
+  let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;                       // Vollbild-Karte
+  let ctxBg, ctxText;                                                     // Kontext-Button
+  let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];         // Schnellreise
   let cursors, wasd;
 
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
   const enemies = [];
   const bullets = [];
+  const mapObjects = [];   // pro Karte neu aufgebaut, beim Wechsel zerstört
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
+  let miniDirty = true;
+
+  const state = {
+    map: 'overworld',
+    cols: 40, rows: 40,
+    bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
+    explored: {},                  // mapId -> Set("c,r")
+    discovered: new Set(),         // entdeckte Bahnhof-ids
+    playerTile: { c: 0, r: 0 },
+    miniSize: 140, miniCollapsed: false,
+    fullMapOpen: false, travelOpen: false, transitioning: false,
+    ctx: null                      // { type:'portal'|'station', target }
+  };
+
+  // ---- Iso-Koordinaten ---------------------------------------
+  const tileToWorld = (c, r) => ({ x: (c - r) * HALF_W, y: (c + r) * HALF_H });
+  const worldToTile = (x, y) => ({ c: Math.round((x / HALF_W + y / HALF_H) / 2), r: Math.round((y / HALF_H - x / HALF_W) / 2) });
 
   // ---- Szene: create -----------------------------------------
   function create() {
-    const scene = this;
-    sceneRef = scene;
+    const scene = this; sceneRef = scene;
 
-    drawFloor(scene);
-
-    // Startposition = Mitte des Grids
-    const startX = 0;
-    const startY = GRID_N * HALF_H;
-
-    shadow = scene.add.ellipse(startX, startY + 14, PLAYER_R * 2.2, PLAYER_R * 1.1, 0x000000, 0.25)
-      .setDepth(1);
-
-    // Spieler = Kreis + Nase in einem Container (Container-Rotation = Blickrichtung)
+    // Spieler (Kreis + Nase im Container)
     const body = scene.add.circle(0, 0, PLAYER_R, COL_PLAYER).setStrokeStyle(3, COL_PLAYER_S);
-    const nose = scene.add.triangle(0, 0, PLAYER_R - 2, -6, PLAYER_R + 12, 0, PLAYER_R - 2, 6, COL_NOSE)
-      .setStrokeStyle(2, COL_PLAYER_S);
-    player = scene.add.container(startX, startY, [body, nose]).setDepth(5);
-    player.facing = 0; // 0 rad = nach rechts (Ost)
-
-    // Kamera folgt dem Spieler weich
-    scene.cameras.main.setBounds(-GRID_N * HALF_W - HALF_W, -HALF_H,
-                                 GRID_N * TILE_W + TILE_W, GRID_N * TILE_H + TILE_H);
+    const nose = scene.add.triangle(0, 0, PLAYER_R - 2, -6, PLAYER_R + 12, 0, PLAYER_R - 2, 6, COL_NOSE).setStrokeStyle(2, COL_PLAYER_S);
+    shadow = scene.add.ellipse(0, 0, PLAYER_R * 2.2, PLAYER_R * 1.1, 0x000000, 0.25).setDepth(3);
+    player = scene.add.container(0, 0, [body, nose]).setDepth(5);
+    player.facing = 0;
     scene.cameras.main.startFollow(player, true, 0.12, 0.12);
-    scene.cameras.main.centerOn(startX, startY);
 
-    // ---- Virtueller Joystick (fix am Bildschirm) ----
-    stickBase = scene.add.circle(0, 0, STICK_RADIUS, 0xffffff, 0.10)
-      .setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(20).setVisible(false);
-    stickThumb = scene.add.circle(0, 0, 28, 0xffffff, 0.35)
-      .setStrokeStyle(2, 0xffffff, 0.55).setScrollFactor(0).setDepth(21).setVisible(false);
+    // Joystick
+    stickBase = scene.add.circle(0, 0, STICK_RADIUS, 0xffffff, 0.10).setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(20).setVisible(false);
+    stickThumb = scene.add.circle(0, 0, 28, 0xffffff, 0.35).setStrokeStyle(2, 0xffffff, 0.55).setScrollFactor(0).setDepth(21).setVisible(false);
 
-    // ---- Großer roter Schuss-Button (rechts unten) ----
-    shootBtn = scene.add.circle(0, 0, 46, COL_ENEMY, 0.85)
-      .setStrokeStyle(3, 0xffffff, 0.55).setScrollFactor(0).setDepth(20);
+    // Schuss-Button
+    shootBtn = scene.add.circle(0, 0, 46, COL_ENEMY, 0.85).setStrokeStyle(3, 0xffffff, 0.55).setScrollFactor(0).setDepth(20);
 
-    // Mehrfinger-Eingabe erlauben (Joystick links + Button rechts gleichzeitig)
+    // Kontext-Button (Betreten/Verlassen/Zugreise)
+    ctxBg = scene.add.rectangle(0, 0, 220, 40, 0x1f2937, 0.92).setStrokeStyle(2, 0xf3e9d2, 0.7).setScrollFactor(0).setDepth(22).setOrigin(0.5).setVisible(false);
+    ctxText = scene.add.text(0, 0, '', { fontFamily: 'system-ui, sans-serif', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(23).setVisible(false);
+
+    // HUD
+    mapNameText = scene.add.text(0, 8, '', { fontFamily: 'system-ui, sans-serif', fontSize: '15px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30);
+    killText = scene.add.text(14, 22, 'Besiegt: 0', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
+    hint = scene.add.text(0, 44, 'Links ziehen · rechts schießen · Karte oben rechts', { fontFamily: 'system-ui, sans-serif', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setAlpha(0.9);
+    scene.tweens.add({ targets: hint, alpha: 0, delay: 4500, duration: 1000 });
+
+    // Minimap
+    miniBg = scene.add.rectangle(0, 0, 140, 158, 0x000000, 0.45).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(25).setOrigin(0, 0);
+    miniTitle = scene.add.text(0, 0, 'KARTE', { fontFamily: 'system-ui, sans-serif', fontSize: '11px', color: '#f3e9d2' }).setScrollFactor(0).setDepth(27).setOrigin(0, 0);
+    miniGfx = scene.add.graphics().setScrollFactor(0).setDepth(26);
+    miniCollapse = scene.add.text(0, 0, '▾', { fontFamily: 'system-ui, sans-serif', fontSize: '16px', color: '#f3e9d2' }).setScrollFactor(0).setDepth(28).setOrigin(0.5);
+    miniExpand = scene.add.text(0, 0, '🗺', { fontSize: '20px' }).setScrollFactor(0).setDepth(28).setOrigin(0.5).setVisible(false);
+
+    // Vollbild-Karte (versteckt)
+    fmBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(50).setOrigin(0, 0).setVisible(false);
+    fmPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(51).setOrigin(0, 0).setVisible(false);
+    fmGfx = scene.add.graphics().setScrollFactor(0).setDepth(52).setVisible(false);
+    fmTitle = scene.add.text(0, 0, '', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(53).setVisible(false);
+    fmClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui, sans-serif', fontSize: '24px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setVisible(false);
+
+    // Schnellreise-Overlay (versteckt)
+    ftBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(55).setOrigin(0, 0).setVisible(false);
+    ftPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(56).setOrigin(0.5, 0).setVisible(false);
+    ftTitle = scene.add.text(0, 0, '🚂  Zugreise', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(57).setVisible(false);
+    ftClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui, sans-serif', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(57).setVisible(false);
+
+    // Eingaben
     scene.input.addPointer(3);
-
-    scene.input.on('pointerdown', (p) => {
-      // Schuss-Button (rechts unten)? -> Dauerfeuer starten
-      if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) {
-        shooting = true; shootId = p.id; shootBtn.setScale(0.92);
-        fireBullet(); fireTimer = FIRE_MS;
-        return;
-      }
-      // Joystick nur auf der linken Bildschirmhälfte aktivieren
-      if (!stick.active && p.x < scene.scale.width / 2) {
-        stick.active = true; stick.id = p.id;
-        stick.baseX = p.x; stick.baseY = p.y;
-        stickBase.setPosition(p.x, p.y).setVisible(true);
-        stickThumb.setPosition(p.x, p.y).setVisible(true);
-        updateStick(p.x, p.y);
-      }
-    });
-    scene.input.on('pointermove', (p) => {
-      if (stick.active && p.id === stick.id) updateStick(p.x, p.y);
-    });
+    scene.input.on('pointerdown', onPointerDown);
+    scene.input.on('pointermove', (p) => { if (stick.active && p.id === stick.id) updateStick(p.x, p.y); });
     const release = (p) => {
       if (stick.active && p.id === stick.id) resetStick();
       if (p.id === shootId) { shooting = false; shootId = null; shootBtn.setScale(1); }
     };
     scene.input.on('pointerup', release);
     scene.input.on('pointerupoutside', release);
-
-    // ---- Tastatur als Desktop-Fallback zum Testen ----
     cursors = scene.input.keyboard.createCursorKeys();
     wasd = scene.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
-    scene.input.keyboard.on('keydown-SPACE', () => { fireBullet(); });
+    scene.input.keyboard.on('keydown-SPACE', () => fireBullet());
+    scene.input.keyboard.on('keydown-M', () => state.fullMapOpen ? closeFullMap() : openFullMap());
 
-    // ---- HUD ----
-    hint = scene.add.text(scene.scale.width / 2, 28, 'Links ziehen · rechts schießen', {
-      fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2'
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setAlpha(0.9);
-    scene.tweens.add({ targets: hint, alpha: 0, delay: 3500, duration: 1000 });
-
-    killText = scene.add.text(14, 22, 'Besiegt: 0', {
-      fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2',
-      stroke: '#000000', strokeThickness: 3
-    }).setScrollFactor(0).setDepth(30);
-
-    layoutUI(scene.scale.gameSize);
     scene.scale.on('resize', (size) => layoutUI(size));
-
-    // ---- Gegner regelmäßig spawnen ----
     scene.time.addEvent({ delay: SPAWN_MS, loop: true, callback: spawnEnemy });
-    for (let i = 0; i < 3; i++) spawnEnemy(); // Startgegner
+
+    loadMap('overworld', { c: 20, r: 20 });
   }
 
-  // ---- HUD-Positionen (auch bei Resize) ----------------------
-  function layoutUI(size) {
-    if (hint) hint.setX(size.width / 2);
-    if (shootBtn) shootBtn.setPosition(size.width - 78, size.height - 92);
+  // ---- Karte laden -------------------------------------------
+  function loadMap(id, spawn) {
+    const m = MAPS[id];
+    state.map = id; state.cols = m.cols; state.rows = m.rows;
+    if (!state.explored[id]) state.explored[id] = new Set();
+
+    state.bounds = {
+      minX: -(m.rows - 1) * HALF_W, maxX: (m.cols - 1) * HALF_W,
+      minY: 0, maxY: (m.cols - 1 + m.rows - 1) * HALF_H
+    };
+
+    // alte Karten-Objekte + Gegner + Projektile entfernen
+    mapObjects.forEach(o => o.destroy()); mapObjects.length = 0;
+    enemies.forEach(e => e.c.destroy()); enemies.length = 0;
+    bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
+
+    // Boden
+    const g = sceneRef.add.graphics().setDepth(0); drawFloorInto(g, m); mapObjects.push(g);
+
+    // Deko (z. B. Gebäude in der Stadt)
+    (m.decor || []).forEach(d => {
+      const w = tileToWorld(d.tx, d.ty);
+      const rect = sceneRef.add.rectangle(w.x, w.y, d.w, d.h, d.color).setStrokeStyle(2, 0x000000, 0.4).setDepth(2);
+      mapObjects.push(rect);
+      if (d.label) mapObjects.push(sceneRef.add.text(w.x, w.y, d.label, { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2' }).setOrigin(0.5).setDepth(2));
+    });
+
+    // Portale (Marker auf dem Boden)
+    m.portals.forEach(p => {
+      const w = tileToWorld(p.tx, p.ty);
+      mapObjects.push(sceneRef.add.circle(w.x, w.y, 18, p.mini, 0.28).setStrokeStyle(3, p.mini, 0.95).setDepth(2));
+      mapObjects.push(sceneRef.add.text(w.x, w.y - 28, p.short, { fontFamily: 'system-ui', fontSize: '12px', color: '#ffffff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
+    });
+
+    // Bahnhöfe (Marker)
+    m.stations.forEach(s => {
+      const w = tileToWorld(s.tx, s.ty);
+      mapObjects.push(sceneRef.add.star(w.x, w.y, 4, 6, 14, COL_STATION, 0.9).setStrokeStyle(2, 0x7c5e10).setDepth(2));
+      mapObjects.push(sceneRef.add.text(w.x, w.y - 26, '🚂 ' + s.name, { fontFamily: 'system-ui', fontSize: '11px', color: '#ffffff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
+    });
+
+    // Kamera + Spieler
+    sceneRef.cameras.main.setBounds(state.bounds.minX - HALF_W, state.bounds.minY - HALF_H,
+      (state.bounds.maxX - state.bounds.minX) + TILE_W, (state.bounds.maxY - state.bounds.minY) + TILE_H);
+    sceneRef.cameras.main.setBackgroundColor(m.bg);
+    const wp = tileToWorld(spawn.c, spawn.r);
+    player.x = wp.x; player.y = wp.y; player.facing = 0; player.rotation = 0;
+    shadow.setPosition(wp.x, wp.y + 14);
+    sceneRef.cameras.main.centerOn(wp.x, wp.y);
+    state.playerTile = { c: spawn.c, r: spawn.r };
+    reveal(spawn.c, spawn.r);
+
+    // Minimap-Größe je nach Kartentyp
+    state.miniSize = m.minimap === 'small' ? 100 : 140;
+    mapNameText.setText(m.name);
+    layoutUI(sceneRef.scale.gameSize);
+    miniDirty = true;
+    toast(m.name);
+
+    // ein paar Gegner sofort platzieren (Kampf-Karten)
+    if (m.enemies) for (let i = 0; i < 3; i++) spawnEnemy();
   }
 
-  // ---- Isometrische Boden-Fläche zeichnen --------------------
-  function drawFloor(scene) {
-    const g = scene.add.graphics().setDepth(0);
-    for (let col = 0; col < GRID_N; col++) {
-      for (let row = 0; row < GRID_N; row++) {
-        const cx = (col - row) * HALF_W;
-        const cy = (col + row) * HALF_H;
-        g.fillStyle((col + row) % 2 === 0 ? COL_SAND_A : COL_SAND_B, 1);
-        g.beginPath();
-        g.moveTo(cx, cy - HALF_H);
-        g.lineTo(cx + HALF_W, cy);
-        g.lineTo(cx, cy + HALF_H);
-        g.lineTo(cx - HALF_W, cy);
-        g.closePath();
-        g.fillPath();
-        g.lineStyle(1, COL_GRID, 0.45);
-        g.strokePath();
-      }
+  function drawFloorInto(g, m) {
+    for (let c = 0; c < m.cols; c++) for (let r = 0; r < m.rows; r++) {
+      const cx = (c - r) * HALF_W, cy = (c + r) * HALF_H;
+      g.fillStyle((c + r) % 2 === 0 ? m.floorA : m.floorB, 1);
+      g.beginPath(); g.moveTo(cx, cy - HALF_H); g.lineTo(cx + HALF_W, cy); g.lineTo(cx, cy + HALF_H); g.lineTo(cx - HALF_W, cy); g.closePath(); g.fillPath();
+      g.lineStyle(1, m.grid, 0.4); g.strokePath();
     }
   }
 
-  // ---- Gegner spawnen ----------------------------------------
-  function spawnEnemy() {
-    if (!sceneRef || !player || enemies.length >= ENEMY_MAX) return;
-    // an zufälligem Winkel in einiger Entfernung zum Spieler (außerhalb des Sichtfelds)
-    const ang = Math.random() * Math.PI * 2;
-    const dist = 380 + Math.random() * 160;
-    let ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, MIN_X, MAX_X);
-    let ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, MIN_Y, MAX_Y);
+  // ---- Fog of War --------------------------------------------
+  function reveal(c, r) {
+    const ex = state.explored[state.map];
+    for (let dc = -REVEAL_R; dc <= REVEAL_R; dc++) for (let dr = -REVEAL_R; dr <= REVEAL_R; dr++) {
+      if (dc * dc + dr * dr > REVEAL_R * REVEAL_R + 1) continue;
+      const nc = c + dc, nr = r + dr;
+      if (nc < 0 || nr < 0 || nc >= state.cols || nr >= state.rows) continue;
+      const k = nc + ',' + nr;
+      if (!ex.has(k)) { ex.add(k); miniDirty = true; }
+    }
+  }
 
+  // ---- Karten-Grafik (Minimap & Vollbild) --------------------
+  function drawMapGraphics(g, cell) {
+    const m = MAPS[state.map], ex = state.explored[state.map];
+    g.clear();
+    g.fillStyle(0x11100e, 1); g.fillRect(0, 0, m.cols * cell, m.rows * cell);
+    g.fillStyle(m.mini, 1);
+    ex.forEach(key => { const p = key.split(','); g.fillRect(p[0] * cell, p[1] * cell, cell, cell); });
+    // Portale (nur wenn erkundet)
+    m.portals.forEach(p => { if (!ex.has(p.tx + ',' + p.ty)) return; g.fillStyle(p.mini, 1); g.fillRect(p.tx * cell - cell * 0.4, p.ty * cell - cell * 0.4, cell * 1.8, cell * 1.8); });
+    // Bahnhöfe (wenn entdeckt)
+    m.stations.forEach(s => { if (!state.discovered.has(s.id)) return; g.fillStyle(COL_STATION, 1); g.fillRect(s.tx * cell - cell * 0.5, s.ty * cell - cell * 0.5, cell * 2, cell * 2); });
+    // Spieler
+    const px = state.playerTile.c * cell + cell / 2, py = state.playerTile.r * cell + cell / 2, pr = Math.max(cell, 2.5);
+    g.fillStyle(COL_PLAYER, 1); g.fillCircle(px, py, pr);
+    g.lineStyle(1.5, 0xffffff, 0.9); g.strokeCircle(px, py, pr);
+  }
+
+  function refreshMaps() {
+    const m = MAPS[state.map];
+    if (!state.miniCollapsed) {
+      const avail = state.miniSize - 12, cell = avail / Math.max(m.cols, m.rows);
+      drawMapGraphics(miniGfx, cell);
+    }
+    if (state.fullMapOpen) {
+      const size = sceneRef.scale.gameSize;
+      const avail = Math.min(size.width * 0.9, size.height * 0.8);
+      const cell = Math.max(2, Math.floor(avail / Math.max(m.cols, m.rows)));
+      drawMapGraphics(fmGfx, cell);
+      const mw = m.cols * cell, mh = m.rows * cell;
+      fmGfx.setPosition((size.width - mw) / 2, (size.height - mh) / 2 + 14);
+      fmPanel.setPosition((size.width - mw) / 2 - 12, (size.height - mh) / 2 - 30).setSize(mw + 24, mh + 60);
+      fmTitle.setPosition(size.width / 2, (size.height - mh) / 2 - 26);
+      fmClose.setPosition((size.width - mw) / 2 + mw + 4, (size.height - mh) / 2 - 20);
+    }
+  }
+
+  // ---- Vollbild-Karte ----------------------------------------
+  function openFullMap() {
+    if (state.travelOpen) return;
+    state.fullMapOpen = true;
+    const size = sceneRef.scale.gameSize;
+    fmBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
+    fmPanel.setVisible(true); fmGfx.setVisible(true);
+    fmTitle.setText('KARTE — ' + MAPS[state.map].name).setVisible(true);
+    fmClose.setVisible(true);
+    refreshMaps();
+  }
+  function closeFullMap() {
+    state.fullMapOpen = false;
+    [fmBackdrop, fmPanel, fmGfx, fmTitle, fmClose].forEach(o => o.setVisible(false));
+  }
+
+  // ---- Schnellreise ------------------------------------------
+  function openTravel() {
+    const list = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id) && !(state.ctx && state.ctx.type === 'station' && state.ctx.target.id === id));
+    state.travelOpen = true;
+    const size = sceneRef.scale.gameSize;
+    const pw = Math.min(320, size.width * 0.86), rowH = 46, ph = 70 + list.length * (rowH + 8) + 16;
+    ftBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
+    ftPanel.setPosition(size.width / 2, (size.height - ph) / 2).setSize(pw, ph).setVisible(true);
+    ftTitle.setPosition(size.width / 2, (size.height - ph) / 2 + 14).setVisible(true);
+    ftClose.setPosition(size.width / 2 + pw / 2 - 20, (size.height - ph) / 2 + 16).setVisible(true);
+    list.forEach((id, i) => {
+      const st = STATION_INDEX[id];
+      const y = (size.height - ph) / 2 + 58 + i * (rowH + 8);
+      const bg = sceneRef.add.rectangle(size.width / 2, y, pw - 32, rowH, 0x334155, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(58).setOrigin(0.5, 0);
+      const tx = sceneRef.add.text(size.width / 2, y + rowH / 2, '🚂  ' + st.name + '  (' + MAPS[st.mapId].name + ')', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(59);
+      ftButtons.push({ bg, tx, station: st });
+    });
+    if (list.length === 0) {
+      const y = (size.height - ph) / 2 + 58;
+      ftButtons.push({ bg: null, tx: sceneRef.add.text(size.width / 2, y + 10, 'Keine weiteren Bahnhöfe entdeckt.', { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(59), station: null });
+    }
+  }
+  function closeTravel() {
+    state.travelOpen = false;
+    ftButtons.forEach(b => { if (b.bg) b.bg.destroy(); if (b.tx) b.tx.destroy(); }); ftButtons = [];
+    [ftBackdrop, ftPanel, ftTitle, ftClose].forEach(o => o.setVisible(false));
+  }
+
+  // ---- Karten-Wechsel mit Überblendung -----------------------
+  function transitionTo(mapId, spawn) {
+    if (state.transitioning) return;
+    state.transitioning = true;
+    hideContext();
+    sceneRef.cameras.main.fadeOut(180, 0, 0, 0);
+    sceneRef.cameras.main.once('camerafadeoutcomplete', () => {
+      loadMap(mapId, spawn);
+      sceneRef.cameras.main.fadeIn(180, 0, 0, 0);
+      state.transitioning = false;
+    });
+  }
+
+  // ---- Layout (auch bei Resize) ------------------------------
+  function layoutUI(size) {
+    const w = size.width, h = size.height;
+    if (shootBtn) shootBtn.setPosition(w - 78, h - 92);
+    if (mapNameText) mapNameText.setX(w / 2);
+    if (hint) hint.setX(w / 2);
+    if (ctxBg) { ctxBg.setPosition(w / 2, 84); ctxText.setPosition(w / 2, 84); }
+
+    // Minimap oben rechts
+    const P = state.miniSize, x = w - P - 12, y = 12;
+    miniBg.setPosition(x, y).setSize(P, P + 18);
+    miniTitle.setPosition(x + 6, y + 4);
+    miniGfx.setPosition(x + 6, y + 18);
+    miniCollapse.setPosition(x + P - 12, y + 9);
+    miniExpand.setPosition(w - 24, y + 16);
+
+    if (state.fullMapOpen || state.travelOpen) { if (state.fullMapOpen) refreshMaps(); }
+  }
+
+  // ---- Eingabe (zentrale Trefferprüfung) ---------------------
+  function onPointerDown(p) {
+    // Schnellreise offen: Buttons / Schließen
+    if (state.travelOpen) {
+      if (hit(ftClose, p, 26)) { closeTravel(); return; }
+      for (const b of ftButtons) {
+        if (b.station && b.bg && inRect(p, b.bg.x - b.bg.width / 2, b.bg.y, b.bg.width, b.bg.height)) {
+          const st = b.station; closeTravel(); transitionTo(st.mapId, { c: st.tx, r: st.ty }); return;
+        }
+      }
+      closeTravel(); return; // Klick außerhalb schließt
+    }
+    // Vollbild-Karte offen: alles schließt
+    if (state.fullMapOpen) { closeFullMap(); return; }
+
+    // Kontext-Button?
+    if (ctxBg.visible && inRect(p, ctxBg.x - ctxBg.width / 2, ctxBg.y - ctxBg.height / 2, ctxBg.width, ctxBg.height)) { doContext(); return; }
+
+    // Minimap: ausklappen / einklappen / öffnen
+    if (state.miniCollapsed) {
+      if (hit(miniExpand, p, 22)) { state.miniCollapsed = false; setMiniVisible(true); miniDirty = true; return; }
+    } else {
+      if (hit(miniCollapse, p, 18)) { state.miniCollapsed = true; setMiniVisible(false); return; }
+      if (inRect(p, miniBg.x, miniBg.y, miniBg.width, miniBg.height)) { openFullMap(); return; }
+    }
+
+    // Schuss-Button
+    if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) {
+      shooting = true; shootId = p.id; shootBtn.setScale(0.92); fireBullet(); fireTimer = FIRE_MS; return;
+    }
+
+    // Joystick (linke Hälfte)
+    if (!stick.active && p.x < sceneRef.scale.width / 2) {
+      stick.active = true; stick.id = p.id; stick.baseX = p.x; stick.baseY = p.y;
+      stickBase.setPosition(p.x, p.y).setVisible(true);
+      stickThumb.setPosition(p.x, p.y).setVisible(true);
+      updateStick(p.x, p.y);
+    }
+  }
+
+  const inRect = (p, x, y, w, h) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+  const hit = (obj, p, r) => Phaser.Math.Distance.Between(p.x, p.y, obj.x, obj.y) <= r;
+
+  function setMiniVisible(v) {
+    [miniBg, miniTitle, miniGfx, miniCollapse].forEach(o => o.setVisible(v));
+    miniExpand.setVisible(!v);
+  }
+
+  // ---- Kontext-Aktion ----------------------------------------
+  function showContext(label) { ctxText.setText(label); ctxBg.width = Math.max(180, ctxText.width + 32); ctxBg.setVisible(true); ctxText.setVisible(true); }
+  function hideContext() { ctxBg.setVisible(false); ctxText.setVisible(false); }
+  function doContext() {
+    if (!state.ctx) return;
+    if (state.ctx.type === 'portal') { const p = state.ctx.target; transitionTo(p.to, p.spawn); }
+    else if (state.ctx.type === 'station') {
+      const discovered = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id));
+      if (discovered.length >= 2) openTravel();
+      else toast('Bahnhof entdeckt – finde weitere für Zugreisen');
+    }
+  }
+
+  // ---- Gegner / Schuss / Schaden -----------------------------
+  function spawnEnemy() {
+    if (!sceneRef || !player || !MAPS[state.map].enemies || enemies.length >= ENEMY_MAX || state.transitioning) return;
+    const ang = Math.random() * Math.PI * 2, dist = 360 + Math.random() * 160;
+    const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
+    const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
     const body = sceneRef.add.circle(0, 0, ENEMY_R, COL_ENEMY).setStrokeStyle(3, COL_ENEMY_S);
     const hpBg = sceneRef.add.rectangle(-16, -ENEMY_R - 9, 32, 5, 0x000000, 0.6).setOrigin(0, 0.5);
     const hpFill = sceneRef.add.rectangle(-16, -ENEMY_R - 9, 32, 5, COL_HP).setOrigin(0, 0.5);
     const c = sceneRef.add.container(ex, ey, [body, hpBg, hpFill]).setDepth(4);
-
     enemies.push({ c, hp: ENEMY_HP, maxHp: ENEMY_HP, hpFill });
   }
 
-  // ---- Schuss abgeben ----------------------------------------
   function fireBullet() {
-    if (!sceneRef || !player) return;
-    const a = player.facing;
-    const dx = Math.cos(a), dy = Math.sin(a);
-    const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6),
-                                       BULLET_R, COL_BULLET).setStrokeStyle(2, 0xb45309).setDepth(6);
+    if (!sceneRef || !player || state.transitioning) return;
+    const a = player.facing, dx = Math.cos(a), dy = Math.sin(a);
+    const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6), BULLET_R, COL_BULLET).setStrokeStyle(2, 0xb45309).setDepth(6);
     bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE });
   }
 
-  // ---- Schaden + Schadenszahl --------------------------------
   function damageEnemy(e, dmg) {
-    e.hp -= dmg;
-    e.hpFill.width = 32 * Math.max(e.hp, 0) / e.maxHp;
+    e.hp -= dmg; e.hpFill.width = 32 * Math.max(e.hp, 0) / e.maxHp;
     popDamage(e.c.x, e.c.y - ENEMY_R - 4, dmg);
-    if (e.hp <= 0) killEnemy(e);
+    if (e.hp <= 0) { const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); }
   }
-
-  function killEnemy(e) {
-    const idx = enemies.indexOf(e);
-    if (idx !== -1) enemies.splice(idx, 1);
-    e.c.destroy();
-    kills++;
-    if (killText) killText.setText('Besiegt: ' + kills);
-  }
-
   function popDamage(x, y, dmg) {
-    const t = sceneRef.add.text(x, y, '' + dmg, {
-      fontFamily: 'system-ui, sans-serif', fontSize: '20px', color: '#fde68a',
-      stroke: '#000000', strokeThickness: 4, fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(40);
-    sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out',
-      onComplete: () => t.destroy() });
+    const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40);
+    sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() });
+  }
+  function toast(msg) {
+    const t = sceneRef.add.text(sceneRef.scale.width / 2, sceneRef.scale.height * 0.28, msg, { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(60);
+    sceneRef.tweens.add({ targets: t, alpha: 0, y: '-=18', delay: 900, duration: 700, onComplete: () => t.destroy() });
   }
 
   // ---- Joystick ----------------------------------------------
   function updateStick(px, py) {
-    let dx = px - stick.baseX;
-    let dy = py - stick.baseY;
-    const len = Math.hypot(dx, dy);
+    let dx = px - stick.baseX, dy = py - stick.baseY; const len = Math.hypot(dx, dy);
     if (len > STICK_RADIUS) { dx = dx / len * STICK_RADIUS; dy = dy / len * STICK_RADIUS; }
     stickThumb.setPosition(stick.baseX + dx, stick.baseY + dy);
-    stick.vx = dx / STICK_RADIUS;
-    stick.vy = dy / STICK_RADIUS;
+    stick.vx = dx / STICK_RADIUS; stick.vy = dy / STICK_RADIUS;
   }
+  function resetStick() { stick.active = false; stick.id = null; stick.vx = 0; stick.vy = 0; stickBase.setVisible(false); stickThumb.setVisible(false); }
 
-  function resetStick() {
-    stick.active = false; stick.id = null; stick.vx = 0; stick.vy = 0;
-    stickBase.setVisible(false); stickThumb.setVisible(false);
-  }
-
-  // ---- Szene: update -----------------------------------------
+  // ---- Update ------------------------------------------------
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000;
+    const uiBlocked = state.fullMapOpen || state.travelOpen;
 
-    // --- Spieler-Bewegung ---
+    // Bewegung
     let vx = 0, vy = 0;
-    if (stick.active) { vx = stick.vx; vy = stick.vy; }
-    if (cursors.left.isDown  || wasd.left.isDown)  vx = -1;
-    if (cursors.right.isDown || wasd.right.isDown) vx = 1;
-    if (cursors.up.isDown    || wasd.up.isDown)    vy = -1;
-    if (cursors.down.isDown  || wasd.down.isDown)  vy = 1;
-
+    if (!uiBlocked && stick.active) { vx = stick.vx; vy = stick.vy; }
+    if (!uiBlocked) {
+      if (cursors.left.isDown || wasd.left.isDown) vx = -1;
+      if (cursors.right.isDown || wasd.right.isDown) vx = 1;
+      if (cursors.up.isDown || wasd.up.isDown) vy = -1;
+      if (cursors.down.isDown || wasd.down.isDown) vy = 1;
+    }
     let mag = Math.hypot(vx, vy);
     if (mag >= STICK_DEADZONE) {
       if (mag > 1) { vx /= mag; vy /= mag; }
-      player.x = Phaser.Math.Clamp(player.x + vx * PLAYER_SPEED * dt, MIN_X, MAX_X);
-      player.y = Phaser.Math.Clamp(player.y + vy * PLAYER_SPEED * dt, MIN_Y, MAX_Y);
-      player.facing = Math.atan2(vy, vx);
-      player.rotation = player.facing;
+      player.x = Phaser.Math.Clamp(player.x + vx * PLAYER_SPEED * dt, state.bounds.minX, state.bounds.maxX);
+      player.y = Phaser.Math.Clamp(player.y + vy * PLAYER_SPEED * dt, state.bounds.minY, state.bounds.maxY);
+      player.facing = Math.atan2(vy, vx); player.rotation = player.facing;
     }
     shadow.setPosition(player.x, player.y + 14);
 
-    // --- Dauerfeuer bei gehaltenem Button ---
+    // Kachel gewechselt? -> Fog aufdecken
+    const pt = worldToTile(player.x, player.y);
+    if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; }
+
+    // Feuer
     fireTimer -= delta;
-    if (shooting && fireTimer <= 0) { fireBullet(); fireTimer = FIRE_MS; }
+    if (!uiBlocked && shooting && fireTimer <= 0) { fireBullet(); fireTimer = FIRE_MS; }
 
-    // --- Gegner verfolgen den Spieler ---
+    // Gegner
     for (const e of enemies) {
-      const ex = player.x - e.c.x, ey = player.y - e.c.y;
-      const d = Math.hypot(ex, ey) || 1;
-      if (d > PLAYER_R + ENEMY_R) {
-        e.c.x += (ex / d) * ENEMY_SPEED * dt;
-        e.c.y += (ey / d) * ENEMY_SPEED * dt;
-      }
+      const ex = player.x - e.c.x, ey = player.y - e.c.y, d = Math.hypot(ex, ey) || 1;
+      if (d > PLAYER_R + ENEMY_R) { e.c.x += (ex / d) * ENEMY_SPEED * dt; e.c.y += (ey / d) * ENEMY_SPEED * dt; }
     }
 
-    // --- Projektile bewegen + Treffer prüfen ---
+    // Projektile
     for (let i = bullets.length - 1; i >= 0; i--) {
-      const b = bullets[i];
-      b.sprite.x += b.vx * dt;
-      b.sprite.y += b.vy * dt;
-      b.life -= dt;
-
-      let hit = false;
-      for (const e of enemies) {
-        if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < ENEMY_R + BULLET_R) {
-          damageEnemy(e, BULLET_DMG);
-          hit = true;
-          break;
-        }
-      }
-      if (hit || b.life <= 0) {
-        b.sprite.destroy();
-        bullets.splice(i, 1);
-      }
+      const b = bullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
+      let hitE = false;
+      for (const e of enemies) { if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < ENEMY_R + BULLET_R) { damageEnemy(e, BULLET_DMG); hitE = true; break; } }
+      if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
     }
+
+    // Interaktion (Portale / Bahnhöfe)
+    if (!uiBlocked && !state.transitioning) updateContext();
+
+    // Karten neu zeichnen wenn nötig
+    if (miniDirty) { refreshMaps(); miniDirty = false; }
   }
 
-  // ---- Phaser-Konfiguration ----------------------------------
-  const config = {
-    type: Phaser.AUTO,
-    parent: 'game',
-    backgroundColor: '#2b2620',
-    scale: {
-      mode: Phaser.Scale.RESIZE,          // automatische Anpassung an die Displaygröße
-      width: window.innerWidth,
-      height: window.innerHeight
-    },
+  function updateContext() {
+    const m = MAPS[state.map];
+    let best = null, bestType = null, bestD = 1e9;
+    for (const p of m.portals) {
+      const w = tileToWorld(p.tx, p.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y);
+      if (d < INTERACT_DIST && d < bestD) { best = p; bestType = 'portal'; bestD = d; }
+    }
+    for (const s of m.stations) {
+      const w = tileToWorld(s.tx, s.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y);
+      if (d < DISCOVER_DIST && !state.discovered.has(s.id)) { state.discovered.add(s.id); miniDirty = true; toast('🚂 Bahnhof entdeckt: ' + s.name); }
+      if (d < INTERACT_DIST && d < bestD) { best = s; bestType = 'station'; bestD = d; }
+    }
+    if (best) {
+      state.ctx = { type: bestType, target: best };
+      if (bestType === 'portal') showContext(best.label);
+      else showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
+    } else { state.ctx = null; hideContext(); }
+  }
+
+  // ---- Start -------------------------------------------------
+  new Phaser.Game({
+    type: Phaser.AUTO, parent: 'game', backgroundColor: '#2b2620',
+    scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
     render: { antialias: true, roundPixels: true },
     scene: { create, update }
-  };
-
-  new Phaser.Game(config);
+  });
   </script>
 </body>
 </html>
