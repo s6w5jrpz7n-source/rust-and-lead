@@ -38,7 +38,7 @@
   const STICK_RADIUS = 60, STICK_DEADZONE = 0.12;
   const ENEMY_R = 15, ENEMY_HP = 60, ENEMY_SPEED = 70, ENEMY_MAX = 10, SPAWN_MS = 1500;
   const BULLET_R = 5, BULLET_SPEED = 560, BULLET_DMG = 20, BULLET_LIFE = 1.1, FIRE_MS = 200;
-  const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90;
+  const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90, GATE_ENTER_DIST = 30;
   const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
   const SALOON_INCOME = 1, OFFLINE_CAP = 8 * 3600, SAVE_KEY = 'rustlead_save_v1';
 
@@ -59,6 +59,7 @@
   const COL_BULLET = 0xfacc15, COL_HP = 0xff3b30, COL_STATION = 0xfacc15;
   const COL_GOLD = 0xfde047, COL_GOLD_S = 0x92700a;
   const COL_LIFE = 0x22c55e, COL_BOSS = 0xf97316;
+  const POST_COL = 0x7a5636, POST_DARK = 0x4a3620;   // Palisade
 
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
@@ -66,15 +67,15 @@
       name: 'Wüste', cols: 40, rows: 40, enemies: true, minimap: 'full',
       floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f, mini: 0xcda877, bg: 0x2b2620,
       portals: [
-        { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 10, r: 17 }, short: 'Rustwater', label: '🏙️  Rustwater betreten', mini: 0x22c55e },
-        { tx: 31, ty: 30, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine betreten', mini: 0x8b5cf6 }
+        { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 10, r: 18 }, short: 'Rustwater', label: '🏙️  Rustwater', mini: 0x22c55e, compound: { c0: 23, r0: 12, c1: 29, r1: 18 } },
+        { tx: 31, ty: 30, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 }
       ],
       stations: [ { id: 'st_desert', tx: 9, ty: 9, name: 'Wüsten-Halt' } ], decor: []
     },
     rustwater: {
-      name: 'Rustwater', cols: 22, rows: 22, enemies: false, minimap: 'full',
+      name: 'Rustwater', cols: 22, rows: 22, enemies: false, walled: true, minimap: 'full',
       floorA: 0x9aa0a6, floorB: 0x878d93, grid: 0x656b71, mini: 0x9aa0a6, bg: 0x20242a,
-      portals: [ { tx: 10, ty: 19, to: 'overworld', spawn: { c: 26, r: 14 }, short: 'Wüste', label: '🚪  Wüste (verlassen)', mini: 0x38bdf8 } ],
+      portals: [ { tx: 10, ty: 21, to: 'overworld', spawn: { c: 26, r: 10 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
       stations: [ { id: 'st_rustwater', tx: 11, ty: 3, name: 'Rustwater Bahnhof' } ],
       decor: [
         { tx: 5, ty: 8, w: 70, h: 46, color: 0x6b5b4a, label: 'SALOON' },
@@ -118,7 +119,7 @@
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, saloonOwned: false,
-    hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0,
+    hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
     ctx: null
@@ -309,6 +310,10 @@
       mapObjects.push(label); shopLabels[sh.id] = label;
     });
 
+    // Palisaden: Stadt-Mauer + befestigte Überwelt-Eingänge
+    if (m.walled) buildCityWall(m);
+    m.portals.forEach(p => { if (p.compound) buildCompound(p); });
+
     sceneRef.cameras.main.setBounds(state.bounds.minX - HALF_W, state.bounds.minY - HALF_H, (state.bounds.maxX - state.bounds.minX) + TILE_W, (state.bounds.maxY - state.bounds.minY) + TILE_H);
     sceneRef.cameras.main.setBackgroundColor(m.bg);
     const wp = tileToWorld(spawn.c, spawn.r);
@@ -317,6 +322,7 @@
     sceneRef.cameras.main.centerOn(wp.x, wp.y);
     state.playerTile = { c: spawn.c, r: spawn.r };
     state.invulnUntil = sceneRef.time.now + 800;
+    state.portalGraceUntil = sceneRef.time.now + 600;   // nicht sofort durchs Ankunfts-Tor zurück
     reveal(spawn.c, spawn.r);
 
     state.miniSize = m.minimap === 'small' ? 100 : 140;
@@ -324,6 +330,35 @@
     layoutUI(sceneRef.scale.gameSize);
     miniDirty = true; toast(m.name);
     if (m.enemies) for (let i = 0; i < 3; i++) spawnEnemy();
+  }
+
+  // ---- Palisade (Stockade) -----------------------------------
+  function placePost(x, y) {
+    const post = sceneRef.add.rectangle(x, y - 11, 8, 22, POST_COL).setStrokeStyle(1, POST_DARK).setDepth(2);
+    const tip = sceneRef.add.triangle(x, y - 22, -4, 0, 0, -7, 4, 0, POST_DARK).setDepth(2);
+    mapObjects.push(post, tip);
+  }
+  function buildWallEdges(corners, gapWorld, gapR) {
+    const spacing = 22;
+    for (let e = 0; e < corners.length; e++) {
+      const a = corners[e], b = corners[(e + 1) % corners.length];
+      const n = Math.max(1, Math.round(Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y) / spacing));
+      for (let i = 0; i < n; i++) {
+        const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n;
+        if (gapWorld && Phaser.Math.Distance.Between(x, y, gapWorld.x, gapWorld.y) < gapR) continue;
+        placePost(x, y);
+      }
+    }
+  }
+  function buildCityWall(m) {
+    const c = [tileToWorld(0, 0), tileToWorld(m.cols - 1, 0), tileToWorld(m.cols - 1, m.rows - 1), tileToWorld(0, m.rows - 1)];
+    const gate = m.portals[0] ? tileToWorld(m.portals[0].tx, m.portals[0].ty) : null;
+    buildWallEdges(c, gate, 66);
+  }
+  function buildCompound(p) {
+    const b = p.compound;
+    const c = [tileToWorld(b.c0, b.r0), tileToWorld(b.c1, b.r0), tileToWorld(b.c1, b.r1), tileToWorld(b.c0, b.r1)];
+    buildWallEdges(c, tileToWorld(p.tx, p.ty), 56);
   }
 
   function drawFloorInto(g, m) {
@@ -658,8 +693,12 @@
 
   function updateContext() {
     const m = MAPS[state.map];
+    // Tore: einfach reinlaufen -> automatischer Übergang
+    for (const p of m.portals) {
+      const w = tileToWorld(p.tx, p.ty);
+      if (Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y) < GATE_ENTER_DIST && sceneRef.time.now > state.portalGraceUntil) { transitionTo(p.to, p.spawn); return; }
+    }
     let best = null, bestType = null, bestD = 1e9;
-    for (const p of m.portals) { const w = tileToWorld(p.tx, p.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST && d < bestD) { best = p; bestType = 'portal'; bestD = d; } }
     for (const s of m.stations) {
       const w = tileToWorld(s.tx, s.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y);
       if (d < DISCOVER_DIST && !state.discovered.has(s.id)) { state.discovered.add(s.id); miniDirty = true; toast('🚂 Bahnhof entdeckt: ' + s.name); }
@@ -668,8 +707,7 @@
     for (const sh of (m.shops || [])) { const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST + 12 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; } }
     if (best) {
       state.ctx = { type: bestType, target: best };
-      if (bestType === 'portal') showContext(best.label);
-      else if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
+      if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
       else showContext(best.id === 'saloon' && state.saloonOwned ? '🍺  ' + best.name + ': +' + best.income + ' Gold/Sek (aktiv)' : '🍺  ' + best.name + ' kaufen — ' + best.cost + ' Gold');
     } else { state.ctx = null; hideContext(); }
   }
