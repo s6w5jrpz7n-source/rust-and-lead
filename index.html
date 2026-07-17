@@ -5,6 +5,7 @@
   <!-- Mobile-First: Fullscreen, kein Zoom, Notch-sicher -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Rust &amp; Lead</title>
+
   <style>
     html, body {
       margin: 0;
@@ -12,66 +13,237 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #2b2b2b;
-      color: #e0c9a6;
+      background: #2b2620;
+      /* Touch-Gesten (Scroll/Zoom) unterbinden – wir wollen reine Spiel-Steuerung */
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
       font-family: system-ui, sans-serif;
     }
-    #placeholder {
+    /* Spiel füllt den kompletten Viewport (dvh-Fallback für mobile Browserleisten) */
+    #game {
       position: fixed;
       inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 0.5rem;
-      padding: 1rem;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
     }
-    #placeholder h1 { margin: 0; font-size: 1.6rem; letter-spacing: 0.05em; }
-    #placeholder p  { margin: 0; opacity: 0.7; font-size: 0.9rem; }
+    #game canvas { display: block; }
   </style>
 </head>
 <body>
+  <div id="game"></div>
 
-  <!--
-    ============================================================
-    RUST & LEAD – Web-Prototyp (Phase 1)   |  Single-File Setup
-    ============================================================
+  <!-- Phaser.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 
-    STATUS: Gerüst / Platzhalter. Die Spiel-Programmierung wird
-    hier eingefügt (mit Fable). Details siehe docs/GDD.md.
+  <script>
+  // ============================================================
+  //  RUST & LEAD – Web-Prototyp (Phase 1) · Schritt 1
+  //  Single-File Setup · Details siehe docs/GDD.md
+  //
+  //  Enthalten:
+  //   (1) Sandfarbene isometrische Boden-Grid-Fläche
+  //   (2) Blauer Kreis als Spieler (mit Nase = Blickrichtung)
+  //   (3) Virtueller Touch-Joystick (unten links, dynamisch)
+  //   (4) Auto-Resize auf die Displaygröße (Phaser.Scale.RESIZE)
+  // ============================================================
 
-    Umsetzung als EINZELDATEI: Phaser.js via CDN einbinden, dann
-    HTML + CSS + JS komplett in dieser Datei halten (CodePen-fähig).
+  // ---- Konfiguration -----------------------------------------
+  const TILE_W = 64;              // Kachelbreite (isometrisch)
+  const TILE_H = 32;              // Kachelhöhe  (isometrisch)
+  const HALF_W = TILE_W / 2;
+  const HALF_H = TILE_H / 2;
+  const GRID_N = 32;              // Grid = GRID_N x GRID_N Kacheln
 
-    ----- ROADMAP (Web-Prototyp) -------------------------------
-    Schritt 1  Grundgerüst
-               - Phaser.js via CDN (<script src="...phaser.min.js">)
-               - Mobile-Viewport + Auto-Resize (Phaser.Scale.RESIZE)
-               - Sandfarbenes isometrisches Boden-Grid
-               - Blauer Kreis als Spieler (mit Nase = Blickrichtung)
-    Schritt 2  Touch-Steuerung
-               - Dynamischer virtueller Joystick unten links
-               - Flüssige isometrische Bewegung (8 Richtungen)
-    Schritt 3  Gegner & Kampf
-               - Rote Gegner spawnen, Schuss-Button rechts
-               - Projektile, Lebensbalken, Schadenszahlen
-    Schritt 4  Rustwater-Wirtschaft
-               - Tab-Wechsel Dungeon <-> Rustwater
-               - "Gatling-Saloon" (100 Gold) -> +1 Gold/Sekunde
-    ------------------------------------------------------------
+  const PLAYER_SPEED = 240;       // Pixel pro Sekunde
+  const PLAYER_R     = 16;        // Spieler-Radius
 
-    Diesen Platzhalter-Block (#placeholder) entfernen, sobald das
-    Phaser-Canvas gerendert wird.
-  -->
+  const STICK_RADIUS   = 60;      // max. Auslenkung des Joysticks
+  const STICK_DEADZONE = 0.12;    // ignoriert Mikro-Wackler
 
-  <div id="placeholder">
-    <h1>RUST &amp; LEAD</h1>
-    <p>Web-Prototyp – Gerüst bereit.</p>
-    <p>Spiel-Code folgt in dieser Datei (siehe docs/GDD.md).</p>
-  </div>
+  // Farben
+  const COL_SAND_A   = 0xd9b38c;  // Sand hell
+  const COL_SAND_B   = 0xcda877;  // Sand dunkel (Schachbrett-Effekt)
+  const COL_GRID     = 0xb8935f;  // Gitterlinien
+  const COL_PLAYER   = 0x3b82f6;  // Spieler blau
+  const COL_PLAYER_S = 0x1e3a8a;  // Spieler Rand
+  const COL_NOSE     = 0x93c5fd;  // Nase hellblau
 
-  <!-- TODO (Fable): Phaser.js via CDN einbinden und Spiel-Code hier ergänzen. -->
+  // ---- Laufzeit-Zustand --------------------------------------
+  let player, shadow;
+  let stickBase, stickThumb, hint;
+  let cursors, wasd;
 
+  const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
+
+  // ---- Szene: create -----------------------------------------
+  function create() {
+    const scene = this;
+
+    drawFloor(scene);
+
+    // Startposition = Mitte des Grids
+    const startX = 0;
+    const startY = GRID_N * HALF_H;
+
+    // Schatten (bleibt flach, dreht sich nicht mit)
+    shadow = scene.add.ellipse(startX, startY + 14, PLAYER_R * 2.2, PLAYER_R * 1.1, 0x000000, 0.25)
+      .setDepth(1);
+
+    // Spieler = Kreis + Nase in einem Container (Container-Rotation = Blickrichtung)
+    const body = scene.add.circle(0, 0, PLAYER_R, COL_PLAYER).setStrokeStyle(3, COL_PLAYER_S);
+    const nose = scene.add.triangle(0, 0, PLAYER_R - 2, -6, PLAYER_R + 12, 0, PLAYER_R - 2, 6, COL_NOSE)
+      .setStrokeStyle(2, COL_PLAYER_S);
+    player = scene.add.container(startX, startY, [body, nose]).setDepth(2);
+    player.facing = 0; // 0 rad = nach rechts (Ost)
+
+    // Kamera folgt dem Spieler weich
+    scene.cameras.main.setBounds(-GRID_N * HALF_W - HALF_W, -HALF_H,
+                                 GRID_N * TILE_W + TILE_W, GRID_N * TILE_H + TILE_H);
+    scene.cameras.main.startFollow(player, true, 0.12, 0.12);
+    scene.cameras.main.centerOn(startX, startY);
+
+    // ---- Virtueller Joystick (fix am Bildschirm) ----
+    stickBase = scene.add.circle(0, 0, STICK_RADIUS, 0xffffff, 0.10)
+      .setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(10).setVisible(false);
+    stickThumb = scene.add.circle(0, 0, 28, 0xffffff, 0.35)
+      .setStrokeStyle(2, 0xffffff, 0.55).setScrollFactor(0).setDepth(11).setVisible(false);
+
+    // Mehrfinger-Eingabe erlauben (rechte Seite bleibt für spätere Buttons frei)
+    scene.input.addPointer(3);
+
+    scene.input.on('pointerdown', (p) => {
+      // Joystick nur auf der linken Bildschirmhälfte aktivieren
+      if (!stick.active && p.x < scene.scale.width / 2) {
+        stick.active = true;
+        stick.id = p.id;
+        stick.baseX = p.x;
+        stick.baseY = p.y;
+        stickBase.setPosition(p.x, p.y).setVisible(true);
+        stickThumb.setPosition(p.x, p.y).setVisible(true);
+        updateStick(p.x, p.y);
+      }
+    });
+    scene.input.on('pointermove', (p) => {
+      if (stick.active && p.id === stick.id) updateStick(p.x, p.y);
+    });
+    const release = (p) => { if (stick.active && p.id === stick.id) resetStick(); };
+    scene.input.on('pointerup', release);
+    scene.input.on('pointerupoutside', release);
+
+    // ---- Tastatur als Desktop-Fallback zum Testen ----
+    cursors = scene.input.keyboard.createCursorKeys();
+    wasd = scene.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
+
+    // ---- Kurzer Hinweis (blendet aus) ----
+    hint = scene.add.text(scene.scale.width / 2, 28, 'Links ziehen zum Bewegen', {
+      fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2'
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(20).setAlpha(0.9);
+    scene.tweens.add({ targets: hint, alpha: 0, delay: 3200, duration: 1000 });
+
+    // Hinweis bei Größenänderung mittig halten
+    scene.scale.on('resize', (size) => { if (hint) hint.setX(size.width / 2); });
+  }
+
+  // ---- Isometrische Boden-Fläche zeichnen --------------------
+  function drawFloor(scene) {
+    const g = scene.add.graphics().setDepth(0);
+    for (let col = 0; col < GRID_N; col++) {
+      for (let row = 0; row < GRID_N; row++) {
+        const cx = (col - row) * HALF_W;
+        const cy = (col + row) * HALF_H;
+        // Schachbrett-Schattierung -> klar als isometrische Kacheln lesbar
+        g.fillStyle((col + row) % 2 === 0 ? COL_SAND_A : COL_SAND_B, 1);
+        g.beginPath();
+        g.moveTo(cx, cy - HALF_H);       // oben
+        g.lineTo(cx + HALF_W, cy);        // rechts
+        g.lineTo(cx, cy + HALF_H);        // unten
+        g.lineTo(cx - HALF_W, cy);        // links
+        g.closePath();
+        g.fillPath();
+        g.lineStyle(1, COL_GRID, 0.45);
+        g.strokePath();
+      }
+    }
+  }
+
+  // ---- Joystick-Vektor berechnen -----------------------------
+  function updateStick(px, py) {
+    let dx = px - stick.baseX;
+    let dy = py - stick.baseY;
+    const len = Math.hypot(dx, dy);
+    if (len > STICK_RADIUS) { dx = dx / len * STICK_RADIUS; dy = dy / len * STICK_RADIUS; }
+    stickThumb.setPosition(stick.baseX + dx, stick.baseY + dy);
+    // normiert auf -1..1 (Länge = analoge Stärke 0..1)
+    stick.vx = dx / STICK_RADIUS;
+    stick.vy = dy / STICK_RADIUS;
+  }
+
+  function resetStick() {
+    stick.active = false;
+    stick.id = null;
+    stick.vx = 0;
+    stick.vy = 0;
+    stickBase.setVisible(false);
+    stickThumb.setVisible(false);
+  }
+
+  // ---- Szene: update (Bewegung) ------------------------------
+  function update(time, delta) {
+    if (!player) return;
+    const dt = delta / 1000;
+
+    let vx = 0, vy = 0;
+    if (stick.active) { vx = stick.vx; vy = stick.vy; }
+
+    // Tastatur-Fallback (Desktop)
+    if (cursors.left.isDown  || wasd.left.isDown)  vx = -1;
+    if (cursors.right.isDown || wasd.right.isDown) vx = 1;
+    if (cursors.up.isDown    || wasd.up.isDown)    vy = -1;
+    if (cursors.down.isDown  || wasd.down.isDown)  vy = 1;
+
+    let mag = Math.hypot(vx, vy);
+    if (mag < STICK_DEADZONE) return;                 // keine Bewegung
+    if (mag > 1) { vx /= mag; vy /= mag; mag = 1; }    // Diagonale nicht schneller
+
+    // flüssige Bewegung in alle Richtungen
+    player.x += vx * PLAYER_SPEED * dt;
+    player.y += vy * PLAYER_SPEED * dt;
+
+    // innerhalb des Grids halten
+    const maxX = GRID_N * HALF_W - HALF_W;
+    const minX = -maxX;
+    const minY = 0;
+    const maxY = GRID_N * TILE_H;
+    player.x = Phaser.Math.Clamp(player.x, minX, maxX);
+    player.y = Phaser.Math.Clamp(player.y, minY, maxY);
+
+    // Blickrichtung = Bewegungsrichtung (Nase dreht mit)
+    player.facing = Math.atan2(vy, vx);
+    player.rotation = player.facing;
+
+    // Schatten folgt (bleibt flach)
+    shadow.setPosition(player.x, player.y + 14);
+  }
+
+  // ---- Phaser-Konfiguration ----------------------------------
+  const config = {
+    type: Phaser.AUTO,
+    parent: 'game',
+    backgroundColor: '#2b2620',
+    scale: {
+      mode: Phaser.Scale.RESIZE,          // automatische Anpassung an die Displaygröße
+      width: window.innerWidth,
+      height: window.innerHeight
+    },
+    render: { antialias: true, roundPixels: true },
+    scene: { create, update }
+  };
+
+  new Phaser.Game(config);
+  </script>
 </body>
 </html>
