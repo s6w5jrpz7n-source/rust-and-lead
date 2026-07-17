@@ -49,11 +49,18 @@
   const REVEAL_R = 3;              // Erkundungs-Radius in Kacheln
   const INTERACT_DIST = 46;        // Reichweite für Betreten/Verlassen
   const DISCOVER_DIST = 90;        // Reichweite, um einen Bahnhof zu entdecken
+  const MAGNET_DIST = 130;         // Reichweite des Gold-Magneten
+  const PICKUP_DIST = 18;          // Aufsammel-Reichweite
+  const MAGNET_SPEED = 460;        // Tempo, mit dem Gold zum Spieler fliegt
+  const SALOON_INCOME = 1;         // Gold/Sek. durch den Gatling-Saloon
+  const OFFLINE_CAP = 8 * 3600;    // max. Offline-Sekunden, die zählen (8 h)
+  const SAVE_KEY = 'rustlead_save_v1';
 
   // Farben
   const COL_PLAYER = 0x3b82f6, COL_PLAYER_S = 0x1e3a8a, COL_NOSE = 0x93c5fd;
   const COL_ENEMY = 0xef4444, COL_ENEMY_S = 0x7f1d1d;
   const COL_BULLET = 0xfacc15, COL_HP = 0xff3b30, COL_STATION = 0xfacc15;
+  const COL_GOLD = 0xfde047, COL_GOLD_S = 0x92700a;
 
   // ---- Karten-Definitionen -----------------------------------
   // tx,ty = Kachel-Koordinaten. spawn = Zielkachel beim Betreten der Zielkarte.
@@ -79,7 +86,8 @@
         { tx: 5, ty: 8, w: 70, h: 46, color: 0x6b5b4a, label: 'SALOON' },
         { tx: 16, ty: 9, w: 60, h: 40, color: 0x5c5148, label: 'STORE' },
         { tx: 11, ty: 14, w: 64, h: 44, color: 0x6b5b4a, label: 'BANK' }
-      ]
+      ],
+      shops: [ { id: 'saloon', tx: 5, ty: 8, name: 'Gatling-Saloon', cost: 100, income: SALOON_INCOME } ]
     },
     dungeon1: {
       name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
@@ -98,7 +106,7 @@
 
   // ---- Laufzeit-Zustand --------------------------------------
   let sceneRef, player, shadow;
-  let stickBase, stickThumb, hint, shootBtn, killText, mapNameText;
+  let stickBase, stickThumb, hint, shootBtn, killText, goldText, mapNameText;
   let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;              // Minimap
   let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;                       // Vollbild-Karte
   let ctxBg, ctxText;                                                     // Kontext-Button
@@ -108,9 +116,10 @@
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
   const enemies = [];
   const bullets = [];
+  const coins = [];
   const mapObjects = [];   // pro Karte neu aufgebaut, beim Wechsel zerstört
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
-  let miniDirty = true;
+  let miniDirty = true, pendingOffline = 0, shopLabels = {};
 
   const state = {
     map: 'overworld',
@@ -121,7 +130,8 @@
     playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, transitioning: false,
-    ctx: null                      // { type:'portal'|'station', target }
+    gold: 0, saloonOwned: false,
+    ctx: null                      // { type:'portal'|'station'|'shop', target }
   };
 
   // ---- Iso-Koordinaten ---------------------------------------
@@ -154,6 +164,7 @@
     // HUD
     mapNameText = scene.add.text(0, 8, '', { fontFamily: 'system-ui, sans-serif', fontSize: '15px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30);
     killText = scene.add.text(14, 22, 'Besiegt: 0', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
+    goldText = scene.add.text(14, 48, '💰 0', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
     hint = scene.add.text(0, 44, 'Links ziehen · rechts schießen · Karte oben rechts', { fontFamily: 'system-ui, sans-serif', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setAlpha(0.9);
     scene.tweens.add({ targets: hint, alpha: 0, delay: 4500, duration: 1000 });
 
@@ -195,7 +206,43 @@
     scene.scale.on('resize', (size) => layoutUI(size));
     scene.time.addEvent({ delay: SPAWN_MS, loop: true, callback: spawnEnemy });
 
+    // Spielstand laden + passives Einkommen
+    load();
+    updateGold(); killText.setText('Besiegt: ' + kills);
+    scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
+
     loadMap('overworld', { c: 20, r: 20 });
+    if (pendingOffline > 0) { toast('🍺 Offline verdient: +' + pendingOffline + ' Gold'); pendingOffline = 0; }
+  }
+
+  // ---- Wirtschaft: Speichern / Laden / Einkommen -------------
+  function incomeTick() {
+    if (state.saloonOwned) { state.gold += SALOON_INCOME; updateGold(); }
+    save();
+  }
+  function updateGold() { if (goldText) goldText.setText('💰 ' + state.gold); }
+  function save() {
+    try {
+      const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        gold: state.gold, saloon: state.saloonOwned, kills,
+        discovered: [...state.discovered], explored: ex, t: Date.now()
+      }));
+    } catch (e) { /* localStorage evtl. gesperrt (z. B. file://) – Spiel läuft trotzdem */ }
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
+      const s = JSON.parse(raw);
+      state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0;
+      state.discovered = new Set(s.discovered || []);
+      state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
+      if (state.saloonOwned && s.t) {
+        const sec = Math.min(Math.floor((Date.now() - s.t) / 1000), OFFLINE_CAP);
+        const g = sec * SALOON_INCOME;
+        if (g > 0) { state.gold += g; pendingOffline = g; }
+      }
+    } catch (e) { /* kein/kaputter Spielstand – frisch starten */ }
   }
 
   // ---- Karte laden -------------------------------------------
@@ -213,6 +260,7 @@
     mapObjects.forEach(o => o.destroy()); mapObjects.length = 0;
     enemies.forEach(e => e.c.destroy()); enemies.length = 0;
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
+    coins.forEach(c => c.s.destroy()); coins.length = 0;
 
     // Boden
     const g = sceneRef.add.graphics().setDepth(0); drawFloorInto(g, m); mapObjects.push(g);
@@ -237,6 +285,16 @@
       const w = tileToWorld(s.tx, s.ty);
       mapObjects.push(sceneRef.add.star(w.x, w.y, 4, 6, 14, COL_STATION, 0.9).setStrokeStyle(2, 0x7c5e10).setDepth(2));
       mapObjects.push(sceneRef.add.text(w.x, w.y - 26, '🚂 ' + s.name, { fontFamily: 'system-ui', fontSize: '11px', color: '#ffffff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
+    });
+
+    // Läden (z. B. Gatling-Saloon)
+    shopLabels = {};
+    (m.shops || []).forEach(sh => {
+      const w = tileToWorld(sh.tx, sh.ty);
+      mapObjects.push(sceneRef.add.circle(w.x, w.y, 16, COL_GOLD, 0.25).setStrokeStyle(3, COL_GOLD, 0.9).setDepth(2));
+      const tag = (sh.id === 'saloon' && state.saloonOwned) ? '✓ gekauft' : '💰 ' + sh.cost;
+      const label = sceneRef.add.text(w.x, w.y - 30, tag, { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2);
+      mapObjects.push(label); shopLabels[sh.id] = label;
     });
 
     // Kamera + Spieler
@@ -453,6 +511,7 @@
       if (discovered.length >= 2) openTravel();
       else toast('Bahnhof entdeckt – finde weitere für Zugreisen');
     }
+    else if (state.ctx.type === 'shop') { buyShop(state.ctx.target); }
   }
 
   // ---- Gegner / Schuss / Schaden -----------------------------
@@ -478,11 +537,34 @@
   function damageEnemy(e, dmg) {
     e.hp -= dmg; e.hpFill.width = 32 * Math.max(e.hp, 0) / e.maxHp;
     popDamage(e.c.x, e.c.y - ENEMY_R - 4, dmg);
-    if (e.hp <= 0) { const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); }
+    if (e.hp <= 0) {
+      const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
+      dropGold(e.c.x, e.c.y, Phaser.Math.Between(1, 3));
+      e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
+    }
+  }
+  function dropGold(x, y, n) {
+    for (let i = 0; i < n; i++) {
+      const s = sceneRef.add.circle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 5, COL_GOLD).setStrokeStyle(1.5, COL_GOLD_S).setDepth(3);
+      coins.push({ s });
+    }
   }
   function popDamage(x, y, dmg) {
     const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40);
     sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() });
+  }
+  function popGold(x, y) {
+    const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40);
+    sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() });
+  }
+  function buyShop(sh) {
+    if (sh.id === 'saloon' && state.saloonOwned) { toast('🍺 Saloon läuft bereits'); return; }
+    if (state.gold < sh.cost) { toast('Nicht genug Gold (' + state.gold + '/' + sh.cost + ')'); return; }
+    state.gold -= sh.cost; updateGold();
+    if (sh.id === 'saloon') state.saloonOwned = true;
+    if (shopLabels[sh.id]) shopLabels[sh.id].setText('✓ gekauft');
+    toast('🍺 ' + sh.name + ' gekauft! +' + sh.income + ' Gold/Sek');
+    save();
   }
   function toast(msg) {
     const t = sceneRef.add.text(sceneRef.scale.width / 2, sceneRef.scale.height * 0.28, msg, { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(60);
@@ -544,7 +626,15 @@
       if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
     }
 
-    // Interaktion (Portale / Bahnhöfe)
+    // Gold-Münzen: Magnet-Effekt + Aufsammeln
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const co = coins[i];
+      const dx = player.x - co.s.x, dy = player.y - co.s.y, d = Math.hypot(dx, dy) || 1;
+      if (d < PICKUP_DIST) { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
+      if (d < MAGNET_DIST) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
+    }
+
+    // Interaktion (Portale / Bahnhöfe / Läden)
     if (!uiBlocked && !state.transitioning) updateContext();
 
     // Karten neu zeichnen wenn nötig
@@ -563,10 +653,15 @@
       if (d < DISCOVER_DIST && !state.discovered.has(s.id)) { state.discovered.add(s.id); miniDirty = true; toast('🚂 Bahnhof entdeckt: ' + s.name); }
       if (d < INTERACT_DIST && d < bestD) { best = s; bestType = 'station'; bestD = d; }
     }
+    for (const sh of (m.shops || [])) {
+      const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y);
+      if (d < INTERACT_DIST + 12 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; }
+    }
     if (best) {
       state.ctx = { type: bestType, target: best };
       if (bestType === 'portal') showContext(best.label);
-      else showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
+      else if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
+      else showContext(best.id === 'saloon' && state.saloonOwned ? '🍺  ' + best.name + ': +' + best.income + ' Gold/Sek (aktiv)' : '🍺  ' + best.name + ' kaufen — ' + best.cost + ' Gold');
     } else { state.ctx = null; hideContext(); }
   }
 
