@@ -185,11 +185,22 @@
         linesPre: ['Ein narbiger Mann mit kaltem Blick mustert dich.', '„Neu hier? Wir brechen das Monopol des Konzerns — oder sterben beim Versuch."'],
         linesPost: ['„Ein wandelnder Stahlkessel. Genau sowas brauchen wir gegen die Iron Rail."'],
         joinText: '„Kämpf für die Freiheit der Arbeiter. Trittst du der Rebellengilde bei?"',
-        quest: { id: 'q_rebels5', title: 'Sand im Getriebe', kind: 'kill', count: 12, rewardGold: 250, rewardItem: 'dampfkern',
-          offerText: '„Sabotier die Konzern-Patrouillen — leg 12 ihrer Schergen um, dann stockt ihre Kriegsmaschine."',
-          activeText: '„Die Patrouillen rollen noch. Mach weiter."',
-          completeText: '„Sand im Getriebe. Perfekt. Hier, dein Anteil."',
-          doneText: '„Die Ölpipeline brennt. Gut gemacht, Genosse."' } } ]
+        quests: [
+          { id: 'q_rebels5', title: 'Sand im Getriebe', kind: 'kill', count: 12, rewardGold: 250, rewardItem: 'dampfkern', chapter: 5, advanceTo: 8,
+            offerText: '„Sabotier die Konzern-Patrouillen — leg 12 ihrer Schergen um, dann stockt ihre Kriegsmaschine."',
+            activeText: '„Die Patrouillen rollen noch. Mach weiter."',
+            completeText: '„Sand im Getriebe. Perfekt. Hier, dein Anteil."',
+            doneText: '„Die Ölpipeline brennt. Gut gemacht, Genosse."' },
+          { id: 'q_rebels8', title: 'Der Kinetoskop-Betrug', kind: 'kill', count: 18, rewardGold: 500, rewardItem: 'dampfkern', chapter: 8, advanceTo: 12,
+            offerText: '„Die Iron Rail sendet gefälschte Kinetoskop-Botschaften — angebliche Grüße deiner „Familie". Zerlege 18 ihrer Projektoren-Wächter, dann zeig ich dir die Wahrheit."',
+            activeText: '„Die Projektoren laufen noch. Reiß sie nieder."',
+            completeText: '„Sieh selbst: Deine Familie ist seit Jahren tot. Alles nur flackernde Bilder, um dich gefügig zu halten. Tut mir leid, Freund."',
+            doneText: '„Jetzt kämpfst du für die Wahrheit — nicht für eine Lüge."' },
+          { id: 'q_rebels12', title: 'Sturm auf die Iron Rail', kind: 'kill', count: 30, rewardGold: 1200, rewardItem: 'dampfkern', chapter: 12,
+            offerText: '„Das Finale. Stürm die Zentrale der Iron Rail und leg 30 ihrer Elite-Chassis um. Für die Freiheit — ein für alle Mal."',
+            activeText: '„Die Zentrale steht noch. Weiter!"',
+            completeText: '„Das Monopol ist gefallen. Die Arbeiter sind frei — dank dir, Genosse."',
+            doneText: '„Ein neuer Anfang für Rustwater. Ohne Ketten."' } ] } ]
     },
     sektor01: {
       name: 'Sektor 01', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
@@ -202,11 +213,22 @@
         linesPre: ['Ein kalter Mann in makelloser Uniform.', '„Ordnung ist Profit. Profit ist Ordnung. Stör keins von beidem."'],
         linesPost: ['„Ein Firmen-Automat, der frei herumläuft. Faszinierend. Und nützlich."'],
         joinText: '„Dien dem Konzern. Die Eiserne Gilde belohnt Effizienz. Beitreten?"',
-        quest: { id: 'q_corp5', title: 'Streikbrecher', kind: 'kill', count: 12, rewardGold: 250, rewardItem: 'dampfkern',
-          offerText: '„Eliminiere 12 Rebellen-Saboteure. Der Ölfluss darf nie stocken."',
-          activeText: '„Es laufen noch Saboteure frei herum. Beende das."',
-          completeText: '„Effizient. Der Konzern vergisst treue Werkzeuge nicht."',
-          doneText: '„Die Produktion läuft ununterbrochen. Vorbildlich."' } } ]
+        quests: [
+          { id: 'q_corp5', title: 'Streikbrecher', kind: 'kill', count: 12, rewardGold: 250, rewardItem: 'dampfkern', chapter: 5, advanceTo: 8,
+            offerText: '„Eliminiere 12 Rebellen-Saboteure. Der Ölfluss darf nie stocken."',
+            activeText: '„Es laufen noch Saboteure frei herum. Beende das."',
+            completeText: '„Effizient. Der Konzern vergisst treue Werkzeuge nicht."',
+            doneText: '„Die Produktion läuft ununterbrochen. Vorbildlich."' },
+          { id: 'q_corp8', title: 'Archiv-Säuberung', kind: 'kill', count: 18, rewardGold: 500, rewardItem: 'dampfkern', chapter: 8, advanceTo: 12,
+            offerText: '„Rebellen haben belastende Kinetoskop-Rollen gestohlen — Aufnahmen, die beweisen, dass wir deine „Familien-Botschaften" gefälscht haben. Vernichte 18 Diebe, bevor sie reden."',
+            activeText: '„Die Rollen sind noch nicht sicher. Räum auf."',
+            completeText: '„Ordnung wiederhergestellt. Und ja — deine Familie war ein Konstrukt aus Licht und Linse. Doch der Konzern gab dir einen Zweck. Das ist mehr wert."',
+            doneText: '„Ein loyales Werkzeug kennt keine Vergangenheit, nur den Auftrag."' },
+          { id: 'q_corp12', title: 'Der eiserne Frieden', kind: 'kill', count: 30, rewardGold: 1200, rewardItem: 'dampfkern', chapter: 12,
+            offerText: '„Die Rebellion macht ihren letzten Zug. Zerschlag 30 Aufständische und zementiere die Ordnung des Konzerns für immer."',
+            activeText: '„Es gibt noch Widerstand. Beende ihn."',
+            completeText: '„Die Ordnung hält. Die Iron Rail dankt ihrem treuesten Chassis."',
+            doneText: '„Rustwater läuft wie ein geöltes Getriebe. So soll es sein."' } ] } ]
     },
     rogues_landing: {
       name: "Rogue's Landing", cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
@@ -219,11 +241,22 @@
         linesPre: ['Ein Grinsen unter einer breiten Gaslampe.', '„Alles hat seinen Preis, Freund. Auch Schweigen."'],
         linesPost: ['„Ein unaufhaltsamer Stahlkoloss? Weißt du, was so einer auf dem Schwarzmarkt wert ist?"'],
         joinText: '„Reichtum kennt keine Fahnen. Machst du Geschäfte mit der Schmugglergilde?"',
-        quest: { id: 'q_smug5', title: 'Das Sumpf-Gold', kind: 'collect', item: 'dampfkern', count: 3, rewardGold: 300, rewardItem: null,
-          offerText: '„Besorg mir 3 Dampfkerne — blaues Alchemie-Öl. Nutz das Chaos, keiner merkt\'s."',
-          activeText: '„Noch nicht genug Kerne. Der Markt wartet nicht ewig."',
-          completeText: '„Heißes Zeug. Verkauft sich von selbst. Dein Schnitt."',
-          doneText: '„Sauberes Geschäft. Man sieht sich, Freund."' } } ]
+        quests: [
+          { id: 'q_smug5', title: 'Das Sumpf-Gold', kind: 'collect', item: 'dampfkern', count: 3, rewardGold: 300, rewardItem: null, chapter: 5, advanceTo: 8,
+            offerText: '„Besorg mir 3 Dampfkerne — blaues Alchemie-Öl. Nutz das Chaos, keiner merkt\'s."',
+            activeText: '„Noch nicht genug Kerne. Der Markt wartet nicht ewig."',
+            completeText: '„Heißes Zeug. Verkauft sich von selbst. Dein Schnitt."',
+            doneText: '„Sauberes Geschäft. Man sieht sich, Freund."' },
+          { id: 'q_smug8', title: 'Heiße Ware, heiße Wahrheit', kind: 'collect', item: 'dampfkern', count: 6, rewardGold: 700, rewardItem: null, chapter: 8, advanceTo: 12,
+            offerText: '„Ich hab ein Kinetoskop-Band abgefangen — zeigt, wie die Iron Rail deine tote Familie nachstellt, um dich zu lenken. Besorg mir 6 Dampfkerne, dann kriegst du die Wahrheit gratis dazu."',
+            activeText: '„Noch nicht genug Kerne. Und die Wahrheit wartet."',
+            completeText: '„Da hast du\'s, Freund: Deine Familie ist längst Staub. Bitteres Geschäft — aber ehrlicher als die Konzern-Märchen. Dein Schnitt."',
+            doneText: '„Wissen ist die härteste Währung. Gut, dass du zahlungsfähig bist."' },
+          { id: 'q_smug12', title: 'Der letzte Deal', kind: 'collect', item: 'dampfkern', count: 10, rewardGold: 1600, rewardItem: null, chapter: 12,
+            offerText: '„Das große Ding: 10 Dampfkerne, und wir kaufen uns aus diesem ganzen Krieg raus. Weder Rebellen noch Konzern — nur wir und der Profit."',
+            activeText: '„Der Deal steht noch aus. Bring die Kerne."',
+            completeText: '„Reich, frei und keiner Fahne verpflichtet. So macht man das, Partner."',
+            doneText: '„Rustwater gehört jetzt denen, die zahlen können. Uns."' } ] } ]
     }
   };
   const STATION_INDEX = {};
@@ -913,17 +946,30 @@
   }
   function renderDialogue() {
     const d = state.dlg; if (!d) return;
-    const q = d.def.quest, flavorN = d.lines.length;
+    const q = currentQuestOf(d.def), flavorN = d.lines.length;
+    const hasPage = !!d.def.guild || !!q;
     dlgName.setText(d.def.name); hideDlgBtn();
     if (d.i < flavorN) {
       dlgText.setText(d.lines[d.i]);
-      dlgHint.setText((d.i === flavorN - 1 && !q) ? '▶ Schließen' : '▶ Weiter');
+      dlgHint.setText((d.i === flavorN - 1 && !hasPage) ? '▶ Schließen' : '▶ Weiter');
     } else {   // Quest-Seite (bei Gilden-NPCs erst nach Beitritt)
       if (d.def.guild && !guildQuestUnlocked(d.def)) renderGuildGate(d.def);
-      else renderQuestPage(q);
+      else if (q) renderQuestPage(q);
+      else { dlgText.setText('„Im Moment hab ich nichts für dich. Komm später wieder."'); dlgHint.setText('▶ Schließen'); }
     }
     [dlgBg, dlgName, dlgText, dlgHint].forEach(o => o.setVisible(true));
     layoutUI(sceneRef.scale.gameSize);
+  }
+  // Aktuelle anzuzeigende Quest eines NPC (Einzel-Quest ODER Ketten-Quest nach Kapitel).
+  function currentQuestOf(def) {
+    const list = def.quests || (def.quest ? [def.quest] : []);
+    let last = null;
+    for (const q of list) {
+      if (questStateOf(q.id) === 'done') { last = q; continue; }
+      if (state.currentChapter >= (q.chapter || 0)) return q;   // freigeschaltet
+      return last;   // nächste Quest noch kapitel-gesperrt → letzte erledigte zeigen
+    }
+    return last;   // alle erledigt → letzte Quest (zeigt doneText)
   }
   function renderQuestPage(q) {
     const st = questStateOf(q.id);
@@ -943,7 +989,8 @@
   function joinGuild(g) { state.chosenGuild = g; toast('🤝 Beigetreten: ' + GUILDS[g].name); save(); updateNpcIndicators(); renderDialogue(); }
   function advanceDialogue() {
     const d = state.dlg; if (!d) { closeDialogue(); return; }
-    const total = d.lines.length + (d.def.quest ? 1 : 0);
+    const hasPage = !!d.def.guild || !!currentQuestOf(d.def);
+    const total = d.lines.length + (hasPage ? 1 : 0);
     if (d.i >= total - 1) { closeDialogue(); return; }
     d.i++; renderDialogue();
   }
@@ -980,33 +1027,37 @@
     if (q.rewardItem === 'potion') { state.potions++; updateAbilityUI(); }
     else if (q.rewardItem && ITEMS[q.rewardItem]) state.inventory[q.rewardItem] = (state.inventory[q.rewardItem] || 0) + 1;
     state.quests[q.id] = 'done';
+    if (q.advanceTo && q.advanceTo > state.currentChapter) { state.currentChapter = q.advanceTo; toast('📖 Kapitel ' + q.advanceTo); }
     toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold'); save(); updateNpcIndicators(); closeDialogue();
   }
   function updateNpcIndicators() {
     for (const n of npcSprites) {
-      if (!n.gear) continue; const q = n.def.quest;
-      if (!q) { n.gear.setVisible(false); continue; }
+      if (!n.gear) continue;
       if (n.def.guild && !guildQuestUnlocked(n.def)) {   // Gilden-NPC: nur Beitritts-Marker
         const g = n.def.guild;
         if (state.isRevealed && (!state.chosenGuild || state.chosenGuild === g)) { n.gear.setVisible(true); n.gear.setText('🤝'); }
         else n.gear.setVisible(false);
         continue;
       }
-      const st = questStateOf(q.id);
-      if (st === 'done') n.gear.setVisible(false);
+      const q = currentQuestOf(n.def);
+      const st = q ? questStateOf(q.id) : 'done';
+      if (!q || st === 'done') n.gear.setVisible(false);
       else { n.gear.setVisible(true); n.gear.setText(st === 'available' ? '⚙️' : (questComplete(q) ? '❗' : '⏳')); }
     }
   }
   function updateQuestTracker() {
     if (!questText) return;
     let s = '';
-    for (const n of npcSprites) { const q = n.def.quest; if (q && questStateOf(q.id) === 'active') { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
+    for (const n of npcSprites) { const q = currentQuestOf(n.def); if (q && questStateOf(q.id) === 'active') { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
     // auch außerhalb der Stadt: erste aktive Quest global finden
     if (!s) for (const id in state.quests) if (state.quests[id] === 'active') { const q = findQuest(id); if (q) { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
     if (questText.text !== s) questText.setText(s);
   }
   function findQuest(id) {
-    for (const mid in MAPS) { const ns = MAPS[mid].npcs || []; for (const n of ns) if (n.quest && n.quest.id === id) return n.quest; }
+    for (const mid in MAPS) for (const n of (MAPS[mid].npcs || [])) {
+      const list = n.quests || (n.quest ? [n.quest] : []);
+      for (const q of list) if (q.id === id) return q;
+    }
     return null;
   }
 
