@@ -2,10 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <!-- Mobile-First: Fullscreen, kein Zoom, Notch-sicher -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Rust &amp; Lead</title>
-
   <style>
     html, body {
       margin: 0; padding: 0; width: 100%; height: 100%;
@@ -20,24 +18,18 @@
 </head>
 <body>
   <div id="game"></div>
-
-  <!-- Phaser.js via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
-
   <script>
   // ============================================================
-  //  RUST & LEAD – Web-Prototyp (Phase 1) · Schritt 1–4+
+  //  RUST & LEAD – Web-Prototyp (Phase 1) · Schritt 1–4 + HUD-Layout
   //  Single-File Setup · Details siehe docs/GDD.md
   //
-  //  Enthalten:
-  //   - Sandfarbenes isometrisches Grid, blauer Spieler (Nase = Blick)
-  //   - Touch-Joystick (links), Schuss-Button (rechts), Auto-Resize
-  //   - Rote Gegner (spawnen/verfolgen), Lebensbalken, Schadenszahlen
-  //   - Mehrere Karten: Wüste (Überwelt) / Stadt Rustwater / Mine (Dungeon)
-  //   - Betreten/Verlassen über Marker + Kontext-Button
-  //   - Fog of War: Karten zeigen nur Erkundetes
-  //   - Ausklappbare Minimap (rechts oben), Antippen -> Vollbild-Karte
-  //   - Bahnhöfe + Schnellreise (Zugreise) zwischen entdeckten Bahnhöfen
+  //  HUD-Layout (nach Diablo-Immortal-Vorbild):
+  //   - Oben links:  Porträt + Spieler-Lebensbalken
+  //   - Oben Mitte:  Boss-Lebensbalken
+  //   - Unten rechts: Haupt-Angriff + Spezial-Attacken drumherum
+  //   - Oben rechts: Minimap + Inventar-Button
+  //   - Unten links: Touch-Joystick
   // ============================================================
 
   // ---- Grund-Konfiguration -----------------------------------
@@ -46,24 +38,29 @@
   const STICK_RADIUS = 60, STICK_DEADZONE = 0.12;
   const ENEMY_R = 15, ENEMY_HP = 60, ENEMY_SPEED = 70, ENEMY_MAX = 10, SPAWN_MS = 1500;
   const BULLET_R = 5, BULLET_SPEED = 560, BULLET_DMG = 20, BULLET_LIFE = 1.1, FIRE_MS = 200;
-  const REVEAL_R = 3;              // Erkundungs-Radius in Kacheln
-  const INTERACT_DIST = 46;        // Reichweite für Betreten/Verlassen
-  const DISCOVER_DIST = 90;        // Reichweite, um einen Bahnhof zu entdecken
-  const MAGNET_DIST = 130;         // Reichweite des Gold-Magneten
-  const PICKUP_DIST = 18;          // Aufsammel-Reichweite
-  const MAGNET_SPEED = 460;        // Tempo, mit dem Gold zum Spieler fliegt
-  const SALOON_INCOME = 1;         // Gold/Sek. durch den Gatling-Saloon
-  const OFFLINE_CAP = 8 * 3600;    // max. Offline-Sekunden, die zählen (8 h)
-  const SAVE_KEY = 'rustlead_save_v1';
+  const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90;
+  const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
+  const SALOON_INCOME = 1, OFFLINE_CAP = 8 * 3600, SAVE_KEY = 'rustlead_save_v1';
+
+  // Spieler-Leben & Kampf
+  const PLAYER_MAX_HP = 100, CONTACT_DPS = 12, INVULN_MS = 1200, REGEN_DELAY = 3000, REGEN_RATE = 8;
+  const LIFE_W = 150, BOSSBAR_W = 260;
+  // Spezial-Attacken
+  const SPREAD_COUNT = 7, SPREAD_ARC = 1.0, SPREAD_CD = 3000;
+  const DASH_DIST = 190, DASH_CD = 2500;
+  const POTION_HEAL = 50, POTION_START = 3;
+  // Boss
+  const BOSS_HP = 700, BOSS_R = 28, BOSS_SPEED = 46, BOSS_CONTACT = 28, BOSS_GOLD = 20, BOSS_KILLS_TRIGGER = 6;
+  const BOSS_NAMES = ['Rost-Baron', 'Blei-Molch', 'Schrott-Koloss', 'Kaktus-König'];
 
   // Farben
   const COL_PLAYER = 0x3b82f6, COL_PLAYER_S = 0x1e3a8a, COL_NOSE = 0x93c5fd;
   const COL_ENEMY = 0xef4444, COL_ENEMY_S = 0x7f1d1d;
   const COL_BULLET = 0xfacc15, COL_HP = 0xff3b30, COL_STATION = 0xfacc15;
   const COL_GOLD = 0xfde047, COL_GOLD_S = 0x92700a;
+  const COL_LIFE = 0x22c55e, COL_BOSS = 0xf97316;
 
   // ---- Karten-Definitionen -----------------------------------
-  // tx,ty = Kachel-Koordinaten. spawn = Zielkachel beim Betreten der Zielkarte.
   const MAPS = {
     overworld: {
       name: 'Wüste', cols: 40, rows: 40, enemies: true, minimap: 'full',
@@ -72,15 +69,12 @@
         { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 10, r: 17 }, short: 'Rustwater', label: '🏙️  Rustwater betreten', mini: 0x22c55e },
         { tx: 31, ty: 30, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine betreten', mini: 0x8b5cf6 }
       ],
-      stations: [ { id: 'st_desert', tx: 9, ty: 9, name: 'Wüsten-Halt' } ],
-      decor: []
+      stations: [ { id: 'st_desert', tx: 9, ty: 9, name: 'Wüsten-Halt' } ], decor: []
     },
     rustwater: {
       name: 'Rustwater', cols: 22, rows: 22, enemies: false, minimap: 'full',
       floorA: 0x9aa0a6, floorB: 0x878d93, grid: 0x656b71, mini: 0x9aa0a6, bg: 0x20242a,
-      portals: [
-        { tx: 10, ty: 19, to: 'overworld', spawn: { c: 26, r: 14 }, short: 'Wüste', label: '🚪  Wüste (verlassen)', mini: 0x38bdf8 }
-      ],
+      portals: [ { tx: 10, ty: 19, to: 'overworld', spawn: { c: 26, r: 14 }, short: 'Wüste', label: '🚪  Wüste (verlassen)', mini: 0x38bdf8 } ],
       stations: [ { id: 'st_rustwater', tx: 11, ty: 3, name: 'Rustwater Bahnhof' } ],
       decor: [
         { tx: 5, ty: 8, w: 70, h: 46, color: 0x6b5b4a, label: 'SALOON' },
@@ -92,57 +86,53 @@
     dungeon1: {
       name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
       floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
-      portals: [
-        { tx: 12, ty: 23, to: 'overworld', spawn: { c: 31, r: 32 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 }
-      ],
-      stations: [],
-      decor: []
+      portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 31, r: 32 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
+      stations: [], decor: []
     }
   };
-
-  // Globaler Bahnhof-Index (id -> {mapId, tx, ty, name}) für Schnellreise
   const STATION_INDEX = {};
   for (const id in MAPS) MAPS[id].stations.forEach(s => STATION_INDEX[s.id] = { mapId: id, tx: s.tx, ty: s.ty, name: s.name });
 
   // ---- Laufzeit-Zustand --------------------------------------
   let sceneRef, player, shadow;
   let stickBase, stickThumb, hint, shootBtn, killText, goldText, mapNameText;
-  let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;              // Minimap
-  let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;                       // Vollbild-Karte
-  let ctxBg, ctxText;                                                     // Kontext-Button
-  let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];         // Schnellreise
+  let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;
+  let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;
+  let ctxBg, ctxText;
+  let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
+  let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
+  let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
+  let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
+  let abilities = [];
   let cursors, wasd;
 
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
-  const enemies = [];
-  const bullets = [];
-  const coins = [];
-  const mapObjects = [];   // pro Karte neu aufgebaut, beim Wechsel zerstört
+  const enemies = [], bullets = [], coins = [], mapObjects = [];
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
   let miniDirty = true, pendingOffline = 0, shopLabels = {};
 
   const state = {
-    map: 'overworld',
-    cols: 40, rows: 40,
+    map: 'overworld', cols: 40, rows: 40,
     bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
-    explored: {},                  // mapId -> Set("c,r")
-    discovered: new Set(),         // entdeckte Bahnhof-ids
-    playerTile: { c: 0, r: 0 },
+    explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
-    fullMapOpen: false, travelOpen: false, transitioning: false,
+    fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, saloonOwned: false,
-    ctx: null                      // { type:'portal'|'station'|'shop', target }
+    hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0,
+    potions: POTION_START, cd: { spread: 0, dash: 0 },
+    boss: null, killsSinceBoss: 0,
+    ctx: null
   };
 
-  // ---- Iso-Koordinaten ---------------------------------------
   const tileToWorld = (c, r) => ({ x: (c - r) * HALF_W, y: (c + r) * HALF_H });
   const worldToTile = (x, y) => ({ c: Math.round((x / HALF_W + y / HALF_H) / 2), r: Math.round((y / HALF_H - x / HALF_W) / 2) });
+  const inRect = (p, x, y, w, h) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+  const hit = (obj, p, r) => Phaser.Math.Distance.Between(p.x, p.y, obj.x, obj.y) <= r;
 
   // ---- Szene: create -----------------------------------------
   function create() {
     const scene = this; sceneRef = scene;
 
-    // Spieler (Kreis + Nase im Container)
     const body = scene.add.circle(0, 0, PLAYER_R, COL_PLAYER).setStrokeStyle(3, COL_PLAYER_S);
     const nose = scene.add.triangle(0, 0, PLAYER_R - 2, -6, PLAYER_R + 12, 0, PLAYER_R - 2, 6, COL_NOSE).setStrokeStyle(2, COL_PLAYER_S);
     shadow = scene.add.ellipse(0, 0, PLAYER_R * 2.2, PLAYER_R * 1.1, 0x000000, 0.25).setDepth(3);
@@ -154,39 +144,78 @@
     stickBase = scene.add.circle(0, 0, STICK_RADIUS, 0xffffff, 0.10).setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(20).setVisible(false);
     stickThumb = scene.add.circle(0, 0, 28, 0xffffff, 0.35).setStrokeStyle(2, 0xffffff, 0.55).setScrollFactor(0).setDepth(21).setVisible(false);
 
-    // Schuss-Button
+    // Haupt-Angriff
     shootBtn = scene.add.circle(0, 0, 46, COL_ENEMY, 0.85).setStrokeStyle(3, 0xffffff, 0.55).setScrollFactor(0).setDepth(20);
+    scene.add.text(0, 0, '🔫', { fontSize: '24px' }).setOrigin(0.5).setScrollFactor(0).setDepth(21).setName('mainIcon');
 
-    // Kontext-Button (Betreten/Verlassen/Zugreise)
-    ctxBg = scene.add.rectangle(0, 0, 220, 40, 0x1f2937, 0.92).setStrokeStyle(2, 0xf3e9d2, 0.7).setScrollFactor(0).setDepth(22).setOrigin(0.5).setVisible(false);
-    ctxText = scene.add.text(0, 0, '', { fontFamily: 'system-ui, sans-serif', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(23).setVisible(false);
+    // Spezial-Attacken
+    const abilDefs = [
+      { id: 'spread', color: 0x8b5cf6, icon: '✦', off: { x: -72, y: -78 } },
+      { id: 'dash', color: 0x38bdf8, icon: '»', off: { x: -104, y: -18 } },
+      { id: 'potion', color: 0x16a34a, icon: '🍶', off: { x: 4, y: -112 } }
+    ];
+    abilities = abilDefs.map(d => {
+      const btn = scene.add.circle(0, 0, 30, d.color, 0.9).setStrokeStyle(3, 0xffffff, 0.5).setScrollFactor(0).setDepth(20);
+      const icon = scene.add.text(0, 0, d.icon, { fontSize: '20px', color: '#fff' }).setOrigin(0.5).setScrollFactor(0).setDepth(21);
+      const cdText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#fff', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(22);
+      return { id: d.id, off: d.off, btn, icon, cdText };
+    });
 
-    // HUD
-    mapNameText = scene.add.text(0, 8, '', { fontFamily: 'system-ui, sans-serif', fontSize: '15px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30);
-    killText = scene.add.text(14, 22, 'Besiegt: 0', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
-    goldText = scene.add.text(14, 48, '💰 0', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
-    hint = scene.add.text(0, 44, 'Links ziehen · rechts schießen · Karte oben rechts', { fontFamily: 'system-ui, sans-serif', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setAlpha(0.9);
-    scene.tweens.add({ targets: hint, alpha: 0, delay: 4500, duration: 1000 });
+    // Kontext-Button
+    ctxBg = scene.add.rectangle(0, 0, 220, 40, 0x1f2937, 0.92).setStrokeStyle(2, 0xf3e9d2, 0.7).setScrollFactor(0).setDepth(24).setOrigin(0.5).setVisible(false);
+    ctxText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(25).setVisible(false);
+
+    // Oben links: Porträt + Lebensbalken
+    portraitBg = scene.add.rectangle(0, 0, 46, 46, 0x1f2937, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(30).setOrigin(0, 0);
+    portraitIcon = scene.add.circle(0, 0, 15, COL_PLAYER).setStrokeStyle(3, COL_PLAYER_S).setScrollFactor(0).setDepth(31);
+    lifeBarBg = scene.add.rectangle(0, 0, LIFE_W, 16, 0x000000, 0.55).setStrokeStyle(2, 0x000000, 0.5).setScrollFactor(0).setDepth(30).setOrigin(0, 0);
+    lifeBarFill = scene.add.rectangle(0, 0, LIFE_W, 16, COL_LIFE).setScrollFactor(0).setDepth(31).setOrigin(0, 0);
+    lifeText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '12px', color: '#eafff0', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
+
+    // HUD-Texte
+    mapNameText = scene.add.text(0, 6, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30);
+    killText = scene.add.text(0, 0, 'Besiegt: 0', { fontFamily: 'system-ui', fontSize: '16px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
+    goldText = scene.add.text(0, 0, '💰 0', { fontFamily: 'system-ui', fontSize: '16px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
+    hint = scene.add.text(0, 90, 'Links ziehen · rechts angreifen · Karte oben rechts', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setAlpha(0.9);
+    scene.tweens.add({ targets: hint, alpha: 0, delay: 5000, duration: 1000 });
+
+    // Oben Mitte: Boss-Leben (versteckt)
+    bossName = scene.add.text(0, 22, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#ffd7a8', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setVisible(false);
+    bossBarBg = scene.add.rectangle(0, 0, BOSSBAR_W, 12, 0x000000, 0.6).setStrokeStyle(2, 0x000000, 0.5).setScrollFactor(0).setDepth(30).setOrigin(0, 0).setVisible(false);
+    bossBarFill = scene.add.rectangle(0, 0, BOSSBAR_W, 12, COL_BOSS).setScrollFactor(0).setDepth(31).setOrigin(0, 0).setVisible(false);
+    bossHpText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '11px', color: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(32).setVisible(false);
 
     // Minimap
     miniBg = scene.add.rectangle(0, 0, 140, 158, 0x000000, 0.45).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(25).setOrigin(0, 0);
-    miniTitle = scene.add.text(0, 0, 'KARTE', { fontFamily: 'system-ui, sans-serif', fontSize: '11px', color: '#f3e9d2' }).setScrollFactor(0).setDepth(27).setOrigin(0, 0);
+    miniTitle = scene.add.text(0, 0, 'KARTE', { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2' }).setScrollFactor(0).setDepth(27).setOrigin(0, 0);
     miniGfx = scene.add.graphics().setScrollFactor(0).setDepth(26);
-    miniCollapse = scene.add.text(0, 0, '▾', { fontFamily: 'system-ui, sans-serif', fontSize: '16px', color: '#f3e9d2' }).setScrollFactor(0).setDepth(28).setOrigin(0.5);
+    miniCollapse = scene.add.text(0, 0, '▾', { fontFamily: 'system-ui', fontSize: '16px', color: '#f3e9d2' }).setScrollFactor(0).setDepth(28).setOrigin(0.5);
     miniExpand = scene.add.text(0, 0, '🗺', { fontSize: '20px' }).setScrollFactor(0).setDepth(28).setOrigin(0.5).setVisible(false);
 
-    // Vollbild-Karte (versteckt)
-    fmBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(50).setOrigin(0, 0).setVisible(false);
-    fmPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(51).setOrigin(0, 0).setVisible(false);
-    fmGfx = scene.add.graphics().setScrollFactor(0).setDepth(52).setVisible(false);
-    fmTitle = scene.add.text(0, 0, '', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(53).setVisible(false);
-    fmClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui, sans-serif', fontSize: '24px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setVisible(false);
+    // Inventar-Button + Overlay
+    invBtn = scene.add.circle(0, 0, 20, 0x1f2937, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(25);
+    invBtn.icon = scene.add.text(0, 0, '🎒', { fontSize: '18px' }).setOrigin(0.5).setScrollFactor(0).setDepth(26);
+    invBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(50).setOrigin(0, 0).setVisible(false);
+    invPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(51).setOrigin(0.5, 0).setVisible(false);
+    invTitle = scene.add.text(0, 0, '🎒  Inventar', { fontFamily: 'system-ui', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52).setVisible(false);
+    invClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52).setVisible(false);
+    invText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52).setVisible(false);
 
-    // Schnellreise-Overlay (versteckt)
-    ftBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(55).setOrigin(0, 0).setVisible(false);
-    ftPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(56).setOrigin(0.5, 0).setVisible(false);
-    ftTitle = scene.add.text(0, 0, '🚂  Zugreise', { fontFamily: 'system-ui, sans-serif', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(57).setVisible(false);
-    ftClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui, sans-serif', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(57).setVisible(false);
+    // Vollbild-Karte
+    fmBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(53).setOrigin(0, 0).setVisible(false);
+    fmPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(54).setOrigin(0, 0).setVisible(false);
+    fmGfx = scene.add.graphics().setScrollFactor(0).setDepth(55).setVisible(false);
+    fmTitle = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(56).setVisible(false);
+    fmClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui', fontSize: '24px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(56).setVisible(false);
+
+    // Schnellreise-Overlay
+    ftBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(57).setOrigin(0, 0).setVisible(false);
+    ftPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(58).setOrigin(0.5, 0).setVisible(false);
+    ftTitle = scene.add.text(0, 0, '🚂  Zugreise', { fontFamily: 'system-ui', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(59).setVisible(false);
+    ftClose = scene.add.text(0, 0, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(59).setVisible(false);
+
+    // Haupt-Angriff-Icon merken (für Reposition)
+    shootBtn.icon = scene.children.getByName('mainIcon');
 
     // Eingaben
     scene.input.addPointer(3);
@@ -202,13 +231,16 @@
     wasd = scene.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     scene.input.keyboard.on('keydown-SPACE', () => fireBullet());
     scene.input.keyboard.on('keydown-M', () => state.fullMapOpen ? closeFullMap() : openFullMap());
+    scene.input.keyboard.on('keydown-ONE', () => useAbility('spread'));
+    scene.input.keyboard.on('keydown-TWO', () => useAbility('dash'));
+    scene.input.keyboard.on('keydown-THREE', () => useAbility('potion'));
 
     scene.scale.on('resize', (size) => layoutUI(size));
     scene.time.addEvent({ delay: SPAWN_MS, loop: true, callback: spawnEnemy });
 
-    // Spielstand laden + passives Einkommen
     load();
-    updateGold(); killText.setText('Besiegt: ' + kills);
+    state.hp = state.maxHp; state.potions = POTION_START;
+    updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
     loadMap('overworld', { c: 20, r: 20 });
@@ -216,19 +248,13 @@
   }
 
   // ---- Wirtschaft: Speichern / Laden / Einkommen -------------
-  function incomeTick() {
-    if (state.saloonOwned) { state.gold += SALOON_INCOME; updateGold(); }
-    save();
-  }
+  function incomeTick() { if (state.saloonOwned) { state.gold += SALOON_INCOME; updateGold(); } save(); }
   function updateGold() { if (goldText) goldText.setText('💰 ' + state.gold); }
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({
-        gold: state.gold, saloon: state.saloonOwned, kills,
-        discovered: [...state.discovered], explored: ex, t: Date.now()
-      }));
-    } catch (e) { /* localStorage evtl. gesperrt (z. B. file://) – Spiel läuft trotzdem */ }
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+    } catch (e) { }
   }
   function load() {
     try {
@@ -238,11 +264,10 @@
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       if (state.saloonOwned && s.t) {
-        const sec = Math.min(Math.floor((Date.now() - s.t) / 1000), OFFLINE_CAP);
-        const g = sec * SALOON_INCOME;
+        const sec = Math.min(Math.floor((Date.now() - s.t) / 1000), OFFLINE_CAP), g = sec * SALOON_INCOME;
         if (g > 0) { state.gold += g; pendingOffline = g; }
       }
-    } catch (e) { /* kein/kaputter Spielstand – frisch starten */ }
+    } catch (e) { }
   }
 
   // ---- Karte laden -------------------------------------------
@@ -250,44 +275,31 @@
     const m = MAPS[id];
     state.map = id; state.cols = m.cols; state.rows = m.rows;
     if (!state.explored[id]) state.explored[id] = new Set();
+    state.bounds = { minX: -(m.rows - 1) * HALF_W, maxX: (m.cols - 1) * HALF_W, minY: 0, maxY: (m.cols - 1 + m.rows - 1) * HALF_H };
 
-    state.bounds = {
-      minX: -(m.rows - 1) * HALF_W, maxX: (m.cols - 1) * HALF_W,
-      minY: 0, maxY: (m.cols - 1 + m.rows - 1) * HALF_H
-    };
-
-    // alte Karten-Objekte + Gegner + Projektile entfernen
     mapObjects.forEach(o => o.destroy()); mapObjects.length = 0;
     enemies.forEach(e => e.c.destroy()); enemies.length = 0;
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
     coins.forEach(c => c.s.destroy()); coins.length = 0;
+    state.boss = null; hideBossBar(); state.killsSinceBoss = 0;
 
-    // Boden
     const g = sceneRef.add.graphics().setDepth(0); drawFloorInto(g, m); mapObjects.push(g);
 
-    // Deko (z. B. Gebäude in der Stadt)
     (m.decor || []).forEach(d => {
       const w = tileToWorld(d.tx, d.ty);
-      const rect = sceneRef.add.rectangle(w.x, w.y, d.w, d.h, d.color).setStrokeStyle(2, 0x000000, 0.4).setDepth(2);
-      mapObjects.push(rect);
+      mapObjects.push(sceneRef.add.rectangle(w.x, w.y, d.w, d.h, d.color).setStrokeStyle(2, 0x000000, 0.4).setDepth(2));
       if (d.label) mapObjects.push(sceneRef.add.text(w.x, w.y, d.label, { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2' }).setOrigin(0.5).setDepth(2));
     });
-
-    // Portale (Marker auf dem Boden)
     m.portals.forEach(p => {
       const w = tileToWorld(p.tx, p.ty);
       mapObjects.push(sceneRef.add.circle(w.x, w.y, 18, p.mini, 0.28).setStrokeStyle(3, p.mini, 0.95).setDepth(2));
-      mapObjects.push(sceneRef.add.text(w.x, w.y - 28, p.short, { fontFamily: 'system-ui', fontSize: '12px', color: '#ffffff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
+      mapObjects.push(sceneRef.add.text(w.x, w.y - 28, p.short, { fontFamily: 'system-ui', fontSize: '12px', color: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
     });
-
-    // Bahnhöfe (Marker)
     m.stations.forEach(s => {
       const w = tileToWorld(s.tx, s.ty);
       mapObjects.push(sceneRef.add.star(w.x, w.y, 4, 6, 14, COL_STATION, 0.9).setStrokeStyle(2, 0x7c5e10).setDepth(2));
-      mapObjects.push(sceneRef.add.text(w.x, w.y - 26, '🚂 ' + s.name, { fontFamily: 'system-ui', fontSize: '11px', color: '#ffffff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
+      mapObjects.push(sceneRef.add.text(w.x, w.y - 26, '🚂 ' + s.name, { fontFamily: 'system-ui', fontSize: '11px', color: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
     });
-
-    // Läden (z. B. Gatling-Saloon)
     shopLabels = {};
     (m.shops || []).forEach(sh => {
       const w = tileToWorld(sh.tx, sh.ty);
@@ -297,25 +309,20 @@
       mapObjects.push(label); shopLabels[sh.id] = label;
     });
 
-    // Kamera + Spieler
-    sceneRef.cameras.main.setBounds(state.bounds.minX - HALF_W, state.bounds.minY - HALF_H,
-      (state.bounds.maxX - state.bounds.minX) + TILE_W, (state.bounds.maxY - state.bounds.minY) + TILE_H);
+    sceneRef.cameras.main.setBounds(state.bounds.minX - HALF_W, state.bounds.minY - HALF_H, (state.bounds.maxX - state.bounds.minX) + TILE_W, (state.bounds.maxY - state.bounds.minY) + TILE_H);
     sceneRef.cameras.main.setBackgroundColor(m.bg);
     const wp = tileToWorld(spawn.c, spawn.r);
     player.x = wp.x; player.y = wp.y; player.facing = 0; player.rotation = 0;
     shadow.setPosition(wp.x, wp.y + 14);
     sceneRef.cameras.main.centerOn(wp.x, wp.y);
     state.playerTile = { c: spawn.c, r: spawn.r };
+    state.invulnUntil = sceneRef.time.now + 800;
     reveal(spawn.c, spawn.r);
 
-    // Minimap-Größe je nach Kartentyp
     state.miniSize = m.minimap === 'small' ? 100 : 140;
     mapNameText.setText(m.name);
     layoutUI(sceneRef.scale.gameSize);
-    miniDirty = true;
-    toast(m.name);
-
-    // ein paar Gegner sofort platzieren (Kampf-Karten)
+    miniDirty = true; toast(m.name);
     if (m.enemies) for (let i = 0; i < 3; i++) spawnEnemy();
   }
 
@@ -335,37 +342,28 @@
       if (dc * dc + dr * dr > REVEAL_R * REVEAL_R + 1) continue;
       const nc = c + dc, nr = r + dr;
       if (nc < 0 || nr < 0 || nc >= state.cols || nr >= state.rows) continue;
-      const k = nc + ',' + nr;
-      if (!ex.has(k)) { ex.add(k); miniDirty = true; }
+      const k = nc + ',' + nr; if (!ex.has(k)) { ex.add(k); miniDirty = true; }
     }
   }
 
-  // ---- Karten-Grafik (Minimap & Vollbild) --------------------
+  // ---- Karten-Grafik -----------------------------------------
   function drawMapGraphics(g, cell) {
     const m = MAPS[state.map], ex = state.explored[state.map];
     g.clear();
     g.fillStyle(0x11100e, 1); g.fillRect(0, 0, m.cols * cell, m.rows * cell);
     g.fillStyle(m.mini, 1);
     ex.forEach(key => { const p = key.split(','); g.fillRect(p[0] * cell, p[1] * cell, cell, cell); });
-    // Portale (nur wenn erkundet)
     m.portals.forEach(p => { if (!ex.has(p.tx + ',' + p.ty)) return; g.fillStyle(p.mini, 1); g.fillRect(p.tx * cell - cell * 0.4, p.ty * cell - cell * 0.4, cell * 1.8, cell * 1.8); });
-    // Bahnhöfe (wenn entdeckt)
     m.stations.forEach(s => { if (!state.discovered.has(s.id)) return; g.fillStyle(COL_STATION, 1); g.fillRect(s.tx * cell - cell * 0.5, s.ty * cell - cell * 0.5, cell * 2, cell * 2); });
-    // Spieler
     const px = state.playerTile.c * cell + cell / 2, py = state.playerTile.r * cell + cell / 2, pr = Math.max(cell, 2.5);
     g.fillStyle(COL_PLAYER, 1); g.fillCircle(px, py, pr);
     g.lineStyle(1.5, 0xffffff, 0.9); g.strokeCircle(px, py, pr);
   }
-
   function refreshMaps() {
     const m = MAPS[state.map];
-    if (!state.miniCollapsed) {
-      const avail = state.miniSize - 12, cell = avail / Math.max(m.cols, m.rows);
-      drawMapGraphics(miniGfx, cell);
-    }
+    if (!state.miniCollapsed) { const avail = state.miniSize - 12; drawMapGraphics(miniGfx, avail / Math.max(m.cols, m.rows)); }
     if (state.fullMapOpen) {
-      const size = sceneRef.scale.gameSize;
-      const avail = Math.min(size.width * 0.9, size.height * 0.8);
+      const size = sceneRef.scale.gameSize, avail = Math.min(size.width * 0.9, size.height * 0.8);
       const cell = Math.max(2, Math.floor(avail / Math.max(m.cols, m.rows)));
       drawMapGraphics(fmGfx, cell);
       const mw = m.cols * cell, mh = m.rows * cell;
@@ -375,130 +373,106 @@
       fmClose.setPosition((size.width - mw) / 2 + mw + 4, (size.height - mh) / 2 - 20);
     }
   }
-
-  // ---- Vollbild-Karte ----------------------------------------
-  function openFullMap() {
-    if (state.travelOpen) return;
-    state.fullMapOpen = true;
-    const size = sceneRef.scale.gameSize;
-    fmBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
-    fmPanel.setVisible(true); fmGfx.setVisible(true);
-    fmTitle.setText('KARTE — ' + MAPS[state.map].name).setVisible(true);
-    fmClose.setVisible(true);
-    refreshMaps();
-  }
-  function closeFullMap() {
-    state.fullMapOpen = false;
-    [fmBackdrop, fmPanel, fmGfx, fmTitle, fmClose].forEach(o => o.setVisible(false));
-  }
+  function openFullMap() { if (state.travelOpen || state.inventoryOpen) return; state.fullMapOpen = true; const s = sceneRef.scale.gameSize; fmBackdrop.setSize(s.width, s.height).setPosition(0, 0).setVisible(true); fmPanel.setVisible(true); fmGfx.setVisible(true); fmTitle.setText('KARTE — ' + MAPS[state.map].name).setVisible(true); fmClose.setVisible(true); refreshMaps(); }
+  function closeFullMap() { state.fullMapOpen = false;[fmBackdrop, fmPanel, fmGfx, fmTitle, fmClose].forEach(o => o.setVisible(false)); }
 
   // ---- Schnellreise ------------------------------------------
   function openTravel() {
     const list = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id) && !(state.ctx && state.ctx.type === 'station' && state.ctx.target.id === id));
     state.travelOpen = true;
-    const size = sceneRef.scale.gameSize;
-    const pw = Math.min(320, size.width * 0.86), rowH = 46, ph = 70 + list.length * (rowH + 8) + 16;
+    const size = sceneRef.scale.gameSize, pw = Math.min(320, size.width * 0.86), rowH = 46, ph = 70 + list.length * (rowH + 8) + 16;
     ftBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
     ftPanel.setPosition(size.width / 2, (size.height - ph) / 2).setSize(pw, ph).setVisible(true);
     ftTitle.setPosition(size.width / 2, (size.height - ph) / 2 + 14).setVisible(true);
     ftClose.setPosition(size.width / 2 + pw / 2 - 20, (size.height - ph) / 2 + 16).setVisible(true);
     list.forEach((id, i) => {
-      const st = STATION_INDEX[id];
-      const y = (size.height - ph) / 2 + 58 + i * (rowH + 8);
-      const bg = sceneRef.add.rectangle(size.width / 2, y, pw - 32, rowH, 0x334155, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(58).setOrigin(0.5, 0);
-      const tx = sceneRef.add.text(size.width / 2, y + rowH / 2, '🚂  ' + st.name + '  (' + MAPS[st.mapId].name + ')', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(59);
+      const st = STATION_INDEX[id], y = (size.height - ph) / 2 + 58 + i * (rowH + 8);
+      const bg = sceneRef.add.rectangle(size.width / 2, y, pw - 32, rowH, 0x334155, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(59).setOrigin(0.5, 0);
+      const tx = sceneRef.add.text(size.width / 2, y + rowH / 2, '🚂  ' + st.name + '  (' + MAPS[st.mapId].name + ')', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(60);
       ftButtons.push({ bg, tx, station: st });
     });
-    if (list.length === 0) {
-      const y = (size.height - ph) / 2 + 58;
-      ftButtons.push({ bg: null, tx: sceneRef.add.text(size.width / 2, y + 10, 'Keine weiteren Bahnhöfe entdeckt.', { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(59), station: null });
+    if (list.length === 0) ftButtons.push({ bg: null, tx: sceneRef.add.text(size.width / 2, (size.height - ph) / 2 + 68, 'Keine weiteren Bahnhöfe entdeckt.', { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60), station: null });
+  }
+  function closeTravel() { state.travelOpen = false; ftButtons.forEach(b => { if (b.bg) b.bg.destroy(); if (b.tx) b.tx.destroy(); }); ftButtons = [];[ftBackdrop, ftPanel, ftTitle, ftClose].forEach(o => o.setVisible(false)); }
+
+  // ---- Inventar ----------------------------------------------
+  function openInventory() {
+    if (state.travelOpen || state.fullMapOpen) return;
+    state.inventoryOpen = true;
+    const size = sceneRef.scale.gameSize, cols = 4, rows = 3, slot = 54, gap = 8;
+    const gw = cols * slot + (cols - 1) * gap, gh = rows * slot + (rows - 1) * gap, pw = gw + 40, ph = gh + 120;
+    const px = size.width / 2, py = (size.height - ph) / 2;
+    invBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
+    invPanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
+    invTitle.setPosition(px, py + 12).setVisible(true);
+    invClose.setPosition(px + pw / 2 - 20, py + 16).setVisible(true);
+    invText.setText('💰 ' + state.gold + '  ·  Besiegt: ' + kills + '  ·  🍶 ' + state.potions).setPosition(px, py + ph - 30).setVisible(true);
+    const x0 = px - gw / 2, y0 = py + 48;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const sx = x0 + c * (slot + gap) + slot / 2, sy = y0 + r * (slot + gap) + slot / 2;
+      invSlots.push(sceneRef.add.rectangle(sx, sy, slot, slot, 0x334155, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.35).setScrollFactor(0).setDepth(52));
     }
   }
-  function closeTravel() {
-    state.travelOpen = false;
-    ftButtons.forEach(b => { if (b.bg) b.bg.destroy(); if (b.tx) b.tx.destroy(); }); ftButtons = [];
-    [ftBackdrop, ftPanel, ftTitle, ftClose].forEach(o => o.setVisible(false));
-  }
+  function closeInventory() { state.inventoryOpen = false; invSlots.forEach(s => s.destroy()); invSlots = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
 
-  // ---- Karten-Wechsel mit Überblendung -----------------------
+  // ---- Karten-Wechsel ----------------------------------------
   function transitionTo(mapId, spawn) {
     if (state.transitioning) return;
-    state.transitioning = true;
-    hideContext();
+    state.transitioning = true; hideContext();
     sceneRef.cameras.main.fadeOut(180, 0, 0, 0);
-    sceneRef.cameras.main.once('camerafadeoutcomplete', () => {
-      loadMap(mapId, spawn);
-      sceneRef.cameras.main.fadeIn(180, 0, 0, 0);
-      state.transitioning = false;
-    });
+    sceneRef.cameras.main.once('camerafadeoutcomplete', () => { loadMap(mapId, spawn); sceneRef.cameras.main.fadeIn(180, 0, 0, 0); state.transitioning = false; });
   }
 
-  // ---- Layout (auch bei Resize) ------------------------------
+  // ---- Layout ------------------------------------------------
   function layoutUI(size) {
     const w = size.width, h = size.height;
-    if (shootBtn) shootBtn.setPosition(w - 78, h - 92);
+    const mc = { x: w - 80, y: h - 100 };
+    if (shootBtn) { shootBtn.setPosition(mc.x, mc.y); if (shootBtn.icon) shootBtn.icon.setPosition(mc.x, mc.y); }
+    for (const ab of abilities) { const bx = mc.x + ab.off.x, by = mc.y + ab.off.y; ab.btn.setPosition(bx, by); ab.icon.setPosition(bx, by); ab.cdText.setPosition(bx, by + (ab.id === 'potion' ? 16 : 0)); }
     if (mapNameText) mapNameText.setX(w / 2);
     if (hint) hint.setX(w / 2);
-    if (ctxBg) { ctxBg.setPosition(w / 2, 84); ctxText.setPosition(w / 2, 84); }
+    if (ctxBg) { ctxBg.setPosition(w / 2, 108); ctxText.setPosition(w / 2, 108); }
 
-    // Minimap oben rechts
+    if (portraitBg) {
+      portraitBg.setPosition(12, 12); portraitIcon.setPosition(35, 35);
+      lifeBarBg.setPosition(64, 16); lifeBarFill.setPosition(64, 16); lifeText.setPosition(64 + LIFE_W / 2, 24);
+      killText.setPosition(14, 66); goldText.setPosition(120, 66);
+    }
+    if (bossName) { bossName.setPosition(w / 2, 22); bossBarBg.setPosition(w / 2 - BOSSBAR_W / 2, 44); bossBarFill.setPosition(w / 2 - BOSSBAR_W / 2, 44); bossHpText.setPosition(w / 2, 50); }
+
     const P = state.miniSize, x = w - P - 12, y = 12;
     miniBg.setPosition(x, y).setSize(P, P + 18);
-    miniTitle.setPosition(x + 6, y + 4);
-    miniGfx.setPosition(x + 6, y + 18);
-    miniCollapse.setPosition(x + P - 12, y + 9);
-    miniExpand.setPosition(w - 24, y + 16);
+    miniTitle.setPosition(x + 6, y + 4); miniGfx.setPosition(x + 6, y + 18);
+    miniCollapse.setPosition(x + P - 12, y + 9); miniExpand.setPosition(w - 24, y + 16);
 
-    if (state.fullMapOpen || state.travelOpen) { if (state.fullMapOpen) refreshMaps(); }
+    if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); }
+    if (state.fullMapOpen) refreshMaps();
   }
 
-  // ---- Eingabe (zentrale Trefferprüfung) ---------------------
+  // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
-    // Schnellreise offen: Buttons / Schließen
+    if (state.inventoryOpen) { closeInventory(); return; }
     if (state.travelOpen) {
       if (hit(ftClose, p, 26)) { closeTravel(); return; }
-      for (const b of ftButtons) {
-        if (b.station && b.bg && inRect(p, b.bg.x - b.bg.width / 2, b.bg.y, b.bg.width, b.bg.height)) {
-          const st = b.station; closeTravel(); transitionTo(st.mapId, { c: st.tx, r: st.ty }); return;
-        }
-      }
-      closeTravel(); return; // Klick außerhalb schließt
+      for (const b of ftButtons) if (b.station && b.bg && inRect(p, b.bg.x - b.bg.width / 2, b.bg.y, b.bg.width, b.bg.height)) { const st = b.station; closeTravel(); transitionTo(st.mapId, { c: st.tx, r: st.ty }); return; }
+      closeTravel(); return;
     }
-    // Vollbild-Karte offen: alles schließt
     if (state.fullMapOpen) { closeFullMap(); return; }
-
-    // Kontext-Button?
     if (ctxBg.visible && inRect(p, ctxBg.x - ctxBg.width / 2, ctxBg.y - ctxBg.height / 2, ctxBg.width, ctxBg.height)) { doContext(); return; }
-
-    // Minimap: ausklappen / einklappen / öffnen
-    if (state.miniCollapsed) {
-      if (hit(miniExpand, p, 22)) { state.miniCollapsed = false; setMiniVisible(true); miniDirty = true; return; }
-    } else {
+    if (hit(invBtn, p, 24)) { openInventory(); return; }
+    if (state.miniCollapsed) { if (hit(miniExpand, p, 22)) { state.miniCollapsed = false; setMiniVisible(true); miniDirty = true; return; } }
+    else {
       if (hit(miniCollapse, p, 18)) { state.miniCollapsed = true; setMiniVisible(false); return; }
       if (inRect(p, miniBg.x, miniBg.y, miniBg.width, miniBg.height)) { openFullMap(); return; }
     }
-
-    // Schuss-Button
-    if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) {
-      shooting = true; shootId = p.id; shootBtn.setScale(0.92); fireBullet(); fireTimer = FIRE_MS; return;
-    }
-
-    // Joystick (linke Hälfte)
+    if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) { shooting = true; shootId = p.id; shootBtn.setScale(0.92); fireBullet(); fireTimer = FIRE_MS; return; }
+    for (const ab of abilities) if (Phaser.Math.Distance.Between(p.x, p.y, ab.btn.x, ab.btn.y) <= 34) { useAbility(ab.id); return; }
     if (!stick.active && p.x < sceneRef.scale.width / 2) {
       stick.active = true; stick.id = p.id; stick.baseX = p.x; stick.baseY = p.y;
-      stickBase.setPosition(p.x, p.y).setVisible(true);
-      stickThumb.setPosition(p.x, p.y).setVisible(true);
-      updateStick(p.x, p.y);
+      stickBase.setPosition(p.x, p.y).setVisible(true); stickThumb.setPosition(p.x, p.y).setVisible(true); updateStick(p.x, p.y);
     }
   }
-
-  const inRect = (p, x, y, w, h) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
-  const hit = (obj, p, r) => Phaser.Math.Distance.Between(p.x, p.y, obj.x, obj.y) <= r;
-
-  function setMiniVisible(v) {
-    [miniBg, miniTitle, miniGfx, miniCollapse].forEach(o => o.setVisible(v));
-    miniExpand.setVisible(!v);
-  }
+  function setMiniVisible(v) { [miniBg, miniTitle, miniGfx, miniCollapse].forEach(o => o.setVisible(v)); miniExpand.setVisible(!v); }
 
   // ---- Kontext-Aktion ----------------------------------------
   function showContext(label) { ctxText.setText(label); ctxBg.width = Math.max(180, ctxText.width + 32); ctxBg.setVisible(true); ctxText.setVisible(true); }
@@ -506,85 +480,121 @@
   function doContext() {
     if (!state.ctx) return;
     if (state.ctx.type === 'portal') { const p = state.ctx.target; transitionTo(p.to, p.spawn); }
-    else if (state.ctx.type === 'station') {
-      const discovered = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id));
-      if (discovered.length >= 2) openTravel();
-      else toast('Bahnhof entdeckt – finde weitere für Zugreisen');
-    }
+    else if (state.ctx.type === 'station') { const d = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)); if (d.length >= 2) openTravel(); else toast('Bahnhof entdeckt – finde weitere für Zugreisen'); }
     else if (state.ctx.type === 'shop') { buyShop(state.ctx.target); }
   }
 
-  // ---- Gegner / Schuss / Schaden -----------------------------
+  // ---- Gegner / Boss -----------------------------------------
+  function addEnemy(x, y, o) {
+    const body = sceneRef.add.circle(0, 0, o.r, o.color).setStrokeStyle(3, o.stroke);
+    const hpBg = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, 0x000000, 0.6).setOrigin(0, 0.5);
+    const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
+    const c = sceneRef.add.container(x, y, [body, hpBg, hpFill]).setDepth(o.isBoss ? 5 : 4);
+    const e = { c, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, name: o.name || '', gold: o.gold || 1 };
+    enemies.push(e); return e;
+  }
   function spawnEnemy() {
     if (!sceneRef || !player || !MAPS[state.map].enemies || enemies.length >= ENEMY_MAX || state.transitioning) return;
     const ang = Math.random() * Math.PI * 2, dist = 360 + Math.random() * 160;
     const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
     const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
-    const body = sceneRef.add.circle(0, 0, ENEMY_R, COL_ENEMY).setStrokeStyle(3, COL_ENEMY_S);
-    const hpBg = sceneRef.add.rectangle(-16, -ENEMY_R - 9, 32, 5, 0x000000, 0.6).setOrigin(0, 0.5);
-    const hpFill = sceneRef.add.rectangle(-16, -ENEMY_R - 9, 32, 5, COL_HP).setOrigin(0, 0.5);
-    const c = sceneRef.add.container(ex, ey, [body, hpBg, hpFill]).setDepth(4);
-    enemies.push({ c, hp: ENEMY_HP, maxHp: ENEMY_HP, hpFill });
+    addEnemy(ex, ey, { r: ENEMY_R, barW: 32, hp: ENEMY_HP, color: COL_ENEMY, stroke: COL_ENEMY_S, contact: CONTACT_DPS, speed: ENEMY_SPEED, gold: Phaser.Math.Between(1, 3) });
+  }
+  function spawnBoss() {
+    if (!MAPS[state.map].enemies || state.boss || state.transitioning) return;
+    const ang = Math.random() * Math.PI * 2, dist = 300 + Math.random() * 120;
+    const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
+    const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
+    const name = BOSS_NAMES[Phaser.Math.Between(0, BOSS_NAMES.length - 1)];
+    const e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD });
+    state.boss = e; setBossBar(e); toast('☠ Boss: ' + name);
   }
 
-  function fireBullet() {
+  // ---- Schuss / Spezial-Attacken -----------------------------
+  function fireBulletAngle(a) {
     if (!sceneRef || !player || state.transitioning) return;
-    const a = player.facing, dx = Math.cos(a), dy = Math.sin(a);
+    const dx = Math.cos(a), dy = Math.sin(a);
     const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6), BULLET_R, COL_BULLET).setStrokeStyle(2, 0xb45309).setDepth(6);
     bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE });
   }
+  function fireBullet() { fireBulletAngle(player.facing); }
+  function castSpread() { const base = player.facing; for (let i = 0; i < SPREAD_COUNT; i++) fireBulletAngle(base - SPREAD_ARC / 2 + SPREAD_ARC * (i / (SPREAD_COUNT - 1))); }
+  function castDash() {
+    const a = player.facing;
+    const nx = Phaser.Math.Clamp(player.x + Math.cos(a) * DASH_DIST, state.bounds.minX, state.bounds.maxX);
+    const ny = Phaser.Math.Clamp(player.y + Math.sin(a) * DASH_DIST, state.bounds.minY, state.bounds.maxY);
+    sceneRef.tweens.add({ targets: player, x: nx, y: ny, duration: 150, ease: 'Cubic.out' });
+    state.invulnUntil = sceneRef.time.now + 450;
+  }
+  function usePotion() {
+    if (state.potions <= 0) { toast('Keine Heiltränke'); return; }
+    if (state.hp >= state.maxHp) { toast('Leben bereits voll'); return; }
+    state.hp = Math.min(state.maxHp, state.hp + POTION_HEAL); state.potions--; updateLife(); updateAbilityUI(); toast('🍶 +' + POTION_HEAL + ' Leben');
+  }
+  function useAbility(id) {
+    if (id === 'spread') { if (state.cd.spread > 0) return; castSpread(); state.cd.spread = SPREAD_CD; }
+    else if (id === 'dash') { if (state.cd.dash > 0) return; castDash(); state.cd.dash = DASH_CD; }
+    else if (id === 'potion') { usePotion(); }
+    updateAbilityUI();
+  }
+  function updateAbilityUI() {
+    for (const ab of abilities) {
+      if (ab.id === 'potion') { ab.cdText.setText('' + state.potions); ab.btn.setAlpha(state.potions > 0 ? 0.9 : 0.4); continue; }
+      const cd = state.cd[ab.id] || 0;
+      if (cd > 0) { ab.btn.setAlpha(0.4); ab.icon.setAlpha(0.3); ab.cdText.setText(Math.ceil(cd / 1000) + ''); }
+      else { ab.btn.setAlpha(0.9); ab.icon.setAlpha(1); ab.cdText.setText(''); }
+    }
+  }
 
+  // ---- Spieler-Leben -----------------------------------------
+  function updateLife() { if (!lifeBarFill) return; lifeBarFill.width = LIFE_W * Math.max(state.hp, 0) / state.maxHp; lifeText.setText(Math.ceil(Math.max(state.hp, 0)) + ' / ' + state.maxHp); }
+  function respawnPlayer() {
+    const m = MAPS[state.map], w = tileToWorld(Math.floor(m.cols / 2), Math.floor(m.rows / 2));
+    player.x = w.x; player.y = w.y; state.hp = state.maxHp; state.potions = POTION_START;
+    state.invulnUntil = sceneRef.time.now + 1500; updateLife(); updateAbilityUI(); toast('💀 Ausgeknockt – Respawn');
+  }
+
+  // ---- Boss-Leiste -------------------------------------------
+  function setBossBar(e) { mapNameText.setVisible(false); bossName.setText('☠ ' + e.name).setVisible(true); bossBarBg.setVisible(true); bossBarFill.setVisible(true); bossHpText.setVisible(true); layoutUI(sceneRef.scale.gameSize); updateBossBar(); }
+  function updateBossBar() { if (!state.boss) return; const e = state.boss; bossBarFill.width = BOSSBAR_W * Math.max(e.hp, 0) / e.maxHp; bossHpText.setText(Math.ceil(Math.max(e.hp, 0)) + ' / ' + e.maxHp); }
+  function hideBossBar() { if (mapNameText) mapNameText.setVisible(true);[bossName, bossBarBg, bossBarFill, bossHpText].forEach(o => o && o.setVisible(false)); }
+
+  // ---- Schaden / Loot ----------------------------------------
   function damageEnemy(e, dmg) {
-    e.hp -= dmg; e.hpFill.width = 32 * Math.max(e.hp, 0) / e.maxHp;
-    popDamage(e.c.x, e.c.y - ENEMY_R - 4, dmg);
+    e.hp -= dmg; e.hpFill.width = e.barW * Math.max(e.hp, 0) / e.maxHp;
+    popDamage(e.c.x, e.c.y - e.r - 4, dmg);
+    if (e.isBoss) updateBossBar();
     if (e.hp <= 0) {
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
-      dropGold(e.c.x, e.c.y, Phaser.Math.Between(1, 3));
-      e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
+      dropGold(e.c.x, e.c.y, e.gold); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
+      if (e.isBoss) { state.boss = null; hideBossBar(); toast('Boss besiegt! +' + e.gold + ' Gold'); }
+      else { state.killsSinceBoss++; if (state.killsSinceBoss >= BOSS_KILLS_TRIGGER && !state.boss && MAPS[state.map].enemies) { state.killsSinceBoss = 0; spawnBoss(); } }
     }
   }
-  function dropGold(x, y, n) {
-    for (let i = 0; i < n; i++) {
-      const s = sceneRef.add.circle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 5, COL_GOLD).setStrokeStyle(1.5, COL_GOLD_S).setDepth(3);
-      coins.push({ s });
-    }
-  }
-  function popDamage(x, y, dmg) {
-    const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40);
-    sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() });
-  }
-  function popGold(x, y) {
-    const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40);
-    sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() });
-  }
+  function dropGold(x, y, n) { for (let i = 0; i < n; i++) coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 5, COL_GOLD).setStrokeStyle(1.5, COL_GOLD_S).setDepth(3) }); }
+  function popDamage(x, y, dmg) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
+  function popGold(x, y) { const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() }); }
   function buyShop(sh) {
     if (sh.id === 'saloon' && state.saloonOwned) { toast('🍺 Saloon läuft bereits'); return; }
     if (state.gold < sh.cost) { toast('Nicht genug Gold (' + state.gold + '/' + sh.cost + ')'); return; }
-    state.gold -= sh.cost; updateGold();
-    if (sh.id === 'saloon') state.saloonOwned = true;
-    if (shopLabels[sh.id]) shopLabels[sh.id].setText('✓ gekauft');
-    toast('🍺 ' + sh.name + ' gekauft! +' + sh.income + ' Gold/Sek');
-    save();
+    state.gold -= sh.cost; updateGold(); if (sh.id === 'saloon') state.saloonOwned = true;
+    if (shopLabels[sh.id]) shopLabels[sh.id].setText('✓ gekauft'); toast('🍺 ' + sh.name + ' gekauft! +' + sh.income + ' Gold/Sek'); save();
   }
-  function toast(msg) {
-    const t = sceneRef.add.text(sceneRef.scale.width / 2, sceneRef.scale.height * 0.28, msg, { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(60);
-    sceneRef.tweens.add({ targets: t, alpha: 0, y: '-=18', delay: 900, duration: 700, onComplete: () => t.destroy() });
-  }
+  function toast(msg) { const t = sceneRef.add.text(sceneRef.scale.width / 2, sceneRef.scale.height * 0.3, msg, { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(60); sceneRef.tweens.add({ targets: t, alpha: 0, y: '-=18', delay: 900, duration: 700, onComplete: () => t.destroy() }); }
 
   // ---- Joystick ----------------------------------------------
   function updateStick(px, py) {
     let dx = px - stick.baseX, dy = py - stick.baseY; const len = Math.hypot(dx, dy);
     if (len > STICK_RADIUS) { dx = dx / len * STICK_RADIUS; dy = dy / len * STICK_RADIUS; }
-    stickThumb.setPosition(stick.baseX + dx, stick.baseY + dy);
-    stick.vx = dx / STICK_RADIUS; stick.vy = dy / STICK_RADIUS;
+    stickThumb.setPosition(stick.baseX + dx, stick.baseY + dy); stick.vx = dx / STICK_RADIUS; stick.vy = dy / STICK_RADIUS;
   }
   function resetStick() { stick.active = false; stick.id = null; stick.vx = 0; stick.vy = 0; stickBase.setVisible(false); stickThumb.setVisible(false); }
 
   // ---- Update ------------------------------------------------
   function update(time, delta) {
     if (!player) return;
-    const dt = delta / 1000;
-    const uiBlocked = state.fullMapOpen || state.travelOpen;
+    const dt = delta / 1000, now = sceneRef.time.now;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen;
 
     // Bewegung
     let vx = 0, vy = 0;
@@ -603,60 +613,59 @@
       player.facing = Math.atan2(vy, vx); player.rotation = player.facing;
     }
     shadow.setPosition(player.x, player.y + 14);
+    player.setAlpha(now < state.invulnUntil && Math.floor(now / 120) % 2 === 0 ? 0.45 : 1);
 
-    // Kachel gewechselt? -> Fog aufdecken
     const pt = worldToTile(player.x, player.y);
     if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; }
 
-    // Feuer
     fireTimer -= delta;
     if (!uiBlocked && shooting && fireTimer <= 0) { fireBullet(); fireTimer = FIRE_MS; }
 
-    // Gegner
+    // Cooldowns
+    state.cd.spread = Math.max(0, state.cd.spread - delta);
+    state.cd.dash = Math.max(0, state.cd.dash - delta);
+    updateAbilityUI();
+
+    // Gegner: Verfolgen + Kontaktschaden
+    let touched = false;
     for (const e of enemies) {
       const ex = player.x - e.c.x, ey = player.y - e.c.y, d = Math.hypot(ex, ey) || 1;
-      if (d > PLAYER_R + ENEMY_R) { e.c.x += (ex / d) * ENEMY_SPEED * dt; e.c.y += (ey / d) * ENEMY_SPEED * dt; }
+      if (d > PLAYER_R + e.r) { e.c.x += (ex / d) * e.speed * dt; e.c.y += (ey / d) * e.speed * dt; }
+      else if (!uiBlocked && now > state.invulnUntil) { state.hp -= e.contact * dt; state.lastDamage = now; touched = true; }
     }
+    if (touched) { updateLife(); if (state.hp <= 0) respawnPlayer(); }
+    else if (now - state.lastDamage > REGEN_DELAY && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + REGEN_RATE * dt); updateLife(); }
+    if (state.boss) updateBossBar();
 
     // Projektile
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
       let hitE = false;
-      for (const e of enemies) { if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < ENEMY_R + BULLET_R) { damageEnemy(e, BULLET_DMG); hitE = true; break; } }
+      for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) { damageEnemy(e, BULLET_DMG); hitE = true; break; }
       if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
     }
 
-    // Gold-Münzen: Magnet-Effekt + Aufsammeln
+    // Gold-Münzen
     for (let i = coins.length - 1; i >= 0; i--) {
-      const co = coins[i];
-      const dx = player.x - co.s.x, dy = player.y - co.s.y, d = Math.hypot(dx, dy) || 1;
+      const co = coins[i], dx = player.x - co.s.x, dy = player.y - co.s.y, d = Math.hypot(dx, dy) || 1;
       if (d < PICKUP_DIST) { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
       if (d < MAGNET_DIST) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
     }
 
-    // Interaktion (Portale / Bahnhöfe / Läden)
     if (!uiBlocked && !state.transitioning) updateContext();
-
-    // Karten neu zeichnen wenn nötig
     if (miniDirty) { refreshMaps(); miniDirty = false; }
   }
 
   function updateContext() {
     const m = MAPS[state.map];
     let best = null, bestType = null, bestD = 1e9;
-    for (const p of m.portals) {
-      const w = tileToWorld(p.tx, p.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y);
-      if (d < INTERACT_DIST && d < bestD) { best = p; bestType = 'portal'; bestD = d; }
-    }
+    for (const p of m.portals) { const w = tileToWorld(p.tx, p.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST && d < bestD) { best = p; bestType = 'portal'; bestD = d; } }
     for (const s of m.stations) {
       const w = tileToWorld(s.tx, s.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y);
       if (d < DISCOVER_DIST && !state.discovered.has(s.id)) { state.discovered.add(s.id); miniDirty = true; toast('🚂 Bahnhof entdeckt: ' + s.name); }
       if (d < INTERACT_DIST && d < bestD) { best = s; bestType = 'station'; bestD = d; }
     }
-    for (const sh of (m.shops || [])) {
-      const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y);
-      if (d < INTERACT_DIST + 12 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; }
-    }
+    for (const sh of (m.shops || [])) { const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST + 12 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; } }
     if (best) {
       state.ctx = { type: bestType, target: best };
       if (bestType === 'portal') showContext(best.label);
