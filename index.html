@@ -119,13 +119,28 @@
       npcs: [
         { id: 'mabel', name: 'Mamma „Rusty" Mabel', short: 'Mabel', tx: 8, ty: 9, color: 0xd97706,
           linesPre: ['„Na, Fremder. Setz dich an die Bar."', 'Sie schiebt dir ein Glas hin: „Kaktus-Schnaps aufs Haus — den ersten geb ich jedem Neuen."', '„Pass auf dich auf da draußen. Die Wüste frisst Männer wie dich zum Frühstück."'],
-          linesPost: ['Mabel starrt dich an, flucht kurz — dann lacht sie rau.', '„Hätte mir gleich auffallen müssen, dass du keinen Kater kriegst, Kleiner!"', 'Sie schiebt dir statt Schnaps eine Dose Schmieröl rüber: „Trink aus. Geht aufs Haus."'] },
+          linesPost: ['Mabel starrt dich an, flucht kurz — dann lacht sie rau.', '„Hätte mir gleich auffallen müssen, dass du keinen Kater kriegst, Kleiner!"', 'Sie schiebt dir statt Schnaps eine Dose Schmieröl rüber: „Trink aus. Geht aufs Haus."'],
+          quest: { id: 'q_bounty', title: 'Kopfgeld: Wegelagerer', kind: 'kill', count: 8, rewardGold: 120, rewardItem: 'zahnrad',
+            offerText: '„Ein paar Wegelagerer machen die Pfade unsicher. Besieg 8 von dem Gesindel, dann gibt\'s Kopfgeld."',
+            activeText: '„Noch nicht fertig? Da draußen ist es immer noch dreckig."',
+            completeText: '„Sauber gemacht! Hier, dein wohlverdientes Kopfgeld."',
+            doneText: '„Läuft wieder rund in Rustwater. Danke, Fremder."' } },
         { id: 'silas', name: 'Silas „Kupferauge" Finch', short: 'Silas', tx: 8, ty: 16, color: 0x9ca3af,
           linesPre: ['Der einäugige Schmied mustert dich durch seine Kupferlinse.', '„Ich brauch seltene Erze aus den Minen, sonst wächst diese Stadt nie."', '„Bring mir was Brauchbares — dann schmied ich dir was Brauchbares."'],
-          linesPost: ['„Ah. Einer von den Eisernen." Er grinst schief. „Erklärt so einiges."', '„Bring mir Spezial-Zahnräder vom Kessel-Friedhof — dann bau ich dir Chassis-Panzerplatten."'] },
+          linesPost: ['„Ah. Einer von den Eisernen." Er grinst schief. „Erklärt so einiges."', '„Bring mir Spezial-Zahnräder vom Kessel-Friedhof — dann bau ich dir Chassis-Panzerplatten."'],
+          quest: { id: 'q_scrap', title: 'Baumaterial: Schrott', kind: 'collect', item: 'schrott', count: 12, rewardGold: 90, rewardItem: null,
+            offerText: '„Bring mir 12 Schrott vom Ödland — Baumaterial für den Stadtausbau."',
+            activeText: '„Ich brauch den Schrott, sonst steht die Schmiede still."',
+            completeText: '„Genau das Richtige. Nimm dein Gold, ehrlich verdient."',
+            doneText: '„Die Schmiede glüht wieder. Gute Arbeit."' } },
         { id: 'doc', name: 'Doktor „Doc" Aris', short: 'Doc Aris', tx: 13, ty: 13, color: 0xe5e7eb,
           linesPre: ['„Zu viele Verletzte da draußen und viel zu wenig Hände."', '„Hol mir Heilkräuter aus der Alchemistischen Oase, dann reden wir weiter."'],
-          linesPost: ['„Bei dir kann ich mir das Verarzten sparen." Er klopft auf dein Stahl-Chassis.', '„Aber ich weiß, wie man so ein Ding wieder flickt. Bring mir Material."'] }
+          linesPost: ['„Bei dir kann ich mir das Verarzten sparen." Er klopft auf dein Stahl-Chassis.', '„Aber ich weiß, wie man so ein Ding wieder flickt. Bring mir Material."'],
+          quest: { id: 'q_rats', title: 'Plage: Schrott-Ratten', kind: 'kill', count: 5, rewardGold: 70, rewardItem: 'potion',
+            offerText: '„Schrott-Ratten fressen die Leitungen unter der Stadt. Mach 5 davon platt."',
+            activeText: '„Die Viecher sind zäh, was? Bleib dran."',
+            completeText: '„Endlich Ruhe da unten. Hier, für dein Wohl."',
+            doneText: '„Die Leitungen halten wieder. Danke."' } }
       ]
     },
     dungeon1: {
@@ -147,7 +162,7 @@
   let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
   let storeUI = [], storeButtons = [], storeCloseRef = null, storePanelRef = null;
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
-  let dlgBg, dlgName, dlgText, dlgHint, npcSprites = [];
+  let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
@@ -168,7 +183,7 @@
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, saloonOwned: false, inventory: {}, isRevealed: false, storeOpen: false, workshopOpen: false,
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
-    dialogueOpen: false, dlg: null,
+    dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
@@ -228,6 +243,7 @@
     mapNameText = scene.add.text(0, 6, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30);
     killText = scene.add.text(0, 0, 'Besiegt: 0', { fontFamily: 'system-ui', fontSize: '16px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
     goldText = scene.add.text(0, 0, '💰 0', { fontFamily: 'system-ui', fontSize: '16px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
+    questText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '13px', color: '#fcd34d', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(30);
     hint = scene.add.text(0, 90, 'Links ziehen · rechts angreifen · Karte oben rechts', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30).setAlpha(0.9);
     scene.tweens.add({ targets: hint, alpha: 0, delay: 5000, duration: 1000 });
 
@@ -271,6 +287,8 @@
     dlgName = scene.add.text(0, 0, '', { fontFamily: '"Courier New", monospace', fontSize: '15px', fontStyle: 'bold', color: '#fcd34d' }).setScrollFactor(0).setDepth(63).setOrigin(0, 0).setVisible(false);
     dlgText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2', wordWrap: { width: 320 } }).setScrollFactor(0).setDepth(63).setOrigin(0, 0).setVisible(false);
     dlgHint = scene.add.text(0, 0, '▶ Weiter', { fontFamily: 'system-ui', fontSize: '12px', color: '#a8a090' }).setScrollFactor(0).setDepth(63).setOrigin(1, 1).setVisible(false);
+    dlgBtn = scene.add.rectangle(0, 0, 200, 34, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.45).setScrollFactor(0).setDepth(63).setVisible(false);
+    dlgBtnText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(64).setVisible(false);
 
     // Haupt-Angriff-Icon merken (für Reposition)
     shootBtn.icon = scene.children.getByName('mainIcon');
@@ -320,7 +338,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, revealed: state.isRevealed, upgrades: state.upgrades, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, revealed: state.isRevealed, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
@@ -329,6 +347,7 @@
       const s = JSON.parse(raw);
       state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed;
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
+      state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       if (state.saloonOwned && s.t) {
@@ -403,8 +422,9 @@
       const gear = sceneRef.add.text(w.x, w.y - 50, '⚙️', { fontSize: '14px' }).setOrigin(0.5).setDepth(4);
       sceneRef.tweens.add({ targets: gear, y: w.y - 54, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
       mapObjects.push(body, head, label, gear);
-      npcSprites.push({ def: n, x: w.x, y: w.y });
+      npcSprites.push({ def: n, x: w.x, y: w.y, gear });
     });
+    updateNpcIndicators();
 
     sceneRef.cameras.main.setBounds(state.bounds.minX - HALF_W, state.bounds.minY - HALF_H, (state.bounds.maxX - state.bounds.minX) + TILE_W, (state.bounds.maxY - state.bounds.minY) + TILE_H);
     sceneRef.cameras.main.setBackgroundColor(m.bg);
@@ -650,6 +670,7 @@
       portraitBg.setPosition(12, 12); portraitIcon.setPosition(35, 35);
       lifeBarBg.setPosition(64, 16); lifeBarFill.setPosition(64, 16); lifeText.setPosition(64 + LIFE_W / 2, 24);
       killText.setPosition(14, 66); goldText.setPosition(120, 66);
+      if (questText) questText.setPosition(14, 90);
     }
     if (bossName) { bossName.setPosition(w / 2, 22); bossBarBg.setPosition(w / 2 - BOSSBAR_W / 2, 44); bossBarFill.setPosition(w / 2 - BOSSBAR_W / 2, 44); bossHpText.setPosition(w / 2, 50); }
 
@@ -667,13 +688,17 @@
       dlgName.setPosition(dx - dw / 2 + 16, dy - dh + 12);
       dlgText.setPosition(dx - dw / 2 + 16, dy - dh + 42); dlgText.setWordWrapWidth(dw - 32);
       dlgHint.setPosition(dx + dw / 2 - 14, dy - 10);
+      if (dlgBtn.visible) { dlgBtn.setPosition(dx, dy - 26); dlgBtnText.setPosition(dx, dy - 26); }
     }
     if (state.fullMapOpen) refreshMaps();
   }
 
   // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
-    if (state.dialogueOpen) { advanceDialogue(); return; }   // Tippen = weiter/schließen
+    if (state.dialogueOpen) {
+      if (dlgBtn.visible && inRect(p, dlgBtn.x - dlgBtn.width / 2, dlgBtn.y - dlgBtn.height / 2, dlgBtn.width, dlgBtn.height)) { const a = dlgBtnAction; if (a) a(); return; }
+      advanceDialogue(); return;
+    }
     if (state.storeOpen) {
       if (storeCloseRef && Phaser.Math.Distance.Between(p.x, p.y, storeCloseRef.x, storeCloseRef.y) <= 24) { closeStore(); return; }
       for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else buyPotion(); return; }
@@ -782,19 +807,83 @@
   }
   function renderDialogue() {
     const d = state.dlg; if (!d) return;
-    dlgName.setText(d.def.name); dlgText.setText(d.lines[d.i]);
-    dlgHint.setText(d.i >= d.lines.length - 1 ? '▶ Schließen' : '▶ Weiter');
+    const q = d.def.quest, flavorN = d.lines.length;
+    dlgName.setText(d.def.name); hideDlgBtn();
+    if (d.i < flavorN) {
+      dlgText.setText(d.lines[d.i]);
+      dlgHint.setText((d.i === flavorN - 1 && !q) ? '▶ Schließen' : '▶ Weiter');
+    } else {   // Quest-Seite
+      const st = questStateOf(q.id);
+      if (st === 'available') { dlgText.setText(q.offerText + '\n\nBelohnung: ' + rewardStr(q)); showDlgBtn('📜 Auftrag annehmen', () => acceptQuest(q)); dlgHint.setText('▶ ablehnen'); }
+      else if (st === 'active') {
+        if (questComplete(q)) { dlgText.setText(q.completeText + '\n\nBelohnung: ' + rewardStr(q)); showDlgBtn('✅ Abgeben', () => turnInQuest(q)); dlgHint.setText(''); }
+        else { dlgText.setText(q.activeText + '\n\nFortschritt: ' + questProgress(q)); dlgHint.setText('▶ Schließen'); }
+      } else { dlgText.setText(q.doneText); dlgHint.setText('▶ Schließen'); }
+    }
     [dlgBg, dlgName, dlgText, dlgHint].forEach(o => o.setVisible(true));
     layoutUI(sceneRef.scale.gameSize);
   }
   function advanceDialogue() {
     const d = state.dlg; if (!d) { closeDialogue(); return; }
-    if (d.i >= d.lines.length - 1) { closeDialogue(); return; }
+    const total = d.lines.length + (d.def.quest ? 1 : 0);
+    if (d.i >= total - 1) { closeDialogue(); return; }
     d.i++; renderDialogue();
   }
   function closeDialogue() {
-    state.dialogueOpen = false; state.dlg = null;
+    state.dialogueOpen = false; state.dlg = null; hideDlgBtn();
     [dlgBg, dlgName, dlgText, dlgHint].forEach(o => o.setVisible(false));
+  }
+  function showDlgBtn(txt, action) { dlgBtnText.setText(txt); dlgBtnAction = action; dlgBtn.setVisible(true); dlgBtnText.setVisible(true); }
+  function hideDlgBtn() { dlgBtnAction = null; if (dlgBtn) dlgBtn.setVisible(false); if (dlgBtnText) dlgBtnText.setVisible(false); }
+
+  // ---- Quests -------------------------------------------------
+  function questStateOf(id) { return state.quests[id] || 'available'; }
+  function questComplete(q) {
+    if (q.kind === 'kill') return (kills - (state.questBase[q.id] || 0)) >= q.count;
+    if (q.kind === 'collect') return (state.inventory[q.item] || 0) >= q.count;
+    return false;
+  }
+  function questProgress(q) {
+    if (q.kind === 'kill') return Math.min(kills - (state.questBase[q.id] || 0), q.count) + '/' + q.count;
+    if (q.kind === 'collect') return Math.min(state.inventory[q.item] || 0, q.count) + '/' + q.count + ' ' + ITEMS[q.item].icon;
+    return '';
+  }
+  function rewardItemName(id) { return id === 'potion' ? ('🍶 ' + T('potion')) : (ITEMS[id] ? ITEMS[id].icon + ' ' + ITEMS[id].name : ''); }
+  function rewardStr(q) { return q.rewardGold + ' 💰' + (q.rewardItem ? ' + ' + rewardItemName(q.rewardItem) : ''); }
+  function acceptQuest(q) {
+    state.quests[q.id] = 'active';
+    if (q.kind === 'kill') state.questBase[q.id] = kills;
+    toast('📜 Auftrag angenommen: ' + q.title); save(); updateNpcIndicators(); closeDialogue();
+  }
+  function turnInQuest(q) {
+    if (!questComplete(q)) return;
+    state.gold += q.rewardGold; updateGold();
+    if (q.kind === 'collect') state.inventory[q.item] = (state.inventory[q.item] || 0) - q.count;
+    if (q.rewardItem === 'potion') { state.potions++; updateAbilityUI(); }
+    else if (q.rewardItem && ITEMS[q.rewardItem]) state.inventory[q.rewardItem] = (state.inventory[q.rewardItem] || 0) + 1;
+    state.quests[q.id] = 'done';
+    toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold'); save(); updateNpcIndicators(); closeDialogue();
+  }
+  function updateNpcIndicators() {
+    for (const n of npcSprites) {
+      if (!n.gear) continue; const q = n.def.quest;
+      if (!q) { n.gear.setVisible(false); continue; }
+      const st = questStateOf(q.id);
+      if (st === 'done') n.gear.setVisible(false);
+      else { n.gear.setVisible(true); n.gear.setText(st === 'available' ? '⚙️' : (questComplete(q) ? '❗' : '⏳')); }
+    }
+  }
+  function updateQuestTracker() {
+    if (!questText) return;
+    let s = '';
+    for (const n of npcSprites) { const q = n.def.quest; if (q && questStateOf(q.id) === 'active') { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
+    // auch außerhalb der Stadt: erste aktive Quest global finden
+    if (!s) for (const id in state.quests) if (state.quests[id] === 'active') { const q = findQuest(id); if (q) { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
+    if (questText.text !== s) questText.setText(s);
+  }
+  function findQuest(id) {
+    for (const mid in MAPS) { const ns = MAPS[mid].npcs || []; for (const n of ns) if (n.quest && n.quest.id === id) return n.quest; }
+    return null;
   }
 
   // ---- Store (verkaufen & kaufen) ----------------------------
@@ -1032,6 +1121,7 @@
 
     if (!uiBlocked && !state.transitioning) updateContext();
     if (miniDirty) { refreshMaps(); miniDirty = false; }
+    updateQuestTracker();
   }
 
   function updateContext() {
