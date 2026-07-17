@@ -78,6 +78,16 @@
     heal:    ['verarzten', 'Chassis flicken']
   };
 
+  // Reveal-Sequenz (Ende Kapitel 4)
+  const REVEAL_LINES = [
+    'Die hydraulische Ramme des Bosses schleudert dich durch die Waggonwand.',
+    'Glas splittert. Ein Spiegel zerbricht vor deinem Gesicht.',
+    'Du starrst in dein Spiegelbild —',
+    'kein Mann aus Fleisch. Ein rauchender, einäugiger STAHL-SCHÄDEL. Zahnräder. Kochendes Öl.',
+    'SYSTEM_REBOOT … SENSOR_ILLUSION_DESYNC … PROTOKOLL: WAHRHEIT',
+    'Du bist keine Kreatur aus Fleisch. Du bist eine Maschine.'
+  ];
+
   // Werkstatt-Upgrades. Waffen-Tuning ist immer erlaubt; Körper-Mods (bodyMod) erst nach dem Reveal.
   // name: [vor Reveal, nach Reveal]
   const UPGRADES = {
@@ -174,6 +184,7 @@
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
+  let revealBg, revealText, revealHint;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
@@ -196,6 +207,7 @@
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
+    currentChapter: 1, revealPlaying: false, revealSeq: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
@@ -216,7 +228,7 @@
     const nose = scene.add.triangle(0, 0, PLAYER_R - 2, -6, PLAYER_R + 12, 0, PLAYER_R - 2, 6, COL_NOSE).setStrokeStyle(2, COL_PLAYER_S);
     shadow = scene.add.ellipse(0, 0, PLAYER_R * 2.2, PLAYER_R * 1.1, 0x000000, 0.25).setDepth(3);
     player = scene.add.container(0, 0, [body, nose]).setDepth(5);
-    player.facing = 0;
+    player.facing = 0; player.body = body; player.nose = nose;
     scene.cameras.main.startFollow(player, true, 0.12, 0.12);
 
     // Joystick
@@ -302,6 +314,11 @@
     dlgBtn = scene.add.rectangle(0, 0, 200, 34, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.45).setScrollFactor(0).setDepth(63).setVisible(false);
     dlgBtnText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(64).setVisible(false);
 
+    // Reveal-Overlay (Kapitel-4-Cutscene)
+    revealBg = scene.add.rectangle(0, 0, 10, 10, 0x140a06, 0.94).setScrollFactor(0).setDepth(70).setOrigin(0, 0).setVisible(false);
+    revealText = scene.add.text(0, 0, '', { fontFamily: '"Courier New", monospace', fontSize: '20px', color: '#ffb37a', align: 'center', wordWrap: { width: 320 }, stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setScrollFactor(0).setDepth(71).setVisible(false);
+    revealHint = scene.add.text(0, 0, '▶ weiter', { fontFamily: 'system-ui', fontSize: '14px', color: '#c9a24a' }).setOrigin(0.5).setScrollFactor(0).setDepth(71).setVisible(false);
+
     // Haupt-Angriff-Icon merken (für Reposition)
     shootBtn.icon = scene.children.getByName('mainIcon');
 
@@ -328,6 +345,7 @@
 
     load();
     applyUpgrades();
+    if (state.isRevealed) applyRevealVisual();   // bereits erwachter Spielstand -> Optik sofort
     state.hp = state.maxHp; state.potions = POTION_START;
     updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
@@ -351,14 +369,14 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
       const s = JSON.parse(raw);
-      state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed;
+      state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1;
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
@@ -710,11 +728,17 @@
       dlgHint.setPosition(dx + dw / 2 - 14, dy - 10);
       if (dlgBtn.visible) { dlgBtn.setPosition(dx, dy - 26); dlgBtnText.setPosition(dx, dy - 26); }
     }
+    if (revealBg && revealBg.visible) {
+      revealBg.setSize(w, h).setPosition(0, 0);
+      revealText.setPosition(w / 2, h / 2 - 20); revealText.setWordWrapWidth(Math.min(w - 48, 520));
+      revealHint.setPosition(w / 2, h - 60);
+    }
     if (state.fullMapOpen) refreshMaps();
   }
 
   // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
+    if (state.revealPlaying) { advanceReveal(); return; }   // Cutscene: höchste Priorität
     if (state.dialogueOpen) {
       if (dlgBtn.visible && inRect(p, dlgBtn.x - dlgBtn.width / 2, dlgBtn.y - dlgBtn.height / 2, dlgBtn.width, dlgBtn.height)) { const a = dlgBtnAction; if (a) a(); return; }
       advanceDialogue(); return;
@@ -912,6 +936,40 @@
     return null;
   }
 
+  // ---- Reveal-Event (Ende Kapitel 4) -------------------------
+  function triggerReveal() {
+    if (state.isRevealed || state.revealPlaying) return;
+    state.revealPlaying = true; hideContext();
+    sceneRef.cameras.main.shake(500, 0.012);
+    sceneRef.cameras.main.flash(400, 255, 60, 30);
+    state.revealSeq = { i: 0 }; renderReveal();
+  }
+  function renderReveal() {
+    const s = state.revealSeq; if (!s) return;
+    revealText.setText(REVEAL_LINES[s.i]);
+    revealHint.setText(s.i >= REVEAL_LINES.length - 1 ? '▶ erwachen' : '▶ weiter');
+    [revealBg, revealText, revealHint].forEach(o => o.setVisible(true));
+    layoutUI(sceneRef.scale.gameSize);
+  }
+  function advanceReveal() {
+    const s = state.revealSeq; if (!s) { closeReveal(); return; }
+    if (s.i >= REVEAL_LINES.length - 1) { closeReveal(); applyReveal(); return; }
+    s.i++; renderReveal();
+  }
+  function closeReveal() { state.revealPlaying = false; state.revealSeq = null; [revealBg, revealText, revealHint].forEach(o => o.setVisible(false)); }
+  function applyRevealVisual() {
+    if (player && player.body) { player.body.setFillStyle(0x6b7280); player.body.setStrokeStyle(3, 0x374151); }
+    if (player && player.nose) { player.nose.setFillStyle(0xff5a1f); player.nose.setStrokeStyle(2, 0x7c2d12); }
+    if (portraitIcon) { portraitIcon.setFillStyle(0x6b7280); portraitIcon.setStrokeStyle(3, 0x374151); }
+    if (lifeBarFill) lifeBarFill.setFillStyle(0xd97706);          // Kupfer/Öl statt biologischem Grün
+    if (portraitBg) portraitBg.setStrokeStyle(2, 0xc2703a, 0.85);
+  }
+  function applyReveal() {
+    state.isRevealed = true; state.currentChapter = 5;
+    applyRevealVisual(); updateNpcIndicators(); updateAbilityUI(); save();
+    toast('⚙ Das Interface mutiert. Du bist erwacht.');
+  }
+
   // ---- Store (verkaufen & kaufen) ----------------------------
   function openStore() {
     if (state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
@@ -1042,7 +1100,7 @@
     if (e.hp <= 0) {
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
       dropGold(e.c.x, e.c.y, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
-      if (e.isBoss) { state.boss = null; hideBossBar(); toast('Boss besiegt! +' + e.gold + ' Gold'); }
+      if (e.isBoss) { state.boss = null; hideBossBar(); toast('Boss besiegt! +' + e.gold + ' Gold'); if (!state.isRevealed) triggerReveal(); }
       else { state.killsSinceBoss++; if (state.killsSinceBoss >= BOSS_KILLS_TRIGGER && !state.boss && MAPS[state.map].enemies) { state.killsSinceBoss = 0; spawnBoss(); } }
     }
   }
@@ -1112,7 +1170,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.dialogueOpen;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.dialogueOpen || state.revealPlaying;
 
     // Bewegung
     let vx = 0, vy = 0;
