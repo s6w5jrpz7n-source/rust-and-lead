@@ -36,7 +36,8 @@
   const TILE_W = 64, TILE_H = 32, HALF_W = TILE_W / 2, HALF_H = TILE_H / 2;
   const PLAYER_SPEED = 240, PLAYER_R = 16;
   const STICK_RADIUS = 60, STICK_DEADZONE = 0.12;
-  const ENEMY_R = 15, ENEMY_HP = 60, ENEMY_SPEED = 70, ENEMY_MAX = 10, SPAWN_MS = 1500;
+  const ENEMY_R = 15, ENEMY_HP = 60, ENEMY_SPEED = 70, ENEMY_MAX = 80;
+  const AIM_RANGE = 500, AGGRO_RANGE = 230, LEASH_RANGE = 480, ENEMY_PER_TILES = 70;
   const BULLET_R = 5, BULLET_SPEED = 560, BULLET_DMG = 20, BULLET_LIFE = 1.1, FIRE_MS = 200;
   const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90, GATE_ENTER_DIST = 30;
   const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
@@ -64,13 +65,13 @@
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
     overworld: {
-      name: 'Wüste', cols: 40, rows: 40, enemies: true, minimap: 'full',
+      name: 'Wüste', cols: 60, rows: 60, enemies: true, minimap: 'full',
       floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f, mini: 0xcda877, bg: 0x2b2620,
       portals: [
         { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 11, r: 3 }, short: 'Rustwater', label: '🏙️  Rustwater', mini: 0x22c55e, compound: { c0: 23, r0: 12, c1: 29, r1: 18 } },
-        { tx: 31, ty: 30, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 }
+        { tx: 46, ty: 46, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 }
       ],
-      stations: [ { id: 'st_desert', tx: 9, ty: 9, name: 'Wüsten-Halt' } ], decor: []
+      stations: [ { id: 'st_desert', tx: 14, ty: 44, name: 'Wüsten-Halt' } ], decor: []
     },
     rustwater: {
       name: 'Rustwater', cols: 22, rows: 22, enemies: false, walled: true, minimap: 'full',
@@ -87,7 +88,7 @@
     dungeon1: {
       name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
       floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
-      portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 31, r: 32 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
+      portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 46, r: 48 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
       stations: [], decor: []
     }
   };
@@ -110,7 +111,7 @@
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
   const enemies = [], bullets = [], coins = [], mapObjects = [];
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
-  let miniDirty = true, pendingOffline = 0, shopLabels = {};
+  let miniDirty = true, pendingOffline = 0, shopLabels = {}, floorKey = null, floorTexN = 0;
 
   const state = {
     map: 'overworld', cols: 40, rows: 40,
@@ -237,14 +238,13 @@
     scene.input.keyboard.on('keydown-THREE', () => useAbility('potion'));
 
     scene.scale.on('resize', (size) => layoutUI(size));
-    scene.time.addEvent({ delay: SPAWN_MS, loop: true, callback: spawnEnemy });
 
     load();
     state.hp = state.maxHp; state.potions = POTION_START;
     updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
-    loadMap('overworld', { c: 20, r: 20 });
+    loadMap('overworld', { c: 30, r: 30 });
     if (pendingOffline > 0) { toast('🍺 Offline verdient: +' + pendingOffline + ' Gold'); pendingOffline = 0; }
   }
 
@@ -283,8 +283,9 @@
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
     coins.forEach(c => c.s.destroy()); coins.length = 0;
     state.boss = null; hideBossBar(); state.killsSinceBoss = 0;
+    if (floorKey && sceneRef.textures.exists(floorKey)) { sceneRef.textures.remove(floorKey); floorKey = null; }
 
-    const g = sceneRef.add.graphics().setDepth(0); drawFloorInto(g, m); mapObjects.push(g);
+    bakeFloor(m);   // Boden einmal in eine Textur backen -> auch bei großen Karten flüssig
 
     (m.decor || []).forEach(d => {
       const w = tileToWorld(d.tx, d.ty);
@@ -330,7 +331,7 @@
     mapNameText.setText(m.name);
     layoutUI(sceneRef.scale.gameSize);
     miniDirty = true; toast(m.name);
-    if (m.enemies) for (let i = 0; i < 3; i++) spawnEnemy();
+    if (m.enemies) scatterEnemies(m);
   }
 
   // ---- Palisade (Stockade) -----------------------------------
@@ -362,12 +363,26 @@
     buildWallEdges(c, tileToWorld(p.tx, p.ty), 56);
   }
 
-  function drawFloorInto(g, m) {
+  function bakeFloor(m) {
+    const b = state.bounds, offX = HALF_W - b.minX, offY = HALF_H - b.minY;
+    const texW = Math.ceil((b.maxX - b.minX) + TILE_W), texH = Math.ceil((b.maxY - b.minY) + TILE_H);
+    const fg = sceneRef.make.graphics({ add: false });
     for (let c = 0; c < m.cols; c++) for (let r = 0; r < m.rows; r++) {
-      const cx = (c - r) * HALF_W, cy = (c + r) * HALF_H;
-      g.fillStyle((c + r) % 2 === 0 ? m.floorA : m.floorB, 1);
-      g.beginPath(); g.moveTo(cx, cy - HALF_H); g.lineTo(cx + HALF_W, cy); g.lineTo(cx, cy + HALF_H); g.lineTo(cx - HALF_W, cy); g.closePath(); g.fillPath();
-      g.lineStyle(1, m.grid, 0.4); g.strokePath();
+      const cx = (c - r) * HALF_W + offX, cy = (c + r) * HALF_H + offY;
+      fg.fillStyle((c + r) % 2 === 0 ? m.floorA : m.floorB, 1);
+      fg.beginPath(); fg.moveTo(cx, cy - HALF_H); fg.lineTo(cx + HALF_W, cy); fg.lineTo(cx, cy + HALF_H); fg.lineTo(cx - HALF_W, cy); fg.closePath(); fg.fillPath();
+      fg.lineStyle(1, m.grid, 0.4); fg.strokePath();
+    }
+    floorKey = 'floor_' + (floorTexN++);
+    fg.generateTexture(floorKey, texW, texH); fg.destroy();
+    mapObjects.push(sceneRef.add.image(b.minX - HALF_W, b.minY - HALF_H, floorKey).setOrigin(0, 0).setDepth(0));
+  }
+  function scatterEnemies(m) {
+    const count = Math.min(ENEMY_MAX, Math.round(m.cols * m.rows / ENEMY_PER_TILES));
+    for (let i = 0; i < count; i++) {
+      const c = Phaser.Math.Between(1, m.cols - 2), r = Phaser.Math.Between(1, m.rows - 2), w = tileToWorld(c, r);
+      if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 220) continue;   // Startbereich frei halten
+      addEnemy(w.x, w.y, { r: ENEMY_R, barW: 32, hp: ENEMY_HP, color: COL_ENEMY, stroke: COL_ENEMY_S, contact: CONTACT_DPS, speed: ENEMY_SPEED, gold: Phaser.Math.Between(1, 3) });
     }
   }
 
@@ -527,7 +542,7 @@
     const hpBg = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, 0x000000, 0.6).setOrigin(0, 0.5);
     const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
     const c = sceneRef.add.container(x, y, [body, hpBg, hpFill]).setDepth(o.isBoss ? 5 : 4);
-    const e = { c, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, name: o.name || '', gold: o.gold || 1 };
+    const e = { c, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro };
     enemies.push(e); return e;
   }
   function spawnEnemy() {
@@ -543,7 +558,7 @@
     const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
     const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
     const name = BOSS_NAMES[Phaser.Math.Between(0, BOSS_NAMES.length - 1)];
-    const e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD });
+    const e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD, aggro: true });
     state.boss = e; setBossBar(e); toast('☠ Boss: ' + name);
   }
 
@@ -554,8 +569,14 @@
     const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6), BULLET_R, COL_BULLET).setStrokeStyle(2, 0xb45309).setDepth(6);
     bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE });
   }
-  function fireBullet() { fireBulletAngle(player.facing); }
-  function castSpread() { const base = player.facing; for (let i = 0; i < SPREAD_COUNT; i++) fireBulletAngle(base - SPREAD_ARC / 2 + SPREAD_ARC * (i / (SPREAD_COUNT - 1))); }
+  function nearestEnemy(range) {
+    let best = null, bd = (range === undefined ? Infinity : range);
+    for (const e of enemies) { const d = Phaser.Math.Distance.Between(player.x, player.y, e.c.x, e.c.y); if (d < bd) { bd = d; best = e; } }
+    return best;
+  }
+  function aimAngle() { const t = nearestEnemy(AIM_RANGE); return t ? Math.atan2(t.c.y - player.y, t.c.x - player.x) : player.facing; }
+  function fireBullet() { const a = aimAngle(); player.facing = a; player.rotation = a; fireBulletAngle(a); }   // Auto-Ziel auf nächsten Gegner
+  function castSpread() { const base = aimAngle(); for (let i = 0; i < SPREAD_COUNT; i++) fireBulletAngle(base - SPREAD_ARC / 2 + SPREAD_ARC * (i / (SPREAD_COUNT - 1))); }
   function castDash() {
     const a = player.facing;
     const nx = Phaser.Math.Clamp(player.x + Math.cos(a) * DASH_DIST, state.bounds.minX, state.bounds.maxX);
@@ -598,6 +619,7 @@
 
   // ---- Schaden / Loot ----------------------------------------
   function damageEnemy(e, dmg) {
+    e.aggro = true;   // Treffer weckt den Gegner
     e.hp -= dmg; e.hpFill.width = e.barW * Math.max(e.hp, 0) / e.maxHp;
     popDamage(e.c.x, e.c.y - e.r - 4, dmg);
     if (e.isBoss) updateBossBar();
@@ -655,6 +677,8 @@
     const pt = worldToTile(player.x, player.y);
     if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; }
 
+    // Beim Angreifen automatisch zum nächsten Gegner ausrichten (kein Zielen per Bewegung nötig)
+    if (!uiBlocked && shooting) { const t = nearestEnemy(AIM_RANGE); if (t) { const a = Math.atan2(t.c.y - player.y, t.c.x - player.x); player.facing = a; player.rotation = a; } }
     fireTimer -= delta;
     if (!uiBlocked && shooting && fireTimer <= 0) { fireBullet(); fireTimer = FIRE_MS; }
 
@@ -663,10 +687,12 @@
     state.cd.dash = Math.max(0, state.cd.dash - delta);
     updateAbilityUI();
 
-    // Gegner: Verfolgen + Kontaktschaden
+    // Gegner: idle bis nah -> dann verfolgen + Kontaktschaden
     let touched = false;
     for (const e of enemies) {
       const ex = player.x - e.c.x, ey = player.y - e.c.y, d = Math.hypot(ex, ey) || 1;
+      if (!e.aggro) { if (d < AGGRO_RANGE) e.aggro = true; else continue; }   // erst angreifen, wenn nah genug
+      else if (!e.isBoss && d > LEASH_RANGE) { e.aggro = false; continue; }   // zu weit -> beruhigt sich wieder
       if (d > PLAYER_R + e.r) { e.c.x += (ex / d) * e.speed * dt; e.c.y += (ey / d) * e.speed * dt; }
       else if (!uiBlocked && now > state.invulnUntil) { state.hp -= e.contact * dt; state.lastDamage = now; touched = true; }
     }
