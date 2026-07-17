@@ -38,7 +38,7 @@
   const STICK_RADIUS = 60, STICK_DEADZONE = 0.12;
   const ENEMY_R = 15, ENEMY_HP = 60, ENEMY_SPEED = 70, ENEMY_MAX = 80;
   const AIM_RANGE = 500, AGGRO_RANGE = 250, LEASH_RANGE = 520, ENEMY_PER_TILES = 70;
-  const CHUNK = 20, CHUNK_RADIUS = 1;   // Boden-Streaming: Kachelblöcke um den Spieler
+  const CHUNK = 20, CHUNK_RADIUS = 2;   // Boden-Streaming: Vorhalte-Ring (radius 2), sichtbar ~radius 1
   const BULLET_R = 5, BULLET_SPEED = 560, BULLET_DMG = 20, BULLET_LIFE = 1.1, FIRE_MS = 200;
   const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90, GATE_ENTER_DIST = 30;
   const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
@@ -336,7 +336,7 @@
     mapNameText.setText(m.name);
     layoutUI(sceneRef.scale.gameSize);
     miniDirty = true; toast(m.name);
-    if (m.streamed) updateChunks();   // erste Boden-Chunks um den Spieler laden
+    if (m.streamed) streamChunks(9);   // sichtbaren Bereich (radius 1) sofort, Rest folgt vorausschauend
     if (m.enemies) scatterEnemies(m);
   }
 
@@ -398,17 +398,25 @@
     for (const k in chunks) { const img = chunks[k]; if (img._key && sceneRef.textures.exists(img._key)) sceneRef.textures.remove(img._key); img.destroy(); }
     chunks = {};
   }
-  function updateChunks() {
+  // Baekt hoechstens `budget` fehlende Chunks pro Aufruf (naechste zuerst) -> kein Frame-Ruckeln
+  function streamChunks(budget) {
     const m = MAPS[state.map]; if (!m.streamed) return;
     const ccx = Math.floor(state.playerTile.c / CHUNK), ccy = Math.floor(state.playerTile.r / CHUNK);
-    const need = {};
+    const need = {}, missing = [];
     for (let dx = -CHUNK_RADIUS; dx <= CHUNK_RADIUS; dx++) for (let dy = -CHUNK_RADIUS; dy <= CHUNK_RADIUS; dy++) {
       const cx = ccx + dx, cy = ccy + dy;
       if (cx < 0 || cy < 0 || cx * CHUNK >= m.cols || cy * CHUNK >= m.rows) continue;
       const k = cx + '_' + cy; need[k] = 1;
-      if (!chunks[k]) chunks[k] = bakeTileRange(m, cx * CHUNK, Math.min(m.cols, (cx + 1) * CHUNK), cy * CHUNK, Math.min(m.rows, (cy + 1) * CHUNK));
+      if (!chunks[k]) missing.push({ k, cx, cy, d: dx * dx + dy * dy });
     }
     for (const k in chunks) { if (!need[k]) { const img = chunks[k]; if (img._key && sceneRef.textures.exists(img._key)) sceneRef.textures.remove(img._key); img.destroy(); delete chunks[k]; } }
+    if (missing.length) {
+      missing.sort((a, b) => a.d - b.d);   // naeheste fehlende zuerst (Vorausschau)
+      for (let i = 0, n = Math.min(budget, missing.length); i < n; i++) {
+        const mm = missing[i];
+        chunks[mm.k] = bakeTileRange(m, mm.cx * CHUNK, Math.min(m.cols, (mm.cx + 1) * CHUNK), mm.cy * CHUNK, Math.min(m.rows, (mm.cy + 1) * CHUNK));
+      }
+    }
   }
 
   // ---- Kollision (Wände & Gebäude) ---------------------------
@@ -734,7 +742,8 @@
     player.setAlpha(now < state.invulnUntil && Math.floor(now / 120) % 2 === 0 ? 0.45 : 1);
 
     const pt = worldToTile(player.x, player.y);
-    if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; updateChunks(); }
+    if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; }
+    streamChunks(1);   // jeden Frame hoechstens 1 Chunk nachbacken -> ruckelfrei
 
     // Beim Angreifen automatisch zum nächsten Gegner ausrichten (kein Zielen per Bewegung nötig)
     if (!uiBlocked && shooting) { const t = nearestEnemy(AIM_RANGE); if (t) { const a = Math.atan2(t.c.y - player.y, t.c.x - player.x); player.facing = a; player.rotation = a; } }
