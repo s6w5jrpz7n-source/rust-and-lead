@@ -63,11 +63,19 @@
   const COL_LIFE = 0x22c55e, COL_BOSS = 0xf97316;
   const POST_COL = 0x7a5636, POST_DARK = 0x4a3620;   // Palisade
 
-  // Loot: Schrott & Steampunk-Bauteile (spaeter im Store verkaufbar / fuer Upgrades)
+  // Loot: Schrott & Steampunk-Bauteile (im Store verkaufbar / spaeter fuer Upgrades)
   const ITEMS = {
     schrott:   { name: 'Schrott',   icon: '🔩', color: 0x9ca3af, value: 2 },
     zahnrad:   { name: 'Zahnrad',   icon: '⚙️', color: 0xb08d57, value: 8 },
     dampfkern: { name: 'Dampfkern', icon: '♨️', color: 0x38bdf8, value: 25 }
+  };
+  const POTION_PRICE = 30;
+
+  // is_revealed: Begriffe wechseln nach dem Reveal (Ende Kapitel 4). [vorher, nachher]
+  const TERMS = {
+    potion:  ['Kaktus-Schnaps', 'Synthetisches Kühlmittel'],
+    stamina: ['Ausdauer', 'Kesseldruck'],
+    heal:    ['verarzten', 'Chassis flicken']
   };
 
   // ---- Karten-Definitionen -----------------------------------
@@ -91,7 +99,7 @@
         { tx: 16, ty: 9, w: 60, h: 40, color: 0x5c5148, label: 'STORE' },
         { tx: 11, ty: 14, w: 64, h: 44, color: 0x6b5b4a, label: 'BANK' }
       ],
-      shops: [ { id: 'saloon', tx: 5, ty: 8, name: 'Gatling-Saloon', cost: 100, income: SALOON_INCOME } ]
+      shops: [ { id: 'saloon', tx: 5, ty: 8, name: 'Gatling-Saloon', cost: 100, income: SALOON_INCOME }, { id: 'store', tx: 16, ty: 9, name: 'Store' } ]
     },
     dungeon1: {
       name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
@@ -110,6 +118,7 @@
   let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;
   let ctxBg, ctxText;
   let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
+  let storeUI = [], storeButtons = [], storeCloseRef = null, storePanelRef = null;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
@@ -128,7 +137,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
-    gold: 0, saloonOwned: false, inventory: {},
+    gold: 0, saloonOwned: false, inventory: {}, isRevealed: false, storeOpen: false,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
     boss: null, killsSinceBoss: 0,
@@ -139,6 +148,7 @@
   const worldToTile = (x, y) => ({ c: Math.round((x / HALF_W + y / HALF_H) / 2), r: Math.round((y / HALF_H - x / HALF_W) / 2) });
   const inRect = (p, x, y, w, h) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
   const hit = (obj, p, r) => Phaser.Math.Distance.Between(p.x, p.y, obj.x, obj.y) <= r;
+  const T = (k) => TERMS[k][state.isRevealed ? 1 : 0];   // Begriff je nach is_revealed
 
   // ---- Szene: create -----------------------------------------
   function create() {
@@ -245,6 +255,7 @@
     scene.input.keyboard.on('keydown-ONE', () => useAbility('spread'));
     scene.input.keyboard.on('keydown-TWO', () => useAbility('dash'));
     scene.input.keyboard.on('keydown-THREE', () => useAbility('potion'));
+    scene.input.keyboard.on('keydown-R', () => { state.isRevealed = !state.isRevealed; toast('is_revealed = ' + state.isRevealed); save(); });   // Dev-Toggle (Desktop)
 
     scene.scale.on('resize', (size) => layoutUI(size));
 
@@ -263,14 +274,14 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, revealed: state.isRevealed, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
       const s = JSON.parse(raw);
-      state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0; state.inventory = s.inv || {};
+      state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed;
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       if (state.saloonOwned && s.t) {
@@ -317,6 +328,10 @@
     shopLabels = {};
     (m.shops || []).forEach(sh => {
       const w = tileToWorld(sh.tx, sh.ty);
+      if (sh.id === 'store') {   // Verkaufs-Laden: nur Markierung, kein Kauf-Ring
+        mapObjects.push(sceneRef.add.text(w.x, w.y - 30, '🛒', { fontSize: '16px' }).setOrigin(0.5).setDepth(2));
+        return;
+      }
       mapObjects.push(sceneRef.add.circle(w.x, w.y, 16, COL_GOLD, 0.25).setStrokeStyle(3, COL_GOLD, 0.9).setDepth(2));
       const tag = (sh.id === 'saloon' && state.saloonOwned) ? '✓ gekauft' : '💰 ' + sh.cost;
       const label = sceneRef.add.text(w.x, w.y - 30, tag, { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2);
@@ -585,6 +600,12 @@
 
   // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
+    if (state.storeOpen) {
+      if (storeCloseRef && Phaser.Math.Distance.Between(p.x, p.y, storeCloseRef.x, storeCloseRef.y) <= 24) { closeStore(); return; }
+      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else buyPotion(); return; }
+      if (storePanelRef && !inRect(p, storePanelRef.x - storePanelRef.width / 2, storePanelRef.y, storePanelRef.width, storePanelRef.height)) closeStore();
+      return;
+    }
     if (state.inventoryOpen) { closeInventory(); return; }
     if (state.travelOpen) {
       if (hit(ftClose, p, 26)) { closeTravel(); return; }
@@ -615,7 +636,47 @@
     if (!state.ctx) return;
     if (state.ctx.type === 'portal') { const p = state.ctx.target; transitionTo(p.to, p.spawn); }
     else if (state.ctx.type === 'station') { const d = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)); if (d.length >= 2) openTravel(); else toast('Bahnhof entdeckt – finde weitere für Zugreisen'); }
-    else if (state.ctx.type === 'shop') { buyShop(state.ctx.target); }
+    else if (state.ctx.type === 'shop') { if (state.ctx.target.id === 'store') openStore(); else buyShop(state.ctx.target); }
+  }
+
+  // ---- Store (verkaufen & kaufen) ----------------------------
+  function openStore() {
+    if (state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
+    state.storeOpen = true; hideContext();
+    const size = sceneRef.scale.gameSize, ids = Object.keys(ITEMS);
+    const pw = Math.min(340, size.width * 0.92), rowH = 46, headH = 52, buyH = 52, footH = 40;
+    const ph = headH + ids.length * (rowH + 6) + buyH + footH;
+    const px = size.width / 2, py = (size.height - ph) / 2;
+    const add = o => { storeUI.push(o); return o; };
+    add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
+    storePanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
+    add(sceneRef.add.text(px, py + 12, '🛒  Store — Rustwater', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    storeCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 14, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+    let y = py + headH;
+    ids.forEach(id => {
+      const it = ITEMS[id], cnt = state.inventory[id] || 0, on = cnt > 0;
+      add(sceneRef.add.text(px - pw / 2 + 16, y + rowH / 2, it.icon + '  ' + it.name + '  ×' + cnt, { fontFamily: 'system-ui', fontSize: '15px', color: on ? '#f3e9d2' : '#8a8172' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      const btn = add(sceneRef.add.rectangle(px + pw / 2 - 62, y + rowH / 2, 104, 32, on ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(btn.x, btn.y, on ? ('verkaufen +' + (cnt * it.value)) : '—', { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      if (on) storeButtons.push({ rect: btn, action: 'sell', id });
+      y += rowH + 6;
+    });
+    const buyBtn = add(sceneRef.add.rectangle(px, y + buyH / 2, pw - 40, 38, 0x7c2d12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(buyBtn.x, buyBtn.y, '🍶  ' + T('potion') + ' kaufen — ' + POTION_PRICE + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    storeButtons.push({ rect: buyBtn, action: 'buyPotion' });
+    add(sceneRef.add.text(px, py + ph - 26, '💰 ' + state.gold + '   ·   🍶 ' + state.potions, { fontFamily: 'system-ui', fontSize: '14px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+  }
+  function closeStore() { state.storeOpen = false; storeUI.forEach(o => o.destroy()); storeUI = []; storeButtons = []; storeCloseRef = null; storePanelRef = null; }
+  function refreshStore() { closeStore(); openStore(); }
+  function sellAll(id) {
+    const cnt = state.inventory[id] || 0; if (cnt <= 0) return;
+    const g = cnt * ITEMS[id].value; state.gold += g; state.inventory[id] = 0; updateGold();
+    toast('+' + g + ' Gold für ' + cnt + '× ' + ITEMS[id].name); save(); refreshStore();
+  }
+  function buyPotion() {
+    if (state.gold < POTION_PRICE) { toast('Nicht genug Gold'); return; }
+    state.gold -= POTION_PRICE; state.potions++; updateGold(); updateAbilityUI();
+    toast('🍶 ' + T('potion') + ' gekauft'); save(); refreshStore();
   }
 
   // ---- Gegner / Boss -----------------------------------------
@@ -669,7 +730,7 @@
   function usePotion() {
     if (state.potions <= 0) { toast('Keine Heiltränke'); return; }
     if (state.hp >= state.maxHp) { toast('Leben bereits voll'); return; }
-    state.hp = Math.min(state.maxHp, state.hp + POTION_HEAL); state.potions--; updateLife(); updateAbilityUI(); toast('🍶 +' + POTION_HEAL + ' Leben');
+    state.hp = Math.min(state.maxHp, state.hp + POTION_HEAL); state.potions--; updateLife(); updateAbilityUI(); toast('🍶 ' + T('potion') + ' +' + POTION_HEAL);
   }
   function useAbility(id) {
     if (id === 'spread') { if (state.cd.spread > 0) return; castSpread(); state.cd.spread = SPREAD_CD; }
@@ -743,7 +804,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen;
 
     // Bewegung
     let vx = 0, vy = 0;
@@ -828,10 +889,11 @@
       if (d < DISCOVER_DIST && !state.discovered.has(s.id)) { state.discovered.add(s.id); miniDirty = true; toast('🚂 Bahnhof entdeckt: ' + s.name); }
       if (d < INTERACT_DIST && d < bestD) { best = s; bestType = 'station'; bestD = d; }
     }
-    for (const sh of (m.shops || [])) { const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST + 12 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; } }
+    for (const sh of (m.shops || [])) { const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST + 40 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; } }
     if (best) {
       state.ctx = { type: bestType, target: best };
       if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
+      else if (best.id === 'store') showContext('🛒  Store — kaufen & verkaufen');
       else showContext(best.id === 'saloon' && state.saloonOwned ? '🍺  ' + best.name + ': +' + best.income + ' Gold/Sek (aktiv)' : '🍺  ' + best.name + ' kaufen — ' + best.cost + ' Gold');
     } else { state.ctx = null; hideContext(); }
   }
