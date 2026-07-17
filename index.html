@@ -89,6 +89,13 @@
     magnet:   { name: ['—', 'Magnet-Spule'], icon: '🧲', desc: 'Loot-Magnet', base: 40, max: 4, bodyMod: true }
   };
 
+  // Tycoon: neutrale Rustwater-Gebäude. Einkommen/Sek = level * incomePer. Ausbau-Kosten = baseCost * (level+1).
+  const BUILDINGS = {
+    saloon:     { name: 'Gatling-Saloon',      icon: '🍺', baseCost: 100, incomePer: 1, max: 5 },
+    forge:      { name: 'Eiserne Schmiede',    icon: '🔨', baseCost: 220, incomePer: 2, max: 5 },
+    distillery: { name: 'Mondschein-Destille', icon: '🥃', baseCost: 400, incomePer: 4, max: 5 }
+  };
+
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
     overworld: {
@@ -108,13 +115,16 @@
       decor: [
         { tx: 5, ty: 8, w: 70, h: 46, color: 0x6b5b4a, label: 'SALOON' },
         { tx: 16, ty: 9, w: 60, h: 40, color: 0x5c5148, label: 'STORE' },
-        { tx: 11, ty: 14, w: 64, h: 44, color: 0x6b5b4a, label: 'BANK' },
-        { tx: 6, ty: 16, w: 68, h: 44, color: 0x4b5563, label: 'WERKSTATT' }
+        { tx: 11, ty: 14, w: 64, h: 44, color: 0x7a5636, label: 'SCHMIEDE' },
+        { tx: 6, ty: 16, w: 68, h: 44, color: 0x4b5563, label: 'WERKSTATT' },
+        { tx: 16, ty: 15, w: 66, h: 44, color: 0x5b4636, label: 'DESTILLE' }
       ],
       shops: [
-        { id: 'saloon', tx: 5, ty: 8, name: 'Gatling-Saloon', cost: 100, income: SALOON_INCOME },
-        { id: 'store', tx: 16, ty: 9, name: 'Store' },
-        { id: 'werkstatt', tx: 6, ty: 16, name: 'Werkstatt' }
+        { id: 'saloon', tx: 5, ty: 8 },
+        { id: 'forge', tx: 11, ty: 14 },
+        { id: 'distillery', tx: 16, ty: 15 },
+        { id: 'store', tx: 16, ty: 9 },
+        { id: 'werkstatt', tx: 6, ty: 16 }
       ],
       npcs: [
         { id: 'mabel', name: 'Mamma „Rusty" Mabel', short: 'Mabel', tx: 8, ty: 9, color: 0xd97706,
@@ -163,6 +173,7 @@
   let storeUI = [], storeButtons = [], storeCloseRef = null, storePanelRef = null;
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
+  let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
@@ -181,7 +192,8 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
-    gold: 0, saloonOwned: false, inventory: {}, isRevealed: false, storeOpen: false, workshopOpen: false,
+    gold: 0, inventory: {}, isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false,
+    economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
@@ -325,7 +337,8 @@
   }
 
   // ---- Wirtschaft: Speichern / Laden / Einkommen -------------
-  function incomeTick() { if (state.saloonOwned) { state.gold += SALOON_INCOME; updateGold(); } save(); }
+  function incomePerSec() { let inc = 0; for (const k in BUILDINGS) inc += (state.economy[k] ? state.economy[k].level : 0) * BUILDINGS[k].incomePer; return inc; }
+  function incomeTick() { const inc = incomePerSec(); if (inc > 0) { state.gold += inc; updateGold(); } save(); }
   function updateGold() { if (goldText) goldText.setText('💰 ' + state.gold); }
 
   // Werte aus Upgrades (Basis + Level-Bonus)
@@ -338,20 +351,24 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, saloon: state.saloonOwned, kills, inv: state.inventory, revealed: state.isRevealed, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
       const s = JSON.parse(raw);
-      state.gold = s.gold || 0; state.saloonOwned = !!s.saloon; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed;
+      state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed;
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
-      if (state.saloonOwned && s.t) {
-        const sec = Math.min(Math.floor((Date.now() - s.t) / 1000), OFFLINE_CAP), g = sec * SALOON_INCOME;
+      state.economy = { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } };
+      if (s.economy) { for (const k in BUILDINGS) if (s.economy[k]) state.economy[k].level = s.economy[k].level || 0; }
+      else if (s.saloon) state.economy.saloon.level = 1;   // Migration alter Spielstände
+      const inc = incomePerSec();
+      if (inc > 0 && s.t) {
+        const sec = Math.min(Math.floor((Date.now() - s.t) / 1000), OFFLINE_CAP), g = sec * inc;
         if (g > 0) { state.gold += g; pendingOffline = g; }
       }
     } catch (e) { }
@@ -402,9 +419,12 @@
         mapObjects.push(sceneRef.add.text(w.x, w.y - 30, state.isRevealed ? '🔧' : '🔧🔒', { fontSize: '15px' }).setOrigin(0.5).setDepth(2));
         return;
       }
-      mapObjects.push(sceneRef.add.circle(w.x, w.y, 16, COL_GOLD, 0.25).setStrokeStyle(3, COL_GOLD, 0.9).setDepth(2));
-      const tag = (sh.id === 'saloon' && state.saloonOwned) ? '✓ gekauft' : '💰 ' + sh.cost;
-      const label = sceneRef.add.text(w.x, w.y - 30, tag, { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2);
+      // Tycoon-Gebäude (Saloon / Schmiede / Destille)
+      const b = BUILDINGS[sh.id]; if (!b) return;
+      mapObjects.push(sceneRef.add.circle(w.x, w.y, 16, COL_GOLD, 0.22).setStrokeStyle(3, COL_GOLD, 0.85).setDepth(2));
+      const lvl = state.economy[sh.id].level;
+      const tag = lvl > 0 ? ('Stufe ' + lvl) : ('💰 ' + b.baseCost);
+      const label = sceneRef.add.text(w.x, w.y - 30, b.icon + ' ' + tag, { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2);
       mapObjects.push(label); shopLabels[sh.id] = label;
     });
 
@@ -705,6 +725,12 @@
       if (storePanelRef && !inRect(p, storePanelRef.x - storePanelRef.width / 2, storePanelRef.y, storePanelRef.width, storePanelRef.height)) closeStore();
       return;
     }
+    if (state.tycoonOpen) {
+      if (tyCloseRef && Phaser.Math.Distance.Between(p.x, p.y, tyCloseRef.x, tyCloseRef.y) <= 24) { closeTycoon(); return; }
+      for (const b of tyButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { buyBuilding(b.k); return; }
+      if (tyPanelRef && !inRect(p, tyPanelRef.x - tyPanelRef.width / 2, tyPanelRef.y, tyPanelRef.width, tyPanelRef.height)) closeTycoon();
+      return;
+    }
     if (state.workshopOpen) {
       if (wsCloseRef && Phaser.Math.Distance.Between(p.x, p.y, wsCloseRef.x, wsCloseRef.y) <= 24) { closeWorkshop(); return; }
       for (const b of wsButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { buyUpgrade(b.id); return; }
@@ -748,7 +774,7 @@
     else if (state.ctx.type === 'station') { const d = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)); if (d.length >= 2) openTravel(); else toast('Bahnhof entdeckt – finde weitere für Zugreisen'); }
     else if (state.ctx.type === 'shop') {
       const id = state.ctx.target.id;
-      if (id === 'store') openStore(); else if (id === 'werkstatt') openWorkshop(); else buyShop(state.ctx.target);
+      if (id === 'store') openStore(); else if (id === 'werkstatt') openWorkshop(); else if (BUILDINGS[id]) openTycoon();
     }
   }
 
@@ -1031,11 +1057,46 @@
   function popLoot(x, y, icon) { const t = sceneRef.add.text(x, y - 8, icon, { fontSize: '15px' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 550, onComplete: () => t.destroy() }); }
   function popDamage(x, y, dmg) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
   function popGold(x, y) { const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() }); }
-  function buyShop(sh) {
-    if (sh.id === 'saloon' && state.saloonOwned) { toast('🍺 Saloon läuft bereits'); return; }
-    if (state.gold < sh.cost) { toast('Nicht genug Gold (' + state.gold + '/' + sh.cost + ')'); return; }
-    state.gold -= sh.cost; updateGold(); if (sh.id === 'saloon') state.saloonOwned = true;
-    if (shopLabels[sh.id]) shopLabels[sh.id].setText('✓ gekauft'); toast('🍺 ' + sh.name + ' gekauft! +' + sh.income + ' Gold/Sek'); save();
+  // ---- Tycoon (Rustwater-Wirtschaft) -------------------------
+  function openTycoon() {
+    if (state.storeOpen || state.workshopOpen || state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
+    state.tycoonOpen = true; hideContext();
+    const size = sceneRef.scale.gameSize, ids = Object.keys(BUILDINGS);
+    const pw = Math.min(360, size.width * 0.94), rowH = 50, headH = 66, footH = 42;
+    const ph = headH + ids.length * (rowH + 6) + footH;
+    const px = size.width / 2, py = (size.height - ph) / 2;
+    const add = o => { tyUI.push(o); return o; };
+    add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
+    tyPanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
+    add(sceneRef.add.text(px, py + 10, '🏙️  Rustwater — Investitionen', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 34, 'Neutrale Wirtschaft · Einkommen läuft immer', { fontFamily: 'system-ui', fontSize: '12px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    tyCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 12, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+    let y = py + headH;
+    ids.forEach(id => {
+      const b = BUILDINGS[id], lvl = state.economy[id].level, maxed = lvl >= b.max, cost = b.baseCost * (lvl + 1);
+      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 - 8, b.icon + '  ' + b.name, { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 + 10, 'Stufe ' + lvl + '/' + b.max + '   +' + (lvl * b.incomePer) + '/Sek', { fontFamily: 'system-ui', fontSize: '11px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      if (!maxed) {
+        const can = state.gold >= cost;
+        const btn = add(sceneRef.add.rectangle(px + pw / 2 - 58, y + rowH / 2, 96, 34, can ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+        add(sceneRef.add.text(btn.x, btn.y - 7, lvl > 0 ? 'ausbauen' : 'kaufen', { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        add(sceneRef.add.text(btn.x, btn.y + 7, cost + ' 💰', { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        tyButtons.push({ rect: btn, k: id });
+      } else add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, 'MAX', { fontFamily: 'system-ui', fontSize: '13px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+      y += rowH + 6;
+    });
+    add(sceneRef.add.text(px, py + ph - 28, '📈 ' + incomePerSec() + '/Sek   ·   💰 ' + state.gold, { fontFamily: 'system-ui', fontSize: '14px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+  }
+  function closeTycoon() { state.tycoonOpen = false; tyUI.forEach(o => o.destroy()); tyUI = []; tyButtons = []; tyCloseRef = null; tyPanelRef = null; }
+  function buyBuilding(k) {
+    const b = BUILDINGS[k], lvl = state.economy[k].level;
+    if (lvl >= b.max) { toast('Bereits max'); return; }
+    const cost = b.baseCost * (lvl + 1);
+    if (state.gold < cost) { toast('Nicht genug Gold (' + state.gold + '/' + cost + ')'); return; }
+    state.gold -= cost; state.economy[k].level++; updateGold();
+    if (shopLabels[k]) shopLabels[k].setText(b.icon + ' Stufe ' + state.economy[k].level);
+    toast(b.name + ' → Stufe ' + state.economy[k].level + '  (+' + b.incomePer + '/Sek)'); save();
+    closeTycoon(); openTycoon();
   }
   function toast(msg) { const t = sceneRef.add.text(sceneRef.scale.width / 2, sceneRef.scale.height * 0.3, msg, { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(60); sceneRef.tweens.add({ targets: t, alpha: 0, y: '-=18', delay: 900, duration: 700, onComplete: () => t.destroy() }); }
 
@@ -1051,7 +1112,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.dialogueOpen;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.dialogueOpen;
 
     // Bewegung
     let vx = 0, vy = 0;
@@ -1143,7 +1204,7 @@
       if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
       else if (best.id === 'store') showContext('🛒  Store — kaufen & verkaufen');
       else if (best.id === 'werkstatt') showContext(state.isRevealed ? '🔧  Werkstatt — Modifikationen' : '🔧  Werkstatt — Waffen-Tuning');
-      else showContext(best.id === 'saloon' && state.saloonOwned ? '🍺  ' + best.name + ': +' + best.income + ' Gold/Sek (aktiv)' : '🍺  ' + best.name + ' kaufen — ' + best.cost + ' Gold');
+      else if (BUILDINGS[best.id]) { const b = BUILDINGS[best.id], lvl = state.economy[best.id].level; showContext(b.icon + '  ' + b.name + (lvl > 0 ? ' — Stufe ' + lvl : ' — kaufen')); }
     } else { state.ctx = null; hideContext(); }
   }
 
