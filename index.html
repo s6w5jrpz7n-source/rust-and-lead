@@ -37,7 +37,8 @@
   const PLAYER_SPEED = 240, PLAYER_R = 16;
   const STICK_RADIUS = 60, STICK_DEADZONE = 0.12;
   const ENEMY_R = 15, ENEMY_HP = 60, ENEMY_SPEED = 70, ENEMY_MAX = 80;
-  const AIM_RANGE = 500, AGGRO_RANGE = 230, LEASH_RANGE = 480, ENEMY_PER_TILES = 70;
+  const AIM_RANGE = 500, AGGRO_RANGE = 250, LEASH_RANGE = 520, ENEMY_PER_TILES = 70;
+  const CHUNK = 20, CHUNK_RADIUS = 1;   // Boden-Streaming: Kachelblöcke um den Spieler
   const BULLET_R = 5, BULLET_SPEED = 560, BULLET_DMG = 20, BULLET_LIFE = 1.1, FIRE_MS = 200;
   const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90, GATE_ENTER_DIST = 30;
   const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
@@ -51,7 +52,7 @@
   const DASH_DIST = 190, DASH_CD = 2500;
   const POTION_HEAL = 50, POTION_START = 3;
   // Boss
-  const BOSS_HP = 700, BOSS_R = 28, BOSS_SPEED = 46, BOSS_CONTACT = 28, BOSS_GOLD = 20, BOSS_KILLS_TRIGGER = 6;
+  const BOSS_HP = 700, BOSS_R = 28, BOSS_SPEED = 46, BOSS_CONTACT = 28, BOSS_GOLD = 20, BOSS_KILLS_TRIGGER = 8;
   const BOSS_NAMES = ['Rost-Baron', 'Blei-Molch', 'Schrott-Koloss', 'Kaktus-König'];
 
   // Farben
@@ -65,13 +66,13 @@
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
     overworld: {
-      name: 'Wüste', cols: 60, rows: 60, enemies: true, minimap: 'full',
+      name: 'Wüste', cols: 80, rows: 80, enemies: true, streamed: true, minimap: 'full',
       floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f, mini: 0xcda877, bg: 0x2b2620,
       portals: [
         { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 11, r: 3 }, short: 'Rustwater', label: '🏙️  Rustwater', mini: 0x22c55e, compound: { c0: 23, r0: 12, c1: 29, r1: 18 } },
-        { tx: 46, ty: 46, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 }
+        { tx: 60, ty: 58, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 }
       ],
-      stations: [ { id: 'st_desert', tx: 14, ty: 44, name: 'Wüsten-Halt' } ], decor: []
+      stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: []
     },
     rustwater: {
       name: 'Rustwater', cols: 22, rows: 22, enemies: false, walled: true, minimap: 'full',
@@ -88,7 +89,7 @@
     dungeon1: {
       name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
       floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
-      portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 46, r: 48 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
+      portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
       stations: [], decor: []
     }
   };
@@ -112,6 +113,7 @@
   const enemies = [], bullets = [], coins = [], mapObjects = [];
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
   let miniDirty = true, pendingOffline = 0, shopLabels = {}, floorKey = null, floorTexN = 0;
+  let chunks = {}, colliders = [];
 
   const state = {
     map: 'overworld', cols: 40, rows: 40,
@@ -244,7 +246,7 @@
     updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
-    loadMap('overworld', { c: 30, r: 30 });
+    loadMap('overworld', { c: 40, r: 40 });
     if (pendingOffline > 0) { toast('🍺 Offline verdient: +' + pendingOffline + ' Gold'); pendingOffline = 0; }
   }
 
@@ -283,14 +285,17 @@
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
     coins.forEach(c => c.s.destroy()); coins.length = 0;
     state.boss = null; hideBossBar(); state.killsSinceBoss = 0;
+    colliders = [];
+    clearChunks();
     if (floorKey && sceneRef.textures.exists(floorKey)) { sceneRef.textures.remove(floorKey); floorKey = null; }
 
-    bakeFloor(m);   // Boden einmal in eine Textur backen -> auch bei großen Karten flüssig
+    if (!m.streamed) bakeFloor(m);   // kleine Karten: ein Boden-Bake. Große: Chunk-Streaming (siehe update)
 
     (m.decor || []).forEach(d => {
       const w = tileToWorld(d.tx, d.ty);
       mapObjects.push(sceneRef.add.rectangle(w.x, w.y, d.w, d.h, d.color).setStrokeStyle(2, 0x000000, 0.4).setDepth(2));
       if (d.label) mapObjects.push(sceneRef.add.text(w.x, w.y, d.label, { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2' }).setOrigin(0.5).setDepth(2));
+      colliders.push({ type: 'rect', x: w.x - d.w / 2, y: w.y - d.h / 2, w: d.w, h: d.h });   // Gebäude solide
     });
     m.portals.forEach(p => {
       const w = tileToWorld(p.tx, p.ty);
@@ -331,6 +336,7 @@
     mapNameText.setText(m.name);
     layoutUI(sceneRef.scale.gameSize);
     miniDirty = true; toast(m.name);
+    if (m.streamed) updateChunks();   // erste Boden-Chunks um den Spieler laden
     if (m.enemies) scatterEnemies(m);
   }
 
@@ -345,10 +351,13 @@
     for (let e = 0; e < corners.length; e++) {
       const a = corners[e], b = corners[(e + 1) % corners.length];
       const n = Math.max(1, Math.round(Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y) / spacing));
-      for (let i = 0; i < n; i++) {
+      let prev = null;
+      for (let i = 0; i <= n; i++) {
         const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n;
-        if (gapWorld && Phaser.Math.Distance.Between(x, y, gapWorld.x, gapWorld.y) < gapR) continue;
-        placePost(x, y);
+        if (gapWorld && Phaser.Math.Distance.Between(x, y, gapWorld.x, gapWorld.y) < gapR) { prev = null; continue; }  // Tor-Öffnung frei lassen
+        if (i < n) placePost(x, y);
+        if (prev) colliders.push({ type: 'seg', ax: prev.x, ay: prev.y, bx: x, by: y });   // solide Wand
+        prev = { x, y };
       }
     }
   }
@@ -363,19 +372,68 @@
     buildWallEdges(c, tileToWorld(p.tx, p.ty), 56);
   }
 
-  function bakeFloor(m) {
-    const b = state.bounds, offX = HALF_W - b.minX, offY = HALF_H - b.minY;
-    const texW = Math.ceil((b.maxX - b.minX) + TILE_W), texH = Math.ceil((b.maxY - b.minY) + TILE_H);
+  // Backt einen Kachelbereich [c0,c1)x[r0,r1) in eine Textur und gibt ein platziertes Image zurück
+  function bakeTileRange(m, c0, c1, r0, r1) {
+    const pts = [tileToWorld(c0, r0), tileToWorld(c1 - 1, r0), tileToWorld(c0, r1 - 1), tileToWorld(c1 - 1, r1 - 1)];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of pts) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
+    minX -= HALF_W; maxX += HALF_W; minY -= HALF_H; maxY += HALF_H;
+    const offX = -minX, offY = -minY, texW = Math.max(1, Math.ceil(maxX - minX)), texH = Math.max(1, Math.ceil(maxY - minY));
     const fg = sceneRef.make.graphics({ add: false });
-    for (let c = 0; c < m.cols; c++) for (let r = 0; r < m.rows; r++) {
+    for (let c = c0; c < c1; c++) for (let r = r0; r < r1; r++) {
       const cx = (c - r) * HALF_W + offX, cy = (c + r) * HALF_H + offY;
       fg.fillStyle((c + r) % 2 === 0 ? m.floorA : m.floorB, 1);
       fg.beginPath(); fg.moveTo(cx, cy - HALF_H); fg.lineTo(cx + HALF_W, cy); fg.lineTo(cx, cy + HALF_H); fg.lineTo(cx - HALF_W, cy); fg.closePath(); fg.fillPath();
       fg.lineStyle(1, m.grid, 0.4); fg.strokePath();
     }
-    floorKey = 'floor_' + (floorTexN++);
-    fg.generateTexture(floorKey, texW, texH); fg.destroy();
-    mapObjects.push(sceneRef.add.image(b.minX - HALF_W, b.minY - HALF_H, floorKey).setOrigin(0, 0).setDepth(0));
+    const key = 'floor_' + (floorTexN++);
+    fg.generateTexture(key, texW, texH); fg.destroy();
+    const img = sceneRef.add.image(minX, minY, key).setOrigin(0, 0).setDepth(0); img._key = key;
+    return img;
+  }
+  function bakeFloor(m) { const img = bakeTileRange(m, 0, m.cols, 0, m.rows); floorKey = img._key; mapObjects.push(img); }
+
+  // ---- Boden-Streaming (Chunks) ------------------------------
+  function clearChunks() {
+    for (const k in chunks) { const img = chunks[k]; if (img._key && sceneRef.textures.exists(img._key)) sceneRef.textures.remove(img._key); img.destroy(); }
+    chunks = {};
+  }
+  function updateChunks() {
+    const m = MAPS[state.map]; if (!m.streamed) return;
+    const ccx = Math.floor(state.playerTile.c / CHUNK), ccy = Math.floor(state.playerTile.r / CHUNK);
+    const need = {};
+    for (let dx = -CHUNK_RADIUS; dx <= CHUNK_RADIUS; dx++) for (let dy = -CHUNK_RADIUS; dy <= CHUNK_RADIUS; dy++) {
+      const cx = ccx + dx, cy = ccy + dy;
+      if (cx < 0 || cy < 0 || cx * CHUNK >= m.cols || cy * CHUNK >= m.rows) continue;
+      const k = cx + '_' + cy; need[k] = 1;
+      if (!chunks[k]) chunks[k] = bakeTileRange(m, cx * CHUNK, Math.min(m.cols, (cx + 1) * CHUNK), cy * CHUNK, Math.min(m.rows, (cy + 1) * CHUNK));
+    }
+    for (const k in chunks) { if (!need[k]) { const img = chunks[k]; if (img._key && sceneRef.textures.exists(img._key)) sceneRef.textures.remove(img._key); img.destroy(); delete chunks[k]; } }
+  }
+
+  // ---- Kollision (Wände & Gebäude) ---------------------------
+  function closestPointOnSeg(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+    let t = l2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0; t = Phaser.Math.Clamp(t, 0, 1);
+    return { x: ax + t * dx, y: ay + t * dy };
+  }
+  function resolveCollision() {
+    for (const co of colliders) {
+      if (co.type === 'seg') {
+        const p = closestPointOnSeg(player.x, player.y, co.ax, co.ay, co.bx, co.by);
+        let dx = player.x - p.x, dy = player.y - p.y, d = Math.hypot(dx, dy);
+        if (d < PLAYER_R) { if (d < 0.001) { dx = 0; dy = -1; d = 1; } const push = PLAYER_R - d; player.x += dx / d * push; player.y += dy / d * push; }
+      } else {
+        const nx = Phaser.Math.Clamp(player.x, co.x, co.x + co.w), ny = Phaser.Math.Clamp(player.y, co.y, co.y + co.h);
+        let dx = player.x - nx, dy = player.y - ny, d = Math.hypot(dx, dy);
+        if (d < PLAYER_R) {
+          if (d < 0.001) {
+            const toL = player.x - co.x, toR = co.x + co.w - player.x, toT = player.y - co.y, toB = co.y + co.h - player.y, mn = Math.min(toL, toR, toT, toB);
+            if (mn === toL) player.x = co.x - PLAYER_R; else if (mn === toR) player.x = co.x + co.w + PLAYER_R; else if (mn === toT) player.y = co.y - PLAYER_R; else player.y = co.y + co.h + PLAYER_R;
+          } else { const push = PLAYER_R - d; player.x += dx / d * push; player.y += dy / d * push; }
+        }
+      }
+    }
   }
   function scatterEnemies(m) {
     const count = Math.min(ENEMY_MAX, Math.round(m.cols * m.rows / ENEMY_PER_TILES));
@@ -671,11 +729,12 @@
       player.y = Phaser.Math.Clamp(player.y + vy * PLAYER_SPEED * dt, state.bounds.minY, state.bounds.maxY);
       player.facing = Math.atan2(vy, vx); player.rotation = player.facing;
     }
+    if (colliders.length) resolveCollision();   // solide Wände/Gebäude
     shadow.setPosition(player.x, player.y + 14);
     player.setAlpha(now < state.invulnUntil && Math.floor(now / 120) % 2 === 0 ? 0.45 : 1);
 
     const pt = worldToTile(player.x, player.y);
-    if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; }
+    if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; updateChunks(); }
 
     // Beim Angreifen automatisch zum nächsten Gegner ausrichten (kein Zielen per Bewegung nötig)
     if (!uiBlocked && shooting) { const t = nearestEnemy(AIM_RANGE); if (t) { const a = Math.atan2(t.c.y - player.y, t.c.x - player.x); player.facing = a; player.rotation = a; } }
