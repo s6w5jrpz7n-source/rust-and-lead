@@ -1136,7 +1136,7 @@
     }
     if (state.storeOpen) {
       if (storeCloseRef && Phaser.Math.Distance.Between(p.x, p.y, storeCloseRef.x, storeCloseRef.y) <= 24) { closeStore(); return; }
-      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else buyPotion(); return; }
+      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else if (b.action === 'sellGear') sellGearByRarity(b.rarity); else buyPotion(); return; }
       if (storePanelRef && !inRect(p, storePanelRef.x - storePanelRef.width / 2, storePanelRef.y, storePanelRef.width, storePanelRef.height)) closeStore();
       return;
     }
@@ -1441,12 +1441,23 @@
   }
 
   // ---- Store (verkaufen & kaufen) ----------------------------
+  function gearValue(g) { return Math.round(RARITY[g.rarity].mult * 15 + g.stat.val); }
+  function sellGearByRarity(rarity) {
+    const keep = [], sold = state.gearBag.filter(g => g.rarity === rarity);
+    if (sold.length === 0) return;
+    let gain = 0; for (const g of sold) gain += gearValue(g);
+    state.gearBag = state.gearBag.filter(g => g.rarity !== rarity);
+    state.gold += gain; updateGold();
+    toast('+' + gain + ' Gold für ' + sold.length + '× ' + RARITY[rarity].name); save(); refreshStore();
+  }
   function openStore() {
     if (state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
     state.storeOpen = true; hideContext();
     const size = sceneRef.scale.gameSize, ids = Object.keys(ITEMS);
-    const pw = Math.min(340, size.width * 0.92), rowH = 46, headH = 52, buyH = 52, footH = 40;
-    const ph = headH + ids.length * (rowH + 6) + buyH + footH;
+    const gearRar = ['common', 'rare', 'epic'].filter(r => state.gearBag.some(g => g.rarity === r));
+    const rowH = 46, headH = 52, buyH = 52, footH = 40, gearHeadH = gearRar.length ? 26 : 0, gearRowH = 40;
+    const pw = Math.min(340, size.width * 0.92);
+    const ph = headH + ids.length * (rowH + 6) + gearHeadH + gearRar.length * (gearRowH + 6) + buyH + footH;
     const px = size.width / 2, py = (size.height - ph) / 2;
     const add = o => { storeUI.push(o); return o; };
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
@@ -1462,6 +1473,19 @@
       if (on) storeButtons.push({ rect: btn, action: 'sell', id });
       y += rowH + 6;
     });
+    // Ausrüstung verkaufen (Bulk je Seltenheit; legendäre bleiben geschützt)
+    if (gearRar.length) {
+      add(sceneRef.add.text(px - pw / 2 + 16, y + 4, '⚔  Ausrüstung verkaufen', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+      y += gearHeadH;
+      gearRar.forEach(r => {
+        const items = state.gearBag.filter(g => g.rarity === r); let sum = 0; for (const g of items) sum += gearValue(g);
+        add(sceneRef.add.text(px - pw / 2 + 16, y + gearRowH / 2, RARITY[r].name + '  ×' + items.length, { fontFamily: 'system-ui', fontSize: '14px', color: css(RARITY[r].color) }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+        const btn = add(sceneRef.add.rectangle(px + pw / 2 - 62, y + gearRowH / 2, 104, 30, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+        add(sceneRef.add.text(btn.x, btn.y, 'verkaufen +' + sum, { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        storeButtons.push({ rect: btn, action: 'sellGear', rarity: r });
+        y += gearRowH + 6;
+      });
+    }
     const buyBtn = add(sceneRef.add.rectangle(px, y + buyH / 2, pw - 40, 38, 0x7c2d12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
     add(sceneRef.add.text(buyBtn.x, buyBtn.y, '🍶  ' + T('potion') + ' kaufen — ' + POTION_PRICE + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     storeButtons.push({ rect: buyBtn, action: 'buyPotion' });
