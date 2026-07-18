@@ -42,6 +42,7 @@
   const BULLET_R = 5, BULLET_SPEED = 560, BULLET_DMG = 20, BULLET_LIFE = 1.1, FIRE_MS = 200;
   const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90, GATE_ENTER_DIST = 30;
   const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
+  const INV_CAP = 40, CHEST_PER_TILES = 320, CHEST_INTERACT = 52;   // Inventar-Limit & Loot-Kisten
   const SALOON_INCOME = 1, OFFLINE_CAP = 8 * 3600, SAVE_KEY = 'rustlead_save_v1';
 
   // Spieler-Leben & Kampf
@@ -73,6 +74,13 @@
     dampfkern: { name: 'Dampfkern', icon: '♨️', color: 0x38bdf8, value: 25 }
   };
   const POTION_PRICE = 30;
+
+  // Loot-Kisten: Beute-Bündel auf der Karte, an Spezialorten & um Bosse herum.
+  const CHEST_TIERS = {
+    normal: { color: 0x8a5a2b, stroke: 0x4a2f14, icon: '📦', schrott: [2, 4], zahnrad: 0.5, dampfkern: 0.06 },
+    rare:   { color: 0xb8935f, stroke: 0x6b4f2a, icon: '🧰', schrott: [3, 5], zahnrad: 1.0, dampfkern: 0.30 },
+    boss:   { color: 0xc9a24a, stroke: 0x7c5e10, icon: '💰', schrott: [4, 7], zahnrad: 1.0, dampfkern: 1.0 }
+  };
 
   // ---- Kampf-Design: Schadensarten, Waffen (Loadout) & Gegner-Matrix ----
   // 4 Kern-Schadensarten mit elementaren Wechselwirkungen (siehe GDD Kap. 9).
@@ -156,7 +164,8 @@
         { tx: 64, ty: 20, to: 'sektor01', spawn: { c: 9, r: 3 }, short: 'Sektor 01', label: '🏭  Sektor 01', mini: 0x60a5fa },
         { tx: 40, ty: 66, to: 'rogues_landing', spawn: { c: 9, r: 3 }, short: "Rogue's Landing", label: "🎲  Rogue's Landing", mini: 0xeab308 }
       ],
-      stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: []
+      stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: [],
+      caches: [ { tx: 45, ty: 40, count: 4, tier: 'rare' } ]   // Kessel-Friedhof: gebündelte Beute
     },
     rustwater: {
       name: 'Rustwater', cols: 22, rows: 22, enemies: false, walled: true, minimap: 'full',
@@ -168,14 +177,16 @@
         { tx: 16, ty: 9, w: 60, h: 40, color: 0x5c5148, label: 'STORE' },
         { tx: 11, ty: 14, w: 64, h: 44, color: 0x7a5636, label: 'SCHMIEDE' },
         { tx: 6, ty: 16, w: 68, h: 44, color: 0x4b5563, label: 'WERKSTATT' },
-        { tx: 16, ty: 15, w: 66, h: 44, color: 0x5b4636, label: 'DESTILLE' }
+        { tx: 16, ty: 15, w: 66, h: 44, color: 0x5b4636, label: 'DESTILLE' },
+        { tx: 11, ty: 8, w: 54, h: 40, color: 0x6d4b2f, label: 'TRUHE' }
       ],
       shops: [
         { id: 'saloon', tx: 5, ty: 8 },
         { id: 'forge', tx: 11, ty: 14 },
         { id: 'distillery', tx: 16, ty: 15 },
         { id: 'store', tx: 16, ty: 9 },
-        { id: 'werkstatt', tx: 6, ty: 16 }
+        { id: 'werkstatt', tx: 6, ty: 16 },
+        { id: 'stash', tx: 11, ty: 8 }
       ],
       npcs: [
         { id: 'mabel', name: 'Mamma „Rusty" Mabel', short: 'Mabel', tx: 8, ty: 9, color: 0xd97706,
@@ -208,7 +219,8 @@
       name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
       floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
       portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
-      stations: [], decor: []
+      stations: [], decor: [ { tx: 13, ty: 11, w: 60, h: 40, color: 0x3a2f22, label: 'SCHATZKAMMER' } ],
+      caches: [ { tx: 13, ty: 13, count: 5, tier: 'rare' } ]
     },
     fort_freedom: {
       name: 'Fort Freedom', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
@@ -310,6 +322,7 @@
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
+  let stashUI = [], stashButtons = [], stashCloseRef = null, stashPanelRef = null;
   let revealBg, revealText, revealHint;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
@@ -318,7 +331,7 @@
   let cursors, wasd;
 
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
-  const enemies = [], bullets = [], eBullets = [], coins = [], mapObjects = [];
+  const enemies = [], bullets = [], eBullets = [], coins = [], chests = [], mapObjects = [];
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
   let miniDirty = true, pendingOffline = 0, shopLabels = {}, floorKey = null, floorTexN = 0;
   let chunks = {}, colliders = [];
@@ -329,7 +342,8 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
-    gold: 0, inventory: {}, isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false,
+    gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
+    isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
@@ -516,7 +530,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
@@ -526,6 +540,7 @@
       state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1; state.chosenGuild = s.guild || null;
       state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
       if (s.weaponLvl) for (const k in state.weaponLvl) if (typeof s.weaponLvl[k] === 'number') state.weaponLvl[k] = s.weaponLvl[k];
+      if (s.stash) for (const k in state.stash) if (typeof s.stash[k] === 'number') state.stash[k] = s.stash[k];
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
@@ -553,6 +568,7 @@
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
     eBullets.forEach(b => b.sprite.destroy()); eBullets.length = 0;
     coins.forEach(c => c.s.destroy()); coins.length = 0;
+    chests.forEach(c => c.c.destroy()); chests.length = 0;
     state.boss = null; hideBossBar(); state.killsSinceBoss = 0;
     colliders = [];
     clearChunks();
@@ -632,6 +648,7 @@
     miniDirty = true; toast(m.name);
     if (m.streamed) streamChunks(9);   // sichtbaren Bereich (radius 1) sofort, Rest folgt vorausschauend
     if (m.enemies) scatterEnemies(m);
+    scatterChests(m);
   }
 
   // ---- Palisade (Stockade) -----------------------------------
@@ -834,7 +851,7 @@
     invPanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
     invTitle.setPosition(px, py + 12).setVisible(true);
     invClose.setPosition(px + pw / 2 - 20, py + 16).setVisible(true);
-    invText.setText('💰 ' + state.gold + '  ·  Besiegt: ' + kills + '  ·  🍶 ' + state.potions).setPosition(px, py + ph - 30).setVisible(true);
+    invText.setText('🎒 ' + invCount() + '/' + INV_CAP + '  ·  💰 ' + state.gold + '  ·  🍶 ' + state.potions).setPosition(px, py + ph - 30).setVisible(true);
     const x0 = px - gw / 2, y0 = py + 48;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const sx = x0 + c * (slot + gap) + slot / 2, sy = y0 + r * (slot + gap) + slot / 2;
@@ -923,6 +940,12 @@
       if (tyPanelRef && !inRect(p, tyPanelRef.x - tyPanelRef.width / 2, tyPanelRef.y, tyPanelRef.width, tyPanelRef.height)) closeTycoon();
       return;
     }
+    if (state.stashOpen) {
+      if (stashCloseRef && Phaser.Math.Distance.Between(p.x, p.y, stashCloseRef.x, stashCloseRef.y) <= 24) { closeStash(); return; }
+      for (const b of stashButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'deposit') stashDeposit(); else stashWithdraw(); return; }
+      if (stashPanelRef && !inRect(p, stashPanelRef.x - stashPanelRef.width / 2, stashPanelRef.y, stashPanelRef.width, stashPanelRef.height)) closeStash();
+      return;
+    }
     if (state.workshopOpen) {
       if (wsCloseRef && Phaser.Math.Distance.Between(p.x, p.y, wsCloseRef.x, wsCloseRef.y) <= 24) { closeWorkshop(); return; }
       for (const b of wsButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { buyUpgrade(b.id); return; }
@@ -965,9 +988,10 @@
     if (!state.ctx) return;
     if (state.ctx.type === 'portal') { const p = state.ctx.target; transitionTo(p.to, p.spawn); }
     else if (state.ctx.type === 'station') { const d = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)); if (d.length >= 2) openTravel(); else toast('Bahnhof entdeckt – finde weitere für Zugreisen'); }
+    else if (state.ctx.type === 'chest') { openChest(state.ctx.target); }
     else if (state.ctx.type === 'shop') {
       const id = state.ctx.target.id;
-      if (id === 'store') openStore(); else if (id === 'werkstatt') openWorkshop(); else if (BUILDINGS[id]) openTycoon();
+      if (id === 'store') openStore(); else if (id === 'werkstatt') openWorkshop(); else if (id === 'stash') openStash(); else if (BUILDINGS[id]) openTycoon();
     }
   }
 
@@ -1274,6 +1298,9 @@
       e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD, aggro: true, cls: 'BIOLOGICAL', sub: 'outlaw' });
     }
     state.boss = e; setBossBar(e); toast('☠ Boss: ' + e.name);
+    // Beute-Bündel rund um den Boss (Kiste + Schatz)
+    spawnChest(ex + 40, ey + 24, 'boss');
+    spawnChest(ex - 38, ey + 28, 'rare');
   }
 
   // ---- Schuss / Spezial-Attacken -----------------------------
@@ -1409,9 +1436,87 @@
     if (Math.random() < (e.isBoss ? 1 : 0.18)) dropLoot(e.c.x, e.c.y, 'zahnrad');
     if (e.isBoss || Math.random() < 0.04) dropLoot(e.c.x, e.c.y, 'dampfkern');
   }
+  function invCount() { let n = 0; for (const k in state.inventory) n += state.inventory[k] || 0; return n; }
+  // ---- Loot-Kisten -------------------------------------------
+  function spawnChest(x, y, tier) {
+    const t = CHEST_TIERS[tier] || CHEST_TIERS.normal;
+    const box = sceneRef.add.rectangle(0, 0, 26, 20, t.color).setStrokeStyle(3, t.stroke).setDepth(3);
+    const lid = sceneRef.add.rectangle(0, -8, 30, 8, t.stroke).setDepth(3);
+    const ic = sceneRef.add.text(0, -22, t.icon, { fontSize: '15px' }).setOrigin(0.5).setDepth(3);
+    const c = sceneRef.add.container(x, y, [box, lid, ic]).setDepth(3);
+    chests.push({ c, tier });
+  }
+  function scatterChests(m) {
+    (m.caches || []).forEach(cache => {
+      for (let i = 0; i < cache.count; i++) {
+        const w = tileToWorld(cache.tx, cache.ty);
+        spawnChest(w.x + Phaser.Math.Between(-34, 34), w.y + Phaser.Math.Between(-24, 24), cache.tier || 'rare');
+      }
+    });
+    if (!m.enemies) return;   // Zufalls-Kisten nur auf Kampfkarten
+    const n = Math.round(m.cols * m.rows / CHEST_PER_TILES);
+    for (let i = 0; i < n; i++) {
+      const c = Phaser.Math.Between(2, m.cols - 3), r = Phaser.Math.Between(2, m.rows - 3), w = tileToWorld(c, r);
+      if (player && Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 200) continue;
+      spawnChest(w.x, w.y, Math.random() < 0.22 ? 'rare' : 'normal');
+    }
+  }
+  function openChest(chest) {
+    const t = CHEST_TIERS[chest.tier] || CHEST_TIERS.normal, x = chest.c.x, y = chest.c.y;
+    const s = Phaser.Math.Between(t.schrott[0], t.schrott[1]);
+    for (let i = 0; i < s; i++) dropLoot(x, y, 'schrott');
+    if (Math.random() < t.zahnrad) dropLoot(x, y, 'zahnrad');
+    if (Math.random() < t.zahnrad && chest.tier !== 'normal') dropLoot(x, y, 'zahnrad');
+    if (Math.random() < t.dampfkern) dropLoot(x, y, 'dampfkern');
+    popLoot(x, y - 6, t.icon);
+    const i = chests.indexOf(chest); if (i !== -1) chests.splice(i, 1);
+    chest.c.destroy(); toast('📦 Kiste geplündert');
+  }
   function popLoot(x, y, icon) { const t = sceneRef.add.text(x, y - 8, icon, { fontSize: '15px' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 550, onComplete: () => t.destroy() }); }
   function popDamage(x, y, dmg, color) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: color ? css(color) : '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
   function popGold(x, y) { const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() }); }
+
+  // ---- Persönliche Truhe (Stash) -----------------------------
+  function openStash() {
+    if (state.storeOpen || state.workshopOpen || state.travelOpen || state.inventoryOpen || state.fullMapOpen || state.tycoonOpen) return;
+    state.stashOpen = true; hideContext();
+    const size = sceneRef.scale.gameSize, ids = ['schrott', 'zahnrad', 'dampfkern'];
+    const pw = Math.min(360, size.width * 0.94), rowH = 44, headH = 64, footH = 92;
+    const ph = headH + ids.length * (rowH + 6) + footH;
+    const px = size.width / 2, py = (size.height - ph) / 2;
+    const add = o => { stashUI.push(o); return o; };
+    add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
+    stashPanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
+    add(sceneRef.add.text(px, py + 10, '📦  Persönliche Truhe', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 34, 'Beutel ' + invCount() + '/' + INV_CAP + ' · Truhe unbegrenzt', { fontFamily: 'system-ui', fontSize: '12px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    stashCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 12, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+    let y = py + headH;
+    ids.forEach(id => {
+      const it = ITEMS[id];
+      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2, it.icon + '  ' + it.name, { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(px + pw / 2 - 14, y + rowH / 2, 'Beutel ×' + (state.inventory[id] || 0) + '   Truhe ×' + (state.stash[id] || 0), { fontFamily: 'system-ui', fontSize: '12px', color: '#a8a090' }).setOrigin(1, 0.5).setScrollFactor(0).setDepth(52));
+      y += rowH + 6;
+    });
+    const bw = (pw - 44) / 2;
+    const dep = add(sceneRef.add.rectangle(px - pw / 2 + 14 + bw / 2, y + 18, bw, 38, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
+    add(sceneRef.add.text(dep.x, dep.y, '⬇  Alles einlagern', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    const wdr = add(sceneRef.add.rectangle(px + pw / 2 - 14 - bw / 2, y + 18, bw, 38, 0x7c4a12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
+    add(sceneRef.add.text(wdr.x, wdr.y, '⬆  Alles entnehmen', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    stashButtons = [{ rect: dep, action: 'deposit' }, { rect: wdr, action: 'withdraw' }];
+  }
+  function closeStash() { state.stashOpen = false; stashUI.forEach(o => o.destroy()); stashUI = []; stashButtons = []; stashCloseRef = null; stashPanelRef = null; }
+  function refreshStash() { closeStash(); openStash(); }
+  function stashDeposit() {
+    let moved = 0;
+    for (const k in state.inventory) { const n = state.inventory[k] || 0; if (n > 0 && state.stash[k] !== undefined) { state.stash[k] += n; state.inventory[k] = 0; moved += n; } }
+    if (moved > 0) { toast('⬇ ' + moved + ' Teile eingelagert'); save(); refreshStash(); } else toast('Beutel ist leer');
+  }
+  function stashWithdraw() {
+    let moved = 0;
+    for (const k in state.stash) { let n = state.stash[k] || 0; while (n > 0 && invCount() < INV_CAP) { state.inventory[k] = (state.inventory[k] || 0) + 1; n--; moved++; } state.stash[k] = n; }
+    if (moved > 0) { toast('⬆ ' + moved + ' Teile entnommen' + (invCount() >= INV_CAP ? ' (Beutel voll)' : '')); save(); refreshStash(); } else toast(invCount() >= INV_CAP ? 'Beutel voll' : 'Truhe ist leer');
+  }
+
   // ---- Tycoon (Rustwater-Wirtschaft) -------------------------
   function openTycoon() {
     if (state.storeOpen || state.workshopOpen || state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
@@ -1467,7 +1572,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.dialogueOpen || state.revealPlaying;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.dialogueOpen || state.revealPlaying;
 
     // Bewegung
     let vx = 0, vy = 0;
@@ -1565,11 +1670,16 @@
     for (let i = coins.length - 1; i >= 0; i--) {
       const co = coins[i], dx = player.x - co.s.x, dy = player.y - co.s.y, d = Math.hypot(dx, dy) || 1;
       if (d < PICKUP_DIST) {
-        if (co.item) { state.inventory[co.item] = (state.inventory[co.item] || 0) + 1; popLoot(co.s.x, co.s.y, ITEMS[co.item].icon); }
-        else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); }
-        co.s.destroy(); coins.splice(i, 1); continue;
+        if (co.item) {
+          if (invCount() >= INV_CAP) {   // Inventar voll -> Loot bleibt liegen, Hinweis auf die Truhe
+            if (now > state.invFullAt) { toast('🎒 Inventar voll (' + INV_CAP + ') — Truhe in Rustwater leeren'); state.invFullAt = now + 4000; }
+          } else {
+            state.inventory[co.item] = (state.inventory[co.item] || 0) + 1; popLoot(co.s.x, co.s.y, ITEMS[co.item].icon);
+            co.s.destroy(); coins.splice(i, 1); continue;
+          }
+        } else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
       }
-      if (d < magnetDist()) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
+      if (d < magnetDist() && !(co.item && invCount() >= INV_CAP)) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
     }
 
     if (!uiBlocked && !state.transitioning) updateContext();
@@ -1591,10 +1701,13 @@
       if (d < INTERACT_DIST && d < bestD) { best = s; bestType = 'station'; bestD = d; }
     }
     for (const sh of (m.shops || [])) { const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST + 40 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; } }
+    for (const ch of chests) { const d = Phaser.Math.Distance.Between(player.x, player.y, ch.c.x, ch.c.y); if (d < CHEST_INTERACT && d < bestD) { best = ch; bestType = 'chest'; bestD = d; } }
     if (best) {
       state.ctx = { type: bestType, target: best };
       if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
+      else if (bestType === 'chest') showContext('📦  Kiste öffnen');
       else if (best.id === 'store') showContext('🛒  Store — kaufen & verkaufen');
+      else if (best.id === 'stash') showContext('📦  Truhe — Loot einlagern (' + invCount() + '/' + INV_CAP + ')');
       else if (best.id === 'werkstatt') showContext(state.isRevealed ? '🔧  Werkstatt — Modifikationen' : '🔧  Werkstatt — Waffen-Tuning');
       else if (BUILDINGS[best.id]) { const b = BUILDINGS[best.id], lvl = state.economy[best.id].level; showContext(b.icon + '  ' + b.name + (lvl > 0 ? ' — Stufe ' + lvl : ' — kaufen')); }
     } else { state.ctx = null; hideContext(); }
