@@ -81,6 +81,42 @@ dürfen das Gameplay niemals verdecken.
 * **Input-Debouncing:** strikter Software-Debouncer gegen Doppeltipps — verhindert
   duplizierte Dialog-/UI-Instanzen und inkonsistente Zustände.
 
+## 1.6 Dungeons — Multilevel-Struktur & Weltplatzierung
+
+### 1.6.1 Multilevel-Aufbau (verbindlich)
+Jeder Dungeon besteht aus **mehreren, absteigenden Ebenen** (Floors). Der Spieler steigt
+über einen **Abstiegs-Schacht / Lastenaufzug** am Ende einer Ebene tiefer; der Ausgang
+(oder ein Aufzug zurück) führt an die Oberfläche.
+
+* **Tiefen-Skalierung:** Mit jeder Ebene steigen Gegner-Level, -Leben, -Panzerung und
+  Pack-Dichte; tiefere Ebenen haben einen höheren Elite-Anteil.
+* **Beute-Skalierung:** Kisten-Tier und Ausrüstungs-Seltenheits-Bias steigen mit der
+  Tiefe. Zwischen-Ebenen können einen **Mini-Boss** tragen; die **tiefste Ebene** hält
+  stets einen **einzigartigen, benannten Boss** (bzw. Superboss) plus einen reichen Cache.
+* **Ebenen-Nebel:** Der volumetrische Fog of War wird **pro Ebene neu gesetzt** (jede
+  Ebene wird frisch erkundet).
+* **Wiedereinstieg:** Checkpoint am **Eingang der aktuellen Ebene** — beim Ausknocken
+  respawnt der Spieler an der aktuellen Ebene, nicht am Dungeon-Start.
+* **Prozedural + handgesetzt:** Layout jeder Ebene wird prozedural aus handgebauten
+  3D-Modulen (Räume/Korridore) zusammengesetzt; feste Anker (Boss-Arena, Schacht,
+  Schatzkammer) sind garantiert.
+
+### 1.6.2 Dungeon-Roster & Weltplatzierung
+Koordinaten im 2000 × 2000-m-Raster (Ursprung Mitte 0,0; Rustwater ≈ Zentrum). Empf.
+Level bindet an Ausrüstungs-Stufen (§7.4) und Kampagnen-Akte.
+
+| Dungeon | Region (x, z) | Thema | Empf. Level | Ebenen | Boss (tiefste Ebene) |
+| :-- | :-- | :-- | :-- | :-: | :-- |
+| **Rost-Mine** | SO (+650, +700) | verlassene Erz-/Dampfmine | 3–8 | 3 | Minen-Titan (Superboss, mech.) |
+| **Alchemistische Oase** | SW (−760, +540) | Sumpf-Höhlen, Fauna & Säure | 5–12 | 3 | Sumpf-Matriarchin (biol.) |
+| **Kessel-Friedhof** | W (−820, −120) | Schrottwracks, Automaten-Grab | 8–14 | 4 | Der Rostbaron (mech., Goliath-Klasse) |
+| **Kinetoskop-Relais** | NO (+700, −680) | Konzern-Untergrundstation | 12–18 | 4 | Relais-Wächter (mech.) — Bezug zum Deepfake-Twist (Akt II) |
+| **Iron-Rail-Tiefbunker** | N (+40, −900) | Konzernzentrale, Endgame | 18+ | 5 | Eiserner Prätor (Finale, Akt III) |
+
+Design-Absicht: Der Ring der Dungeons um Rustwater bildet eine natürliche Schwierigkeits-
+und Story-Kurve (Mine früh → Tiefbunker als Endgame). Jeder Dungeon hat eine
+Schatzkammer-Ebene (Cache-Bündel, §7.7) und ist an einen Kampagnen-Abschnitt geknüpft.
+
 ---
 
 # 2. KERN-ZUSTAND & TOWNSHIP-MECHANIK
