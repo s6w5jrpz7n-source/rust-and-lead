@@ -51,6 +51,9 @@
   const SPREAD_COUNT = 7, SPREAD_ARC = 1.0, SPREAD_CD = 3000;
   const DASH_DIST = 190, DASH_CD = 2500;
   const POTION_HEAL = 50, POTION_START = 3;
+  // Wurf-Granaten (Flächen-Ordnung) & feindliche Projektile
+  const GRENADE_R = 115, ACID_CD = 5000, SHOCK_CD = 6000, ACID_POT = 14;
+  const E_BULLET_SPEED = 300, E_BULLET_R = 5;
   // Boss
   const BOSS_HP = 700, BOSS_R = 28, BOSS_SPEED = 46, BOSS_CONTACT = 28, BOSS_GOLD = 20, BOSS_KILLS_TRIGGER = 8;
   const BOSS_NAMES = ['Rost-Baron', 'Blei-Molch', 'Schrott-Koloss', 'Kaktus-König'];
@@ -91,12 +94,14 @@
   const ENEMY_TYPES = {
     outlaw:    { name: 'Grenzgänger',       cls: 'BIOLOGICAL', sub: 'outlaw',    r: 15, hp: 55,  speed: 82,  armor: 0,  contact: 12, gold: [1, 3] },
     fauna:     { name: 'Ölfresser-Ratte',   cls: 'BIOLOGICAL', sub: 'fauna',     r: 12, hp: 32,  speed: 122, armor: 0,  contact: 9,  gold: [1, 2], swarm: true },
-    konstrukt: { name: 'Konzern-Konstrukt', cls: 'MECHANICAL', sub: 'konstrukt', r: 15, hp: 95,  speed: 54,  armor: 15, contact: 13, gold: [2, 4] },
+    revolver:  { name: 'Revolverheld',      cls: 'BIOLOGICAL', sub: 'outlaw',    r: 14, hp: 48,  speed: 72,  armor: 0,  contact: 10, gold: [2, 3], ranged: { min: 150, max: 360, dmg: 9, rate: 1500, color: 0xfca5a5 } },
+    konstrukt: { name: 'Konzern-Konstrukt', cls: 'MECHANICAL', sub: 'konstrukt', r: 15, hp: 95,  speed: 54,  armor: 15, contact: 13, gold: [2, 4], ranged: { min: 130, max: 340, dmg: 8, rate: 1300, color: 0xfbbf24 } },
     goliath:   { name: 'Schwerer Ernter',   cls: 'MECHANICAL', sub: 'goliath',   r: 28, hp: 900, speed: 40,  armor: 30, contact: 28, gold: 24, frontImmune: true, isBoss: true }
   };
   const ENEMY_COLORS = {
     outlaw:    { color: 0xb45309, stroke: 0x7c2d12 },
     fauna:     { color: 0x65a30d, stroke: 0x365314 },
+    revolver:  { color: 0xd97706, stroke: 0x78350f },
     konstrukt: { color: 0x64748b, stroke: 0x1e293b },
     goliath:   { color: 0x475569, stroke: 0x0f172a }
   };
@@ -128,6 +133,7 @@
     regen:    { name: ['—', 'Kühlsystem'], icon: '❄️', desc: 'Regeneration', base: 50, max: 5, bodyMod: true },
     magnet:   { name: ['—', 'Magnet-Spule'], icon: '🧲', desc: 'Loot-Magnet', base: 40, max: 4, bodyMod: true }
   };
+  const WEAPON_UP = { base: 55, max: 5, per: 5 };   // pro Waffe: +5 Basisschaden/Stufe (Säure zusätzlich +2 Potenz)
 
   // Tycoon: neutrale Rustwater-Gebäude. Einkommen/Sek = level * incomePer. Ausbau-Kosten = baseCost * (level+1).
   const BUILDINGS = {
@@ -312,7 +318,7 @@
   let cursors, wasd;
 
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
-  const enemies = [], bullets = [], coins = [], mapObjects = [];
+  const enemies = [], bullets = [], eBullets = [], coins = [], mapObjects = [];
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
   let miniDirty = true, pendingOffline = 0, shopLabels = {}, floorKey = null, floorTexN = 0;
   let chunks = {}, colliders = [];
@@ -329,8 +335,9 @@
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
-    potions: POTION_START, cd: { spread: 0, dash: 0 },
+    potions: POTION_START, cd: { spread: 0, dash: 0, acid: 0, shock: 0 },
     boss: null, killsSinceBoss: 0, weapon: 'karabiner',
+    weaponLvl: { karabiner: 0, voltgun: 0, saeure: 0, brenner: 0 },
     ctx: null
   };
 
@@ -363,13 +370,15 @@
     const abilDefs = [
       { id: 'spread', color: 0x8b5cf6, icon: '✦', off: { x: -72, y: -78 } },
       { id: 'dash', color: 0x38bdf8, icon: '»', off: { x: -104, y: -18 } },
-      { id: 'potion', color: 0x16a34a, icon: '🍶', off: { x: 4, y: -112 } }
+      { id: 'potion', color: 0x16a34a, icon: '🍶', off: { x: 4, y: -112 } },
+      { id: 'acid', color: 0x84cc16, icon: '🧪', off: { x: -150, y: -74 }, gated: true },
+      { id: 'shock', color: 0x0ea5e9, icon: '⚡', off: { x: -134, y: -128 }, gated: true }
     ];
     abilities = abilDefs.map(d => {
       const btn = scene.add.circle(0, 0, 30, d.color, 0.9).setStrokeStyle(3, 0xffffff, 0.5).setScrollFactor(0).setDepth(20);
       const icon = scene.add.text(0, 0, d.icon, { fontSize: '20px', color: '#fff' }).setOrigin(0.5).setScrollFactor(0).setDepth(21);
       const cdText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#fff', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(22);
-      return { id: d.id, off: d.off, btn, icon, cdText };
+      return { id: d.id, off: d.off, btn, icon, cdText, gated: !!d.gated };
     });
 
     // Waffen-Umschalter (Schadensart wechseln) — rechts über dem Schuss-Button
@@ -488,7 +497,9 @@
   // Werte aus Upgrades (Basis + Level-Bonus)
   function curWeapon() { return WEAPONS[state.weapon] || WEAPONS.karabiner; }
   function weaponUnlocked(id) { return WEAPONS[id].always || state.isRevealed; }
-  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6; }
+  function weaponLvl(id) { return (state.weaponLvl && state.weaponLvl[id]) || 0; }
+  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5; }
+  function weaponAcid() { return curWeapon().acid + weaponLvl('saeure') * 2; }
   function fireMs() { return Math.max(80, curWeapon().fireMs - state.upgrades.firerate * 22); }
   function cycleWeapon() {
     const avail = WEAPON_ORDER.filter(weaponUnlocked);
@@ -505,7 +516,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
@@ -514,6 +525,7 @@
       const s = JSON.parse(raw);
       state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1; state.chosenGuild = s.guild || null;
       state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
+      if (s.weaponLvl) for (const k in state.weaponLvl) if (typeof s.weaponLvl[k] === 'number') state.weaponLvl[k] = s.weaponLvl[k];
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
@@ -539,6 +551,7 @@
     mapObjects.forEach(o => o.destroy()); mapObjects.length = 0;
     enemies.forEach(e => e.c.destroy()); enemies.length = 0;
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
+    eBullets.forEach(b => b.sprite.destroy()); eBullets.length = 0;
     coins.forEach(c => c.s.destroy()); coins.length = 0;
     state.boss = null; hideBossBar(); state.killsSinceBoss = 0;
     colliders = [];
@@ -727,8 +740,8 @@
   // Gewichteter Gegner-Pool: nach dem Reveal treten mechanische Konzern-Konstrukte auf.
   function pickEnemyType() {
     const pool = state.isRevealed
-      ? [['outlaw', 3], ['fauna', 3], ['konstrukt', 4]]
-      : [['outlaw', 5], ['fauna', 4], ['konstrukt', 1]];
+      ? [['outlaw', 3], ['fauna', 2], ['revolver', 2], ['konstrukt', 4]]
+      : [['outlaw', 4], ['fauna', 3], ['revolver', 2], ['konstrukt', 1]];
     let total = 0; for (const p of pool) total += p[1];
     let x = Math.random() * total;
     for (const p of pool) { if ((x -= p[1]) <= 0) return p[0]; }
@@ -738,7 +751,7 @@
     const t = ENEMY_TYPES[typeKey], col = ENEMY_COLORS[typeKey];
     const g = Array.isArray(t.gold) ? Phaser.Math.Between(t.gold[0], t.gold[1]) : t.gold;
     return addEnemy(x, y, { r: t.r, barW: t.isBoss ? 56 : (t.sub === 'fauna' ? 26 : 32), hp: t.hp, color: col.color, stroke: col.stroke,
-      contact: t.contact, speed: t.speed, gold: g, cls: t.cls, sub: t.sub, armor: t.armor, frontImmune: t.frontImmune,
+      contact: t.contact, speed: t.speed, gold: g, cls: t.cls, sub: t.sub, armor: t.armor, frontImmune: t.frontImmune, ranged: t.ranged,
       isBoss: !!t.isBoss, name: (opts && opts.name) || t.name, aggro: !!(opts && opts.aggro) });
   }
   function scatterEnemies(m) {
@@ -962,9 +975,15 @@
   function openWorkshop() {
     if (state.storeOpen || state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
     state.workshopOpen = true; hideContext();
-    const size = sceneRef.scale.gameSize, ids = Object.keys(UPGRADES);
-    const pw = Math.min(360, size.width * 0.94), rowH = 46, headH = 66, footH = 38;
-    const ph = headH + ids.length * (rowH + 6) + footH;
+    const size = sceneRef.scale.gameSize;
+    // Zeilenmodell: Körper-/Waffen-Mods + (nach Reveal) Waffen-Armaturen je freigeschalteter Waffe
+    const rows = Object.keys(UPGRADES).map(id => ({ kind: 'up', id }));
+    const wlist = WEAPON_ORDER.filter(weaponUnlocked);
+    rows.push({ kind: 'head', label: '🔫  Waffen-Armaturen' });
+    wlist.forEach(id => rows.push({ kind: 'weapon', id }));
+    const rowH = 46, headH = 66, footH = 38, subH = 26;
+    const bodyH = rows.reduce((s, r) => s + (r.kind === 'head' ? subH : rowH + 6), 0);
+    const pw = Math.min(360, size.width * 0.94), ph = Math.min(size.height * 0.96, headH + bodyH + footH);
     const px = size.width / 2, py = (size.height - ph) / 2;
     const add = o => { wsUI.push(o); return o; };
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
@@ -973,16 +992,28 @@
     add(sceneRef.add.text(px, py + 34, state.isRevealed ? 'Android-Modifikationen' : 'Nur Waffen-Tuning · Körper-Mods gesperrt', { fontFamily: 'system-ui', fontSize: '12px', color: state.isRevealed ? '#7dd3fc' : '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
     wsCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 12, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
     let y = py + headH;
-    ids.forEach(id => {
-      const up = UPGRADES[id], lvl = state.upgrades[id], locked = up.bodyMod && !state.isRevealed, maxed = lvl >= up.max;
-      const nm = up.name[state.isRevealed ? 1 : 0], cost = up.base * (lvl + 1);
-      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 - 7, up.icon + '  ' + (locked ? up.desc : nm), { fontFamily: 'system-ui', fontSize: '14px', color: locked ? '#8a8172' : '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
-      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 + 10, locked ? '🔒 nach dem Erwachen' : ('Stufe ' + lvl + '/' + up.max), { fontFamily: 'system-ui', fontSize: '11px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+    rows.forEach(row => {
+      if (row.kind === 'head') {
+        add(sceneRef.add.text(px - pw / 2 + 14, y + subH / 2, row.label, { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+        y += subH; return;
+      }
+      let icon, nm, sub, lvl, max, cost, locked, maxed, id = row.id;
+      if (row.kind === 'up') {
+        const up = UPGRADES[id]; lvl = state.upgrades[id]; max = up.max; locked = up.bodyMod && !state.isRevealed; maxed = lvl >= max;
+        icon = up.icon; nm = locked ? up.desc : up.name[state.isRevealed ? 1 : 0]; cost = up.base * (lvl + 1);
+        sub = locked ? '🔒 nach dem Erwachen' : ('Stufe ' + lvl + '/' + max);
+      } else {   // weapon
+        const w = WEAPONS[id], dt = DMG_TYPES[w.type]; lvl = weaponLvl(id); max = WEAPON_UP.max; locked = false; maxed = lvl >= max;
+        icon = dt.icon; nm = w.name; cost = WEAPON_UP.base * (lvl + 1);
+        sub = 'Schaden ' + (w.base + lvl * WEAPON_UP.per) + (id === 'saeure' ? ' · Säure-Potenz ' + (w.acid + lvl * 2) : '') + '  ·  ' + lvl + '/' + max;
+      }
+      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 - 7, icon + '  ' + nm, { fontFamily: 'system-ui', fontSize: '14px', color: locked ? '#8a8172' : '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 + 10, sub, { fontFamily: 'system-ui', fontSize: '11px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
       if (!locked && !maxed) {
         const can = state.gold >= cost;
         const btn = add(sceneRef.add.rectangle(px + pw / 2 - 58, y + rowH / 2, 96, 34, can ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
         add(sceneRef.add.text(btn.x, btn.y, cost + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-        storeButtonsPush(btn, id);
+        storeButtonsPush(btn, row.kind === 'weapon' ? 'w_' + id : id);
       } else {
         add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, maxed ? 'MAX' : '🔒', { fontFamily: 'system-ui', fontSize: '13px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
       }
@@ -993,6 +1024,15 @@
   function storeButtonsPush(btn, id) { wsButtons.push({ rect: btn, id }); }
   function closeWorkshop() { state.workshopOpen = false; wsUI.forEach(o => o.destroy()); wsUI = []; wsButtons = []; wsCloseRef = null; wsPanelRef = null; }
   function buyUpgrade(id) {
+    if (id.startsWith('w_')) {   // Waffen-Armatur
+      const wid = id.slice(2), lvl = weaponLvl(wid);
+      if (lvl >= WEAPON_UP.max) { toast('Bereits max'); return; }
+      const cost = WEAPON_UP.base * (lvl + 1);
+      if (state.gold < cost) { toast('Nicht genug Gold (' + state.gold + '/' + cost + ')'); return; }
+      state.gold -= cost; state.weaponLvl[wid]++; updateGold();
+      toast(WEAPONS[wid].name + ' → Stufe ' + state.weaponLvl[wid]); save();
+      closeWorkshop(); openWorkshop(); updateWeaponUI(); return;
+    }
     const up = UPGRADES[id], lvl = state.upgrades[id];
     if (up.bodyMod && !state.isRevealed) { toast('🔒 Erst nach dem Erwachen'); return; }
     if (lvl >= up.max) { toast('Bereits max'); return; }
@@ -1210,7 +1250,8 @@
     const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
     const c = sceneRef.add.container(x, y, [body, hpBg, hpFill]).setDepth(o.isBoss ? 5 : 4);
     const e = { c, body, baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
-      cls: o.cls || 'BIOLOGICAL', sub: o.sub || 'outlaw', armor: o.armor || 0, maxArmor: o.armor || 0, frontImmune: !!o.frontImmune, stunUntil: 0, dot: null };
+      cls: o.cls || 'BIOLOGICAL', sub: o.sub || 'outlaw', armor: o.armor || 0, maxArmor: o.armor || 0, frontImmune: !!o.frontImmune, stunUntil: 0, dot: null,
+      ranged: o.ranged || null, fireCd: Phaser.Math.Between(300, 1200) };
     enemies.push(e); return e;
   }
   function spawnEnemy() {
@@ -1240,7 +1281,7 @@
     if (!sceneRef || !player || state.transitioning) return;
     const w = curWeapon(), dx = Math.cos(a), dy = Math.sin(a);
     const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6), BULLET_R, w.bulletColor).setStrokeStyle(2, 0x1f2937, 0.6).setDepth(6);
-    bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE, type: w.type, base: dmgPerBullet(), acid: w.acid });
+    bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE, type: w.type, base: dmgPerBullet(), acid: weaponAcid() });
   }
   function nearestEnemy(range) {
     let best = null, bd = (range === undefined ? Infinity : range);
@@ -1262,14 +1303,39 @@
     if (state.hp >= state.maxHp) { toast('Leben bereits voll'); return; }
     state.hp = Math.min(state.maxHp, state.hp + POTION_HEAL); state.potions--; updateLife(); updateAbilityUI(); toast('🍶 ' + T('potion') + ' +' + POTION_HEAL);
   }
+  function enemyFire(e, R) {
+    const a = Math.atan2(player.y - e.c.y, player.x - e.c.x), dx = Math.cos(a), dy = Math.sin(a);
+    const s = sceneRef.add.circle(e.c.x + dx * (e.r + 4), e.c.y + dy * (e.r + 4), E_BULLET_R, R.color).setStrokeStyle(2, 0x111827, 0.6).setDepth(6);
+    eBullets.push({ sprite: s, vx: dx * E_BULLET_SPEED, vy: dy * E_BULLET_SPEED, life: 2.4, dmg: R.dmg });
+  }
+  // Wurf-Granate: Flächenschaden am nächsten Ziel + garantierter Status (Säure = Korrosion, Schock = Stun).
+  function throwGrenade(kind) {
+    const type = kind === 'acid' ? 'ALCHEMICAL' : 'GALVANIC', col = DMG_TYPES[type].color;
+    const t = nearestEnemy(640);
+    const tx = t ? t.c.x : player.x + Math.cos(player.facing) * 230;
+    const ty = t ? t.c.y : player.y + Math.sin(player.facing) * 230;
+    const fx = sceneRef.add.circle(tx, ty, GRENADE_R, col, 0.35).setStrokeStyle(3, col, 0.8).setDepth(7).setScale(0.2);
+    sceneRef.tweens.add({ targets: fx, scale: 1, alpha: 0, duration: 400, ease: 'Cubic.out', onComplete: () => fx.destroy() });
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      if (Phaser.Math.Distance.Between(tx, ty, e.c.x, e.c.y) > GRENADE_R + e.r) continue;
+      applyStatus(e, kind === 'acid' ? 'CORRODE' : 'STUN', ACID_POT);   // garantierter Effekt im Radius
+      const res = calcDamage(type, e, kind === 'acid' ? 30 : 45);
+      damageEnemy(e, res.dmg, { color: col, immune: res.immune });
+    }
+    toast((kind === 'acid' ? '🧪 Säure-Granate' : '⚡ Elektrofeld-Granate') + ' geworfen');
+  }
   function useAbility(id) {
     if (id === 'spread') { if (state.cd.spread > 0) return; castSpread(); state.cd.spread = SPREAD_CD; }
     else if (id === 'dash') { if (state.cd.dash > 0) return; castDash(); state.cd.dash = DASH_CD; }
     else if (id === 'potion') { usePotion(); }
+    else if (id === 'acid') { if (!state.isRevealed) { toast('🔒 Ordnung nach dem Erwachen'); return; } if (state.cd.acid > 0) return; throwGrenade('acid'); state.cd.acid = ACID_CD; }
+    else if (id === 'shock') { if (!state.isRevealed) { toast('🔒 Ordnung nach dem Erwachen'); return; } if (state.cd.shock > 0) return; throwGrenade('shock'); state.cd.shock = SHOCK_CD; }
     updateAbilityUI();
   }
   function updateAbilityUI() {
     for (const ab of abilities) {
+      if (ab.gated && !state.isRevealed) { ab.btn.setAlpha(0.25); ab.icon.setAlpha(0.3); ab.cdText.setText('🔒'); continue; }
       if (ab.id === 'potion') { ab.cdText.setText('' + state.potions); ab.btn.setAlpha(state.potions > 0 ? 0.9 : 0.4); continue; }
       const cd = state.cd[ab.id] || 0;
       if (cd > 0) { ab.btn.setAlpha(0.4); ab.icon.setAlpha(0.3); ab.cdText.setText(Math.ceil(cd / 1000) + ''); }
@@ -1435,6 +1501,8 @@
     // Cooldowns
     state.cd.spread = Math.max(0, state.cd.spread - delta);
     state.cd.dash = Math.max(0, state.cd.dash - delta);
+    state.cd.acid = Math.max(0, state.cd.acid - delta);
+    state.cd.shock = Math.max(0, state.cd.shock - delta);
     updateAbilityUI();
 
     // Gegner: idle bis nah -> dann verfolgen + Kontaktschaden
@@ -1446,6 +1514,14 @@
       if (stunned) continue;                                               // bewegungsunfähig, kein Kontaktschaden
       if (!e.aggro) { if (d < AGGRO_RANGE) e.aggro = true; else continue; }   // erst angreifen, wenn nah genug
       else if (!e.isBoss && d > LEASH_RANGE) { e.aggro = false; continue; }   // zu weit -> beruhigt sich wieder
+      if (e.ranged) {   // Fernkämpfer: Abstand halten (Deckung/Schützenlinie), kiten & feuern
+        const R = e.ranged;
+        if (d > R.max) { e.c.x += (ex / d) * e.speed * dt; e.c.y += (ey / d) * e.speed * dt; }        // heranrücken
+        else if (d < R.min) { e.c.x -= (ex / d) * e.speed * 0.8 * dt; e.c.y -= (ey / d) * e.speed * 0.8 * dt; }   // zurückweichen
+        e.fireCd -= delta;
+        if (d <= R.max + 20 && e.fireCd <= 0 && !uiBlocked && !state.transitioning) { enemyFire(e, R); e.fireCd = R.rate; }
+        continue;
+      }
       if (d > PLAYER_R + e.r) { e.c.x += (ex / d) * e.speed * dt; e.c.y += (ey / d) * e.speed * dt; }
       else if (!uiBlocked && now > state.invulnUntil) { state.hp -= e.contact * dt; state.lastDamage = now; touched = true; }
     }
@@ -1472,6 +1548,17 @@
         hitE = true; break;
       }
       if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
+    }
+
+    // Feindliche Projektile (Fernkämpfer)
+    for (let i = eBullets.length - 1; i >= 0; i--) {
+      const b = eBullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
+      let hit = false;
+      if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, player.x, player.y) < PLAYER_R + E_BULLET_R) {
+        if (!uiBlocked && now > state.invulnUntil) { state.hp -= b.dmg; state.lastDamage = now; updateLife(); if (state.hp <= 0) respawnPlayer(); }
+        hit = true;
+      }
+      if (hit || b.life <= 0) { b.sprite.destroy(); eBullets.splice(i, 1); }
     }
 
     // Gold-Münzen
