@@ -43,7 +43,7 @@
   const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90, GATE_ENTER_DIST = 30;
   const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
   const INV_CAP = 40, CHEST_PER_TILES = 320, CHEST_INTERACT = 52;   // Inventar-Limit & Loot-Kisten
-  const SALOON_INCOME = 1, OFFLINE_CAP = 8 * 3600, SAVE_KEY = 'rustlead_save_v1';
+  const SALOON_INCOME = 1, SAVE_KEY = 'rustlead_save_v1';
 
   // Spieler-Leben & Kampf
   const PLAYER_MAX_HP = 100, CONTACT_DPS = 12, INVULN_MS = 1200, REGEN_DELAY = 3000, REGEN_RATE = 8;
@@ -358,7 +358,7 @@
   const stick = { active: false, id: null, baseX: 0, baseY: 0, vx: 0, vy: 0 };
   const enemies = [], bullets = [], eBullets = [], coins = [], chests = [], mapObjects = [];
   let shooting = false, shootId = null, fireTimer = 0, kills = 0;
-  let miniDirty = true, pendingOffline = 0, shopLabels = {}, floorKey = null, floorTexN = 0;
+  let miniDirty = true, shopLabels = {}, floorKey = null, floorTexN = 0;
   let chunks = {}, colliders = [];
 
   const state = {
@@ -536,7 +536,6 @@
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
     loadMap('overworld', { c: 40, r: 40 });
-    if (pendingOffline > 0) { toast('🍺 Offline verdient: +' + pendingOffline + ' Gold'); pendingOffline = 0; }
   }
 
   // ---- Wirtschaft: Speichern / Laden / Einkommen -------------
@@ -619,7 +618,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -640,11 +639,8 @@
       state.economy = { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } };
       if (s.economy) { for (const k in BUILDINGS) if (s.economy[k]) state.economy[k].level = s.economy[k].level || 0; }
       else if (s.saloon) state.economy.saloon.level = 1;   // Migration alter Spielstände
-      const inc = incomePerSec();
-      if (inc > 0 && s.t) {
-        const sec = Math.min(Math.floor((Date.now() - s.t) / 1000), OFFLINE_CAP), g = sec * inc;
-        if (g > 0) { state.gold += g; pendingOffline = g; }
-      }
+      // Kein Offline-Ertrag: Beim Laden wird KEINE verstrichene Realzeit geprüft und kein
+      // rückwirkendes Gold vergeben. Die Wirtschaft läuft nur während aktiver Spielzeit.
     } catch (e) { }
   }
 

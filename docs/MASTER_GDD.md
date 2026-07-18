@@ -192,15 +192,22 @@ Implementierungsregel: **jede** menschlich klingende Beschriftung durchläuft di
 Auflösung `T(key) = TERMS[key][is_revealed ? 1 : 0]`. Neue Begriffe werden ausschließlich
 über diese Tabelle eingeführt, nie hartkodiert.
 
-## 2.2 Asynchrone Tycoon-Unabhängigkeit
+## 2.2 Asynchrone Tycoon-Unabhängigkeit (nur aktive Spielzeit)
 Die Wirtschaft der Township **Rustwater** läuft auf einem **eigenständigen
-Hintergrund-Intervall-Tick** (1 Sekunde), vollständig entkoppelt von Kampf, Kapitel-
-oder Gildenwahl.
+Hintergrund-Intervall-Tick** (1 Sekunde), der **ausschließlich während der aktiven
+Spielzeit** feuert. Er ist entkoppelt von Kampf, Kapitel- oder Gildenwahl, aber an die
+laufende In-Game-Simulation gebunden.
 
-* Einkommen/Sek = Σ (`gebäude.level × incomePer`) über alle Gebäude.
-* Der Tick läuft **immer** — im Kampf, im Dialog, im Menü.
-* **Offline-Ertrag:** Beim Laden wird die verstrichene Realzeit (gedeckelt) mit dem
-  Einkommen/Sek multipliziert und gutgeschrieben.
+* **In-Game-Generierung:** Einkommen/Sek = Σ (`gebäude.level × incomePer`) über alle
+  Gebäude — gebunden an die In-Game-Simulationsuhr.
+* **Simulations-Bedingung:** Der Tick feuert in **jeder aktiven Gameplay-Sekunde** (im
+  Kampf, im Dialog, im Menü), **pausiert jedoch vollständig**, sobald das Spiel beendet,
+  minimiert oder pausiert wird.
+* **Kein Offline-Ertrag:** Es findet **keinerlei** passive Progression oder Gold-
+  Erwirtschaftung im Hintergrund statt, während der Spieler offline ist. Beim Neustart
+  läuft die Wirtschaft exakt an dem Punkt und mit dem Kontostand weiter, an dem
+  gespeichert wurde — es wird **weder verstrichene Realzeit geprüft noch rückwirkend Gold
+  gutgeschrieben**.
 * Kampagnen-Entscheidungen und Gildenzugehörigkeit verändern **niemals** direkt diesen
   Tick (nur indirekt über freigeschaltete Boost-Quests, §5.4).
 
@@ -299,11 +306,13 @@ Speicher-Schema (unten) serialisiert.
   "gearBag": [],
   "quests": {}, "questBase": {},
   "discovered": ["<stationId>"],
-  "explored": { "<mapId>": ["<c,r>"] },
-  "t": 0
+  "explored": { "<mapId>": ["<c,r>"] }
 }
 ```
-`t` (Zeitstempel des letzten Speicherns) treibt die Offline-Ertrags-Berechnung.
+**Kein Zeitstempel:** Das Save-Schema enthält bewusst **kein** `t`/Zeitstempel-Feld. Der
+Wirtschaftszustand ist vollständig durch die aktuellen **Gebäudestufen** und den aktiven
+In-Game-Tick definiert (§2.2). Beim Laden wird **keine** verstrichene Realzeit geprüft und
+**kein** rückwirkendes Gold vergeben.
 
 ---
 
