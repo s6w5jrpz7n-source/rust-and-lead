@@ -7,6 +7,37 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
 ## Dateien
 - `scripts/GameState.gd` — globaler Laufzeit-Zustand (Single Source of Truth).
 - `scripts/QuestManager.gd` — Quests, Fraktions-Locking, Kapitel-Progression, Reveal.
+- `scripts/CombatData.gd` — Kampf-Registries: Schadensarten, Waffen, Gegner-Statblöcke,
+  `xp_for_kill()`, `weapon_acid()` (statische Klasse, `class_name`).
+- `scripts/CombatTarget.gd` — veränderlicher Kampf-Zustand einer Einheit (Leben,
+  Panzerung, Stun/DOT); `from_type(type, {elite, superboss, depth})` inkl.
+  Tiefen-Skalierung für Multilevel-Dungeons (GDD §1.6).
+- `scripts/DamageEngine.gd` — reiner Schadens-Kalkulator: `calculate()`, `apply_status()`,
+  `tick_dot()`, `resolve_hit()`, `player_damage_taken_mul()` (alles `static`).
+
+## Kampf-Backend (Nutzung)
+`CombatData`, `CombatTarget` und `DamageEngine` sind `class_name`-Klassen (statisch bzw.
+per `.new()`), **kein Autoload nötig**. Wechselwirkungs-Matrix & Werte entsprechen exakt
+dem verifizierten Web-Prototyp (Master-GDD §6.2/§6.3).
+
+```gdscript
+var now := Time.get_ticks_msec()
+# Gegner aus dem Roster (optional Elite/Superboss/Tiefe):
+var guard := CombatTarget.from_type("konstrukt")            # MECHANICAL, armor 15
+var titan := CombatTarget.from_type("goliath", {"superboss": true, "depth": 2})
+
+# Treffer eines galvanischen Volt-Karabiners auf den Automaten:
+var hit := DamageEngine.resolve_hit(CombatData.GALVANIC, guard, 40, 0, now)
+# hit == { damage: 100, effect: "SHORT_CIRCUIT_STUN"(40%), immune: false, killed: false }
+
+# DOT/Stun pro Frame verarbeiten:
+if not guard.is_stunned(now):
+    pass  # Bewegung/Angriff erlaubt
+DamageEngine.tick_dot(guard, now, get_process_delta_time())
+
+# Eingehender Schaden am Spieler (Rüstung mindert):
+var taken := int(round(raw_damage * DamageEngine.player_damage_taken_mul(player_armor)))
+```
 
 ## Autoload-Registrierung (Reihenfolge beachten!)
 Project Settings ▸ Autoload — **`GameState` zuerst**, dann `QuestManager` (letzterer
