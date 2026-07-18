@@ -1,15 +1,21 @@
-class_name DamageEngine extends RefCounted
-## DamageEngine — reiner Schadens-Kalkulator (Master-GDD §6.2/§6.3).
+class_name CombatEngine extends RefCounted
+## CombatEngine — mathematische Kampf- & Mitigations-Engine (Master-GDD §6.2/§6.3).
+## (Modul 1; hervorgegangen aus dem früheren DamageEngine, um Mitigations-Formel und
+##  Flanken-Logik ergänzt.)
 ##
 ## Stateless: alle Methoden sind `static`, kein Autoload nötig — Aufruf direkt als
-## `DamageEngine.calculate(...)` / `DamageEngine.resolve_hit(...)`. Die Werte entsprechen
+## `CombatEngine.calculate(...)` / `CombatEngine.resolve_hit(...)`. Die Werte entsprechen
 ## exakt der im Web-Prototyp verifizierten Wechselwirkungs-Matrix (Tests DMG_MATRIX,
-## STATUS_FX). Reihenfolge der Faktoren ist verbindlich.
+## STATUS_FX). Reihenfolge der Faktoren ist verbindlich. Nutzt CombatData (Konstanten/
+## Registries) und operiert auf CombatTarget (veränderlicher Zustand).
 
 ## Berechnet den Schaden einer Schadensart gegen ein Ziel.
+## `from_front` = Angriff auf die Frontpanzerung; nur relevant für front-immune Einheiten
+## (Goliath, Minen-Titan): frontal prallt Kinetik ab, bis Säure die Panzerung auf 0 ätzt —
+## eine Flanke (from_front = false) umgeht die Immunität und nutzt normale Panzerungs-Minderung.
 ## Rückgabe: { "damage": int, "effect": String, "immune": bool }.
 ## Verändert das Ziel NICHT (Ausnahme: Korrosion wird in apply_status angewandt).
-static func calculate(damage_type: String, target: CombatTarget, base_damage: int, acid_potency: int = 10) -> Dictionary:
+static func calculate(damage_type: String, target: CombatTarget, base_damage: int, acid_potency: int = 10, from_front: bool = true) -> Dictionary:
 	var dmg: float = float(base_damage)
 	var effect: String = CombatData.FX_NONE
 	var cls: String = target.classification
@@ -18,14 +24,15 @@ static func calculate(damage_type: String, target: CombatTarget, base_damage: in
 	if cls == CombatData.MECHANICAL:
 		match damage_type:
 			CombatData.GALVANIC:
-				dmg *= 2.5                                   # Automaten: massiver Bonus
+				dmg *= 2.5                                   # Automaten: massiver Bonus (2.5x)
 				if randf() < 0.40:
 					effect = CombatData.FX_STUN
 			CombatData.KINETIC:
-				if target.front_immune:
-					dmg = 0.0 if armor > 0 else float(base_damage)   # Front prallt ab, bis Säure ätzt
+				if target.front_immune and from_front:
+					# Frontal immun, solange Panzerung > 0 (Säure muss sie erst zersetzen).
+					dmg = 0.0 if armor > 0 else float(base_damage)
 				else:
-					dmg = float(maxi(1, base_damage - armor))        # Panzerung schluckt Blei
+					dmg = float(maxi(1, base_damage - armor))        # Panzerung schluckt Blei (Flanke/normal)
 			CombatData.THERMAL:
 				dmg *= (0.6 if target.sub == "goliath" else 1.2)     # Goliath widersteht, Leichtbau brennt
 			CombatData.ALCHEMICAL:
@@ -85,9 +92,10 @@ static func tick_dot(target: CombatTarget, now_ms: int, delta_sec: float) -> int
 
 
 ## Kompletter Treffer: Schaden berechnen, Status anwenden, Schaden zufügen.
+## `from_front` reicht die Flanken-Logik durch (siehe calculate()).
 ## Rückgabe wie calculate(), zusätzlich { "killed": bool }.
-static func resolve_hit(damage_type: String, target: CombatTarget, base_damage: int, acid_potency: int, now_ms: int) -> Dictionary:
-	var res: Dictionary = calculate(damage_type, target, base_damage, acid_potency)
+static func resolve_hit(damage_type: String, target: CombatTarget, base_damage: int, acid_potency: int, now_ms: int, from_front: bool = true) -> Dictionary:
+	var res: Dictionary = calculate(damage_type, target, base_damage, acid_potency, from_front)
 	if String(res["effect"]) != CombatData.FX_NONE:
 		apply_status(target, String(res["effect"]), now_ms, acid_potency)
 	if int(res["damage"]) > 0:
@@ -96,7 +104,13 @@ static func resolve_hit(damage_type: String, target: CombatTarget, base_damage: 
 	return res
 
 
-## Schadensminderung des Spielers durch angelegte Rüstung/Panzerplatten (GDD §6.2).
-## Multiplikator auf eingehenden Schaden: 100 / (100 + armor·9) — steigend, gedeckelt.
-static func player_damage_taken_mul(player_armor: int) -> float:
-	return 100.0 / (100.0 + player_armor * 9.0)
+## Schadensminderung durch Rüstung/Panzerplatten (GDD §6.2, exakte Formel):
+##   final_damage = incoming_damage × (100 / (100 + armor_value × 9))
+## Die Kurve ist steigend und **gedeckelt** (nähert sich 0, erreicht sie nie): jeder
+## Rüstungspunkt bringt weniger Zusatzschutz als der vorige -> keine Unverwundbarkeit.
+static func player_damage_taken_mul(armor_value: int) -> float:
+	return 100.0 / (100.0 + armor_value * 9.0)
+
+## Wendet die Mitigations-Formel an und liefert den finalen (ganzzahligen) Schaden.
+static func mitigate_damage(incoming_damage: int, armor_value: int) -> int:
+	return maxi(0, roundi(incoming_damage * player_damage_taken_mul(armor_value)))

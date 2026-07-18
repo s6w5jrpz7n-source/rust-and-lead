@@ -1,7 +1,7 @@
 class_name CombatTarget extends RefCounted
 ## CombatTarget — veränderlicher Kampf-Zustand einer Einheit (Gegner oder Spieler-Proxy).
 ##
-## Kapselt alles, was die DamageEngine liest/verändert: Klassifizierung, Panzerung,
+## Kapselt alles, was die CombatEngine liest/verändert: Klassifizierung, Panzerung,
 ## Leben, Status (Stun/DOT). Wird typischerweise an einen 3D-Node gehängt, ist aber
 ## bewusst logik-only (RefCounted) und ohne Szenen-Abhängigkeit — damit voll testbar.
 

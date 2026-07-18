@@ -12,8 +12,13 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
 - `scripts/CombatTarget.gd` — veränderlicher Kampf-Zustand einer Einheit (Leben,
   Panzerung, Stun/DOT); `from_type(type, {elite, superboss, depth})` inkl.
   Tiefen-Skalierung für Multilevel-Dungeons (GDD §1.6).
-- `scripts/DamageEngine.gd` — reiner Schadens-Kalkulator: `calculate()`, `apply_status()`,
-  `tick_dot()`, `resolve_hit()`, `player_damage_taken_mul()` (alles `static`).
+- `scripts/CombatEngine.gd` — **Modul 1:** mathematische Kampf-/Mitigations-Engine:
+  `calculate()` (Matrix + Flanken-Logik), `apply_status()`, `tick_dot()`, `resolve_hit()`,
+  `mitigate_damage()` / `player_damage_taken_mul()` (alles `static`).
+- `scripts/TycoonManager.gd` — **Modul 2:** aktive Rustwater-Wirtschaft (Node-Autoload):
+  Sekunden-Tick nur bei aktiver Spielzeit, Kostenkurve, Ripple-Booster.
+- `scripts/GridInventoryBackend.gd` — **Modul 3:** reines Grid-Inventar (`class_name`,
+  instanziierbar): Footprint-Prüfung, Insert/Remove, Auto-Platzierung.
 - `scripts/WorldManager.gd` — Weltgeografie & Gating (GDD §1.6/§1.7): POI-Registry mit
   Koordinaten, Sektor-Logik und die drei Tore (Sprengtore, Smog-Linie, Fraktions-
   Feindseligkeit) als aus `GameState` abgeleitete Abfragen (`class_name`, `static`).
@@ -42,8 +47,8 @@ WorldManager.is_base_hostile("sektor01")          # true  (fremdes HQ -> Geschü
 WorldManager.is_base_friendly("fort_freedom")     # true  (eigene Gilde)
 ```
 
-## Kampf-Backend (Nutzung)
-`CombatData`, `CombatTarget` und `DamageEngine` sind `class_name`-Klassen (statisch bzw.
+## Modul 1 — Kampf-Backend (CombatEngine)
+`CombatData`, `CombatTarget` und `CombatEngine` sind `class_name`-Klassen (statisch bzw.
 per `.new()`), **kein Autoload nötig**. Wechselwirkungs-Matrix & Werte entsprechen exakt
 dem verifizierten Web-Prototyp (Master-GDD §6.2/§6.3).
 
@@ -54,26 +59,53 @@ var guard := CombatTarget.from_type("konstrukt")            # MECHANICAL, armor 
 var titan := CombatTarget.from_type("goliath", {"superboss": true, "depth": 2})
 
 # Treffer eines galvanischen Volt-Karabiners auf den Automaten:
-var hit := DamageEngine.resolve_hit(CombatData.GALVANIC, guard, 40, 0, now)
+var hit := CombatEngine.resolve_hit(CombatData.GALVANIC, guard, 40, 0, now)
 # hit == { damage: 100, effect: "SHORT_CIRCUIT_STUN"(40%), immune: false, killed: false }
+
+# Front-Immunität: frontal 0 Kinetik, bis Säure die Panzerung auf 0 ätzt; Flanke umgeht sie.
+CombatEngine.calculate(CombatData.KINETIC, titan, 40).damage            # 0 (frontal, armor>0)
+CombatEngine.calculate(CombatData.KINETIC, titan, 40, 10, false).damage # Flanke: max(1, 40-armor)
 
 # DOT/Stun pro Frame verarbeiten:
 if not guard.is_stunned(now):
     pass  # Bewegung/Angriff erlaubt
-DamageEngine.tick_dot(guard, now, get_process_delta_time())
+CombatEngine.tick_dot(guard, now, get_process_delta_time())
 
-# Eingehender Schaden am Spieler (Rüstung mindert):
-var taken := int(round(raw_damage * DamageEngine.player_damage_taken_mul(player_armor)))
+# Eingehender Schaden am Spieler (exakte Mitigations-Formel 100/(100+armor*9)):
+var taken := CombatEngine.mitigate_damage(raw_damage, player_armor)
+```
+
+## Modul 2 — Aktive Wirtschaft (TycoonManager, Autoload)
+Sekunden-Tick **nur bei aktiver Spielzeit** (kein Offline-Ertrag, kein Zeitstempel):
+```gdscript
+TycoonManager.income_per_sec()               # Σ level*income_per (ganzzahlig)
+TycoonManager.upgrade_cost("forge")          # base_cost * (level+1), evtl. -10% (Forge-Boost)
+TycoonManager.try_upgrade("forge")           # prüft Gold & Max, bucht ganzzahlig ab
+TycoonManager.activate_boost("saloon", 60.0) # 60 aktive Sek: +15% Schmiede-Einkommen (Ripple)
+TycoonManager.sell_value(200)                # +20% mit aktivem Destille-Boost
+```
+
+## Modul 3 — Grid-Inventar (GridInventoryBackend, instanziierbar)
+```gdscript
+var grid := GridInventoryBackend.new(10, 8)                   # 10x8 Zellen
+var f := GridInventoryBackend.footprint("armor")             # Vector2i(2,2)
+grid.can_fit_item(0, 0, f.x, f.y)                            # true
+grid.insert_item(101, 0, 0, f.x, f.y)                       # belegt (0,0)-(1,1) mit uid 101
+grid.find_first_empty_space(3, 1)                           # erster Platz für schwere Waffe
+grid.place_first(102, 3, 1)                                 # Loot-Drop automatisch platzieren
+grid.remove_item(101)                                       # Zellen der uid wieder frei
 ```
 
 ## Autoload-Registrierung (Reihenfolge beachten!)
-Project Settings ▸ Autoload — **`GameState` zuerst**, dann `QuestManager` (letzterer
-liest bei jedem Aufruf `GameState`):
+Project Settings ▸ Autoload — **`GameState` zuerst**, dann die abhängigen Manager. Die
+`class_name`-Klassen (CombatEngine, CombatData, CombatTarget, WorldManager,
+GridInventoryBackend) brauchen **keinen** Autoload-Eintrag.
 
 | Reihenfolge | Name | Pfad |
 | :-- | :-- | :-- |
 | 1 | `GameState` | `res://godot/scripts/GameState.gd` |
 | 2 | `QuestManager` | `res://godot/scripts/QuestManager.gd` |
+| 3 | `TycoonManager` | `res://godot/scripts/TycoonManager.gd` |
 
 ## Quest-Zustandsmaschine
 ```
