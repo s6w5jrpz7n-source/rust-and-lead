@@ -40,8 +40,9 @@ Die Entwicklung läuft zweistufig:
    moderne Lichttechnik. **SDFGI** (Signed Distance Field Global Illumination),
    **volumetrischer Nebel** für den Fog of War sowie dynamische, kontrastreiche
    Echtzeit-Schatten.
-3. **Moderne Kamera:** 3D-isometrische Kamera (orthografisch oder flach-perspektivisch),
-   ausgelegt auf großflächige Exploration.
+3. **Moderne Kamera:** **fixe, nicht rotierbare** 3D-isometrische Kamera (orthografisch
+   oder flach-perspektivisch), weich folgend, ausgelegt auf großflächige Exploration
+   (Details siehe 3.3) – inkl. automatischem Sichtverdeckungs-System (3.4).
 4. **Visceral Combat & Physik:** Wuchtiger, moderner Kampf. **Voll-3D-Skelett­animationen**
    statt kachelbasierter Animationen, **Ragdoll-Physik** für besiegte Gegner, sowie
    **GPU-Partikeleffekte** für elementare Treffer (galvanische Funken, alchemistische
@@ -64,6 +65,33 @@ Die Spielwelt ist eine **zusammenhängende, nahtlose 3D-Open-World**.
 ### 3.2 Struktur
 Nahtlose Open-World mit Streaming/LOD statt harter Kartenwechsel; Stadt (Rustwater),
 Fraktionsbasen und Dungeons sind eingebettete Bereiche derselben Welt.
+
+### 3.3 Kamera – Fixe isometrische Perspektive
+Permanent fixierte, **nicht rotierbare** 3D-Kamera für das klassische, fokussierte
+ARPG-Spielgefühl.
+* **Winkel:** starr, Pitch ca. **35°–45°** nach unten, Yaw um **45°** auf der Y-Achse →
+  perfekter isometrischer Look.
+* **Folgemodus:** folgt der Spieler-Transform **weich interpoliert** (Lerp / Smooth Damp),
+  ruckelfrei bei Sprints und plötzlichen Richtungswechseln.
+* **Keine Spieler-Rotation:** manuelle Kameradrehung ist vollständig deaktiviert.
+
+### 3.4 Dynamisches Sichtverdeckungs-System (Occlusion Handling)
+Große industrielle Strukturen (Raffinerien, Schaufelradbagger, Felswände) können die
+Achsen-bedingte Sicht blockieren. Ein automatisiertes Shader-/Ausblend-System hält das
+Gameplay stets sichtbar:
+
+**3.4.1 Wand-Ausblenden (See-Through Alpha Masking).** Befinden sich Spieler-Mesh oder
+ein feindlicher Automat hinter einer Struktur, wirft Godot einen automatischen **Raycast**
+von der Kamera zum Spieler. Alle Objekte, die diesen Strahl schneiden, wechseln in einen
+transparenten Zustand – **kein hartes Ausblenden**, sondern ein **Kreis-Dither-Shader
+(Screendoor Transparency)**, der exakt an der Spielerposition ein „Loch" in die Wand
+schneidet. Die Architektur bleibt sichtbar, die Sicht aufs Gameplay ist frei.
+
+**3.4.2 Röntgen-Kontur (X-Ray Outlines).** Ergänzend erhalten Charakter-Meshes einen
+**Silhouette-Glow-Shader**. Ist der Spieler komplett verdeckt, zeichnet die Engine eine
+leuchtende, farbige Kontur **durch die Wände** – z. B. gedimmtes **Messing-Gelb** für den
+Helden, **galvanisches Blau** für mechanische Gegner. So bleibt auch im dichtesten
+Fabrik-Gefecht die volle Kontrolle über Positionen und Hitboxen erhalten.
 
 ---
 
