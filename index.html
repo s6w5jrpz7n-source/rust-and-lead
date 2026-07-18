@@ -88,8 +88,10 @@
     armor:  { name: 'Rüstung', icon: '🛡️', stat: 'armor',    base: 4,  unit: '+{v} Rüstung',    order: 1 },
     weapon: { name: 'Waffe',   icon: '🔫', stat: 'damage',   base: 6,  unit: '+{v} Schaden',     order: 2 },
     gadget: { name: 'Gadget',  icon: '🔩', stat: 'firerate', base: 14, unit: '+{v} Feuerrate',   order: 3 },
-    boots:  { name: 'Stiefel', icon: '🥾', stat: 'speed',    base: 18, unit: '+{v} Tempo',        order: 4 }
+    boots:  { name: 'Stiefel', icon: '🥾', stat: 'speed',    base: 18, unit: '+{v} Tempo',        order: 4 },
+    plate:  { name: 'Panzerplatte', icon: '🔳', stat: 'armor', base: 3, unit: '+{v} Rüstung',    order: 5 }
   };
+  const PLATE_SLOTS = ['plate1', 'plate2', 'plate3'];   // drei stapelbare Panzerplatten-Slots
   const RARITY = {
     common:    { name: 'Gewöhnlich', color: 0x9ca3af, mult: 1.0, w: 58 },
     rare:      { name: 'Selten',     color: 0x38bdf8, mult: 1.8, w: 26 },
@@ -364,7 +366,7 @@
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
-    equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null }, gearBag: [],
+    equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null }, gearBag: [],
     isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
@@ -571,11 +573,17 @@
     for (const p of pool) { if ((x -= p[1]) <= 0) return p[0]; }
     return 'common';
   }
-  function equipGear(gearOrIdx) {
+  function slotType(equipSlot) { return equipSlot.startsWith('plate') ? 'plate' : equipSlot; }   // plate1/2/3 -> 'plate'
+  function slotDef(equipSlot) { return GEAR_SLOTS[slotType(equipSlot)]; }
+  function equipSlotsForType(type) { return type === 'plate' ? PLATE_SLOTS : [type]; }
+  function equipGear(gearOrIdx, targetSlot) {
     const idx = typeof gearOrIdx === 'number' ? gearOrIdx : state.gearBag.indexOf(gearOrIdx);
     if (idx < 0 || idx >= state.gearBag.length) return;
-    const g = state.gearBag[idx], prev = state.equip[g.slot];
-    state.equip[g.slot] = g; state.gearBag.splice(idx, 1);
+    const g = state.gearBag[idx];
+    const slots = equipSlotsForType(g.slot);
+    const slot = (targetSlot && slots.includes(targetSlot)) ? targetSlot : (slots.find(s => !state.equip[s]) || slots[0]);
+    const prev = state.equip[slot];
+    state.equip[slot] = g; state.gearBag.splice(idx, 1);
     if (prev) state.gearBag.push(prev);   // altes Teil zurück in die Tasche
     applyUpgrades(); updateLife(); save();
   }
@@ -598,7 +606,7 @@
       state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
       if (s.weaponLvl) for (const k in state.weaponLvl) if (typeof s.weaponLvl[k] === 'number') state.weaponLvl[k] = s.weaponLvl[k];
       if (s.stash) for (const k in state.stash) if (typeof s.stash[k] === 'number') state.stash[k] = s.stash[k];
-      if (s.equip) for (const k in state.equip) if (s.equip[k] && GEAR_SLOTS[k]) state.equip[k] = s.equip[k];
+      if (s.equip) for (const k in state.equip) if (s.equip[k] && GEAR_SLOTS[slotType(k)]) state.equip[k] = s.equip[k];
       if (Array.isArray(s.gearBag)) state.gearBag = s.gearBag.filter(g => g && GEAR_SLOTS[g.slot]);
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
@@ -914,7 +922,7 @@
     invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];
     const size = sceneRef.scale.gameSize, add = o => { invSlots.push(o); return o; };
     const pw = Math.min(360, size.width * 0.94);
-    const headH = 62, dollH = 176, matH = 28, bagTitleH = 22, bagCols = 4, bagRows = 3, bagSlot = 52, bagGap = 6;
+    const headH = 62, dollH = 248, matH = 28, bagTitleH = 22, bagCols = 4, bagRows = 3, bagSlot = 52, bagGap = 6;
     const bagH = bagRows * bagSlot + (bagRows - 1) * bagGap;
     const ph = headH + dollH + matH + bagTitleH + bagH + 22;
     const px = size.width / 2, py = (size.height - ph) / 2;
@@ -925,10 +933,13 @@
     invText.setText('🎒 ' + invCount() + '/' + INV_CAP + '  ·  💰 ' + state.gold + '  ·  ❤ ' + state.maxHp + '  ·  🛡️ ' + playerArmor()).setPosition(px, py + 36).setVisible(true);
     // Paper-Doll
     const by = py + headH, bx = px;
-    add(sceneRef.add.circle(bx, by + 20, 14, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-    add(sceneRef.add.rectangle(bx, by + 72, 30, 84, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-    const S = 48, pos = { helmet: [bx, by + 8], weapon: [bx - 68, by + 68], armor: [bx, by + 68], gadget: [bx + 68, by + 68], boots: [bx, by + 128] };
+    add(sceneRef.add.circle(bx, by + 18, 14, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.rectangle(bx, by + 96, 30, 120, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+    const S = 46, pos = { helmet: [bx, by + 6], weapon: [bx - 70, by + 62], armor: [bx, by + 62], gadget: [bx + 70, by + 62], boots: [bx, by + 190] };
     for (const slot in pos) drawEquipSlot(slot, pos[slot][0], pos[slot][1], S, add);
+    // Drei Panzerplatten-Slots (stapelbare Rüstung)
+    PLATE_SLOTS.forEach((slot, k) => drawEquipSlot(slot, bx + (k - 1) * 54, by + 124, S, add, false));
+    add(sceneRef.add.text(bx, by + 124 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     // Materialien
     const my = by + dollH + 4, mats = ['schrott', 'zahnrad', 'dampfkern'];
     mats.forEach((id, k) => add(sceneRef.add.text(px - pw / 2 + (pw / 3) * (k + 0.5), my, ITEMS[id].icon + ' ×' + (state.inventory[id] || 0), { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52)));
@@ -941,14 +952,14 @@
       drawBagSlot(idx, sx, sy, bagSlot, add);
     }
   }
-  function drawEquipSlot(slot, x, y, S, add) {
-    const g = state.equip[slot], col = g ? RARITY[g.rarity].color : 0x334155;
+  function drawEquipSlot(slot, x, y, S, add, label) {
+    const g = state.equip[slot], def = slotDef(slot), col = g ? RARITY[g.rarity].color : 0x334155;
     add(sceneRef.add.rectangle(x, y, S, S, g ? col : 0x334155, g ? 0.32 : 0.85).setStrokeStyle(2, g ? col : 0xf3e9d2, g ? 0.95 : 0.3).setScrollFactor(0).setDepth(52));
     if (g) {
       add(sceneRef.add.text(x, y - 6, g.icon, { fontSize: '19px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
       add(sceneRef.add.text(x, y + 15, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-    } else add(sceneRef.add.text(x, y, GEAR_SLOTS[slot].icon, { fontSize: '17px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(0.4));
-    add(sceneRef.add.text(x, y + S / 2 + 8, GEAR_SLOTS[slot].name, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    } else add(sceneRef.add.text(x, y, def.icon, { fontSize: '17px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(0.4));
+    if (label !== false) add(sceneRef.add.text(x, y + S / 2 + 8, label || def.name, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     equipSlotRects.push({ x, y, w: S, h: S, slot, gear: g });
   }
   function drawBagSlot(idx, x, y, S, add) {
@@ -969,7 +980,7 @@
     for (const es of equipSlotRects) if (inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { overSlot = es; break; }
     if (!overSlot) for (const bs of bagSlotRects) if (inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { overBag = true; break; }
     if (overSlot) {
-      if (d.gear.slot === overSlot.slot) { if (d.from.type === 'bag') equipGear(d.gear); else if (d.from.type === 'equip' && !d.moved) unequipGear(d.from.slot); }
+      if (slotType(overSlot.slot) === d.gear.slot) { if (d.from.type === 'bag') equipGear(d.gear, overSlot.slot); else if (d.from.type === 'equip' && !d.moved) unequipGear(d.from.slot); }
       else toast('Passt nur in den ' + GEAR_SLOTS[d.gear.slot].name + '-Slot');
     } else if (overBag) {
       if (d.from.type === 'equip') unequipGear(d.from.slot);
@@ -1564,9 +1575,10 @@
     coins.push({ s, item: null, gear });
   }
   function dropGearRoll(x, y, bias, n) {   // n Ausrüstungsteile mit Seltenheits-Bias
+    const types = Object.keys(GEAR_SLOTS);
     for (let i = 0; i < (n || 1); i++) {
-      const slot = Object.keys(GEAR_SLOTS)[Phaser.Math.Between(0, 4)];
-      dropGear(x, y, makeGear(slot, rollRarity(bias)));
+      const type = types[Phaser.Math.Between(0, types.length - 1)];
+      dropGear(x, y, makeGear(type, rollRarity(bias)));
     }
   }
   function dropLootFor(e) {
