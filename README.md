@@ -9,13 +9,16 @@ Spiel-Logik wird schrittweise in `index.html` implementiert.
 
 ## Vision (Kurzfassung)
 
-Ein isometrisches Action-RPG, optimiert für mobile Browser. Entwicklung in zwei Phasen:
+Zielbau ist ein **modernes, hochauflösendes 3D-isometrisches Action-RPG** mit grim-dark
+Atmosphäre (Fallout/Diablo-Vibe) – **kein** Retro-/Pixel-Look. Entwicklung in zwei Phasen:
 
-1. **Phase 1 – Web-Prototyp:** Leichtgewichtiger, spielbarer Prototyp als **einzelne
-   `index.html`** (Phaser.js). Nutzt programmgesteuerte Platzhalter (geometrische
-   Formen/Farben) und ist sofort auf dem Smartphone per Touch-Joystick testbar.
-2. **Phase 2 – Godot-Portierung:** Nach erfolgreichem Gameplay-Test wird das Projekt in
-   die **Godot Engine 4.x** übertragen und die Platzhalter durch echte 2D-Sprites ersetzt.
+1. **Phase 1 – Gameplay-Prototyp (Web):** Leichtgewichtiger, spielbarer Prototyp als
+   **einzelne `index.html`** (Phaser.js). Dient der **Validierung von Mechanik &
+   Balancing** und nutzt dafür neutrale geometrische Platzhalter (kein angestrebter
+   Kunststil). Sofort am Smartphone per Touch-Joystick testbar.
+2. **Phase 2 – Produktion in Godot 4:** Die erprobten Systeme werden in ein vollwertiges
+   **3D-Projekt** überführt (Godot 4, Forward+, PBR, SDFGI, volumetrischer Nebel,
+   Ragdoll, GPU-Partikel). Die Platzhalter-Geometrie weicht hochauflösenden 3D-Meshes.
 
 Das vollständige Game Design Document liegt unter [`docs/GDD.md`](docs/GDD.md).
 
@@ -65,4 +68,8 @@ Technik: **HTML5 + CSS3 + JavaScript**, Rendering über **Phaser.js** (per CDN e
 
 ## Status
 
-🚧 **Setup / Gerüst.** Die Spiel-Programmierung erfolgt anschließend in `index.html`.
+✅ **Gameplay-Prototyp spielbar.** Bewegung, Auto-Ziel-Kampf mit Schadensarten &
+Gegner-Matrix, Status-Effekte, Loot & Kisten, Grid-Inventar mit Ausrüstung, Level-System,
+Quests/Fraktionen und Rustwater-Wirtschaft sind implementiert (Systeme als Spezifikation
+für die Godot-Produktion). Darstellung: neutrale Platzhalter-Geometrie – der finale
+Kunststil ist modernes 3D (siehe [`docs/GDD.md`](docs/GDD.md)).

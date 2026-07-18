@@ -1,80 +1,130 @@
 # Game Design Document (GDD): "Rust & Lead"
-## Focus: Mobile-First Web Prototyping & Future Godot Transition
+## Fokus: Modernes 3D-Isometrisches ARPG (Godot 4) · Mobile-First Prototyping
+
+> **Aktualisierte Vision (Stand: Refactoring-Direktive):** "Rust & Lead" wird als
+> **modernes, hochauflösendes 3D-isometrisches Action-RPG- & Tycoon-Hybrid** auf Basis
+> von **Godot 4** entwickelt. Sämtliche Referenzen auf "16-Bit", "Retro-Stil" oder
+> "Pixel-Art" sind ausdrücklich **gestrichen**. Der visuelle Zielstil ist grim-dark,
+> gritty und realistisch (Fallout/Diablo-Atmosphäre).
 
 ---
 
 ## 1. Executive Summary & Vision
 
-**Rust & Lead** ist ein isometrisches Action-RPG (ARPG) im Steampunk-Western-Stil (*Weird West* / *Fallout*), optimiert für mobile Endgeräte.
+**Rust & Lead** ist ein isometrisches Action-RPG (ARPG) mit Tycoon-Anteil im
+Steampunk-Western-Stil (*Weird West* / *Fallout*). Der Zielbau ist eine moderne,
+hochauflösende **3D**-Produktion – keine 2D-Sprite-/Tilemap-Optik.
 
-Da die Entwicklung vollständig mobil-freundlich und ohne eigene Grafik-Erstellung starten soll, nutzen wir eine **zweistufige Entwicklungs-Pipeline**:
-1. **Phase 1 (Web-Prototyp):** Ein leichtgewichtiger, spielbarer Prototyp als einzelne HTML5-Datei (Phaser.js). Dieser nutzt programmgesteuerte Platzhalter (geometrische Formen/Farben) und ist sofort über mobile Web-Editoren (wie CodePen) auf dem Smartphone-Bildschirm per Touch-Joystick testbar.
-2. **Phase 2 (Godot-Portierung):** Nach erfolgreichem Gameplay-Test im Web wird das Projekt in die **Godot Engine 4.x** übertragen. Hier werden die geometrischen Platzhalter durch echte 2D-Spritesheets (z.B. aus Blender vorgerendert oder von Kenney.nl) und Tilemaps ersetzt.
+Die Entwicklung läuft zweistufig:
 
----
-
-## 2. Technische Spezifikationen & Steuerung
-
-### Web-Prototyp (Phase 1)
-* **Technologie:** HTML5, CSS3, JavaScript (Phaser.js Engine).
-* **Hosting:** Single-File-Setup für einfache Vorschau via CodePen, JSFiddle oder itch.io.
-* **Mobil-Optimierung:** Automatisches Resizing auf Hochkant- oder Querformat (Querformat empfohlen), Touch-Eingaben priorisiert.
-* **Grafik-Platzhalter:**
-    * *Spieler:* Blauer Kreis (mit einer kleinen Nase, um die Blickrichtung anzuzeigen).
-    * *Gegner:* Rote Quadrate oder Kreise.
-    * *Boden/Wände:* Einfarbige Kacheln (z.B. Sandgelb für Wüste, Grau für Dungeons).
-
-### Mobile Steuerung (Virtual Joystick)
-* **Linke Bildschirmhälfte:** Ein dynamischer virtueller Joystick. Sobald der Daumen den Bildschirm berührt, erscheint der Joystick und steuert die Bewegung des Spielers (isometrisch, 8 Richtungen).
-* **Rechte Bildschirmhälfte:** Großer roter Action-Button zum Schießen/Schlagen, daneben kleinere Buttons für Fähigkeiten (Heiltrank/Whiskey).
+1. **Phase 1 (Gameplay-Prototyp, Web):** Ein leichtgewichtiger, sofort spielbarer
+   Prototyp als einzelne HTML5-Datei (Phaser.js). Er dient **ausschließlich der
+   Validierung von Spielmechanik, Systemen und Balancing** (Bewegung, Kampf, Loot,
+   Wirtschaft, Ausrüstung, Level, Quests). Die Darstellung nutzt bewusst **neutrale
+   geometrische Platzhalter** – dies ist *kein* angestrebter Kunststil, sondern ein
+   funktionaler Abstraktions-Layer zum schnellen Testen am Smartphone.
+2. **Phase 2 (Produktion in Godot 4):** Die im Prototyp erprobten Systeme werden in ein
+   vollwertiges **3D-Projekt in Godot 4** überführt. Platzhalter-Geometrie wird durch
+   hochauflösende 3D-Meshes mit PBR-Materialien ersetzt; die Atmosphäre entsteht durch
+   moderne Echtzeit-Beleuchtung.
 
 ---
 
-## 3. Core Gameplay Loop
+## 2. Kritische visuelle & technische Direktiven (Godot 4)
 
-1. **Dungeon-Run (Combat & Loot):** Der Spieler steuert den Charakter durch einen zufällig generierten Raum, weicht Gegnern aus und besiegt sie per Knopfdruck.
-2. **Loot-System:** Gegner lassen Goldmünzen fallen, die automatisch per Magnet-Effekt zum Spieler gezogen werden.
-3. **Rustwater Base (Wirtschaft):** Der Spieler wechselt per Button in die Stadt "Rustwater" und investiert sein gesammeltes Gold in ein passives Einkommens-Gebäude (z. B. "Gatling-Saloon"). Dieses generiert fortlaufend Gold (auch offline/während des Kampfes).
-
----
-
-## 4. Vom Web-Prototyp zu Godot (Grafik-Transition)
-
-* **Wie funktionieren die Platzhalter?**
-    Im Web-Prototyp generiert die Phaser-Engine die Grafiken live aus Code (`graphics.fillCircle`, `graphics.fillRect`). Das spart Ladezeiten und Asset-Verwaltung.
-* **Der Übergang zu Godot:**
-    In Godot nutzen wir das `CharacterBody2D`-Node für den Spieler. Anstatt der Phaser-Kreise importieren wir in Godot **Spritesheets** (2D-Bilderrahmen-Animationen).
-    * *Beispiel:* Du erstellst einen Charakter in Blender, renderst ihn aus 8 Kameraperspektiven (isometrisch) beim Laufen und Angreifen als PNG-Bilder und importierst diese als `AnimatedSprite2D` in Godot.
-    * Gleiches gilt für den Boden: In Godot bauen wir ein `TileMap`-System auf, bei dem die sandgelben Phaser-Vierecke durch detaillierte Wüsten-Bodenplatten-Grafiken ersetzt werden.
-
----
-
-## 5. Strukturierte Roadmap (Web-Prototyp Fokus)
-
-### Schritt 1: Das lauffähige Grundgerüst (HTML5 Single File)
-* Erstellung einer kompletten `index.html` mit eingebundener Phaser.js Engine.
-* Implementierung des Viewports für mobile Bildschirme.
-* Zeichnen des Spielers (Blauer Kreis) und des Bodens (sandfarbenes Gitter).
-
-### Schritt 2: Touch-Steuerung (Virtual Joystick)
-* Implementierung eines voll funktionsfähigen virtuellen Touch-Joysticks auf der linken Seite.
-* Flüssige Bewegung des Spielers in isometrischer Perspektive.
-
-### Schritt 3: Erste Gegner & Kampfsystem
-* Spawnen von roten Gegner-Kreisen.
-* Hinzufügen eines "Schießen"-Buttons auf der rechten Seite, der Projektile (gelbe Punkte) in Blickrichtung abfeuert.
-* Gegner-Lebensbalken und Schadenszahlen, die hochploppen.
-
-### Schritt 4: Das Rustwater-Wirtschafts-Tab
-* Ein einfacher UI-Wechsel zwischen "Dungeon" und "Rustwater".
-* In "Rustwater" kann man für 100 Gold den "Gatling-Saloon" kaufen, der jede Sekunde +1 Gold generiert.
+1. **Moderne 3D-Rendering-Pipeline:** Godot 4 **Forward+**-Renderer. Welt, Figuren und
+   Umgebung als **hochauflösende 3D-Meshes mit PBR-Materialien** (Physically Based
+   Rendering), die gritty-realistische Oberflächen betonen: verwittertes Eisen, nasses
+   Öl, korrodiertes Kupfer, realistische organische Texturen.
+2. **Grim-Dark-Atmosphäre (Fallout/Diablo-Vibe):** Dunkle, bedrückende Stimmung über
+   moderne Lichttechnik. **SDFGI** (Signed Distance Field Global Illumination),
+   **volumetrischer Nebel** für den Fog of War sowie dynamische, kontrastreiche
+   Echtzeit-Schatten.
+3. **Moderne Kamera:** 3D-isometrische Kamera (orthografisch oder flach-perspektivisch),
+   ausgelegt auf großflächige Exploration.
+4. **Visceral Combat & Physik:** Wuchtiger, moderner Kampf. **Voll-3D-Skelett­animationen**
+   statt kachelbasierter Animationen, **Ragdoll-Physik** für besiegte Gegner, sowie
+   **GPU-Partikeleffekte** für elementare Treffer (galvanische Funken, alchemistische
+   Säure-Korrosion, dynamisches Feuer).
 
 ---
 
-## 6. Erste Anweisung für die Implementierung (Web-Prototyp, Schritt 1)
+## 3. Weltkarte & Exploration (3D-Umgebung)
 
-> Erstelle als ersten Schritt eine einzige, vollständige `index.html` Datei (inklusive Phaser.js über CDN und CSS für Fullscreen-Mobile). Es soll folgendes enthalten sein:
-> 1. Eine sandfarbene isometrische Bodenfläche (Grid).
-> 2. Ein blauer Kreis als Spieler in der Mitte.
-> 3. Ein voll funktionsfähiger, virtueller Touch-Joystick unten links, der den Spieler flüssig in alle Richtungen bewegt.
-> 4. Automatische Anpassung an die Displaygröße des Handys.
+### 3.1 Maßstab & Koordinaten
+Die Spielwelt ist eine **zusammenhängende, nahtlose 3D-Open-World**.
+* **Dimensionen:** Massive 3D-Ebene von **2000 × 2000 Metern** (Godot Spatial Units).
+* **Reise-Metrik:** Bei moderner Laufgeschwindigkeit von **4,7 m/s** dauert ein
+  durchgehender diagonaler Sprint über die vollständig erkundete Karte rund
+  **5 Minuten** Echtzeit-Fußweg.
+* **Exploration:** Die Karte wird durch ein **volumetrisches Nebelsystem** verhüllt.
+  Bewegung durch die Welt schneidet in Echtzeit Pfade in den Nebel – basierend auf der
+  **3D-Sichtlinie (Line-of-Sight)** des Spielers.
+
+### 3.2 Struktur
+Nahtlose Open-World mit Streaming/LOD statt harter Kartenwechsel; Stadt (Rustwater),
+Fraktionsbasen und Dungeons sind eingebettete Bereiche derselben Welt.
+
+---
+
+## 4. Moderne NPC-Interaktion
+
+### 4.1 Dynamische 3D-UI-Overlays
+* **World-Space-UI:** NPC-Namen und Interaktions-Status schweben als **3D-Billboard-
+  UI** (`Label3D` bzw. screen-space-projizierte UI) direkt über den Charakter-Meshes.
+* **Input-Debouncing (Anti-Doppeltipp):** Ein strikter Software-Debouncer fängt schnelle
+  Touch-/Klick-Eingaben ab und verhindert duplizierte UI-Instanzen oder inkonsistente
+  Zustände in der 3D-Interaktions-Pipeline.
+
+---
+
+## 5. Core Gameplay Loop
+
+1. **Combat & Loot:** Der Spieler bekämpft Gegner (Auto-Ziel-Fernkampf, Fähigkeiten,
+   Wurf-Granaten) und sammelt Beute – Gold, Material, Loot-Kisten und Ausrüstung.
+2. **Charakter-Progression:** Erfahrung durch Kills & Quests → Level → höhere
+   Ausrüstungs-Stufen; anlegbare Ausrüstung (Helm, Rüstung, Waffe, Gadget, Stiefel,
+   drei Panzerplatten) mit Seltenheitsstufen und Grid-Inventar.
+3. **Rustwater-Wirtschaft (Tycoon):** Gold fließt in passive Einkommens-Gebäude, die
+   im Hintergrund unabhängig weiterlaufen (auch offline).
+
+Diese Systeme sind im Web-Prototyp (Phase 1) bereits implementiert und dienen als
+verbindliche Spezifikation für die Godot-Produktion.
+
+---
+
+## 6. Der Übergang vom Prototyp zu Godot 4
+
+* **Was der Prototyp liefert:** eine erprobte, ausbalancierte **Spiel-Logik** –
+  Bewegung, Auto-Ziel-Kampf, Schadensarten & Gegner-Matrix, Status-Effekte, Loot &
+  Kisten, Inventar/Ausrüstung, Level-System, Quests/Fraktionen, Wirtschaft.
+* **Was in Godot neu entsteht (Produktion):**
+    * **Figuren & Gegner:** hochauflösende 3D-Meshes mit PBR, **3D-Skelett­animationen**
+      (Blender → glTF), Ragdoll bei Tod.
+    * **Umgebung:** modellierte 3D-Level statt Kacheln; PBR-Bodenmaterialien
+      (Sand, Fels, Metallböden), platzierte 3D-Props (Palisaden, Gebäude, Wracks).
+    * **Beleuchtung/Atmosphäre:** SDFGI, volumetrischer Nebel (Fog of War),
+      Echtzeit-Schatten; grim-dark Farb- und Kontrast-Grading.
+    * **VFX:** GPU-Partikel für elementare Treffer (galvanisch/alchemistisch/thermisch)
+      und Umwelt (Dampf, Funken, Rauch).
+    * **Steuerung/UI:** virtueller Touch-Joystick + Action-/Fähigkeiten-Buttons,
+      World-Space-`Label3D` für NPCs, 3D-isometrische Kamera.
+
+---
+
+## 7. Steuerung
+
+* **Linke Bildschirmhälfte:** dynamischer virtueller Touch-Joystick (erscheint bei
+  Berührung), flüssige Bewegung.
+* **Rechte Bildschirmhälfte:** großer Action-Button (Angriff, Auto-Ziel auf nächsten
+  Gegner) plus Fähigkeiten-Buttons (Spezialschuss, Ausweich-Dash, Heiltrank,
+  Säure-/Elektrofeld-Granate) und Waffen-Umschalter (Schadensart).
+
+---
+
+## 8. Terminologie & Ton
+
+Steampunk-Western, grim-dark. Konsequent Steampunk-Begriffe (Zahnräder, Kupferleitungen,
+Dampfdruck, Alchemistische Synthese, Kinetoskop-Projektion). **Keine** modernen
+Cyberpunk-Begriffe. Der visuelle Ton ist realistisch-gritty (Fallout/Diablo), **nicht**
+retro, nicht Pixel-Art.
