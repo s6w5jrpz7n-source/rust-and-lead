@@ -581,10 +581,14 @@
   let gearUid = 1;
   function makeGear(slot, rarity) {
     const def = GEAR_SLOTS[slot], r = RARITY[rarity], adj = GEAR_ADJ[rarity];
-    const val = Math.max(1, Math.round(def.base * r.mult));
-    return { uid: gearUid++, slot, rarity, req: r.req, icon: def.icon, name: adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name, stat: { key: def.stat, val } };
+    let val = Math.max(1, Math.round(def.base * r.mult)), big = false, name = adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name;
+    if (slot === 'weapon' && Math.random() < 0.3) { big = true; val = Math.round(val * 1.4); name = 'Schwere ' + name; }   // sehr große Waffe: 3 Slots, mehr Schaden
+    return { uid: gearUid++, slot, rarity, req: r.req, big, icon: def.icon, name, stat: { key: def.stat, val } };
   }
   function gearReq(g) { return g.req || RARITY[g.rarity].req || 1; }
+  // Grid-Fußabdruck [Spalten, Zeilen]: Rüstung 4, Waffe 2, sehr große Waffe 3, Kleinteile 1
+  function gearFoot(g) { if (g.slot === 'armor') return [2, 2]; if (g.slot === 'weapon') return g.big ? [3, 1] : [2, 1]; return [1, 1]; }
+  function gearCells(g) { const f = gearFoot(g); return f[0] * f[1]; }
   function rollRarity(bias) {   // bias hebt seltene Stufen an (0=normal, höher=besser)
     let pool = RARITY_ORDER.map((k, i) => [k, Math.max(0.5, RARITY[k].w + bias * i * 6)]);
     let total = 0; for (const p of pool) total += p[1];
@@ -609,7 +613,7 @@
   }
   function unequipGear(slot) {
     const g = state.equip[slot]; if (!g) return;
-    if (state.gearBag.length >= GEARBAG_CAP) { toast('Ausrüstungstasche voll'); return; }
+    if (gearCells(g) > gridFree()) { toast('🎒 Inventar voll — kein Platz'); return; }
     state.equip[slot] = null; state.gearBag.push(g); applyUpgrades(); updateLife(); save();
   }
   function save() {
@@ -939,38 +943,79 @@
   // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
   function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; renderInventory(); }
   function refreshInventory() { if (state.inventoryOpen) renderInventory(); }
+  // Vollbild-Layout: Ausrüstung links, Grid-Inventar rechts
+  function invLayout() {
+    const size = sceneRef.scale.gameSize, inset = 8;
+    const px = inset, py = inset, pw = size.width - inset * 2, ph = size.height - inset * 2;
+    const headH = 58, colTop = py + headH;
+    const leftW = Math.round(pw * 0.44), rightX = px + leftW + 8, rightW = pw - leftW - 12;
+    const gap = 5, cols = 4;
+    const cell = Math.floor((rightW - (cols - 1) * gap - 6) / cols);
+    const gy0 = colTop + 22, colBottom = py + ph - 10;
+    const rows = Math.max(6, Math.floor((colBottom - gy0 + gap) / (cell + gap)));
+    const gridW = cols * cell + (cols - 1) * gap, gx0 = rightX + Math.round((rightW - gridW) / 2);
+    return { size, px, py, pw, ph, headH, colTop, leftW, rightX, rightW, gap, cols, rows, cell, gx0, gy0, bx: px + leftW / 2 };
+  }
+  function gridItems() {   // alles, was im Grid liegt: Gear (Fußabdruck) + Material-/Trank-Stapel (1 Slot)
+    const items = [];
+    for (const g of state.gearBag) items.push({ kind: 'gear', gear: g, foot: gearFoot(g) });
+    for (const id of ['schrott', 'zahnrad', 'dampfkern']) if ((state.inventory[id] || 0) > 0) items.push({ kind: 'mat', id, foot: [1, 1] });
+    if (state.potions > 0) items.push({ kind: 'potion', foot: [1, 1] });
+    items.sort((a, b) => (b.foot[0] * b.foot[1]) - (a.foot[0] * a.foot[1]));   // Große zuerst packen
+    return items;
+  }
+  function packGrid(cols, rows) {
+    const occ = Array.from({ length: rows }, () => new Array(cols).fill(false)), placed = [];
+    const fits = (x, y, w, h) => { if (x + w > cols || y + h > rows) return false; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (occ[y + j][x + i]) return false; return true; };
+    for (const it of gridItems()) {
+      const w = it.foot[0], h = it.foot[1]; let done = false;
+      for (let y = 0; y < rows && !done; y++) for (let x = 0; x < cols && !done; x++) if (fits(x, y, w, h)) {
+        for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) occ[y + j][x + i] = true;
+        placed.push({ it, gx: x, gy: y, w, h }); done = true;
+      }
+    }
+    return placed;
+  }
+  function gridUsedCells() { let n = 0; for (const it of gridItems()) n += it.foot[0] * it.foot[1]; return n; }
+  function gridFree() { const L = invLayout(); return L.cols * L.rows - gridUsedCells(); }
   function renderInventory() {
     invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];
-    const size = sceneRef.scale.gameSize, add = o => { invSlots.push(o); return o; };
-    const pw = Math.min(360, size.width * 0.94);
-    const headH = 62, dollH = 248, matH = 28, bagTitleH = 22, bagCols = 4, bagRows = 3, bagSlot = 52, bagGap = 6;
-    const bagH = bagRows * bagSlot + (bagRows - 1) * bagGap;
-    const ph = headH + dollH + matH + bagTitleH + bagH + 22;
-    const px = size.width / 2, py = (size.height - ph) / 2;
-    invBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
-    invPanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
-    invTitle.setPosition(px, py + 10).setVisible(true);
-    invClose.setPosition(px + pw / 2 - 20, py + 14).setVisible(true);
-    invText.setText('⭐ Lv ' + state.level + ' (' + state.xp + '/' + xpToNext(state.level) + ' XP)  ·  ❤ ' + state.maxHp + '  ·  🛡️ ' + playerArmor() + '  ·  🎒 ' + invCount() + '/' + INV_CAP).setPosition(px, py + 36).setVisible(true);
-    // Paper-Doll
-    const by = py + headH, bx = px;
-    add(sceneRef.add.circle(bx, by + 18, 14, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-    add(sceneRef.add.rectangle(bx, by + 96, 30, 120, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-    const S = 46, pos = { helmet: [bx, by + 6], weapon: [bx - 70, by + 62], armor: [bx, by + 62], gadget: [bx + 70, by + 62], boots: [bx, by + 190] };
+    const L = invLayout(), add = o => { invSlots.push(o); return o; };
+    invBackdrop.setSize(L.size.width, L.size.height).setPosition(0, 0).setVisible(true);
+    invPanel.setPosition(L.size.width / 2, L.py).setSize(L.pw, L.ph).setVisible(true);
+    invTitle.setPosition(L.px + 12, L.py + 10).setOrigin(0, 0).setVisible(true);
+    invClose.setPosition(L.px + L.pw - 22, L.py + 16).setVisible(true);
+    invText.setText('⭐ Lv ' + state.level + '  (' + state.xp + '/' + xpToNext(state.level) + ' XP)   ❤ ' + state.maxHp + '   🛡️ ' + playerArmor() + '   💰 ' + state.gold).setPosition(L.px + 12, L.py + 34).setOrigin(0, 0).setVisible(true);
+    // ---- Links: Ausrüstung (Paper-Doll) ----
+    const bx = L.bx, ty = L.colTop + 4, S = 44;
+    add(sceneRef.add.circle(bx, ty + 12, 13, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.rectangle(bx, ty + 96, 28, 120, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+    const pos = { helmet: [bx, ty + 2], weapon: [bx - 56, ty + 58], armor: [bx, ty + 58], gadget: [bx + 56, ty + 58], boots: [bx, ty + 186] };
     for (const slot in pos) drawEquipSlot(slot, pos[slot][0], pos[slot][1], S, add);
-    // Drei Panzerplatten-Slots (stapelbare Rüstung)
-    PLATE_SLOTS.forEach((slot, k) => drawEquipSlot(slot, bx + (k - 1) * 54, by + 124, S, add, false));
-    add(sceneRef.add.text(bx, by + 124 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-    // Materialien
-    const my = by + dollH + 4, mats = ['schrott', 'zahnrad', 'dampfkern'];
-    mats.forEach((id, k) => add(sceneRef.add.text(px - pw / 2 + (pw / 3) * (k + 0.5), my, ITEMS[id].icon + ' ×' + (state.inventory[id] || 0), { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52)));
-    // Ausrüstungstasche
-    const bty = my + matH;
-    add(sceneRef.add.text(px - pw / 2 + 16, bty, '🧰  Ausrüstung — antippen zum Anlegen  (' + state.gearBag.length + '/' + GEARBAG_CAP + ')', { fontFamily: 'system-ui', fontSize: '11px', color: '#c9a24a' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
-    const gw = bagCols * bagSlot + (bagCols - 1) * bagGap, gx0 = px - gw / 2, gy0 = bty + 20;
-    for (let r = 0; r < bagRows; r++) for (let c = 0; c < bagCols; c++) {
-      const idx = r * bagCols + c, sx = gx0 + c * (bagSlot + bagGap) + bagSlot / 2, sy = gy0 + r * (bagSlot + bagGap) + bagSlot / 2;
-      drawBagSlot(idx, sx, sy, bagSlot, add);
+    PLATE_SLOTS.forEach((slot, k) => drawEquipSlot(slot, bx + (k - 1) * 50, ty + 120, S, add, false));
+    add(sceneRef.add.text(bx, ty + 120 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    // ---- Rechts: Grid-Inventar ----
+    add(sceneRef.add.text(L.rightX, L.colTop, '🎒  Inventar  (' + gridUsedCells() + '/' + (L.cols * L.rows) + ')', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
+      const cx = L.gx0 + c * (L.cell + L.gap), cy = L.gy0 + r * (L.cell + L.gap);
+      add(sceneRef.add.rectangle(cx, cy, L.cell, L.cell, 0x1b2431, 0.85).setStrokeStyle(1, 0xf3e9d2, 0.18).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+    }
+    for (const p of packGrid(L.cols, L.rows)) drawGridItem(p, L, add);
+  }
+  function drawGridItem(p, L, add) {
+    const ix = L.gx0 + p.gx * (L.cell + L.gap), iy = L.gy0 + p.gy * (L.cell + L.gap);
+    const iw = p.w * L.cell + (p.w - 1) * L.gap, ih = p.h * L.cell + (p.h - 1) * L.gap;
+    const cx = ix + iw / 2, cy = iy + ih / 2, big = Math.min(iw, ih);
+    if (p.it.kind === 'gear') {
+      const g = p.it.gear, col = RARITY[g.rarity].color, locked = state.level < gearReq(g);
+      add(sceneRef.add.rectangle(cx, cy, iw - 2, ih - 2, col, 0.28).setStrokeStyle(2, col, 0.95).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(cx, cy - big * 0.14, g.icon, { fontSize: Math.round(big * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(54).setAlpha(locked ? 0.4 : 1));
+      add(sceneRef.add.text(cx, cy + ih / 2 - 10, locked ? '🔒Lv' + gearReq(g) : '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: locked ? '#f87171' : css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      bagSlotRects.push({ x: cx, y: cy, w: iw, h: ih, gear: g });
+    } else {
+      const isMat = p.it.kind === 'mat', icon = isMat ? ITEMS[p.it.id].icon : '🍶', cnt = isMat ? state.inventory[p.it.id] : state.potions;
+      add(sceneRef.add.text(cx, cy - 5, icon, { fontSize: Math.round(L.cell * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      add(sceneRef.add.text(cx, cy + L.cell / 2 - 9, '×' + cnt, { fontFamily: 'system-ui', fontSize: '10px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
     }
   }
   function drawEquipSlot(slot, x, y, S, add, label) {
@@ -982,17 +1027,6 @@
     } else add(sceneRef.add.text(x, y, def.icon, { fontSize: '17px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(0.4));
     if (label !== false) add(sceneRef.add.text(x, y + S / 2 + 8, label || def.name, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     equipSlotRects.push({ x, y, w: S, h: S, slot, gear: g });
-  }
-  function drawBagSlot(idx, x, y, S, add) {
-    const g = state.gearBag[idx], col = g ? RARITY[g.rarity].color : 0x334155;
-    const locked = g && state.level < gearReq(g);
-    add(sceneRef.add.rectangle(x, y, S, S, 0x334155, 0.85).setStrokeStyle(2, g ? col : 0xf3e9d2, g ? 0.95 : 0.25).setScrollFactor(0).setDepth(52));
-    if (g) {
-      add(sceneRef.add.text(x, y - 5, g.icon, { fontSize: '19px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(locked ? 0.4 : 1));
-      if (locked) add(sceneRef.add.text(x, y + 15, '🔒 Lv' + gearReq(g), { fontFamily: 'system-ui', fontSize: '9px', color: '#f87171', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      else add(sceneRef.add.text(x, y + 15, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-    }
-    bagSlotRects.push({ x, y, w: S, h: S, idx, gear: g });
   }
   function beginDrag(gear, from, p) {
     invDrag = { gear, from, moved: false, startX: p.x, startY: p.y, ghost: sceneRef.add.text(p.x, p.y, gear.icon, { fontSize: '28px' }).setOrigin(0.5).setScrollFactor(0).setDepth(61) };
@@ -1863,10 +1897,10 @@
       const co = coins[i], dx = player.x - co.s.x, dy = player.y - co.s.y, d = Math.hypot(dx, dy) || 1;
       if (d < PICKUP_DIST) {
         if (co.gear) {
-          if (state.gearBag.length < GEARBAG_CAP) {
+          if (gearCells(co.gear) <= gridFree()) {
             state.gearBag.push(co.gear); popLoot(co.s.x, co.s.y, co.gear.icon); toast(RARITY[co.gear.rarity].name + ': ' + co.gear.name); save();
             co.s.destroy(); coins.splice(i, 1); continue;
-          } else if (now > state.invFullAt) { toast('🧰 Ausrüstungstasche voll — im Inventar ausrüsten/ablegen'); state.invFullAt = now + 4000; }
+          } else if (now > state.invFullAt) { toast('🎒 Inventar voll — Platz schaffen (ausrüsten/verschrotten)'); state.invFullAt = now + 4000; }
         } else if (co.item) {
           if (invCount() >= INV_CAP) {   // Inventar voll -> Loot bleibt liegen, Hinweis auf die Truhe
             if (now > state.invFullAt) { toast('🎒 Inventar voll (' + INV_CAP + ') — Truhe in Rustwater leeren'); state.invFullAt = now + 4000; }
@@ -1876,7 +1910,7 @@
           }
         } else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
       }
-      const blocked = (co.item && invCount() >= INV_CAP) || (co.gear && state.gearBag.length >= GEARBAG_CAP);
+      const blocked = (co.item && invCount() >= INV_CAP) || (co.gear && gearCells(co.gear) > gridFree());
       if (d < magnetDist() && !blocked) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
     }
 
