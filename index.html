@@ -82,6 +82,26 @@
     boss:   { color: 0xc9a24a, stroke: 0x7c5e10, icon: '💰', schrott: [4, 7], zahnrad: 1.0, dampfkern: 1.0 }
   };
 
+  // ---- Ausrüstung: Charakter-System (Helm, Rüstung, Stiefel, Waffe, Gadget) ----
+  const GEAR_SLOTS = {
+    helmet: { name: 'Helm',    icon: '⛑️', stat: 'hp',       base: 14, unit: '+{v} Panzerung', order: 0 },
+    armor:  { name: 'Rüstung', icon: '🛡️', stat: 'armor',    base: 4,  unit: '+{v} Rüstung',    order: 1 },
+    weapon: { name: 'Waffe',   icon: '🔫', stat: 'damage',   base: 6,  unit: '+{v} Schaden',     order: 2 },
+    gadget: { name: 'Gadget',  icon: '🔩', stat: 'firerate', base: 14, unit: '+{v} Feuerrate',   order: 3 },
+    boots:  { name: 'Stiefel', icon: '🥾', stat: 'speed',    base: 18, unit: '+{v} Tempo',        order: 4 }
+  };
+  const RARITY = {
+    common:    { name: 'Gewöhnlich', color: 0x9ca3af, mult: 1.0, w: 58 },
+    rare:      { name: 'Selten',     color: 0x38bdf8, mult: 1.8, w: 26 },
+    epic:      { name: 'Episch',     color: 0xa855f7, mult: 2.8, w: 12 },
+    legendary: { name: 'Legendär',   color: 0xf59e0b, mult: 4.2, w: 4 }
+  };
+  const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'];
+  const GEAR_ADJ = { common: ['Rostiger', 'Abgenutzter', 'Einfacher'], rare: ['Kupferner', 'Verstärkter', 'Gehärteter'], epic: ['Dampfbetriebener', 'Alchemistischer', 'Präzisions-'], legendary: ['Titanischer', 'Legendärer', 'Iron-Rail-'] };
+  const GEARBAG_CAP = 12;
+  // Elite-Bosse (stehen mitten in Gegnergruppen) & Dungeon-Superboss
+  const ELITE_PER_MAP = 3, SUPERBOSS_MULT = 4;
+
   // ---- Kampf-Design: Schadensarten, Waffen (Loadout) & Gegner-Matrix ----
   // 4 Kern-Schadensarten mit elementaren Wechselwirkungen (siehe GDD Kap. 9).
   const DMG_TYPES = {
@@ -220,15 +240,15 @@
       floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
       portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
       stations: [], decor: [ { tx: 13, ty: 11, w: 60, h: 40, color: 0x3a2f22, label: 'SCHATZKAMMER' } ],
-      caches: [ { tx: 13, ty: 13, count: 5, tier: 'rare' } ]
+      caches: [ { tx: 13, ty: 13, count: 5, tier: 'rare' } ], elites: 1, superboss: { tx: 13, ty: 9 }
     },
     fort_freedom: {
       name: 'Fort Freedom', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
       floorA: 0x8a6a4a, floorB: 0x7a5a3a, grid: 0x5a4128, mini: 0x8a6a4a, bg: 0x1c140c,
       portals: [ { tx: 9, ty: 0, to: 'overworld', spawn: { c: 14, r: 28 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
       stations: [ { id: 'st_fort', tx: 9, ty: 9, name: 'Fort Freedom' } ],
-      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x5c4632, label: 'HÄNDLER' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x6b4f2a, label: 'FUNK' } ],
-      shops: [ { id: 'store', tx: 5, ty: 6 } ],
+      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x5c4632, label: 'HÄNDLER' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x6b4f2a, label: 'FUNK' }, { tx: 13, ty: 6, w: 52, h: 38, color: 0x6d4b2f, label: 'TRUHE' } ],
+      shops: [ { id: 'store', tx: 5, ty: 6 }, { id: 'stash', tx: 13, ty: 6 } ],
       npcs: [ { id: 'gideon', name: 'Gideon Cross', short: 'Gideon', tx: 12, ty: 8, color: 0x9a3b2f, guild: 'rebels',
         linesPre: ['Ein narbiger Mann mit kaltem Blick mustert dich.', '„Neu hier? Wir brechen das Monopol des Konzerns — oder sterben beim Versuch."'],
         linesPost: ['„Ein wandelnder Stahlkessel. Genau sowas brauchen wir gegen die Iron Rail."'],
@@ -255,8 +275,8 @@
       floorA: 0x9aa0a6, floorB: 0x868c92, grid: 0x5b6167, mini: 0x9aa0a6, bg: 0x14171b,
       portals: [ { tx: 9, ty: 0, to: 'overworld', spawn: { c: 64, r: 18 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
       stations: [ { id: 'st_sektor', tx: 9, ty: 9, name: 'Sektor 01' } ],
-      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x4b5563, label: 'AUSGABE' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x374151, label: 'KONTROLLE' } ],
-      shops: [ { id: 'store', tx: 5, ty: 6 } ],
+      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x4b5563, label: 'AUSGABE' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x374151, label: 'KONTROLLE' }, { tx: 13, ty: 6, w: 52, h: 38, color: 0x475569, label: 'TRUHE' } ],
+      shops: [ { id: 'store', tx: 5, ty: 6 }, { id: 'stash', tx: 13, ty: 6 } ],
       npcs: [ { id: 'quentin', name: 'Aufseher Quentin', short: 'Quentin', tx: 12, ty: 8, color: 0x60a5fa, guild: 'corp',
         linesPre: ['Ein kalter Mann in makelloser Uniform.', '„Ordnung ist Profit. Profit ist Ordnung. Stör keins von beidem."'],
         linesPost: ['„Ein Firmen-Automat, der frei herumläuft. Faszinierend. Und nützlich."'],
@@ -283,8 +303,8 @@
       floorA: 0x4a3b52, floorB: 0x3e3146, grid: 0x2a2130, mini: 0x4a3b52, bg: 0x120c17,
       portals: [ { tx: 9, ty: 0, to: 'overworld', spawn: { c: 40, r: 68 }, short: 'Tor', label: '🚪  Wüste', mini: 0x38bdf8 } ],
       stations: [ { id: 'st_rogue', tx: 9, ty: 9, name: "Rogue's Landing" } ],
-      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x6d4b2f, label: 'HEHLER' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x5a3b6b, label: 'WETTEN' } ],
-      shops: [ { id: 'store', tx: 5, ty: 6 } ],
+      decor: [ { tx: 5, ty: 6, w: 64, h: 42, color: 0x6d4b2f, label: 'HEHLER' }, { tx: 13, ty: 12, w: 60, h: 40, color: 0x5a3b6b, label: 'WETTEN' }, { tx: 13, ty: 6, w: 52, h: 38, color: 0x6d4b2f, label: 'TRUHE' } ],
+      shops: [ { id: 'store', tx: 5, ty: 6 }, { id: 'stash', tx: 13, ty: 6 } ],
       npcs: [ { id: 'slick', name: '„Slick" Sterling', short: 'Slick', tx: 12, ty: 8, color: 0xeab308, guild: 'smugglers',
         linesPre: ['Ein Grinsen unter einer breiten Gaslampe.', '„Alles hat seinen Preis, Freund. Auch Schweigen."'],
         linesPost: ['„Ein unaufhaltsamer Stahlkoloss? Weißt du, was so einer auf dem Schwarzmarkt wert ist?"'],
@@ -327,6 +347,7 @@
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
+  let equipSlotRects = [], bagSlotRects = [], invDrag = null;
   let abilities = [];
   let cursors, wasd;
 
@@ -343,6 +364,7 @@
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
+    equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null }, gearBag: [],
     isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
@@ -473,10 +495,14 @@
     // Eingaben
     scene.input.addPointer(3);
     scene.input.on('pointerdown', onPointerDown);
-    scene.input.on('pointermove', (p) => { if (stick.active && p.id === stick.id) updateStick(p.x, p.y); });
+    scene.input.on('pointermove', (p) => {
+      if (stick.active && p.id === stick.id) updateStick(p.x, p.y);
+      if (invDrag) { invDrag.ghost.setPosition(p.x, p.y); if (Math.hypot(p.x - invDrag.startX, p.y - invDrag.startY) > 10) invDrag.moved = true; }
+    });
     const release = (p) => {
       if (stick.active && p.id === stick.id) resetStick();
       if (p.id === shootId) { shooting = false; shootId = null; shootBtn.setScale(1); }
+      if (invDrag) endDrag(p);
     };
     scene.input.on('pointerup', release);
     scene.input.on('pointerupoutside', release);
@@ -512,9 +538,13 @@
   function curWeapon() { return WEAPONS[state.weapon] || WEAPONS.karabiner; }
   function weaponUnlocked(id) { return WEAPONS[id].always || state.isRevealed; }
   function weaponLvl(id) { return (state.weaponLvl && state.weaponLvl[id]) || 0; }
-  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5; }
+  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5 + equipStat('damage'); }
   function weaponAcid() { return curWeapon().acid + weaponLvl('saeure') * 2; }
-  function fireMs() { return Math.max(80, curWeapon().fireMs - state.upgrades.firerate * 22); }
+  function fireMs() { return Math.max(60, curWeapon().fireMs - state.upgrades.firerate * 22 - equipStat('firerate')); }
+  // Ausrüstungs-Boni: Summe der Stat-Werte aller angelegten Teile
+  function equipStat(key) { let s = 0; for (const sl in state.equip) { const g = state.equip[sl]; if (g && g.stat.key === key) s += g.stat.val; } return s; }
+  function playerArmor() { return equipStat('armor'); }
+  function dmgTakenMul() { return 100 / (100 + playerArmor() * 9); }   // Rüstung senkt eingehenden Schaden
   function cycleWeapon() {
     const avail = WEAPON_ORDER.filter(weaponUnlocked);
     if (avail.length <= 1) { toast('🔒 Weitere Waffen nach dem Erwachen'); return; }
@@ -523,14 +553,41 @@
     const w = curWeapon(), t = DMG_TYPES[w.type];
     toast(t.icon + ' ' + w.name + ' (' + t.name + ')'); save(); updateWeaponUI();
   }
-  function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30; }
+  function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30 + equipStat('speed'); }
   function regenRate() { return REGEN_RATE + state.upgrades.regen * 4; }
   function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45; }
-  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25; if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
+  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp'); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
+  // ---- Ausrüstung erzeugen & anlegen -------------------------
+  let gearUid = 1;
+  function makeGear(slot, rarity) {
+    const def = GEAR_SLOTS[slot], r = RARITY[rarity], adj = GEAR_ADJ[rarity];
+    const val = Math.max(1, Math.round(def.base * r.mult));
+    return { uid: gearUid++, slot, rarity, icon: def.icon, name: adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name, stat: { key: def.stat, val } };
+  }
+  function rollRarity(bias) {   // bias hebt seltene Stufen an (0=normal, höher=besser)
+    let pool = RARITY_ORDER.map((k, i) => [k, Math.max(0.5, RARITY[k].w + bias * i * 6)]);
+    let total = 0; for (const p of pool) total += p[1];
+    let x = Math.random() * total;
+    for (const p of pool) { if ((x -= p[1]) <= 0) return p[0]; }
+    return 'common';
+  }
+  function equipGear(gearOrIdx) {
+    const idx = typeof gearOrIdx === 'number' ? gearOrIdx : state.gearBag.indexOf(gearOrIdx);
+    if (idx < 0 || idx >= state.gearBag.length) return;
+    const g = state.gearBag[idx], prev = state.equip[g.slot];
+    state.equip[g.slot] = g; state.gearBag.splice(idx, 1);
+    if (prev) state.gearBag.push(prev);   // altes Teil zurück in die Tasche
+    applyUpgrades(); updateLife(); save();
+  }
+  function unequipGear(slot) {
+    const g = state.equip[slot]; if (!g) return;
+    if (state.gearBag.length >= GEARBAG_CAP) { toast('Ausrüstungstasche voll'); return; }
+    state.equip[slot] = null; state.gearBag.push(g); applyUpgrades(); updateLife(); save();
+  }
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
@@ -541,6 +598,8 @@
       state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
       if (s.weaponLvl) for (const k in state.weaponLvl) if (typeof s.weaponLvl[k] === 'number') state.weaponLvl[k] = s.weaponLvl[k];
       if (s.stash) for (const k in state.stash) if (typeof s.stash[k] === 'number') state.stash[k] = s.stash[k];
+      if (s.equip) for (const k in state.equip) if (s.equip[k] && GEAR_SLOTS[k]) state.equip[k] = s.equip[k];
+      if (Array.isArray(s.gearBag)) state.gearBag = s.gearBag.filter(g => g && GEAR_SLOTS[g.slot]);
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
@@ -649,6 +708,7 @@
     if (m.streamed) streamChunks(9);   // sichtbaren Bereich (radius 1) sofort, Rest folgt vorausschauend
     if (m.enemies) scatterEnemies(m);
     scatterChests(m);
+    if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty);
   }
 
   // ---- Palisade (Stockade) -----------------------------------
@@ -778,6 +838,13 @@
       if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 220) continue;   // Startbereich frei halten
       spawnTyped(pickEnemyType(), w.x, w.y);
     }
+    // Elite-Bosse stehen verteilt in der Karte (mit Gefolge) — kein Kill-Zähler mehr
+    const elites = m.elites !== undefined ? m.elites : ELITE_PER_MAP;
+    for (let i = 0; i < elites; i++) {
+      const c = Phaser.Math.Between(3, m.cols - 4), r = Phaser.Math.Between(3, m.rows - 4), w = tileToWorld(c, r);
+      if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 360) continue;
+      spawnElite(w.x, w.y);
+    }
   }
 
   // ---- Fog of War --------------------------------------------
@@ -840,34 +907,78 @@
   }
   function closeTravel() { state.travelOpen = false; ftButtons.forEach(b => { if (b.bg) b.bg.destroy(); if (b.tx) b.tx.destroy(); }); ftButtons = [];[ftBackdrop, ftPanel, ftTitle, ftClose].forEach(o => o.setVisible(false)); }
 
-  // ---- Inventar ----------------------------------------------
-  function openInventory() {
-    if (state.travelOpen || state.fullMapOpen) return;
-    state.inventoryOpen = true;
-    const size = sceneRef.scale.gameSize, cols = 4, rows = 3, slot = 54, gap = 8;
-    const gw = cols * slot + (cols - 1) * gap, gh = rows * slot + (rows - 1) * gap, pw = gw + 40, ph = gh + 120;
+  // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
+  function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; renderInventory(); }
+  function refreshInventory() { if (state.inventoryOpen) renderInventory(); }
+  function renderInventory() {
+    invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];
+    const size = sceneRef.scale.gameSize, add = o => { invSlots.push(o); return o; };
+    const pw = Math.min(360, size.width * 0.94);
+    const headH = 62, dollH = 176, matH = 28, bagTitleH = 22, bagCols = 4, bagRows = 3, bagSlot = 52, bagGap = 6;
+    const bagH = bagRows * bagSlot + (bagRows - 1) * bagGap;
+    const ph = headH + dollH + matH + bagTitleH + bagH + 22;
     const px = size.width / 2, py = (size.height - ph) / 2;
     invBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
     invPanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
-    invTitle.setPosition(px, py + 12).setVisible(true);
-    invClose.setPosition(px + pw / 2 - 20, py + 16).setVisible(true);
-    invText.setText('🎒 ' + invCount() + '/' + INV_CAP + '  ·  💰 ' + state.gold + '  ·  🍶 ' + state.potions).setPosition(px, py + ph - 30).setVisible(true);
-    const x0 = px - gw / 2, y0 = py + 48;
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const sx = x0 + c * (slot + gap) + slot / 2, sy = y0 + r * (slot + gap) + slot / 2;
-      invSlots.push(sceneRef.add.rectangle(sx, sy, slot, slot, 0x334155, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.35).setScrollFactor(0).setDepth(52));
-    }
-    // gesammelte Items in die Slots legen
-    const slotCount = invSlots.length; let idx = 0;
-    for (const id in ITEMS) {
-      const cnt = state.inventory[id] || 0; if (cnt <= 0 || idx >= slotCount) continue;
-      const sl = invSlots[idx];
-      invSlots.push(sceneRef.add.text(sl.x, sl.y - 6, ITEMS[id].icon, { fontSize: '22px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      invSlots.push(sceneRef.add.text(sl.x, sl.y + 16, '×' + cnt, { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      idx++;
+    invTitle.setPosition(px, py + 10).setVisible(true);
+    invClose.setPosition(px + pw / 2 - 20, py + 14).setVisible(true);
+    invText.setText('🎒 ' + invCount() + '/' + INV_CAP + '  ·  💰 ' + state.gold + '  ·  ❤ ' + state.maxHp + '  ·  🛡️ ' + playerArmor()).setPosition(px, py + 36).setVisible(true);
+    // Paper-Doll
+    const by = py + headH, bx = px;
+    add(sceneRef.add.circle(bx, by + 20, 14, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.rectangle(bx, by + 72, 30, 84, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+    const S = 48, pos = { helmet: [bx, by + 8], weapon: [bx - 68, by + 68], armor: [bx, by + 68], gadget: [bx + 68, by + 68], boots: [bx, by + 128] };
+    for (const slot in pos) drawEquipSlot(slot, pos[slot][0], pos[slot][1], S, add);
+    // Materialien
+    const my = by + dollH + 4, mats = ['schrott', 'zahnrad', 'dampfkern'];
+    mats.forEach((id, k) => add(sceneRef.add.text(px - pw / 2 + (pw / 3) * (k + 0.5), my, ITEMS[id].icon + ' ×' + (state.inventory[id] || 0), { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52)));
+    // Ausrüstungstasche
+    const bty = my + matH;
+    add(sceneRef.add.text(px - pw / 2 + 16, bty, '🧰  Ausrüstung — antippen zum Anlegen  (' + state.gearBag.length + '/' + GEARBAG_CAP + ')', { fontFamily: 'system-ui', fontSize: '11px', color: '#c9a24a' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    const gw = bagCols * bagSlot + (bagCols - 1) * bagGap, gx0 = px - gw / 2, gy0 = bty + 20;
+    for (let r = 0; r < bagRows; r++) for (let c = 0; c < bagCols; c++) {
+      const idx = r * bagCols + c, sx = gx0 + c * (bagSlot + bagGap) + bagSlot / 2, sy = gy0 + r * (bagSlot + bagGap) + bagSlot / 2;
+      drawBagSlot(idx, sx, sy, bagSlot, add);
     }
   }
-  function closeInventory() { state.inventoryOpen = false; invSlots.forEach(s => s.destroy()); invSlots = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
+  function drawEquipSlot(slot, x, y, S, add) {
+    const g = state.equip[slot], col = g ? RARITY[g.rarity].color : 0x334155;
+    add(sceneRef.add.rectangle(x, y, S, S, g ? col : 0x334155, g ? 0.32 : 0.85).setStrokeStyle(2, g ? col : 0xf3e9d2, g ? 0.95 : 0.3).setScrollFactor(0).setDepth(52));
+    if (g) {
+      add(sceneRef.add.text(x, y - 6, g.icon, { fontSize: '19px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(x, y + 15, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    } else add(sceneRef.add.text(x, y, GEAR_SLOTS[slot].icon, { fontSize: '17px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(0.4));
+    add(sceneRef.add.text(x, y + S / 2 + 8, GEAR_SLOTS[slot].name, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    equipSlotRects.push({ x, y, w: S, h: S, slot, gear: g });
+  }
+  function drawBagSlot(idx, x, y, S, add) {
+    const g = state.gearBag[idx], col = g ? RARITY[g.rarity].color : 0x334155;
+    add(sceneRef.add.rectangle(x, y, S, S, 0x334155, 0.85).setStrokeStyle(2, g ? col : 0xf3e9d2, g ? 0.95 : 0.25).setScrollFactor(0).setDepth(52));
+    if (g) {
+      add(sceneRef.add.text(x, y - 5, g.icon, { fontSize: '19px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(x, y + 15, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    }
+    bagSlotRects.push({ x, y, w: S, h: S, idx, gear: g });
+  }
+  function beginDrag(gear, from, p) {
+    invDrag = { gear, from, moved: false, startX: p.x, startY: p.y, ghost: sceneRef.add.text(p.x, p.y, gear.icon, { fontSize: '28px' }).setOrigin(0.5).setScrollFactor(0).setDepth(61) };
+  }
+  function endDrag(p) {
+    const d = invDrag; invDrag = null; if (d.ghost) d.ghost.destroy();
+    let overSlot = null, overBag = false;
+    for (const es of equipSlotRects) if (inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { overSlot = es; break; }
+    if (!overSlot) for (const bs of bagSlotRects) if (inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { overBag = true; break; }
+    if (overSlot) {
+      if (d.gear.slot === overSlot.slot) { if (d.from.type === 'bag') equipGear(d.gear); else if (d.from.type === 'equip' && !d.moved) unequipGear(d.from.slot); }
+      else toast('Passt nur in den ' + GEAR_SLOTS[d.gear.slot].name + '-Slot');
+    } else if (overBag) {
+      if (d.from.type === 'equip') unequipGear(d.from.slot);
+    } else if (!d.moved) {   // Tippen ohne Ziehen
+      if (d.from.type === 'bag') equipGear(d.gear); else unequipGear(d.from.slot);
+    }
+    refreshInventory();
+  }
+  function closeInventory() { state.inventoryOpen = false; if (invDrag && invDrag.ghost) { invDrag.ghost.destroy(); invDrag = null; } invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
 
   // ---- Karten-Wechsel ----------------------------------------
   function transitionTo(mapId, spawn) {
@@ -952,7 +1063,13 @@
       if (wsPanelRef && !inRect(p, wsPanelRef.x - wsPanelRef.width / 2, wsPanelRef.y, wsPanelRef.width, wsPanelRef.height)) closeWorkshop();
       return;
     }
-    if (state.inventoryOpen) { closeInventory(); return; }
+    if (state.inventoryOpen) {
+      if (hit(invClose, p, 26)) { closeInventory(); return; }
+      for (const es of equipSlotRects) if (es.gear && inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { beginDrag(es.gear, { type: 'equip', slot: es.slot }, p); return; }
+      for (const bs of bagSlotRects) if (bs.gear && inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { beginDrag(bs.gear, { type: 'bag', idx: bs.idx }, p); return; }
+      if (invPanel && !inRect(p, invPanel.x - invPanel.width / 2, invPanel.y, invPanel.width, invPanel.height)) closeInventory();
+      return;
+    }
     if (state.travelOpen) {
       if (hit(ftClose, p, 26)) { closeTravel(); return; }
       for (const b of ftButtons) if (b.station && b.bg && inRect(p, b.bg.x - b.bg.width / 2, b.bg.y, b.bg.width, b.bg.height)) { const st = b.station; closeTravel(); transitionTo(st.mapId, { c: st.tx, r: st.ty }); return; }
@@ -1273,7 +1390,7 @@
     const hpBg = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, 0x000000, 0.6).setOrigin(0, 0.5);
     const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
     const c = sceneRef.add.container(x, y, [body, hpBg, hpFill]).setDepth(o.isBoss ? 5 : 4);
-    const e = { c, body, baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
+    const e = { c, body, baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, elite: !!o.elite, isSuperBoss: !!o.isSuperBoss, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
       cls: o.cls || 'BIOLOGICAL', sub: o.sub || 'outlaw', armor: o.armor || 0, maxArmor: o.armor || 0, frontImmune: !!o.frontImmune, stunUntil: 0, dot: null,
       ranged: o.ranged || null, fireCd: Phaser.Math.Between(300, 1200) };
     enemies.push(e); return e;
@@ -1285,22 +1402,25 @@
     const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
     spawnTyped(pickEnemyType(), ex, ey);
   }
-  function spawnBoss() {
-    if (!MAPS[state.map].enemies || state.boss || state.transitioning) return;
-    const ang = Math.random() * Math.PI * 2, dist = 300 + Math.random() * 120;
-    const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
-    const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
+  // Elite-Boss: steht als starker Gegner mitten in der Karte (kein Kill-Zähler mehr).
+  function spawnElite(ex, ey) {
     let e;
-    if (state.isRevealed && Math.random() < 0.5) {   // Mechanischer Goliath: Front-Panzerung, säure-/galvanik-anfällig
-      e = spawnTyped('goliath', ex, ey, { name: 'Goliath-Ernter', aggro: true });
-    } else {                                          // Biologischer Boss (Grenzland-Legende)
+    if (state.isRevealed && Math.random() < 0.5) {   // Mechanischer Goliath: Front-Panzerung
+      e = spawnTyped('goliath', ex, ey, { name: 'Goliath-Ernter' });
+    } else {                                          // Biologischer Elite (Grenzland-Legende)
       const name = BOSS_NAMES[Phaser.Math.Between(0, BOSS_NAMES.length - 1)];
-      e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD, aggro: true, cls: 'BIOLOGICAL', sub: 'outlaw' });
+      e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD, cls: 'BIOLOGICAL', sub: 'outlaw' });
     }
-    state.boss = e; setBossBar(e); toast('☠ Boss: ' + e.name);
-    // Beute-Bündel rund um den Boss (Kiste + Schatz)
-    spawnChest(ex + 40, ey + 24, 'boss');
-    spawnChest(ex - 38, ey + 28, 'rare');
+    e.elite = true;
+    // ein paar normale Gegner als Gefolge rundherum
+    for (let i = 0; i < 3; i++) { const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 50; spawnTyped(pickEnemyType(), ex + Math.cos(a) * d, ey + Math.sin(a) * d); }
+    return e;
+  }
+  // Dungeon-Superboss: 4× so stark wie ein normaler Boss, wartet im Dungeon.
+  function spawnSuperBoss(tx, ty) {
+    const w = tileToWorld(tx, ty);
+    const e = addEnemy(w.x, w.y, { r: BOSS_R + 12, barW: 74, hp: BOSS_HP * SUPERBOSS_MULT, color: 0x7f1d1d, stroke: 0x2a0505, contact: Math.round(BOSS_CONTACT * 1.6), speed: BOSS_SPEED - 6, isBoss: true, isSuperBoss: true, name: 'Minen-Titan', gold: BOSS_GOLD * SUPERBOSS_MULT, armor: 25, cls: 'MECHANICAL', sub: 'goliath', frontImmune: true });
+    state.boss = e; setBossBar(e);
   }
 
   // ---- Schuss / Spezial-Attacken -----------------------------
@@ -1420,21 +1540,50 @@
     e.aggro = true;   // Treffer weckt den Gegner
     e.hp -= dmg; e.hpFill.width = e.barW * Math.max(e.hp, 0) / e.maxHp;
     popDamage(e.c.x, e.c.y - e.r - 4, (opts && opts.immune) ? '⛊' : dmg, opts && opts.color);
-    if (e.isBoss) updateBossBar();
+    if (e === state.boss) updateBossBar();
     if (e.hp <= 0) {
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
-      dropGold(e.c.x, e.c.y, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
-      if (e.isBoss) { state.boss = null; hideBossBar(); toast('Boss besiegt! +' + e.gold + ' Gold'); if (!state.isRevealed) triggerReveal(); }
-      else { state.killsSinceBoss++; if (state.killsSinceBoss >= BOSS_KILLS_TRIGGER && !state.boss && MAPS[state.map].enemies) { state.killsSinceBoss = 0; spawnBoss(); } }
+      const bx = e.c.x, by = e.c.y;
+      dropGold(bx, by, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
+      if (e.isSuperBoss) {
+        state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
+        spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'rare');
+        if (!state.isRevealed) triggerReveal();
+      } else if (e.elite) {
+        toast('☠ Elite besiegt! +' + e.gold + ' Gold');
+        spawnChest(bx + 40, by + 22, 'boss'); spawnChest(bx - 38, by + 26, 'rare');
+        if (!state.isRevealed) triggerReveal();
+      }
     }
   }
   function dropGold(x, y, n) { for (let i = 0; i < n; i++) coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 5, COL_GOLD).setStrokeStyle(1.5, COL_GOLD_S).setDepth(3), item: null }); }
   function dropLoot(x, y, id) { const it = ITEMS[id]; coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-14, 14), y + Phaser.Math.Between(-14, 14), 5, it.color).setStrokeStyle(1.5, 0x1f2937).setDepth(3), item: id }); }
+  function dropGear(x, y, gear) {
+    const col = RARITY[gear.rarity].color;
+    const s = sceneRef.add.circle(x + Phaser.Math.Between(-16, 16), y + Phaser.Math.Between(-14, 14), 7, col).setStrokeStyle(2, 0xffffff, 0.85).setDepth(3);
+    coins.push({ s, item: null, gear });
+  }
+  function dropGearRoll(x, y, bias, n) {   // n Ausrüstungsteile mit Seltenheits-Bias
+    for (let i = 0; i < (n || 1); i++) {
+      const slot = Object.keys(GEAR_SLOTS)[Phaser.Math.Between(0, 4)];
+      dropGear(x, y, makeGear(slot, rollRarity(bias)));
+    }
+  }
   function dropLootFor(e) {
-    const base = e.isBoss ? 4 : 1 + (Math.random() < 0.5 ? 1 : 0);
+    if (e.isSuperBoss) {   // Dungeon-Titan: Berge von Gold, Items & epische/legendäre Ausrüstung
+      for (let i = 0; i < 10; i++) dropLoot(e.c.x, e.c.y, 'schrott');
+      for (let i = 0; i < 4; i++) dropLoot(e.c.x, e.c.y, 'zahnrad');
+      for (let i = 0; i < 3; i++) dropLoot(e.c.x, e.c.y, 'dampfkern');
+      dropGearRoll(e.c.x, e.c.y, 3.5, 3);
+      return;
+    }
+    const elite = e.elite || e.isBoss;
+    const base = elite ? 4 : 1 + (Math.random() < 0.5 ? 1 : 0);
     for (let i = 0; i < base; i++) dropLoot(e.c.x, e.c.y, 'schrott');
-    if (Math.random() < (e.isBoss ? 1 : 0.18)) dropLoot(e.c.x, e.c.y, 'zahnrad');
-    if (e.isBoss || Math.random() < 0.04) dropLoot(e.c.x, e.c.y, 'dampfkern');
+    if (Math.random() < (elite ? 1 : 0.18)) dropLoot(e.c.x, e.c.y, 'zahnrad');
+    if (elite || Math.random() < 0.04) dropLoot(e.c.x, e.c.y, 'dampfkern');
+    if (elite) dropGearRoll(e.c.x, e.c.y, 1.2, 1);              // Elite: garantiert ein Teil
+    else if (Math.random() < 0.08) dropGearRoll(e.c.x, e.c.y, 0, 1);
   }
   function invCount() { let n = 0; for (const k in state.inventory) n += state.inventory[k] || 0; return n; }
   // ---- Loot-Kisten -------------------------------------------
@@ -1468,6 +1617,10 @@
     if (Math.random() < t.zahnrad) dropLoot(x, y, 'zahnrad');
     if (Math.random() < t.zahnrad && chest.tier !== 'normal') dropLoot(x, y, 'zahnrad');
     if (Math.random() < t.dampfkern) dropLoot(x, y, 'dampfkern');
+    // Ausrüstung: Kisten-Tier bestimmt die Chance & Qualität
+    if (chest.tier === 'boss') dropGearRoll(x, y, 1.6, 1);
+    else if (chest.tier === 'rare') { if (Math.random() < 0.55) dropGearRoll(x, y, 0.7, 1); }
+    else if (Math.random() < 0.15) dropGearRoll(x, y, 0, 1);
     popLoot(x, y - 6, t.icon);
     const i = chests.indexOf(chest); if (i !== -1) chests.splice(i, 1);
     chest.c.destroy(); toast('📦 Kiste geplündert');
@@ -1628,7 +1781,7 @@
         continue;
       }
       if (d > PLAYER_R + e.r) { e.c.x += (ex / d) * e.speed * dt; e.c.y += (ey / d) * e.speed * dt; }
-      else if (!uiBlocked && now > state.invulnUntil) { state.hp -= e.contact * dt; state.lastDamage = now; touched = true; }
+      else if (!uiBlocked && now > state.invulnUntil) { state.hp -= e.contact * dt * dmgTakenMul(); state.lastDamage = now; touched = true; }
     }
     if (touched) { updateLife(); if (state.hp <= 0) respawnPlayer(); }
     else if (now - state.lastDamage > REGEN_DELAY && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + regenRate() * dt); updateLife(); }
@@ -1660,7 +1813,7 @@
       const b = eBullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
       let hit = false;
       if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, player.x, player.y) < PLAYER_R + E_BULLET_R) {
-        if (!uiBlocked && now > state.invulnUntil) { state.hp -= b.dmg; state.lastDamage = now; updateLife(); if (state.hp <= 0) respawnPlayer(); }
+        if (!uiBlocked && now > state.invulnUntil) { state.hp -= b.dmg * dmgTakenMul(); state.lastDamage = now; updateLife(); if (state.hp <= 0) respawnPlayer(); }
         hit = true;
       }
       if (hit || b.life <= 0) { b.sprite.destroy(); eBullets.splice(i, 1); }
@@ -1670,7 +1823,12 @@
     for (let i = coins.length - 1; i >= 0; i--) {
       const co = coins[i], dx = player.x - co.s.x, dy = player.y - co.s.y, d = Math.hypot(dx, dy) || 1;
       if (d < PICKUP_DIST) {
-        if (co.item) {
+        if (co.gear) {
+          if (state.gearBag.length < GEARBAG_CAP) {
+            state.gearBag.push(co.gear); popLoot(co.s.x, co.s.y, co.gear.icon); toast(RARITY[co.gear.rarity].name + ': ' + co.gear.name); save();
+            co.s.destroy(); coins.splice(i, 1); continue;
+          } else if (now > state.invFullAt) { toast('🧰 Ausrüstungstasche voll — im Inventar ausrüsten/ablegen'); state.invFullAt = now + 4000; }
+        } else if (co.item) {
           if (invCount() >= INV_CAP) {   // Inventar voll -> Loot bleibt liegen, Hinweis auf die Truhe
             if (now > state.invFullAt) { toast('🎒 Inventar voll (' + INV_CAP + ') — Truhe in Rustwater leeren'); state.invFullAt = now + 4000; }
           } else {
@@ -1679,7 +1837,8 @@
           }
         } else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
       }
-      if (d < magnetDist() && !(co.item && invCount() >= INV_CAP)) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
+      const blocked = (co.item && invCount() >= INV_CAP) || (co.gear && state.gearBag.length >= GEARBAG_CAP);
+      if (d < magnetDist() && !blocked) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
     }
 
     if (!uiBlocked && !state.transitioning) updateContext();
