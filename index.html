@@ -71,6 +71,36 @@
   };
   const POTION_PRICE = 30;
 
+  // ---- Kampf-Design: Schadensarten, Waffen (Loadout) & Gegner-Matrix ----
+  // 4 Kern-Schadensarten mit elementaren Wechselwirkungen (siehe GDD Kap. 9).
+  const DMG_TYPES = {
+    KINETIC:    { name: 'Kinetisch',     icon: '🔩', color: 0xfbbf24 },
+    GALVANIC:   { name: 'Galvanisch',    icon: '⚡', color: 0x38bdf8 },
+    ALCHEMICAL: { name: 'Alchemistisch', icon: '🧪', color: 0x84cc16 },
+    THERMAL:    { name: 'Thermisch',     icon: '🔥', color: 0xf97316 }
+  };
+  // Waffen des Spielers. Karabiner immer verfügbar, Rest nach dem Reveal (Steampunk-Armaturen).
+  const WEAPONS = {
+    karabiner: { name: 'Blei-Karabiner',           type: 'KINETIC',    base: 20, fireMs: 200, bulletColor: 0xfbbf24, acid: 0, always: true },
+    voltgun:   { name: 'Leydener Volt-Karabiner',  type: 'GALVANIC',   base: 16, fireMs: 240, bulletColor: 0x38bdf8, acid: 0 },
+    saeure:    { name: 'Säure-Sprüher',            type: 'ALCHEMICAL', base: 12, fireMs: 210, bulletColor: 0x84cc16, acid: 10 },
+    brenner:   { name: 'Dampf-Brenner',            type: 'THERMAL',    base: 14, fireMs: 170, bulletColor: 0xf97316, acid: 0 }
+  };
+  const WEAPON_ORDER = ['karabiner', 'voltgun', 'saeure', 'brenner'];
+  // Gegner-Klassifizierung & Verhalten (siehe GDD Kap. 10).
+  const ENEMY_TYPES = {
+    outlaw:    { name: 'Grenzgänger',       cls: 'BIOLOGICAL', sub: 'outlaw',    r: 15, hp: 55,  speed: 82,  armor: 0,  contact: 12, gold: [1, 3] },
+    fauna:     { name: 'Ölfresser-Ratte',   cls: 'BIOLOGICAL', sub: 'fauna',     r: 12, hp: 32,  speed: 122, armor: 0,  contact: 9,  gold: [1, 2], swarm: true },
+    konstrukt: { name: 'Konzern-Konstrukt', cls: 'MECHANICAL', sub: 'konstrukt', r: 15, hp: 95,  speed: 54,  armor: 15, contact: 13, gold: [2, 4] },
+    goliath:   { name: 'Schwerer Ernter',   cls: 'MECHANICAL', sub: 'goliath',   r: 28, hp: 900, speed: 40,  armor: 30, contact: 28, gold: 24, frontImmune: true, isBoss: true }
+  };
+  const ENEMY_COLORS = {
+    outlaw:    { color: 0xb45309, stroke: 0x7c2d12 },
+    fauna:     { color: 0x65a30d, stroke: 0x365314 },
+    konstrukt: { color: 0x64748b, stroke: 0x1e293b },
+    goliath:   { color: 0x475569, stroke: 0x0f172a }
+  };
+
   // is_revealed: Begriffe wechseln nach dem Reveal (Ende Kapitel 4). [vorher, nachher]
   const TERMS = {
     potion:  ['Kaktus-Schnaps', 'Synthetisches Kühlmittel'],
@@ -265,6 +295,7 @@
   // ---- Laufzeit-Zustand --------------------------------------
   let sceneRef, player, shadow;
   let stickBase, stickThumb, hint, shootBtn, killText, goldText, mapNameText;
+  let weaponBtn, weaponIcon, weaponName;
   let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;
   let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;
   let ctxBg, ctxText;
@@ -299,7 +330,7 @@
     currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
     potions: POTION_START, cd: { spread: 0, dash: 0 },
-    boss: null, killsSinceBoss: 0,
+    boss: null, killsSinceBoss: 0, weapon: 'karabiner',
     ctx: null
   };
 
@@ -340,6 +371,11 @@
       const cdText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#fff', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(22);
       return { id: d.id, off: d.off, btn, icon, cdText };
     });
+
+    // Waffen-Umschalter (Schadensart wechseln) — rechts über dem Schuss-Button
+    weaponBtn = scene.add.circle(0, 0, 26, 0xfbbf24, 0.9).setStrokeStyle(3, 0xffffff, 0.55).setScrollFactor(0).setDepth(20);
+    weaponIcon = scene.add.text(0, 0, '🔩', { fontSize: '18px' }).setOrigin(0.5).setScrollFactor(0).setDepth(21);
+    weaponName = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(22);
 
     // Kontext-Button
     ctxBg = scene.add.rectangle(0, 0, 220, 40, 0x1f2937, 0.92).setStrokeStyle(2, 0xf3e9d2, 0.7).setScrollFactor(0).setDepth(24).setOrigin(0.5).setVisible(false);
@@ -428,6 +464,7 @@
     scene.input.keyboard.on('keydown-ONE', () => useAbility('spread'));
     scene.input.keyboard.on('keydown-TWO', () => useAbility('dash'));
     scene.input.keyboard.on('keydown-THREE', () => useAbility('potion'));
+    scene.input.keyboard.on('keydown-Q', () => cycleWeapon());
     scene.input.keyboard.on('keydown-R', () => { state.isRevealed = !state.isRevealed; toast('is_revealed = ' + state.isRevealed); save(); });   // Dev-Toggle (Desktop)
 
     scene.scale.on('resize', (size) => layoutUI(size));
@@ -436,7 +473,7 @@
     applyUpgrades();
     if (state.isRevealed) applyRevealVisual();   // bereits erwachter Spielstand -> Optik sofort
     state.hp = state.maxHp; state.potions = POTION_START;
-    updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI();
+    updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI(); updateWeaponUI();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
     loadMap('overworld', { c: 40, r: 40 });
@@ -449,8 +486,18 @@
   function updateGold() { if (goldText) goldText.setText('💰 ' + state.gold); }
 
   // Werte aus Upgrades (Basis + Level-Bonus)
-  function dmgPerBullet() { return BULLET_DMG + state.upgrades.damage * 6; }
-  function fireMs() { return Math.max(80, FIRE_MS - state.upgrades.firerate * 22); }
+  function curWeapon() { return WEAPONS[state.weapon] || WEAPONS.karabiner; }
+  function weaponUnlocked(id) { return WEAPONS[id].always || state.isRevealed; }
+  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6; }
+  function fireMs() { return Math.max(80, curWeapon().fireMs - state.upgrades.firerate * 22); }
+  function cycleWeapon() {
+    const avail = WEAPON_ORDER.filter(weaponUnlocked);
+    if (avail.length <= 1) { toast('🔒 Weitere Waffen nach dem Erwachen'); return; }
+    const i = avail.indexOf(state.weapon);
+    state.weapon = avail[(i + 1) % avail.length];
+    const w = curWeapon(), t = DMG_TYPES[w.type];
+    toast(t.icon + ' ' + w.name + ' (' + t.name + ')'); save(); updateWeaponUI();
+  }
   function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30; }
   function regenRate() { return REGEN_RATE + state.upgrades.regen * 4; }
   function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45; }
@@ -458,7 +505,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
@@ -466,6 +513,7 @@
       const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
       const s = JSON.parse(raw);
       state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1; state.chosenGuild = s.guild || null;
+      state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
@@ -676,12 +724,29 @@
       }
     }
   }
+  // Gewichteter Gegner-Pool: nach dem Reveal treten mechanische Konzern-Konstrukte auf.
+  function pickEnemyType() {
+    const pool = state.isRevealed
+      ? [['outlaw', 3], ['fauna', 3], ['konstrukt', 4]]
+      : [['outlaw', 5], ['fauna', 4], ['konstrukt', 1]];
+    let total = 0; for (const p of pool) total += p[1];
+    let x = Math.random() * total;
+    for (const p of pool) { if ((x -= p[1]) <= 0) return p[0]; }
+    return 'outlaw';
+  }
+  function spawnTyped(typeKey, x, y, opts) {
+    const t = ENEMY_TYPES[typeKey], col = ENEMY_COLORS[typeKey];
+    const g = Array.isArray(t.gold) ? Phaser.Math.Between(t.gold[0], t.gold[1]) : t.gold;
+    return addEnemy(x, y, { r: t.r, barW: t.isBoss ? 56 : (t.sub === 'fauna' ? 26 : 32), hp: t.hp, color: col.color, stroke: col.stroke,
+      contact: t.contact, speed: t.speed, gold: g, cls: t.cls, sub: t.sub, armor: t.armor, frontImmune: t.frontImmune,
+      isBoss: !!t.isBoss, name: (opts && opts.name) || t.name, aggro: !!(opts && opts.aggro) });
+  }
   function scatterEnemies(m) {
     const count = Math.min(ENEMY_MAX, Math.round(m.cols * m.rows / ENEMY_PER_TILES));
     for (let i = 0; i < count; i++) {
       const c = Phaser.Math.Between(1, m.cols - 2), r = Phaser.Math.Between(1, m.rows - 2), w = tileToWorld(c, r);
       if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 220) continue;   // Startbereich frei halten
-      addEnemy(w.x, w.y, { r: ENEMY_R, barW: 32, hp: ENEMY_HP, color: COL_ENEMY, stroke: COL_ENEMY_S, contact: CONTACT_DPS, speed: ENEMY_SPEED, gold: Phaser.Math.Between(1, 3) });
+      spawnTyped(pickEnemyType(), w.x, w.y);
     }
   }
 
@@ -789,6 +854,7 @@
     const mc = { x: w - 80, y: h - 100 };
     if (shootBtn) { shootBtn.setPosition(mc.x, mc.y); if (shootBtn.icon) shootBtn.icon.setPosition(mc.x, mc.y); }
     for (const ab of abilities) { const bx = mc.x + ab.off.x, by = mc.y + ab.off.y; ab.btn.setPosition(bx, by); ab.icon.setPosition(bx, by); ab.cdText.setPosition(bx, by + (ab.id === 'potion' ? 16 : 0)); }
+    if (weaponBtn) { const wx = mc.x - 48, wy = mc.y - 150; weaponBtn.setPosition(wx, wy); weaponIcon.setPosition(wx, wy); weaponName.setPosition(wx, wy + 22); }
     if (mapNameText) mapNameText.setX(w / 2);
     if (hint) hint.setX(w / 2);
     if (ctxBg) { ctxBg.setPosition(w / 2, 108); ctxText.setPosition(w / 2, 108); }
@@ -864,6 +930,7 @@
       if (hit(miniCollapse, p, 18)) { state.miniCollapsed = true; setMiniVisible(false); return; }
       if (inRect(p, miniBg.x, miniBg.y, miniBg.width, miniBg.height)) { openFullMap(); return; }
     }
+    if (weaponBtn && Phaser.Math.Distance.Between(p.x, p.y, weaponBtn.x, weaponBtn.y) <= 32) { cycleWeapon(); return; }
     if (Phaser.Math.Distance.Between(p.x, p.y, shootBtn.x, shootBtn.y) <= 52) { shooting = true; shootId = p.id; shootBtn.setScale(0.92); fireBullet(); fireTimer = fireMs(); return; }
     for (const ab of abilities) if (Phaser.Math.Distance.Between(p.x, p.y, ab.btn.x, ab.btn.y) <= 34) { useAbility(ab.id); return; }
     // NPC direkt antippen (Weltkoordinaten, da im Weltraum)
@@ -1091,8 +1158,9 @@
   }
   function applyReveal() {
     state.isRevealed = true; state.currentChapter = 5;
-    applyRevealVisual(); updateNpcIndicators(); updateAbilityUI(); save();
+    applyRevealVisual(); updateNpcIndicators(); updateAbilityUI(); updateWeaponUI(); save();
     toast('⚙ Das Interface mutiert. Du bist erwacht.');
+    toast('🔧 Neue Armaturen: Volt-Karabiner, Säure-Sprüher, Dampf-Brenner');
   }
 
   // ---- Store (verkaufen & kaufen) ----------------------------
@@ -1141,7 +1209,8 @@
     const hpBg = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, 0x000000, 0.6).setOrigin(0, 0.5);
     const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
     const c = sceneRef.add.container(x, y, [body, hpBg, hpFill]).setDepth(o.isBoss ? 5 : 4);
-    const e = { c, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro };
+    const e = { c, body, baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
+      cls: o.cls || 'BIOLOGICAL', sub: o.sub || 'outlaw', armor: o.armor || 0, maxArmor: o.armor || 0, frontImmune: !!o.frontImmune, stunUntil: 0, dot: null };
     enemies.push(e); return e;
   }
   function spawnEnemy() {
@@ -1149,24 +1218,29 @@
     const ang = Math.random() * Math.PI * 2, dist = 360 + Math.random() * 160;
     const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
     const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
-    addEnemy(ex, ey, { r: ENEMY_R, barW: 32, hp: ENEMY_HP, color: COL_ENEMY, stroke: COL_ENEMY_S, contact: CONTACT_DPS, speed: ENEMY_SPEED, gold: Phaser.Math.Between(1, 3) });
+    spawnTyped(pickEnemyType(), ex, ey);
   }
   function spawnBoss() {
     if (!MAPS[state.map].enemies || state.boss || state.transitioning) return;
     const ang = Math.random() * Math.PI * 2, dist = 300 + Math.random() * 120;
     const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
     const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
-    const name = BOSS_NAMES[Phaser.Math.Between(0, BOSS_NAMES.length - 1)];
-    const e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD, aggro: true });
-    state.boss = e; setBossBar(e); toast('☠ Boss: ' + name);
+    let e;
+    if (state.isRevealed && Math.random() < 0.5) {   // Mechanischer Goliath: Front-Panzerung, säure-/galvanik-anfällig
+      e = spawnTyped('goliath', ex, ey, { name: 'Goliath-Ernter', aggro: true });
+    } else {                                          // Biologischer Boss (Grenzland-Legende)
+      const name = BOSS_NAMES[Phaser.Math.Between(0, BOSS_NAMES.length - 1)];
+      e = addEnemy(ex, ey, { r: BOSS_R, barW: 56, hp: BOSS_HP, color: 0xb91c1c, stroke: 0x450a0a, contact: BOSS_CONTACT, speed: BOSS_SPEED, isBoss: true, name, gold: BOSS_GOLD, aggro: true, cls: 'BIOLOGICAL', sub: 'outlaw' });
+    }
+    state.boss = e; setBossBar(e); toast('☠ Boss: ' + e.name);
   }
 
   // ---- Schuss / Spezial-Attacken -----------------------------
   function fireBulletAngle(a) {
     if (!sceneRef || !player || state.transitioning) return;
-    const dx = Math.cos(a), dy = Math.sin(a);
-    const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6), BULLET_R, COL_BULLET).setStrokeStyle(2, 0xb45309).setDepth(6);
-    bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE });
+    const w = curWeapon(), dx = Math.cos(a), dy = Math.sin(a);
+    const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6), BULLET_R, w.bulletColor).setStrokeStyle(2, 0x1f2937, 0.6).setDepth(6);
+    bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE, type: w.type, base: dmgPerBullet(), acid: w.acid });
   }
   function nearestEnemy(range) {
     let best = null, bd = (range === undefined ? Infinity : range);
@@ -1203,6 +1277,12 @@
     }
   }
 
+  function updateWeaponUI() {
+    if (!weaponBtn) return;
+    const w = curWeapon(), t = DMG_TYPES[w.type];
+    weaponBtn.setFillStyle(t.color, 0.9); weaponIcon.setText(t.icon); weaponName.setText(t.name);
+    weaponBtn.setAlpha(WEAPON_ORDER.filter(weaponUnlocked).length <= 1 ? 0.55 : 0.95);
+  }
   // ---- Spieler-Leben -----------------------------------------
   function updateLife() { if (!lifeBarFill) return; lifeBarFill.width = LIFE_W * Math.max(state.hp, 0) / state.maxHp; lifeText.setText(Math.ceil(Math.max(state.hp, 0)) + ' / ' + state.maxHp); }
   function respawnPlayer() {
@@ -1217,10 +1297,36 @@
   function hideBossBar() { if (mapNameText) mapNameText.setVisible(true);[bossName, bossBarBg, bossBarFill, bossHpText].forEach(o => o && o.setVisible(false)); }
 
   // ---- Schaden / Loot ----------------------------------------
-  function damageEnemy(e, dmg) {
+  // Schadens-Kalkulator: Schadensart × Gegner-Klassifizierung (GDD Kap. 11).
+  function calcDamage(type, e, base) {
+    let dmg = base, effect = null, immune = false;
+    const cls = e.cls, armor = e.armor || 0;
+    if (cls === 'MECHANICAL') {
+      if (type === 'GALVANIC') { dmg *= 2.5; if (Math.random() < 0.40) effect = 'STUN'; }              // Automaten: massiver Bonus + Kurzschluss
+      else if (type === 'KINETIC') { dmg = e.frontImmune ? (armor > 0 ? 0 : dmg) : Math.max(1, dmg - armor); }  // Panzerung schluckt Blei
+      else if (type === 'THERMAL') { dmg *= (e.sub === 'goliath') ? 0.6 : 1.2; }                       // Leichtbau brennt, Goliath widersteht
+    } else if (cls === 'BIOLOGICAL') {
+      if (type === 'KINETIC') { dmg *= 1.5; if (Math.random() < 0.33) effect = 'BLEED'; }              // Fleisch: Bonus + Verbluten
+      else if (type === 'GALVANIC') { dmg *= 0.4; }                                                     // biologische Isolierung dämpft
+      else if (type === 'THERMAL') { dmg *= 1.3; if (Math.random() < 0.5) effect = 'BURN'; }           // brennt + Überhitzung
+    }
+    if (type === 'ALCHEMICAL' && armor > 0) { effect = 'CORRODE'; }   // zersetzt Rüstung (in applyStatus)
+    if (dmg <= 0) immune = true;
+    return { dmg: Math.max(0, Math.round(dmg)), effect, immune };
+  }
+  const css = (hex) => '#' + hex.toString(16).padStart(6, '0');
+  function applyStatus(e, effect, acid) {
+    if (!e || e.hp <= 0) return;
+    const now = sceneRef.time.now;
+    if (effect === 'STUN') { e.stunUntil = now + 4000; }                                               // Kurzschluss: 4s bewegungsunfähig
+    else if (effect === 'BLEED') { e.dot = { type: 'BLEED', dps: Math.max(4, e.maxHp * 0.04), until: now + 3000, tick: 0, color: 0xdc2626 }; }
+    else if (effect === 'BURN') { e.dot = { type: 'BURN', dps: Math.max(5, e.maxHp * 0.05), until: now + 3000, tick: 0, color: 0xf97316 }; }
+    else if (effect === 'CORRODE') { e.armor = Math.max(0, e.armor - (acid || 10)); if (e.body) e.body.setStrokeStyle(3, 0x84cc16); popDamage(e.c.x, e.c.y - e.r - 4, '🧪', 0x84cc16); }
+  }
+  function damageEnemy(e, dmg, opts) {
     e.aggro = true;   // Treffer weckt den Gegner
     e.hp -= dmg; e.hpFill.width = e.barW * Math.max(e.hp, 0) / e.maxHp;
-    popDamage(e.c.x, e.c.y - e.r - 4, dmg);
+    popDamage(e.c.x, e.c.y - e.r - 4, (opts && opts.immune) ? '⛊' : dmg, opts && opts.color);
     if (e.isBoss) updateBossBar();
     if (e.hp <= 0) {
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
@@ -1238,7 +1344,7 @@
     if (e.isBoss || Math.random() < 0.04) dropLoot(e.c.x, e.c.y, 'dampfkern');
   }
   function popLoot(x, y, icon) { const t = sceneRef.add.text(x, y - 8, icon, { fontSize: '15px' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 550, onComplete: () => t.destroy() }); }
-  function popDamage(x, y, dmg) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
+  function popDamage(x, y, dmg, color) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: color ? css(color) : '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
   function popGold(x, y) { const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() }); }
   // ---- Tycoon (Rustwater-Wirtschaft) -------------------------
   function openTycoon() {
@@ -1335,6 +1441,9 @@
     let touched = false;
     for (const e of enemies) {
       const ex = player.x - e.c.x, ey = player.y - e.c.y, d = Math.hypot(ex, ey) || 1;
+      const stunned = now < e.stunUntil;
+      if (e.body) e.body.setFillStyle(stunned ? 0x7dd3fc : e.baseColor);   // Kurzschluss sichtbar machen
+      if (stunned) continue;                                               // bewegungsunfähig, kein Kontaktschaden
       if (!e.aggro) { if (d < AGGRO_RANGE) e.aggro = true; else continue; }   // erst angreifen, wenn nah genug
       else if (!e.isBoss && d > LEASH_RANGE) { e.aggro = false; continue; }   // zu weit -> beruhigt sich wieder
       if (d > PLAYER_R + e.r) { e.c.x += (ex / d) * e.speed * dt; e.c.y += (ey / d) * e.speed * dt; }
@@ -1344,11 +1453,24 @@
     else if (now - state.lastDamage > REGEN_DELAY && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + regenRate() * dt); updateLife(); }
     if (state.boss) updateBossBar();
 
+    // Status-Effekte über Zeit (Verbluten / Überhitzung) — Rückwärts-Index, da Gegner sterben können
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i]; if (!e.dot) continue;
+      if (now >= e.dot.until) { e.dot = null; continue; }
+      e.dot.tick += dt;
+      if (e.dot.tick >= 0.4) { const dd = Math.round(e.dot.dps * e.dot.tick); e.dot.tick = 0; if (dd > 0) damageEnemy(e, dd, { color: e.dot.color }); }
+    }
+
     // Projektile
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
       let hitE = false;
-      for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) { damageEnemy(e, dmgPerBullet()); hitE = true; break; }
+      for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) {
+        const res = calcDamage(b.type, e, b.base);
+        if (res.effect) applyStatus(e, res.effect, b.acid);
+        damageEnemy(e, res.dmg, { color: DMG_TYPES[b.type].color, immune: res.immune });
+        hitE = true; break;
+      }
       if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
     }
 
