@@ -943,18 +943,20 @@
   // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
   function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; renderInventory(); }
   function refreshInventory() { if (state.inventoryOpen) renderInventory(); }
-  // Vollbild-Layout: Ausrüstung links, Grid-Inventar rechts
+  // Zentriertes Charakter-Panel: Ausrüstung + Werte links, Grid-Inventar rechts
   function invLayout() {
-    const size = sceneRef.scale.gameSize, inset = 8;
-    const px = inset, py = inset, pw = size.width - inset * 2, ph = size.height - inset * 2;
-    const headH = 58, colTop = py + headH;
-    const leftW = Math.round(pw * 0.44), rightX = px + leftW + 8, rightW = pw - leftW - 12;
+    const size = sceneRef.scale.gameSize;
+    const pw = Math.min(440, Math.round(size.width * 0.94));
+    const ph = Math.min(size.height - 20, Math.round(size.height * 0.86));
+    const px = Math.round((size.width - pw) / 2), py = Math.round((size.height - ph) / 2);
+    const headH = 56, colTop = py + headH, colBottom = py + ph - 12;
+    const leftW = Math.round(pw * 0.44), rightX = px + leftW + 10, rightW = pw - leftW - 14;
     const gap = 5, cols = 4;
-    const cell = Math.floor((rightW - (cols - 1) * gap - 6) / cols);
-    const gy0 = colTop + 22, colBottom = py + ph - 10;
+    const cell = Math.floor((rightW - (cols - 1) * gap - 4) / cols);
+    const gy0 = colTop + 22;
     const rows = Math.max(6, Math.floor((colBottom - gy0 + gap) / (cell + gap)));
     const gridW = cols * cell + (cols - 1) * gap, gx0 = rightX + Math.round((rightW - gridW) / 2);
-    return { size, px, py, pw, ph, headH, colTop, leftW, rightX, rightW, gap, cols, rows, cell, gx0, gy0, bx: px + leftW / 2 };
+    return { size, px, py, pw, ph, headH, colTop, colBottom, leftW, rightX, rightW, gap, cols, rows, cell, gx0, gy0, bx: px + leftW / 2, dollTop: colTop + 4, statsTop: colTop + 246 };
   }
   function gridItems() {   // alles, was im Grid liegt: Gear (Fußabdruck) + Material-/Trank-Stapel (1 Slot)
     const items = [];
@@ -985,15 +987,17 @@
     invPanel.setPosition(L.size.width / 2, L.py).setSize(L.pw, L.ph).setVisible(true);
     invTitle.setPosition(L.px + 12, L.py + 10).setOrigin(0, 0).setVisible(true);
     invClose.setPosition(L.px + L.pw - 22, L.py + 16).setVisible(true);
-    invText.setText('⭐ Lv ' + state.level + '  (' + state.xp + '/' + xpToNext(state.level) + ' XP)   ❤ ' + state.maxHp + '   🛡️ ' + playerArmor() + '   💰 ' + state.gold).setPosition(L.px + 12, L.py + 34).setOrigin(0, 0).setVisible(true);
+    invText.setText('⭐ Lv ' + state.level + '   (' + state.xp + ' / ' + xpToNext(state.level) + ' XP)      💰 ' + state.gold).setPosition(L.px + 12, L.py + 34).setOrigin(0, 0).setVisible(true);
     // ---- Links: Ausrüstung (Paper-Doll) ----
-    const bx = L.bx, ty = L.colTop + 4, S = 44;
+    const bx = L.bx, ty = L.dollTop, S = 44;
     add(sceneRef.add.circle(bx, ty + 12, 13, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
     add(sceneRef.add.rectangle(bx, ty + 96, 28, 120, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
     const pos = { helmet: [bx, ty + 2], weapon: [bx - 56, ty + 58], armor: [bx, ty + 58], gadget: [bx + 56, ty + 58], boots: [bx, ty + 186] };
     for (const slot in pos) drawEquipSlot(slot, pos[slot][0], pos[slot][1], S, add);
     PLATE_SLOTS.forEach((slot, k) => drawEquipSlot(slot, bx + (k - 1) * 50, ty + 120, S, add, false));
     add(sceneRef.add.text(bx, ty + 120 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    // ---- Links unten: Werte-Blatt ----
+    drawStatsSheet(L, add);
     // ---- Rechts: Grid-Inventar ----
     add(sceneRef.add.text(L.rightX, L.colTop, '🎒  Inventar  (' + gridUsedCells() + '/' + (L.cols * L.rows) + ')', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
     for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
@@ -1001,6 +1005,27 @@
       add(sceneRef.add.rectangle(cx, cy, L.cell, L.cell, 0x1b2431, 0.85).setStrokeStyle(1, 0xf3e9d2, 0.18).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
     }
     for (const p of packGrid(L.cols, L.rows)) drawGridItem(p, L, add);
+  }
+  function drawStatsSheet(L, add) {
+    const x = L.px + 12, w = L.leftW - 20, y = L.statsTop, h = L.colBottom - y;
+    add(sceneRef.add.rectangle(x, y, w, h, 0x161d28, 0.9).setStrokeStyle(2, 0xc9a24a, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+    add(sceneRef.add.text(x + 10, y + 8, '📋  Werte', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+    const rows = [
+      ['❤ Leben', state.maxHp],
+      ['⚔ Schaden', dmgPerBullet()],
+      ['⚡ Feuerrate', (1000 / fireMs()).toFixed(1) + '/s'],
+      ['🛡️ Rüstung', playerArmor()],
+      ['· Schutz', Math.round((1 - dmgTakenMul()) * 100) + '%'],
+      ['🥾 Tempo', Math.round(moveSpeed())],
+      ['🎒 Plätze', gridUsedCells() + '/' + (L.cols * L.rows)]
+    ];
+    const step = Math.min(30, (h - 52) / rows.length); let ry = y + 34;
+    rows.forEach(r => {
+      add(sceneRef.add.text(x + 10, ry, r[0], { fontFamily: 'system-ui', fontSize: '12px', color: '#cbd5e1' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(x + w - 10, ry, '' + r[1], { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(1, 0).setScrollFactor(0).setDepth(53));
+      ry += step;
+    });
+    add(sceneRef.add.text(x + w / 2, L.colBottom - 12, 'Ziehen/Antippen zum Anlegen', { fontFamily: 'system-ui', fontSize: '9px', color: '#8a8172' }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(53));
   }
   function drawGridItem(p, L, add) {
     const ix = L.gx0 + p.gx * (L.cell + L.gap), iy = L.gy0 + p.gy * (L.cell + L.gap);
