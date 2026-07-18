@@ -13,6 +13,12 @@ Herkunft und Nachvollziehbarkeit. Jedes Paket: glTF + `.bin` + PBR-Texturen
 | `namaqualand_cliff_02_1k/` | Felsklippe | Sektorgrenzen, Canyon (Rogue's Landing) | CC0 · Poly Haven |
 | `namaqualand_boulder_03_1k/` | Findling/Felsbrocken | Deckung, Landschafts-Dekor | CC0 · Poly Haven |
 
+## Gameplay-Items (`models/items/`)
+| Ordner | Beschreibung | Passt zu | Lizenz |
+| :-- | :-- | :-- | :-- |
+| `treasure_chest_1k/` | Schatztruhe | Loot-Kisten (§7.7), Boss-/Cache-Beute | CC0 · Poly Haven |
+| `stick_grenade_1k/` | Stielhandgranate | Säure-/Elektrofeld-Wurf-Granate (§7.2) | CC0 · Poly Haven |
+
 ## Deko / Props (`models/props/`)
 | Ordner | Beschreibung | Passt zu | Lizenz |
 | :-- | :-- | :-- | :-- |
