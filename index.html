@@ -93,14 +93,15 @@
   };
   const PLATE_SLOTS = ['plate1', 'plate2', 'plate3'];   // drei stapelbare Panzerplatten-Slots
   const RARITY = {
-    common:    { name: 'Gewöhnlich', color: 0x9ca3af, mult: 1.0, w: 58 },
-    rare:      { name: 'Selten',     color: 0x38bdf8, mult: 1.8, w: 26 },
-    epic:      { name: 'Episch',     color: 0xa855f7, mult: 2.8, w: 12 },
-    legendary: { name: 'Legendär',   color: 0xf59e0b, mult: 4.2, w: 4 }
+    common:    { name: 'Gewöhnlich', color: 0x9ca3af, mult: 1.0, w: 58, req: 1 },
+    rare:      { name: 'Selten',     color: 0x38bdf8, mult: 1.8, w: 26, req: 3 },
+    epic:      { name: 'Episch',     color: 0xa855f7, mult: 2.8, w: 12, req: 7 },
+    legendary: { name: 'Legendär',   color: 0xf59e0b, mult: 4.2, w: 4,  req: 11 }
   };
   const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'];
   const GEAR_ADJ = { common: ['Rostiger', 'Abgenutzter', 'Einfacher'], rare: ['Kupferner', 'Verstärkter', 'Gehärteter'], epic: ['Dampfbetriebener', 'Alchemistischer', 'Präzisions-'], legendary: ['Titanischer', 'Legendärer', 'Iron-Rail-'] };
   const GEARBAG_CAP = 12;
+  const LEVEL_MAX = 30, LEVEL_HP_BONUS = 8;   // Erfahrungssystem: Level durch Kills & Quests
   // Elite-Bosse (stehen mitten in Gegnergruppen) & Dungeon-Superboss
   const ELITE_PER_MAP = 3, SUPERBOSS_MULT = 4;
 
@@ -347,6 +348,7 @@
   let stashUI = [], stashButtons = [], stashCloseRef = null, stashPanelRef = null;
   let revealBg, revealText, revealHint;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
+  let xpBarBg, xpBarFill, levelBadge, levelText;                          // Erfahrung / Level
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
   let equipSlotRects = [], bagSlotRects = [], invDrag = null;
@@ -367,6 +369,7 @@
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null }, gearBag: [],
+    level: 1, xp: 0,
     isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
@@ -434,6 +437,11 @@
     lifeBarBg = scene.add.rectangle(0, 0, LIFE_W, 16, 0x000000, 0.55).setStrokeStyle(2, 0x000000, 0.5).setScrollFactor(0).setDepth(30).setOrigin(0, 0);
     lifeBarFill = scene.add.rectangle(0, 0, LIFE_W, 16, COL_LIFE).setScrollFactor(0).setDepth(31).setOrigin(0, 0);
     lifeText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '12px', color: '#eafff0', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
+    // XP-Balken unter dem Lebensbalken + Level-Abzeichen am Porträt
+    xpBarBg = scene.add.rectangle(0, 0, LIFE_W, 6, 0x000000, 0.55).setStrokeStyle(1, 0x000000, 0.5).setScrollFactor(0).setDepth(30).setOrigin(0, 0);
+    xpBarFill = scene.add.rectangle(0, 0, LIFE_W, 6, 0x38bdf8).setScrollFactor(0).setDepth(31).setOrigin(0, 0);
+    levelBadge = scene.add.circle(0, 0, 12, 0x1f2937, 0.95).setStrokeStyle(2, 0xfacc15, 0.9).setScrollFactor(0).setDepth(32);
+    levelText = scene.add.text(0, 0, '1', { fontFamily: 'system-ui', fontSize: '13px', color: '#facc15', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(33);
 
     // HUD-Texte
     mapNameText = scene.add.text(0, 6, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(30);
@@ -524,7 +532,7 @@
     applyUpgrades();
     if (state.isRevealed) applyRevealVisual();   // bereits erwachter Spielstand -> Optik sofort
     state.hp = state.maxHp; state.potions = POTION_START;
-    updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateAbilityUI(); updateWeaponUI();
+    updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateLevelUI(); updateAbilityUI(); updateWeaponUI();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
     loadMap('overworld', { c: 40, r: 40 });
@@ -558,14 +566,25 @@
   function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30 + equipStat('speed'); }
   function regenRate() { return REGEN_RATE + state.upgrades.regen * 4; }
   function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45; }
-  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp'); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
+  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS; if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
+  // ---- Erfahrung & Level -------------------------------------
+  function xpToNext(lv) { return 40 + lv * 30; }   // Level 1->2: 70 XP, danach +30/Stufe
+  function gainXp(n) {
+    if (state.level >= LEVEL_MAX) return;
+    state.xp += n; let leveled = false;
+    while (state.level < LEVEL_MAX && state.xp >= xpToNext(state.level)) { state.xp -= xpToNext(state.level); state.level++; leveled = true; }
+    if (leveled) { applyUpgrades(); state.hp = state.maxHp; updateLife(); toast('⭐ Stufe ' + state.level + ' erreicht!'); }
+    updateLevelUI();
+  }
+  function xpForKill(e) { return e.isSuperBoss ? 300 : e.elite ? 50 : Math.max(3, Math.round(e.maxHp / 11)); }
   // ---- Ausrüstung erzeugen & anlegen -------------------------
   let gearUid = 1;
   function makeGear(slot, rarity) {
     const def = GEAR_SLOTS[slot], r = RARITY[rarity], adj = GEAR_ADJ[rarity];
     const val = Math.max(1, Math.round(def.base * r.mult));
-    return { uid: gearUid++, slot, rarity, icon: def.icon, name: adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name, stat: { key: def.stat, val } };
+    return { uid: gearUid++, slot, rarity, req: r.req, icon: def.icon, name: adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name, stat: { key: def.stat, val } };
   }
+  function gearReq(g) { return g.req || RARITY[g.rarity].req || 1; }
   function rollRarity(bias) {   // bias hebt seltene Stufen an (0=normal, höher=besser)
     let pool = RARITY_ORDER.map((k, i) => [k, Math.max(0.5, RARITY[k].w + bias * i * 6)]);
     let total = 0; for (const p of pool) total += p[1];
@@ -580,6 +599,7 @@
     const idx = typeof gearOrIdx === 'number' ? gearOrIdx : state.gearBag.indexOf(gearOrIdx);
     if (idx < 0 || idx >= state.gearBag.length) return;
     const g = state.gearBag[idx];
+    if (state.level < gearReq(g)) { toast('🔒 Benötigt Stufe ' + gearReq(g) + ' (' + RARITY[g.rarity].name + ')'); return; }
     const slots = equipSlotsForType(g.slot);
     const slot = (targetSlot && slots.includes(targetSlot)) ? targetSlot : (slots.find(s => !state.equip[s]) || slots[0]);
     const prev = state.equip[slot];
@@ -595,7 +615,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex, t: Date.now() }));
     } catch (e) { }
   }
   function load() {
@@ -608,6 +628,7 @@
       if (s.stash) for (const k in state.stash) if (typeof s.stash[k] === 'number') state.stash[k] = s.stash[k];
       if (s.equip) for (const k in state.equip) if (s.equip[k] && GEAR_SLOTS[slotType(k)]) state.equip[k] = s.equip[k];
       if (Array.isArray(s.gearBag)) state.gearBag = s.gearBag.filter(g => g && GEAR_SLOTS[g.slot]);
+      state.level = Math.max(1, s.level || 1); state.xp = s.xp || 0;
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.discovered = new Set(s.discovered || []);
@@ -930,7 +951,7 @@
     invPanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
     invTitle.setPosition(px, py + 10).setVisible(true);
     invClose.setPosition(px + pw / 2 - 20, py + 14).setVisible(true);
-    invText.setText('🎒 ' + invCount() + '/' + INV_CAP + '  ·  💰 ' + state.gold + '  ·  ❤ ' + state.maxHp + '  ·  🛡️ ' + playerArmor()).setPosition(px, py + 36).setVisible(true);
+    invText.setText('⭐ Lv ' + state.level + ' (' + state.xp + '/' + xpToNext(state.level) + ' XP)  ·  ❤ ' + state.maxHp + '  ·  🛡️ ' + playerArmor() + '  ·  🎒 ' + invCount() + '/' + INV_CAP).setPosition(px, py + 36).setVisible(true);
     // Paper-Doll
     const by = py + headH, bx = px;
     add(sceneRef.add.circle(bx, by + 18, 14, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
@@ -964,10 +985,12 @@
   }
   function drawBagSlot(idx, x, y, S, add) {
     const g = state.gearBag[idx], col = g ? RARITY[g.rarity].color : 0x334155;
+    const locked = g && state.level < gearReq(g);
     add(sceneRef.add.rectangle(x, y, S, S, 0x334155, 0.85).setStrokeStyle(2, g ? col : 0xf3e9d2, g ? 0.95 : 0.25).setScrollFactor(0).setDepth(52));
     if (g) {
-      add(sceneRef.add.text(x, y - 5, g.icon, { fontSize: '19px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      add(sceneRef.add.text(x, y + 15, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(x, y - 5, g.icon, { fontSize: '19px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(locked ? 0.4 : 1));
+      if (locked) add(sceneRef.add.text(x, y + 15, '🔒 Lv' + gearReq(g), { fontFamily: 'system-ui', fontSize: '9px', color: '#f87171', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      else add(sceneRef.add.text(x, y + 15, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     }
     bagSlotRects.push({ x, y, w: S, h: S, idx, gear: g });
   }
@@ -1013,9 +1036,11 @@
 
     if (portraitBg) {
       portraitBg.setPosition(12, 12); portraitIcon.setPosition(35, 35);
-      lifeBarBg.setPosition(64, 16); lifeBarFill.setPosition(64, 16); lifeText.setPosition(64 + LIFE_W / 2, 24);
-      killText.setPosition(14, 66); goldText.setPosition(120, 66);
-      if (questText) questText.setPosition(14, 90);
+      lifeBarBg.setPosition(64, 14); lifeBarFill.setPosition(64, 14); lifeText.setPosition(64 + LIFE_W / 2, 22);
+      if (xpBarBg) { xpBarBg.setPosition(64, 33); xpBarFill.setPosition(64, 33); }
+      if (levelBadge) { levelBadge.setPosition(50, 50); levelText.setPosition(50, 50); }
+      killText.setPosition(70, 44); goldText.setPosition(172, 44);
+      if (questText) questText.setPosition(14, 74);
     }
     if (bossName) { bossName.setPosition(w / 2, 22); bossBarBg.setPosition(w / 2 - BOSSBAR_W / 2, 44); bossBarFill.setPosition(w / 2 - BOSSBAR_W / 2, 44); bossHpText.setPosition(w / 2, 50); }
 
@@ -1287,7 +1312,8 @@
     else if (q.rewardItem && ITEMS[q.rewardItem]) state.inventory[q.rewardItem] = (state.inventory[q.rewardItem] || 0) + 1;
     state.quests[q.id] = 'done';
     if (q.advanceTo && q.advanceTo > state.currentChapter) { state.currentChapter = q.advanceTo; toast('📖 Kapitel ' + q.advanceTo); }
-    toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold'); save(); updateNpcIndicators(); closeDialogue();
+    const xpGain = Math.max(25, Math.round(q.rewardGold * 0.5));
+    toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold · +' + xpGain + ' XP'); gainXp(xpGain); save(); updateNpcIndicators(); closeDialogue();
   }
   function updateNpcIndicators() {
     for (const n of npcSprites) {
@@ -1509,6 +1535,7 @@
   }
   // ---- Spieler-Leben -----------------------------------------
   function updateLife() { if (!lifeBarFill) return; lifeBarFill.width = LIFE_W * Math.max(state.hp, 0) / state.maxHp; lifeText.setText(Math.ceil(Math.max(state.hp, 0)) + ' / ' + state.maxHp); }
+  function updateLevelUI() { if (!levelText) return; levelText.setText('' + state.level); const need = xpToNext(state.level); xpBarFill.width = LIFE_W * (state.level >= LEVEL_MAX ? 1 : Math.max(0, Math.min(1, state.xp / need))); }
   function respawnPlayer() {
     const m = MAPS[state.map], w = tileToWorld(Math.floor(m.cols / 2), Math.floor(m.rows / 2));
     player.x = w.x; player.y = w.y; state.hp = state.maxHp; state.potions = POTION_START;
@@ -1555,7 +1582,7 @@
     if (e.hp <= 0) {
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
       const bx = e.c.x, by = e.c.y;
-      dropGold(bx, by, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills);
+      dropGold(bx, by, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); gainXp(xpForKill(e));
       if (e.isSuperBoss) {
         state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
         spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'rare');
