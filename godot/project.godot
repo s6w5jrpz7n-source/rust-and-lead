@@ -1,0 +1,18 @@
+; Godot 4 Projekt-Manifest — "Rust & Lead" Backend (Phase 2).
+; Projekt-Wurzel ist dieser Ordner (godot/), daher res:// == godot/.
+; Reines Logik-Backend + headless Test-Runner (keine Spiel-Assets/Rendering).
+
+config_version=5
+
+[application]
+
+config/name="Rust & Lead — Backend"
+run/main_scene="res://tests/TestRunner.tscn"
+config/features=PackedStringArray("4.3")
+
+[autoload]
+
+; Reihenfolge zählt: GameState zuerst, dann die abhängigen Manager.
+GameState="*res://scripts/GameState.gd"
+QuestManager="*res://scripts/QuestManager.gd"
+TycoonManager="*res://scripts/TycoonManager.gd"

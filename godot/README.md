@@ -96,16 +96,27 @@ grid.place_first(102, 3, 1)                                 # Loot-Drop automati
 grid.remove_item(101)                                       # Zellen der uid wieder frei
 ```
 
-## Autoload-Registrierung (Reihenfolge beachten!)
-Project Settings ▸ Autoload — **`GameState` zuerst**, dann die abhängigen Manager. Die
-`class_name`-Klassen (CombatEngine, CombatData, CombatTarget, WorldManager,
-GridInventoryBackend) brauchen **keinen** Autoload-Eintrag.
+## Godot-Projekt & Tests
+Die **Projekt-Wurzel ist dieser `godot/`-Ordner** (`project.godot`), also `res:// == godot/`.
+Autoloads sind dort bereits registriert (Reihenfolge zählt); die `class_name`-Klassen
+(CombatEngine, CombatData, CombatTarget, WorldManager, GridInventoryBackend) brauchen
+**keinen** Autoload-Eintrag.
 
 | Reihenfolge | Name | Pfad |
 | :-- | :-- | :-- |
-| 1 | `GameState` | `res://godot/scripts/GameState.gd` |
-| 2 | `QuestManager` | `res://godot/scripts/QuestManager.gd` |
-| 3 | `TycoonManager` | `res://godot/scripts/TycoonManager.gd` |
+| 1 | `GameState` | `res://scripts/GameState.gd` |
+| 2 | `QuestManager` | `res://scripts/QuestManager.gd` |
+| 3 | `TycoonManager` | `res://scripts/TycoonManager.gd` |
+
+**Headless-Tests** (abhängigkeitsfrei, kein GUT-Addon):
+
+```sh
+godot --headless --path godot          # führt tests/TestRunner.tscn aus, Exit 0/1
+```
+`tests/TestRunner.gd` prüft alle Module deterministisch gegen die GDD-Werte
+(Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
+Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates) und beendet mit Exit-Code
+0 (alles grün) bzw. 1 (Fehler).
 
 ## Quest-Zustandsmaschine
 ```
