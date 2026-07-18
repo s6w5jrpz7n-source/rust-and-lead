@@ -1,7 +1,9 @@
-# Godot 4 editor-/import-Cache (nicht versionieren)
+# Godot 4 — nur den Editor-/Import-Cache ignorieren.
+# WICHTIG: Die `*.import`-Dateien NEBEN den Assets werden versioniert (enthalten uid &
+# Import-Einstellungen) — daher hier bewusst NICHT ignorieren.
 .godot/
-*.import
+
+# Export-Artefakte
 export.cfg
 export_presets.cfg
-.mono/
-data_*/
+*.translation
