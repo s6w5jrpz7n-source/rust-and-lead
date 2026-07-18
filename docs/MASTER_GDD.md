@@ -68,7 +68,8 @@ dürfen das Gameplay niemals verdecken.
 * **Fog of War:** volumetrisches Nebelsystem; Bewegung schneidet in Echtzeit Pfade in den
   Nebel — basierend auf der **3D-Sichtlinie (Line-of-Sight)** des Spielers.
 * **Eingebettete Bereiche:** Rustwater (Township), Fraktionsbasen (Fort Freedom, Sektor 01,
-  Rogue's Landing) und Dungeons (z. B. die Mine) sind Bereiche derselben Welt.
+  Rogue's Landing) und Dungeons (z. B. die Schrott-Minen) sind Bereiche derselben Welt.
+  Konkrete Weltkoordinaten & Sektoren: §1.6; Progressions-Tore: §1.7.
 
 ## 1.5 Steuerung (Mobile-First, auch Desktop)
 * **Linke Bildschirmhälfte:** dynamischer virtueller Touch-Joystick (erscheint bei
@@ -81,41 +82,87 @@ dürfen das Gameplay niemals verdecken.
 * **Input-Debouncing:** strikter Software-Debouncer gegen Doppeltipps — verhindert
   duplizierte Dialog-/UI-Instanzen und inkonsistente Zustände.
 
-## 1.6 Dungeons — Multilevel-Struktur & Weltplatzierung
+## 1.6 Weltkoordinaten-System & POI-Layout
 
-### 1.6.1 Multilevel-Aufbau (verbindlich)
-Jeder Dungeon besteht aus **mehreren, absteigenden Ebenen** (Floors). Der Spieler steigt
-über einen **Abstiegs-Schacht / Lastenaufzug** am Ende einer Ebene tiefer; der Ausgang
-(oder ein Aufzug zurück) führt an die Oberfläche.
+Die zusammenhängende 3D-Welt spannt eine Ebene von **2000 × 2000 Metern** (Godot Spatial
+Units). Striktes Koordinatensystem, **Ursprung (0,0) in der Südwest-Ecke**:
+* **X = West → Ost** (0 … 2000),
+* **Y = Süd → Nord** (0 … 2000).
+
+Die Welt ist in **3 Progressions-Sektoren** geteilt, die direkt an die Kampagnen-Akte
+gebunden sind. Die Sektorgrenzen sind horizontale Linien (Y-Werte) mit mechanischen/
+umweltbasierten Toren (§1.7) — **keine unsichtbaren Wände**.
+
+### 1.6.1 Geografische POI-Master-Tabelle
+
+| Sektor & Akt | POI | Koordinaten (X, Y) | Typ & Kernfunktion |
+| :-- | :-- | :-- | :-- |
+| **Sektor 1** (Kap. 1–4) | **Rustwater Hub & Basis** | (300, 300) | Zentraler Spieler-Hub / Tycoon-Basis |
+| | **Die Schrott-Minen** | (150, 450) | Ressourcen-Dungeon (Schrott & Eisen farmen) — *multilevel* |
+| | **Das Rattengestrüpp** | (500, 200) | Frühes Jagdrevier (Zielzone `q_rats`) |
+| | **Iron Rail Zugdepot** | (450, 750) | **Hard Gate 1:** Boss-Arena des Kapitel-4-Zugüberfalls |
+| **Sektor 2** (Kap. 5–8) | **Fort Freedom** | (200, 1200) | HQ Rebellengilde (Wehr-Festung) |
+| | **Sektor 01** | (1700, 1300) | HQ Eiserne Gilde (hochmechanisierte Zone) |
+| | **Rogue's Landing** | (950, 950) | HQ Schmugglergilde (versteckter Schwarzmarkt-Canyon) |
+| | **Alchemie-Raffinerie** | (1000, 1450) | **Hard Gate 2:** Smog-Barriere / Nadelöhr |
+| **Sektor 3** (Kap. 9–12) | **Goliath-Testgelände** | (600, 1750) | High-Level-Open-World (Elite- & Goliath-Spawns) |
+| | **Schmelzöfen von Vulcan** | (1400, 1800) | Endgame-Ressourcen-Dungeon (legendäre Materialien) — *multilevel* |
+| | **Das Eiserne Herz (HQ)** | (1000, 1950) | **Finaler Dungeon:** Kern des Iron-Rail-Konzerns — *multilevel* |
+
+### 1.6.2 Dungeon-Struktur (Multilevel, verbindlich)
+Alle als *multilevel* markierten POIs (Schrott-Minen, Schmelzöfen von Vulcan, Das Eiserne
+Herz; die Zugdepot-Arena ist einstufig) bestehen aus **mehreren, absteigenden Ebenen**
+(Floors). Der Spieler steigt über einen **Abstiegs-Schacht / Lastenaufzug** am Ende einer
+Ebene tiefer; ein Aufzug/Ausgang führt zurück an die Oberfläche.
 
 * **Tiefen-Skalierung:** Mit jeder Ebene steigen Gegner-Level, -Leben, -Panzerung und
-  Pack-Dichte; tiefere Ebenen haben einen höheren Elite-Anteil.
+  Pack-Dichte; tiefere Ebenen haben einen höheren Elite-Anteil. (Backend: `CombatTarget.
+  from_type(type, { "depth": n })`.)
 * **Beute-Skalierung:** Kisten-Tier und Ausrüstungs-Seltenheits-Bias steigen mit der
-  Tiefe. Zwischen-Ebenen können einen **Mini-Boss** tragen; die **tiefste Ebene** hält
-  stets einen **einzigartigen, benannten Boss** (bzw. Superboss) plus einen reichen Cache.
-* **Ebenen-Nebel:** Der volumetrische Fog of War wird **pro Ebene neu gesetzt** (jede
-  Ebene wird frisch erkundet).
-* **Wiedereinstieg:** Checkpoint am **Eingang der aktuellen Ebene** — beim Ausknocken
-  respawnt der Spieler an der aktuellen Ebene, nicht am Dungeon-Start.
-* **Prozedural + handgesetzt:** Layout jeder Ebene wird prozedural aus handgebauten
-  3D-Modulen (Räume/Korridore) zusammengesetzt; feste Anker (Boss-Arena, Schacht,
-  Schatzkammer) sind garantiert.
+  Tiefe. Zwischen-Ebenen tragen ggf. einen **Mini-Boss**; die **tiefste Ebene** hält stets
+  einen **einzigartigen, benannten Boss** (bzw. Superboss) plus einen reichen Cache.
+* **Ebenen-Nebel:** Der volumetrische Fog of War wird **pro Ebene neu gesetzt**.
+* **Wiedereinstieg:** Checkpoint am **Eingang der aktuellen Ebene** (kein Rückwurf zum
+  Dungeon-Start beim Ausknocken).
+* **Prozedural + handgesetzt:** Ebenen werden prozedural aus handgebauten 3D-Modulen
+  zusammengesetzt; feste Anker (Boss-Arena, Schacht, Schatzkammer) sind garantiert.
 
-### 1.6.2 Dungeon-Roster & Weltplatzierung
-Koordinaten im 2000 × 2000-m-Raster (Ursprung Mitte 0,0; Rustwater ≈ Zentrum). Empf.
-Level bindet an Ausrüstungs-Stufen (§7.4) und Kampagnen-Akte.
+## 1.7 Progressions-Gating & Umwelt-Barrieren
+Narrativer Sog ohne immersionsbrechende unsichtbare Wände — stattdessen mechanische,
+umweltbasierte und fraktionsbasierte Tore.
 
-| Dungeon | Region (x, z) | Thema | Empf. Level | Ebenen | Boss (tiefste Ebene) |
-| :-- | :-- | :-- | :-- | :-: | :-- |
-| **Rost-Mine** | SO (+650, +700) | verlassene Erz-/Dampfmine | 3–8 | 3 | Minen-Titan (Superboss, mech.) |
-| **Alchemistische Oase** | SW (−760, +540) | Sumpf-Höhlen, Fauna & Säure | 5–12 | 3 | Sumpf-Matriarchin (biol.) |
-| **Kessel-Friedhof** | W (−820, −120) | Schrottwracks, Automaten-Grab | 8–14 | 4 | Der Rostbaron (mech., Goliath-Klasse) |
-| **Kinetoskop-Relais** | NO (+700, −680) | Konzern-Untergrundstation | 12–18 | 4 | Relais-Wächter (mech.) — Bezug zum Deepfake-Twist (Akt II) |
-| **Iron-Rail-Tiefbunker** | N (+40, −900) | Konzernzentrale, Endgame | 18+ | 5 | Eiserner Prätor (Finale, Akt III) |
+### 1.7.1 Tor Sektor 1 → 2: Die Iron-Rail-Sprengtore (Y = 800)
+* **Barriere:** Die Nordgrenze von Sektor 1 ist durch eine massive, befestigte, gepanzerte
+  Schienen-Mauer des Konzerns vollständig abgeriegelt.
+* **Logik-Gate:** Die mechanischen Sprengtore sind **hart per Code verriegelt**. Einziger
+  Durchbruch: Abschluss von **Kapitel 4 (Der Zugüberfall)**. Mit dem Sieg über den Zug-Boss
+  **kracht der gekaperte Panzerzug physisch durch die Sprengtore** und öffnet die dauerhafte
+  Transitroute nach Sektor 2 (`current_chapter >= 5`).
 
-Design-Absicht: Der Ring der Dungeons um Rustwater bildet eine natürliche Schwierigkeits-
-und Story-Kurve (Mine früh → Tiefbunker als Endgame). Jeder Dungeon hat eine
-Schatzkammer-Ebene (Cache-Bündel, §7.7) und ist an einen Kampagnen-Abschnitt geknüpft.
+### 1.7.2 Tor Sektor 2 → 3: Die alchemistische Smog-Linie (Y = 1500)
+* **Barriere:** Der gesamte Nordhorizont zum Industriekern ist von einer dichten, giftig-
+  grünen Wolke aus überdrucktem Kühlmittel und alchemistischem Abgas erstickt — Quelle ist
+  die **Alchemie-Raffinerie (1000, 1450)**.
+* **Logik-Gate:** Betritt der Spieler die Zone **ohne Schutz**, tickt ein **tödlicher
+  Umwelt-DOT** sein Leben **innerhalb von 3 Sekunden auf 0**.
+* **Auflösungs-Mechanik:** Um das Umwelt-Tor zu passieren, investiert der Spieler seine
+  angesammelten **Tycoon-Ressourcen** in Rustwater und baut das **Raffinerie-/Labor-Gebäude
+  auf Stufe 3** aus. Das schaltet das **„Alchemie-Filter"-Upgrade** für das mechanische
+  Chassis frei, das den Umweltschaden **vollständig neutralisiert** und den sicheren
+  Zutritt zum Endgame von Sektor 3 gewährt.
+* **Design-Abhängigkeit:** Das hierfür referenzierte „Raffinerie/Labor"-Gebäude ist im
+  Tycoon-Roster (§2.2) als eigenständiges Gebäude bzw. als Umwidmung der Destille zu
+  ergänzen; das Alchemie-Filter-Upgrade ist ein Chassis-Mod mit Freischalt-Bedingung
+  „Gebäudestufe ≥ 3".
+
+### 1.7.3 Dynamisches Fraktions-Feindseligkeits-Gating (Sektor 2)
+* **Logik-Gate:** Mit der Gildenwahl in Kapitel 5 (`chosen_guild != null`) aktualisieren die
+  Fraktionsbasen ihre **Feindseligkeits-Flags** in der Engine.
+* **Auswirkung:** Verbündet sich der Spieler mit den **Rebellen**, löst das Annähern an die
+  Wachen von **Sektor 01 (1700, 1300)** sofort **automatisches Geschützturm-Feuer** und
+  schwere mechanische Verstärkungs-Aggro aus. Umgekehrt wird bei Wahl der **Eisernen Gilde**
+  **Fort Freedom** zur aktiven Feind-Kampfzone — friedliche Interaktionen sind dann nur noch
+  auf dem gewählten Pfad möglich.
 
 ---
 
@@ -164,6 +211,12 @@ oder Gildenwahl.
 | `saloon`     | Gatling-Saloon      | 🍺 | 100 | +1 | 5 |
 | `forge`      | Eiserne Schmiede    | 🔨 | 220 | +2 | 5 |
 | `distillery` | Mondschein-Destille | 🥃 | 400 | +4 | 5 |
+
+**Progressions-Kopplung (§1.7.2):** Zusätzlich zum passiven Einkommen dient ein
+**Raffinerie-/Labor-Gebäude** als Freischalt-Bedingung für das Endgame: Ausbau auf
+**Stufe 3** schaltet das Chassis-Upgrade **„Alchemie-Filter"** frei, das die tödliche
+Smog-Linie (Y = 1500) neutralisiert. Dieses Gebäude ist als eigener Eintrag zu ergänzen
+oder der Destille zuzuordnen (offene Design-Entscheidung).
 
 ## 2.3 Master-State-Management-Schema
 Die vollständige Laufzeit-Zustandsstruktur. Persistente Felder werden zusätzlich im
@@ -719,8 +772,8 @@ Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. 
 | `rare`   | 🧰 | 3–5 Schrott, Zahnräder, gute Dampfkern-Chance, Ausrüstung (bessere Seltenheit) |
 | `boss`   | 💰 | 4–7 Schrott, Zahnräder, garantierter Dampfkern, hochwertige Ausrüstung |
 
-Kisten liegen verstreut in Kampfzonen, gebündelt an Spezialorten (Mine-Schatzkammer,
-Kessel-Friedhof) und um Elite-/Superbosse.
+Kisten liegen verstreut in Kampfzonen, gebündelt an Spezialorten (Schatzkammer-Ebenen der
+Multilevel-Dungeons, z. B. Schrott-Minen & Schmelzöfen von Vulcan) und um Elite-/Superbosse.
 
 ## 7.8 Verbindliche Terminologie
 **Erlaubt (Steampunk):** Zahnräder, Kupferleitungen, Dampfdruck, Kesseldruck, galvanische
