@@ -41,6 +41,11 @@ var gold: int = 0
 var potions: int = 3
 var inventory: Dictionary = { "schrott": 0, "zahnrad": 0, "dampfkern": 0 }
 
+## Township-Gebäude: id -> Ausbaustufe (int). Flache Form (im GDD-Schema §2.3 verschachtelt
+## als {level:int} beschrieben; hier vereinfacht, `building_level()` kapselt den Zugriff).
+## `laboratory` (Alchemie-Labor) ist das Raffinerie-Gebäude für das Smog-Gate (§1.7.2).
+var economy: Dictionary = { "saloon": 0, "forge": 0, "distillery": 0, "laboratory": 0 }
+
 # ── Kampf-Zähler: monotone Gesamt-Kills; Basis für das Kill-Quest-Tracking ─────
 var kills: int = 0
 
@@ -112,3 +117,11 @@ func remove_item(id: String, amount: int) -> bool:
 
 func add_potion(amount: int = 1) -> void:
 	potions += maxi(0, amount)
+
+
+# ── Township-Gebäude ──────────────────────────────────────────────────────────
+func building_level(id: String) -> int:
+	return int(economy.get(id, 0))
+
+func set_building_level(id: String, level: int) -> void:
+	economy[id] = maxi(0, level)

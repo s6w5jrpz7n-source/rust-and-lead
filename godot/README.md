@@ -14,6 +14,33 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
   Tiefen-Skalierung für Multilevel-Dungeons (GDD §1.6).
 - `scripts/DamageEngine.gd` — reiner Schadens-Kalkulator: `calculate()`, `apply_status()`,
   `tick_dot()`, `resolve_hit()`, `player_damage_taken_mul()` (alles `static`).
+- `scripts/WorldManager.gd` — Weltgeografie & Gating (GDD §1.6/§1.7): POI-Registry mit
+  Koordinaten, Sektor-Logik und die drei Tore (Sprengtore, Smog-Linie, Fraktions-
+  Feindseligkeit) als aus `GameState` abgeleitete Abfragen (`class_name`, `static`).
+
+## Weltgeografie & Gating (WorldManager)
+Koordinaten: Ursprung SW-Ecke, X = W→O, Y = S→N (0…2000). Alle Gate-Zustände sind aus
+`GameState` abgeleitet (kein Doppel-Zustand).
+
+```gdscript
+WorldManager.sector_of_pos(Vector2(1000, 1600))   # 3
+WorldManager.poi_position("eisernes_herz")        # (1000, 1950)
+WorldManager.dungeon_floors("schmelzoefen_vulcan")# 4 (multilevel)
+
+# Gate 1 — Sprengtore (Y=800): erst nach Kapitel 4 offen.
+WorldManager.is_blast_gate_open()                 # current_chapter >= 5
+WorldManager.can_cross_blast_line(from_y, to_y)   # blockt Nord-Querung, wenn zu
+
+# Gate 2 — Smog-Linie (Y=1500): tödlicher DOT ohne Alchemie-Filter (Labor Stufe 3).
+GameState.set_building_level("laboratory", 3)     # schaltet den Filter frei
+WorldManager.has_alchemie_filter()                # true
+var dmg := WorldManager.smog_dot_damage(player.global_position_2d, delta)  # 0 mit Filter
+
+# Gate 3 — Fraktions-Feindseligkeit (nach Gildenwahl):
+QuestManager.choose_guild("rebels")
+WorldManager.is_base_hostile("sektor01")          # true  (fremdes HQ -> Geschützturm-Aggro)
+WorldManager.is_base_friendly("fort_freedom")     # true  (eigene Gilde)
+```
 
 ## Kampf-Backend (Nutzung)
 `CombatData`, `CombatTarget` und `DamageEngine` sind `class_name`-Klassen (statisch bzw.
