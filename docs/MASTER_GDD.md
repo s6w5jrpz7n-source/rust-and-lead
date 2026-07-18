@@ -1,0 +1,695 @@
+# MASTER GAME DESIGN DOCUMENT — "Rust & Lead"
+### Modernes 3D-Isometrisches Action-RPG- & Tycoon-Hybrid · Godot 4
+
+> **Status dieses Dokuments:** Konsolidierte, verbindliche Referenz (Single Source of
+> Truth). Der spielbare Phaser-Web-Prototyp validiert sämtliche hier beschriebenen
+> Systeme; die Godot-4-Produktion setzt sie mit hochauflösender 3D-Grafik um.
+>
+> **Ton & Stil:** grim-dark Steampunk-Western (Fallout / Diablo IV). **Kein** Retro,
+> **kein** Pixel-Art, **keine** 2D-Kacheln. **Keine** modernen Cyberpunk-Begriffe —
+> stattdessen Zahnräder, galvanische Impulse, alchemistische Synthese,
+> Kinetoskop-Projektion, Dampfdruck.
+
+---
+
+## INHALT
+1. Technisches & Visuelles Fundament
+2. Kern-Zustand & Township-Mechanik (`is_revealed`, asynchroner Tycoon, State-Schema)
+3. Die 12-Kapitel-Kampagne (Akt I–III)
+4. Fraktions-Quest-Matrix & NPC-Netzwerk
+5. Modulares Mini-Quest-System (Grind & Boosts)
+6. Kampf-Design & Code-Templates
+7. Anhang: Ausrüstung, Progression, Wirtschaft, Gegner-Roster, Terminologie
+
+---
+
+# 1. TECHNISCHES & VISUELLES FUNDAMENT
+
+## 1.1 Rendering-Pipeline
+* **Engine:** Godot 4, **Forward+**-Renderer.
+* **Materialien:** hochauflösende **PBR**-Materialien (Physically Based Rendering) für
+  gritty-realistische Oberflächen: verwittertes Eisen, nasses Öl, korrodiertes Kupfer,
+  Ruß, feuchter Sumpfschlamm, realistische organische Texturen (Fleisch, Leder, Fell).
+* **Global Illumination:** **SDFGI** (Signed Distance Field Global Illumination) für
+  weiche, realistische indirekte Beleuchtung großflächiger Innen- und Außenräume.
+* **Atmosphäre:** **volumetrischer Nebel** (dient zugleich als Fog of War),
+  dynamische, hochkontrastige **Echtzeit-Schatten**, grim-dark Farb-/Kontrast-Grading.
+
+## 1.2 Fixe 3D-Isometrische Kamera
+* **Winkel:** permanent fix, **nicht rotierbar** — Pitch **35°–45°** nach unten,
+  Yaw **45°** auf der Y-Achse → klassischer, fokussierter Iso-Look.
+* **Projektion:** orthografisch oder flach-perspektivisch, ausgelegt auf großflächige
+  Exploration.
+* **Folgemodus:** **weich interpoliert** (Lerp / Smooth Damp) auf die Spieler-Transform,
+  ruckelfrei bei Sprints und plötzlichen Richtungswechseln.
+* **Keine Spieler-Rotation:** manuelle Kameradrehung vollständig deaktiviert.
+
+## 1.3 Dynamisches Sichtverdeckungs-System (Occlusion Handling)
+Große industrielle Strukturen (Raffinerien, Schaufelradbagger, Fabrikwände, Felswände)
+dürfen das Gameplay niemals verdecken.
+
+* **1.3.1 Wand-Ausblenden (See-Through Alpha Masking).** Steht das Spieler-Mesh oder ein
+  feindlicher Automat hinter einer Struktur, wirft die Engine einen **Raycast** von der
+  Kamera zum Charakter. Alle geschnittenen Objekte wechseln transparent — **kein hartes
+  Ausblenden**, sondern ein **Kreis-Dither-Shader (Screendoor Transparency)**, der exakt
+  an der Charakterposition ein rundes „Loch" in die Wand schneidet. Die Architektur
+  bleibt sichtbar, die Sicht aufs Gameplay frei.
+* **1.3.2 Röntgen-Kontur (X-Ray Silhouette Outlines).** Ergänzend erhalten Charakter-Meshes
+  einen **Silhouette-Glow-Shader**. Ist ein Charakter vollständig verdeckt, zeichnet die
+  Engine eine leuchtende, farbige Kontur **durch die Wände**: gedimmtes **Messing-Gelb**
+  für den Helden, **galvanisches Blau** für mechanische Gegner, **blutrot** für
+  biologische Gegner.
+
+## 1.4 Welt-Maßstab & Exploration
+* **Dimensionen:** zusammenhängende, nahtlose **3D-Open-World, 2000 × 2000 Meter**
+  (Godot Spatial Units), mit Streaming/LOD statt harter Kartenwechsel.
+* **Reise-Metrik:** Laufgeschwindigkeit **4,7 m/s**; ein durchgehender diagonaler Sprint
+  über die vollständig erkundete Welt dauert rund **5 Minuten** Echtzeit-Fußweg.
+* **Fog of War:** volumetrisches Nebelsystem; Bewegung schneidet in Echtzeit Pfade in den
+  Nebel — basierend auf der **3D-Sichtlinie (Line-of-Sight)** des Spielers.
+* **Eingebettete Bereiche:** Rustwater (Township), Fraktionsbasen (Fort Freedom, Sektor 01,
+  Rogue's Landing) und Dungeons (z. B. die Mine) sind Bereiche derselben Welt.
+
+## 1.5 Steuerung (Mobile-First, auch Desktop)
+* **Linke Bildschirmhälfte:** dynamischer virtueller Touch-Joystick (erscheint bei
+  Berührung), flüssige Bewegung.
+* **Rechte Bildschirmhälfte:** großer Angriffs-Button (**Auto-Ziel** auf den nächsten
+  Gegner — kein Zielen per Bewegung), Fähigkeiten-Buttons (Spezialschuss, Ausweich-Dash,
+  Heiltrank, Säure-Granate, Elektrofeld-Granate) sowie ein Waffen-Umschalter (Schadensart).
+* **World-Space-UI:** NPC-Namen und Interaktions-Status als **`Label3D`-Billboards** über
+  den Charakter-Meshes.
+* **Input-Debouncing:** strikter Software-Debouncer gegen Doppeltipps — verhindert
+  duplizierte Dialog-/UI-Instanzen und inkonsistente Zustände.
+
+---
+
+# 2. KERN-ZUSTAND & TOWNSHIP-MECHANIK
+
+## 2.1 Die zustandsgesteuerte UI-Regel: `is_revealed`
+Der globale Boolean `is_revealed` steuert **die gesamte Darstellung von Begriffen,
+Beschriftungen und Werten**. Er kippt einmalig am Ende von Kapitel 4 (Train-Raid-Reveal)
+von `false` auf `true` und bleibt dann dauerhaft `true`.
+
+* **`is_revealed = false` (Fleisch-Illusion):** Der Held hält sich für einen Menschen.
+  Die UI spricht menschliche Sprache — Heilung, Ausdauer, Trank, „verarzten".
+* **`is_revealed = true` (mechanische Wahrheit):** Die Illusion bricht. Dieselben Elemente
+  morphen zu mechanischen Steampunk-Datenströmen — Kühlmittel, Kesseldruck,
+  Chassis-Reparatur. Zusätzlich schaltet der Reveal **Körper-Modifikationen** und
+  **fortgeschrittene Armaturen** frei (siehe §7).
+
+**Verbindliche Begriffstabelle (`TERMS`, `[vor Reveal, nach Reveal]`):**
+
+| Schlüssel | `is_revealed = false` | `is_revealed = true` |
+| :-- | :-- | :-- |
+| `potion`  | Kaktus-Schnaps | Synthetisches Kühlmittel |
+| `stamina` | Ausdauer | Kesseldruck |
+| `heal`    | verarzten | Chassis flicken |
+
+Implementierungsregel: **jede** menschlich klingende Beschriftung durchläuft die
+Auflösung `T(key) = TERMS[key][is_revealed ? 1 : 0]`. Neue Begriffe werden ausschließlich
+über diese Tabelle eingeführt, nie hartkodiert.
+
+## 2.2 Asynchrone Tycoon-Unabhängigkeit
+Die Wirtschaft der Township **Rustwater** läuft auf einem **eigenständigen
+Hintergrund-Intervall-Tick** (1 Sekunde), vollständig entkoppelt von Kampf, Kapitel-
+oder Gildenwahl.
+
+* Einkommen/Sek = Σ (`gebäude.level × incomePer`) über alle Gebäude.
+* Der Tick läuft **immer** — im Kampf, im Dialog, im Menü.
+* **Offline-Ertrag:** Beim Laden wird die verstrichene Realzeit (gedeckelt) mit dem
+  Einkommen/Sek multipliziert und gutgeschrieben.
+* Kampagnen-Entscheidungen und Gildenzugehörigkeit verändern **niemals** direkt diesen
+  Tick (nur indirekt über freigeschaltete Boost-Quests, §5.4).
+
+**Township-Gebäude (Ausbaustufen; Kosten = `baseCost × (level + 1)`):**
+
+| ID | Name | Icon | Basiskosten | Einkommen/Stufe/Sek | Max-Stufe |
+| :-- | :-- | :-: | --: | --: | --: |
+| `saloon`     | Gatling-Saloon      | 🍺 | 100 | +1 | 5 |
+| `forge`      | Eiserne Schmiede    | 🔨 | 220 | +2 | 5 |
+| `distillery` | Mondschein-Destille | 🥃 | 400 | +4 | 5 |
+
+## 2.3 Master-State-Management-Schema
+Die vollständige Laufzeit-Zustandsstruktur. Persistente Felder werden zusätzlich im
+Speicher-Schema (unten) serialisiert.
+
+```json
+{
+  "map": "overworld",
+  "cols": 80, "rows": 80,
+  "bounds": { "minX": 0, "maxX": 0, "minY": 0, "maxY": 0 },
+  "explored": { "<mapId>": ["<c,r>", "..."] },
+  "discovered": ["<stationId>", "..."],
+  "playerTile": { "c": 0, "r": 0 },
+
+  "isRevealed": false,
+  "currentChapter": 1,
+  "chosenGuild": null,
+
+  "level": 1,
+  "xp": 0,
+  "hp": 100, "maxHp": 100,
+
+  "gold": 0,
+  "inventory": { "schrott": 0, "zahnrad": 0, "dampfkern": 0 },
+  "stash":     { "schrott": 0, "zahnrad": 0, "dampfkern": 0 },
+
+  "weapon": "karabiner",
+  "weaponLvl": { "karabiner": 0, "voltgun": 0, "saeure": 0, "brenner": 0 },
+  "upgrades": { "damage": 0, "firerate": 0, "hp": 0, "speed": 0, "regen": 0, "magnet": 0 },
+
+  "equip": {
+    "helmet": null, "armor": null, "weapon": null, "gadget": null, "boots": null,
+    "plate1": null, "plate2": null, "plate3": null
+  },
+  "gearBag": [
+    {
+      "uid": 1, "slot": "weapon", "rarity": "epic", "req": 7, "big": true,
+      "icon": "🔫", "name": "Dampfbetriebener Schwere Waffe",
+      "stat": { "key": "damage", "val": 24 }
+    }
+  ],
+
+  "potions": 3,
+  "cd": { "spread": 0, "dash": 0, "acid": 0, "shock": 0 },
+
+  "economy": { "saloon": { "level": 0 }, "forge": { "level": 0 }, "distillery": { "level": 0 } },
+
+  "quests":    { "<questId>": "available | active | done" },
+  "questBase": { "<questId>": 0 },
+
+  "boss": null,
+  "ctx":  null,
+
+  "flags_ui": {
+    "inventoryOpen": false, "storeOpen": false, "workshopOpen": false,
+    "tycoonOpen": false, "stashOpen": false, "travelOpen": false,
+    "fullMapOpen": false, "dialogueOpen": false, "revealPlaying": false,
+    "transitioning": false
+  }
+}
+```
+
+**Persistentes Speicher-Schema (`localStorage`, `SAVE_KEY = "rustlead_save_v1"`):**
+
+```json
+{
+  "gold": 0,
+  "economy": { "saloon": { "level": 0 }, "forge": { "level": 0 }, "distillery": { "level": 0 } },
+  "kills": 0,
+  "inv": { "schrott": 0, "zahnrad": 0, "dampfkern": 0 },
+  "stash": { "schrott": 0, "zahnrad": 0, "dampfkern": 0 },
+  "revealed": false,
+  "chapter": 1,
+  "guild": null,
+  "level": 1, "xp": 0,
+  "weapon": "karabiner",
+  "weaponLvl": { "karabiner": 0, "voltgun": 0, "saeure": 0, "brenner": 0 },
+  "upgrades": { "damage": 0, "firerate": 0, "hp": 0, "speed": 0, "regen": 0, "magnet": 0 },
+  "equip": { "helmet": null, "armor": null, "weapon": null, "gadget": null, "boots": null, "plate1": null, "plate2": null, "plate3": null },
+  "gearBag": [],
+  "quests": {}, "questBase": {},
+  "discovered": ["<stationId>"],
+  "explored": { "<mapId>": ["<c,r>"] },
+  "t": 0
+}
+```
+`t` (Zeitstempel des letzten Speicherns) treibt die Offline-Ertrags-Berechnung.
+
+---
+
+# 3. DIE 12-KAPITEL-KAMPAGNE
+
+**Prämisse.** Der Protagonist ist ein menschlicher Geist, den der **Iron-Rail-Konzern**
+in ein eisernes Kriegs-Chassis verpflanzt hat. Sensor-Illusionen gaukeln ihm einen
+Körper aus Fleisch und eine lebende Familie vor. Er glaubt, ein Mensch zu sein — bis der
+Reveal in Kapitel 4 alles zerbricht. `is_revealed` steuert dabei die gesamte Wahrnehmung.
+
+## AKT I — DIE FLEISCH-ILLUSION (Kapitel 1–4) · `is_revealed = false`
+
+**Kapitel 1 — „Staub & Blei".**
+Tutorial und Weltanschluss. Der Held erwacht am Rand der Wüste, scheinbar ein Mensch mit
+Kopfschmerzen und lückenhafter Erinnerung. Er erreicht **Rustwater**, lernt Bewegung,
+Auto-Ziel-Kampf, Loot-Magnet und die ersten Township-Funktionen (Händler, Werkstatt,
+Truhe). Erste Kopfgelder von Mabel führen ihn in die Wüste. Menschliche UI durchgehend.
+
+**Kapitel 2 — „Sand im Räderwerk".**
+Der Held verdient sich Ruf, sammelt Schrott und Zahnräder, baut das erste
+Einkommens-Gebäude (Gatling-Saloon) und erkundet die nähere Wüste. Erste Begegnungen mit
+**Konzern-Patrouillen** deuten an, dass der Iron-Rail-Konzern die Region unter Kontrolle
+hält. Kleinere Ungereimtheiten: Der Held wird nie müde, hat nie Hunger — abgetan als
+„zähe Konstitution".
+
+**Kapitel 3 — „Die Mine".**
+Der erste Dungeon (die **Mine**) mit dem Superboss **Minen-Titan** als optionalem, aber
+lohnendem Höhepunkt. Der Held sucht dort nach Antworten über seine Herkunft und findet
+erste verschlüsselte Konzern-Kinetoskop-Rollen, die er (noch) nicht deuten kann.
+Spannungsaufbau: Wer sind die Rebellen, wer der Konzern?
+
+**Kapitel 4 — „Der Zugüberfall" · REVEAL.**
+Höhepunkt von Akt I. Der Held stellt sich einem gepanzerten Konzern-Boss auf einem
+fahrenden Zug. Die **hydraulische Ramme** des Bosses schleudert ihn durch die Waggonwand;
+ein **Spiegel zerbricht** vor seinem Gesicht — er starrt in sein Spiegelbild und sieht:
+**keinen Mann aus Fleisch, sondern einen rauchenden, einäugigen Stahl-Schädel, Zahnräder,
+kochendes Öl.** Die Reveal-Sequenz spielt (`revealPlaying`), danach kippt
+**`is_revealed → true`**, `currentChapter` springt auf 5. Ab jetzt: mechanische UI,
+Körper-Mods & Spezialwaffen freigeschaltet, Konzern-Automaten treten häufiger auf.
+
+> **Reveal-Sequenz (`REVEAL_LINES`):**
+> 1. „Die hydraulische Ramme des Bosses schleudert dich durch die Waggonwand."
+> 2. „Glas splittert. Ein Spiegel zerbricht vor deinem Gesicht."
+> 3. „Du starrst in dein Spiegelbild —"
+> 4. „kein Mann aus Fleisch. Ein rauchender, einäugiger STAHL-SCHÄDEL. Zahnräder. Kochendes Öl."
+> 5. „SYSTEM_REBOOT … SENSOR_ILLUSION_DESYNC … PROTOKOLL: WAHRHEIT"
+> 6. „Du bist keine Kreatur aus Fleisch. Du bist eine Maschine."
+
+## AKT II — DIE KÜNSTLICHE FAMILIE (Kapitel 5–8) · `is_revealed = true`
+
+**Kapitel 5 — „Erwacht" · Gildenwahl.**
+Der Held verarbeitet die Wahrheit. Alle drei Fraktionen werben um den „wandelnden
+Stahlkessel". Der Spieler **wählt eine Gilde** (Rebellen, Eiserne Gilde, Schmuggler) und
+nimmt deren erste Fraktions-Quest an (Kapitel-5-Auftrag, siehe §4). Motiv des Helden:
+Er will zu **seiner Familie** — deren Kinetoskop-Botschaften er weiter empfängt.
+
+**Kapitel 6 — „Kupfer & Kesseldruck".**
+Ausbau der eigenen Schlagkraft: Werkstatt-Körper-Mods, Waffen-Armaturen, erste epische
+Ausrüstung. Der Held nutzt die Township-Wirtschaft, um Gilden-Operationen zu finanzieren.
+Erste Hinweise, dass die „Familien-Botschaften" technische Artefakte enthalten.
+
+**Kapitel 7 — „Das flackernde Bild".**
+Der Held spürt eine Kinetoskop-Relaisstation auf. Die Botschaften seiner Familie sind zu
+perfekt, zu wiederholt. Ein Techniker (gilden-abhängig) entdeckt Manipulations-Spuren —
+die Bilder sind **künstlich zusammengesetzt** (alchemistisch-optische Fälschung; das
+Steampunk-Äquivalent eines Deepfakes).
+
+**Kapitel 8 — „Die Wahrheit im Kessel" · ZWEITER TWIST.**
+Der Kapitel-8-Fraktions-Auftrag (§4) enthüllt aus Sicht der gewählten Gilde denselben
+Kern: **Die Familie des Helden ist seit Jahren tot.** Die „Botschaften" waren
+**gefälschte Kinetoskop-Projektionen** des Iron-Rail-Konzerns — ein Mittel, den
+Stahl-Soldaten gefügig und loyal zu halten. Der emotionale Boden bricht weg; aus Suche
+nach Familie wird kalter Zorn. `currentChapter → 12` wird durch Abschluss freigeschaltet.
+
+## AKT III — DER EISERNE KREUZZUG (Kapitel 9–12) · `is_revealed = true`
+
+**Kapitel 9 — „Kriegsmaschine".**
+Der Held rüstet zum offenen Krieg gegen den Konzern. Elite-Automaten (Goliaths) und
+Schützenlinien aus Konzern-Konstrukten bevölkern die Wüste. Der Spieler perfektioniert
+das Zusammenspiel der Schadensarten (Galvanik gegen Automaten, Säure gegen Panzerung).
+
+**Kapitel 10 — „Sabotage".**
+Gezielte Schläge gegen die Infrastruktur der Iron Rail: Ölpipelines, Relaisstationen,
+Waffenlager. Die Township floriert oder leidet je nach Fraktionslinie; Boost-Quests (§5.4)
+verschieben die Wirtschaft. Der Konzern schlägt mit schweren Ernter-Einheiten zurück.
+
+**Kapitel 11 — „Die letzte Bastion".**
+Vorbereitung auf den Endschlag. Der Held sammelt Verbündete (oder Söldner/Schmuggler,
+gilden-abhängig), maximiert Ausrüstung (legendäre Teile, Stufe 11+) und stellt sich den
+stärksten Wächtern der Konzern-Zentrale.
+
+**Kapitel 12 — „Sturm auf die Iron Rail" · FINALE.**
+Der Kapitel-12-Fraktions-Auftrag (§4) ist das jeweilige Endgefecht. Je nach Gilde
+unterschiedlicher Ausgang:
+* **Rebellen:** Das Monopol fällt, die Arbeiter sind frei — ein neuer Anfang für Rustwater
+  ohne Ketten.
+* **Eiserne Gilde:** Der Konzern siegt und zementiert seine Ordnung; der Held ist sein
+  treuestes Chassis, Rustwater läuft „wie ein geöltes Getriebe".
+* **Schmuggler:** Weder Rebellen noch Konzern gewinnen — der Held und die Schmuggler
+  kaufen sich aus dem Krieg heraus; Rustwater gehört fortan denen, die zahlen können.
+
+---
+
+# 4. FRAKTIONS-QUEST-MATRIX & NPC-NETZWERK
+
+## 4.1 Fraktionen & Wahl-Logik
+Drei Fraktionen; Beitritt **erst nach dem Reveal** möglich. Die Wahl ist **exklusiv** —
+eine gewählte Gilde schließt die beiden anderen dauerhaft aus (deren Botschafter weisen
+den Helden ab). Der Fraktions-Quest-Strang schaltet sich **kapitelweise** frei
+(Kapitel 5 → 8 → 12); Abschluss eines Ketten-Auftrags hebt `currentChapter` auf das
+nächste Kapitel.
+
+| Fraktion (`chosenGuild`) | Basis | Botschafter | Ethos |
+| :-- | :-- | :-- | :-- |
+| **Rebellengilde** (`rebels`)   | Fort Freedom    | Gideon Cross      | Freiheit der Arbeiter, Sturz des Konzern-Monopols |
+| **Eiserne Gilde** (`corp`)     | Sektor 01       | Aufseher Quentin  | Ordnung = Profit; Effizienz über alles |
+| **Schmugglergilde** (`smugglers`) | Rogue's Landing | „Slick" Sterling | Reichtum kennt keine Fahnen |
+
+## 4.2 Choice-Impact-Matrix (Kapitel 5 / 8 / 12)
+
+| Kapitel | Rebellen (Gideon) | Eiserne Gilde (Quentin) | Schmuggler (Slick) |
+| :-- | :-- | :-- | :-- |
+| **5** | **Sand im Getriebe** — 12 Konzern-Schergen ausschalten · 250 💰 + Dampfkern | **Streikbrecher** — 12 Rebellen-Saboteure eliminieren · 250 💰 + Dampfkern | **Das Sumpf-Gold** — 3 Dampfkerne sammeln · 300 💰 |
+| **8** | **Der Kinetoskop-Betrug** — 18 Projektoren-Wächter zerlegen · 500 💰 + Dampfkern → *„Deine Familie ist tot; alles nur Bilder."* | **Archiv-Säuberung** — 18 Diebe belastender Kinetoskop-Rollen vernichten · 500 💰 + Dampfkern → *„Deine Familie war ein Konstrukt aus Licht und Linse."* | **Heiße Ware, heiße Wahrheit** — 6 Dampfkerne besorgen · 700 💰 → *„Deine Familie ist längst Staub."* |
+| **12** | **Sturm auf die Iron Rail** — 30 Elite-Chassis niederkämpfen · 1200 💰 + Dampfkern · *Monopol fällt* | **Der eiserne Frieden** — 30 Aufständische zerschlagen · 1200 💰 + Dampfkern · *Ordnung siegt* | **Der letzte Deal** — 10 Dampfkerne · 1600 💰 · *Freikauf aus dem Krieg* |
+
+**Quest-IDs & Mechanik (verbindlich):**
+* Rebellen: `q_rebels5` (kill 12), `q_rebels8` (kill 18), `q_rebels12` (kill 30).
+* Eiserne Gilde: `q_corp5` (kill 12), `q_corp8` (kill 18), `q_corp12` (kill 30).
+* Schmuggler: `q_smug5` (collect 3 dampfkern), `q_smug8` (collect 6), `q_smug12` (collect 10).
+* Freischalt-Gate je Auftrag: `chapter` (5/8/12). Abschluss setzt `advanceTo`
+  (5→8, 8→12). Kill-Fortschritt = `kills − questBase[id]`; Collect-Fortschritt =
+  Inventarbestand, wird bei Abgabe abgezogen.
+
+## 4.3 Hub-NPC-Profile
+
+### Rustwater (neutrale Township)
+* **Mamma „Rusty" Mabel** — Saloon-Wirtin. Vor Reveal: mütterlich, warnt vor der Wüste,
+  spendiert Kaktus-Schnaps. Nach Reveal: erkennt den Automaten, reicht statt Schnaps eine
+  Dose Schmieröl. **Quest `q_bounty` „Kopfgeld: Wegelagerer"** — 8 Wegelagerer besiegen ·
+  120 💰 + Zahnrad.
+* **Silas „Kupferauge" Finch** — einäugiger Schmied mit Kupferlinse. Braucht Baumaterial
+  für den Stadtausbau; nach Reveal bietet er Chassis-Panzerplatten. **Quest `q_scrap`
+  „Baumaterial: Schrott"** — 12 Schrott sammeln · 90 💰.
+* **Doktor „Doc" Aris** — Feldarzt. Nach Reveal klopft er auf das Stahl-Chassis: „Bei dir
+  spar ich mir das Verarzten." **Quest `q_rats` „Plage: Schrott-Ratten"** — 5 Ratten
+  ausschalten · 70 💰 + Heiltrank.
+
+### Fort Freedom (Rebellengilde)
+* **Gideon Cross** — narbiger Anführer, kalter Blick. „Wir brechen das Monopol des
+  Konzerns — oder sterben beim Versuch." Botschafter & Quest-Geber der Rebellen-Kette.
+  Basis besitzt Händler (`store`) und Truhe (`stash`) sowie eine Funk-/Zugstation.
+
+### Sektor 01 (Eiserne Gilde)
+* **Aufseher Quentin** — kalter Mann in makelloser Uniform. „Ordnung ist Profit. Profit
+  ist Ordnung." Botschafter & Quest-Geber der Konzern-Kette. Basis mit Ausgabe (`store`),
+  Truhe (`stash`), Kontrollstation.
+
+### Rogue's Landing (Schmugglergilde)
+* **„Slick" Sterling** — Grinsen unter der Gaslampe. „Alles hat seinen Preis, Freund. Auch
+  Schweigen." Botschafter & Quest-Geber der Schmuggler-Kette. Basis mit Hehler (`store`),
+  Truhe (`stash`), Wett-Station.
+
+**NPC-Interaktion (technisch):** World-Space-`Label3D` über dem Mesh; Annäherung zeigt den
+Interaktions-Prompt; Dialog mit strengem Anti-Doppeltipp-Debouncer; Quest-Marker über dem
+Kopf (⚙️ verfügbar, ⏳ aktiv, ❗ abgabebereit, 🤝 Gilde beitretbar).
+
+---
+
+# 5. MODULARES MINI-QUEST-SYSTEM (GRIND & BOOSTS)
+
+Wiederholbare, prozedural instanziierte Aufträge, die den Kern-Loop tragen und
+Progression (Gold, XP, Loot, Wirtschafts-Boosts) speisen. Vier Kategorien.
+
+## 5.1 Suchen & Retten (Search & Rescue)
+* **Fantasy:** Ein Siedler, Arbeiter oder Späher ist in einem umkämpften Sektor
+  gestrandet; der Held muss ihn erreichen und lebend heraushol­en.
+* **Mechanik:** Ziel-Marker in einem Gefahrengebiet; beim Erreichen schließt sich ein
+  Eskort-/Verteidigungs-Fenster (Wellen von Gegnern, während der Gerettete folgt) oder
+  ein einfacher Rückweg. Optionaler Timer.
+* **Belohnung:** Gold + XP, gelegentlich Ausrüstung; bei Township-relevanten Geretteten
+  ein kleiner, temporärer Wirtschafts-Impuls (§5.4).
+* **Fehlschlag:** Stirbt der Gerettete (durch Gegner), gilt der Auftrag als gescheitert.
+
+## 5.2 Transport & Logistik (mit Instabilitäts-Tracker)
+* **Fantasy:** Volatile Fracht (z. B. **Dampfkerne**, alchemistische Gemische) von A nach
+  B bringen, ohne dass sie hochgeht.
+* **Instabilitäts-Tracker:** Ein Fracht-Instabilitätswert (0–100 %) steigt kontinuierlich
+  über Zeit und **sprunghaft bei jedem Treffer**, den der Held einsteckt. Erreicht er
+  100 %, **detoniert die Fracht** (Flächenschaden am Helden) und der Auftrag scheitert.
+  Gegenmaßnahmen: schnelle, direkte Routen; Ausweich-Dash statt Treffer kassieren;
+  optionale „Kühlmittel"-Ablasspunkte auf der Strecke senken den Wert.
+* **Belohnung:** skaliert mit Restdistanz-Effizienz und **verbleibender Stabilität**
+  (weniger Instabilität = mehr Gold/XP).
+* **Design-Ziel:** belohnt sauberes, ausweichlastiges Fahren statt Dauer-Tanken.
+
+## 5.3 Kopfgeld & Ausrottung (Bounty / Extermination)
+* **Fantasy:** Ein benannter Gesetzloser, ein Elite-Automat oder eine Fauna-Plage bedroht
+  einen Sektor.
+* **Mechanik:** Zwei Ausprägungen —
+  * **Ausrottung:** eine bestimmte Anzahl eines Gegnertyps ausschalten (z. B. „5
+    Schrott-Ratten", „12 Wegelagerer"). Fortschritt = Kill-Zähler − Basis.
+  * **Kopfgeld-Ziel:** ein einzelner, verstärkter **Elite-Boss** (Boss-Statistik, steht
+    mit Gefolge in der Welt). Sein Tod droppt ein Beute-Bündel (Loot-Kisten) und
+    garantierte Ausrüstung.
+* **Belohnung:** Gold + XP (Elite 50 XP), hochwertige Ausrüstung, Materialien.
+
+## 5.4 Tycoon-Booster (mit wirtschaftlichen Kettenreaktionen)
+* **Fantasy:** Aufträge, die die Township direkt stärken — Rohstoff-Lieferungen,
+  Schutz von Karawanen, Anwerben von Fachkräften.
+* **Mechanik:** Abschluss gewährt einen **temporären Einkommens-Multiplikator** oder
+  senkt Ausbaukosten eines Gebäudes für begrenzte Zeit.
+* **Wirtschaftliche Kettenreaktion (Ripple):** Booster wirken **nicht isoliert** — ein
+  Boost auf den **Saloon** hebt zusätzlich die Nachbar-Produktion (Schmiede) leicht an
+  („mehr Kundschaft ⇒ mehr Aufträge"); ein Boost auf die **Schmiede** senkt kurzfristig
+  Werkstatt-/Ausbaukosten; ein Boost auf die **Destille** erhöht den Verkaufswert von
+  Loot beim Händler. So entsteht ein kleines Wirtschafts-Netz statt additiver
+  Einzelboni. **Wichtig:** Booster verändern **Parameter** des asynchronen Tycoon-Ticks
+  (§2.2), nie den Tick-Mechanismus selbst.
+
+**Gemeinsame Struktur aller Mini-Quests:** `{ id, kategorie, kind: 'kill'|'collect'|'escort'|'transport'|'boost', ziel, count, timer?, instabilität?, rewardGold, rewardXp, rewardItem?, rippleEffect? }`.
+
+---
+
+# 6. KAMPF-DESIGN & CODE-TEMPLATES
+
+## 6.1 Die 4 Kern-Schadensarten
+| Schadensart | Farbe/VFX | Effektiv gegen | Ineffektiv gegen | Status-Effekt |
+| :-- | :-- | :-- | :-- | :-- |
+| **Kinetisch** (`KINETIC`) | Messing-Gelb / Mündungsfeuer | Biologisch | schwere Panzerung | **Verbluten** (DOT, organisch) |
+| **Galvanisch** (`GALVANIC`) | Blau / Blitz-Funken | Mechanisch | Biologisch (Isolierung) | **Kurzschluss** (Stun 4 s) |
+| **Alchemistisch** (`ALCHEMICAL`) | Säure-Grün / Korrosions-Dampf | Panzerung/Rüstung | (Basis) | **Korrosion** (Rüstungs-Debuff) |
+| **Thermisch** (`THERMAL`) | Orange / dynamisches Feuer | Biologie & Leichtbau-Automaten | schwere Automaten (Goliath) | **Überhitzung** (DOT) |
+
+## 6.2 Exakte Wechselwirkungs-Matrix
+Zielklassen: **`BIOLOGICAL`** (blutend, verwundbar) und **`MECHANICAL`** (gepanzert,
+schmerzfrei). Reihenfolge der Faktoren wie in der Engine implementiert.
+
+**Gegen `MECHANICAL`:**
+* `GALVANIC`  → Schaden × **2.5**; 40 % Chance auf `SHORT_CIRCUIT_STUN`.
+* `KINETIC`   → `max(1, dmg − armor)`; bei front-immunen Einheiten (Goliath) **0**,
+  solange `armor > 0`.
+* `THERMAL`   → Goliath × **0.6** (widersteht), sonst × **1.2** (Leichtbau brennt).
+* `ALCHEMICAL`→ reduziert `armor` um `acidPotency`, löst `ARMOR_CORRODED` aus.
+
+**Gegen `BIOLOGICAL`:**
+* `KINETIC`   → Schaden × **1.5**; 33 % Chance auf `BLEEDING_DOT`.
+* `GALVANIC`  → Schaden × **0.4** (biologische Isolierung dämpft).
+* `THERMAL`   → Schaden × **1.3**; 50 % Chance auf `OVERHEAT/BURN_DOT`.
+* `ALCHEMICAL`→ Basisschaden (keine Rüstung vorhanden ⇒ kein Korrosionsbonus).
+
+**Spieler-Verteidigung:** Angelegte Rüstung/Panzerplatten liefern `armor`; eingehender
+Schaden wird mit `100 / (100 + armor·9)` multipliziert (steigende, gedeckelte Reduktion).
+
+## 6.3 Code-Template — Damage Calculation Engine
+```javascript
+// Schadensberechnungs-Engine für "Rust & Lead" (modernes Steampunk-ARPG).
+// Reine Funktion: Schadensart × Gegner-Klassifizierung -> {damage, effect, immune}.
+const DamageEngine = {
+  // Multiplikatoren & Status-Regeln der Wechselwirkungs-Matrix.
+  calculate(damageType, target, baseDamage) {
+    let dmg = baseDamage, effect = null, immune = false;
+    const cls   = target.classification;   // 'BIOLOGICAL' | 'MECHANICAL'
+    const armor = target.armorValue || 0;
+
+    if (cls === 'MECHANICAL') {
+      if (damageType === 'GALVANIC') {
+        dmg *= 2.5;                                   // Automaten: massiver Bonus
+        if (Math.random() < 0.40) effect = 'SHORT_CIRCUIT_STUN';
+      } else if (damageType === 'KINETIC') {
+        dmg = target.frontImmune                      // Goliath-Frontpanzerung
+          ? (armor > 0 ? 0 : dmg)                     // Blei prallt ab, bis Säure ätzt
+          : Math.max(1, dmg - armor);                 // Panzerung schluckt Blei
+      } else if (damageType === 'THERMAL') {
+        dmg *= (target.sub === 'goliath') ? 0.6 : 1.2;
+      } else if (damageType === 'ALCHEMICAL' && armor > 0) {
+        target.armorValue = Math.max(0, armor - (target.acidPotency || 10));
+        effect = 'ARMOR_CORRODED';                    // Rüstung zersetzt (für nächste Treffer)
+      }
+    } else if (cls === 'BIOLOGICAL') {
+      if (damageType === 'KINETIC') {
+        dmg *= 1.5;                                   // Fleisch: Bonus
+        if (Math.random() < 0.33) effect = 'BLEEDING_DOT';
+      } else if (damageType === 'GALVANIC') {
+        dmg *= 0.4;                                   // biologische Isolierung dämpft
+      } else if (damageType === 'THERMAL') {
+        dmg *= 1.3;
+        if (Math.random() < 0.50) effect = 'OVERHEAT_DOT';
+      }
+    }
+
+    if (dmg <= 0) immune = true;
+    return { damage: Math.max(0, Math.round(dmg)), effect, immune };
+  },
+
+  // Anwendung eines Status-Effekts auf ein Ziel (DOT/Stun/Korrosion).
+  applyStatus(target, effect, now, acidPotency = 10) {
+    if (!target || target.health <= 0) return;
+    if (effect === 'SHORT_CIRCUIT_STUN')      target.stunUntil = now + 4000;
+    else if (effect === 'BLEEDING_DOT')       target.dot = { type: 'BLEED', dps: Math.max(4, target.maxHealth * 0.04), until: now + 3000 };
+    else if (effect === 'OVERHEAT_DOT')       target.dot = { type: 'BURN',  dps: Math.max(5, target.maxHealth * 0.05), until: now + 3000 };
+    else if (effect === 'ARMOR_CORRODED')     target.armorValue = Math.max(0, target.armorValue - acidPotency);
+  }
+};
+
+// Beispiel: Konzern-Wach-Einheit trifft galvanischer Volt-Karabiner.
+const corporateAutomaton = { name: 'Sektor-01-Wach-Einheit', classification: 'MECHANICAL',
+                             sub: 'konstrukt', armorValue: 15, health: 200, maxHealth: 200 };
+const voltKarabiner = { damageType: 'GALVANIC', baseDamage: 40, acidPotency: 0 };
+const result = DamageEngine.calculate(voltKarabiner.damageType, corporateAutomaton, voltKarabiner.baseDamage);
+// -> { damage: 100, effect: 'SHORT_CIRCUIT_STUN' (40% Chance), immune: false }
+```
+
+## 6.4 Code-Template — World Map Encounter System
+```javascript
+// Encounter-System der offenen Welt: verteilt Gegner, Elite-Bosse, Loot-Kisten
+// und (in Dungeons) einen Superboss. Bosse "stehen" in der Welt statt nach Kill-Zähler
+// zu spawnen. Nach dem Reveal treten mechanische Automaten häufiger auf.
+const EncounterSystem = {
+  // Gewichteter Gegner-Pool je nach Reveal-Status.
+  pickEnemyType(isRevealed) {
+    const pool = isRevealed
+      ? [['outlaw', 3], ['fauna', 2], ['revolver', 2], ['konstrukt', 4]]   // Automaten dazu
+      : [['outlaw', 4], ['fauna', 3], ['revolver', 2], ['konstrukt', 1]];
+    let total = 0; for (const p of pool) total += p[1];
+    let x = Math.random() * total;
+    for (const p of pool) if ((x -= p[1]) <= 0) return p[0];
+    return 'outlaw';
+  },
+
+  // Standard-Population einer Kampfzone + verteilte Elite-Bosse mit Gefolge.
+  populate(zone, world) {
+    const count = Math.min(world.ENEMY_MAX, Math.round(zone.area / world.ENEMY_PER_AREA));
+    for (let i = 0; i < count; i++) {
+      const pos = zone.randomPoint();
+      if (pos.distanceTo(world.player) < world.SAFE_RADIUS) continue;   // Startbereich frei
+      world.spawnEnemy(this.pickEnemyType(world.isRevealed), pos);
+    }
+    // Elite-Bosse stehen verteilt (kein Kill-Zähler) — je mit kleinem Gefolge.
+    const elites = zone.elites ?? world.ELITE_PER_ZONE;
+    for (let i = 0; i < elites; i++) {
+      const pos = zone.randomPoint();
+      if (pos.distanceTo(world.player) < world.ELITE_SAFE_RADIUS) continue;
+      const boss = world.spawnElite(pos);                              // Boss-Statistik, elite = true
+      for (let k = 0; k < 3; k++) world.spawnEnemy(this.pickEnemyType(world.isRevealed), pos.jitter(60));
+    }
+    // Beute: verstreute Kisten + gebündelte Caches an Spezialorten.
+    this.scatterChests(zone, world);
+    // Dungeon: ein besonders starker Superboss (4x Boss) wartet.
+    if (zone.superboss) world.spawnSuperBoss(zone.superboss, { hpMult: 4, armor: 25, frontImmune: true });
+  },
+
+  // Loot-Kisten: Zufalls-Kisten in Kampfzonen + Cache-Bündel (z. B. Mine-Schatzkammer).
+  scatterChests(zone, world) {
+    for (const cache of (zone.caches || []))
+      for (let i = 0; i < cache.count; i++) world.spawnChest(cache.pos.jitter(34), cache.tier || 'rare');
+    if (!zone.combat) return;
+    const n = Math.round(zone.area / world.CHEST_PER_AREA);
+    for (let i = 0; i < n; i++) {
+      const pos = zone.randomPoint();
+      if (pos.distanceTo(world.player) < world.SAFE_RADIUS) continue;
+      world.spawnChest(pos, Math.random() < 0.22 ? 'rare' : 'normal');
+    }
+  },
+
+  // Tod eines Elite/Superboss: Beute-Bündel (Kisten) + garantierte Ausrüstung + XP;
+  // erster Elite-/Boss-Tod vor dem Reveal löst den Kapitel-4-Reveal aus.
+  onDefeat(enemy, world) {
+    world.dropGold(enemy.pos, enemy.gold);
+    world.dropLootFor(enemy);                                          // Material + Ausrüstung nach Tier
+    world.gainXp(enemy.isSuperBoss ? 300 : enemy.elite ? 50 : Math.max(3, Math.round(enemy.maxHealth / 11)));
+    if (enemy.isSuperBoss || enemy.elite) {
+      world.spawnChest(enemy.pos.jitter(40), 'boss');
+      world.spawnChest(enemy.pos.jitter(40), 'rare');
+      if (!world.isRevealed) world.triggerReveal();                    // Ende Kapitel 4
+    }
+  }
+};
+```
+
+---
+
+# 7. ANHANG
+
+## 7.1 Waffen-Loadout (Schadensart-Umschalter)
+Karabiner immer verfügbar; die übrigen drei erst **nach dem Reveal** (Steampunk-Armaturen).
+| ID | Name | Schadensart | Basis | Feuertakt (ms) | Sonder |
+| :-- | :-- | :-- | --: | --: | :-- |
+| `karabiner` | Blei-Karabiner | KINETIC | 20 | 200 | immer verfügbar |
+| `voltgun`   | Leydener Volt-Karabiner | GALVANIC | 16 | 240 | Anti-Automat |
+| `saeure`    | Säure-Sprüher | ALCHEMICAL | 12 | 210 | Säure-Potenz 10 (skaliert mit Level) |
+| `brenner`   | Dampf-Brenner | THERMAL | 14 | 170 | schnellster Takt |
+
+Waffen-Armaturen (Werkstatt): pro Waffe +5 Basisschaden/Stufe (max 5); Säure-Sprüher
+zusätzlich +2 Säure-Potenz/Stufe.
+
+## 7.2 Fähigkeiten & Granaten
+* **Spezialschuss (Spread):** Fächer aus 7 Projektilen der aktuellen Schadensart.
+* **Ausweich-Dash:** kurze Sprint-Ausweichrolle mit I-Frames.
+* **Heiltrank:** stellt Leben her (`T('potion')`-Begriff je nach Reveal).
+* **Säure-Granate** *(nach Reveal)*: Flächen-Korrosion — garantierter `ARMOR_CORRODED`
+  im Radius (knackt Goliath-Panzerung).
+* **Elektrofeld-Granate** *(nach Reveal)*: Flächen-`SHORT_CIRCUIT_STUN` — legt ganze
+  Konzern-Schützenlinien für 4 s lahm.
+
+## 7.3 Gegner-Roster
+| Typ | Klasse | Verhalten | Panzerung | Besonderheit |
+| :-- | :-- | :-- | --: | :-- |
+| Grenzgänger (`outlaw`)   | BIOLOGICAL | Nahkampf-Verfolger | 0 | Standard-Gesetzloser |
+| Ölfresser-Ratte (`fauna`)| BIOLOGICAL | schneller Melee-Schwarm | 0 | umzingelt, keine Deckung |
+| Revolverheld (`revolver`)| BIOLOGICAL | Fernkämpfer, hält Abstand & kitet | 0 | feuert Projektile |
+| Konzern-Konstrukt (`konstrukt`) | MECHANICAL | Schützenlinie, feuert | 15 | galvanik-anfällig (Stun) |
+| Schwerer Ernter / Goliath (`goliath`) | MECHANICAL | langsamer Koloss (Boss/Elite) | 30 | **frontimmun** ggü. Kinetik bis Korrosion |
+| Minen-Titan (Superboss) | MECHANICAL | Dungeon-Wächter | 25 | **4× Boss-Leben**, frontimmun, riesige Beute |
+
+**KI-Prinzipien:** biologische Gegner bluten und fliehen ggf.; Fernkämpfer halten eine
+Distanz-Bandbreite (heranrücken/zurückweichen), feuern auf Cooldown; Automaten kennen
+keine Flucht/Heilung. Kern-Kampf: **Auto-Ziel** auf den nächsten Gegner (kein Zielen per
+Bewegung), Aggro/Leash-Radien, Kontakt- und Projektilschaden.
+
+## 7.4 Ausrüstung, Seltenheit & Grid-Inventar
+**Ausrüstungs-Slots (Paper-Doll):** Helm (`hp`), Rüstung (`armor`), Waffe (`damage`),
+Gadget (`firerate`), Stiefel (`speed`) + **drei Panzerplatten** (`plate1/2/3`, je `armor`,
+stapelbar).
+
+**Seltenheit (Stat-Multiplikator & Level-Voraussetzung):**
+| Seltenheit | Farbe | Stat-Mult | Mindest-Level |
+| :-- | :-- | --: | --: |
+| Gewöhnlich | Grau | ×1.0 | 1 |
+| Selten | Blau | ×1.8 | 3 |
+| Episch | Violett | ×2.8 | 7 |
+| Legendär | Gold | ×4.2 | 11 |
+
+**Grid-Fußabdruck (Inventar-Plätze):** Rüstung **2×2 (4)**, Waffe **2×1 (2)**, sehr große
+Waffe **3×1 (3)** (ca. 30 % der Waffen, +40 % Schaden), Helm/Stiefel/Gadget/Panzerplatte
+sowie Material-/Trank-Stapel je **1×1 (1)**. Vollbild-Charakter-Panel: Ausrüstung + Werte
+links, gepacktes Grid-Inventar rechts; Anlegen per Ziehen oder Antippen.
+
+**Verkauf:** Händler kauft Ausrüstung im Bulk je Seltenheit (Gewöhnlich/Selten/Episch);
+**legendäre Teile sind geschützt** und werden nie im Bulk verkauft.
+
+## 7.5 Progression (Level & Erfahrung)
+* XP aus **Kills** (Standard `max(3, maxHp/11)`, Elite 50, Superboss 300) und
+  **Quest-Abgaben** (`max(25, rewardGold·0.5)`).
+* Aufstiegskurve: `xpToNext(level) = 40 + level·30`; **+8 max. Leben pro Stufe**;
+  Levelaufstieg heilt voll. Level-Cap **30**.
+* Level gated hochwertige Ausrüstung (siehe 7.4) und ist die Kern-Fortschrittsachse
+  neben Ausrüstung, Waffen-Armaturen und Werkstatt-Körper-Mods.
+
+## 7.6 Werkstatt-Modifikationen
+Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. Namen als
+`[vor Reveal, nach Reveal]`:
+| ID | Vor Reveal | Nach Reveal | Wirkung |
+| :-- | :-- | :-- | :-- |
+| `damage`   | Revolver-Kaliber | Ballistische Kalibrierung | Schaden |
+| `firerate` | Schneller Hahn | Kolben-Frequenz | Feuerrate |
+| `hp`       | — | T-4 Torso-Panzerung | max. Leben |
+| `speed`    | — | Hydraulik-Laufbeine | Tempo |
+| `regen`    | — | Kühlsystem | Regeneration |
+| `magnet`   | — | Magnet-Spule | Loot-Magnet |
+
+## 7.7 Loot-Kisten
+| Tier | Icon | Inhalt |
+| :-- | :-: | :-- |
+| `normal` | 📦 | 2–4 Schrott, Chance Zahnrad, kleine Ausrüstungs-Chance |
+| `rare`   | 🧰 | 3–5 Schrott, Zahnräder, gute Dampfkern-Chance, Ausrüstung (bessere Seltenheit) |
+| `boss`   | 💰 | 4–7 Schrott, Zahnräder, garantierter Dampfkern, hochwertige Ausrüstung |
+
+Kisten liegen verstreut in Kampfzonen, gebündelt an Spezialorten (Mine-Schatzkammer,
+Kessel-Friedhof) und um Elite-/Superbosse.
+
+## 7.8 Verbindliche Terminologie
+**Erlaubt (Steampunk):** Zahnräder, Kupferleitungen, Dampfdruck, Kesseldruck, galvanische
+Impulse, alchemistische Synthese, Kinetoskop-Projektion, Chassis, Automat, Rechenkern
+(„per alchemistischer Synthese überbrücken" statt „hacken").
+**Verboten (Cyberpunk/Modern):** Chips, Cyberware, Neural Network, Hack, Neon-Data,
+Firewall, Download — sowie jegliche Retro-/Pixel-/16-Bit-/2D-Kachel-Referenz.
+```
