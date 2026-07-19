@@ -346,12 +346,13 @@
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
   let stashUI = [], stashButtons = [], stashCloseRef = null, stashPanelRef = null;
+  let chestUI = [], chestButtons = [], chestCloseRef = null, chestPanelRef = null;
   let revealBg, revealText, revealHint;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let xpBarBg, xpBarFill, levelBadge, levelText;                          // Erfahrung / Level
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
-  let equipSlotRects = [], bagSlotRects = [], invDrag = null;
+  let equipSlotRects = [], bagSlotRects = [], invDrag = null, invScroll = 0, invScrollBtns = [];
   let abilities = [];
   let cursors, wasd;
 
@@ -371,6 +372,7 @@
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null }, gearBag: [],
     level: 1, xp: 0,
     isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
+    chestOpen: false, chestLoot: null, merchant: {},
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
@@ -618,7 +620,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -634,6 +636,7 @@
       state.level = Math.max(1, s.level || 1); state.xp = s.xp || 0;
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
+      state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       state.economy = { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } };
@@ -937,7 +940,7 @@
   function closeTravel() { state.travelOpen = false; ftButtons.forEach(b => { if (b.bg) b.bg.destroy(); if (b.tx) b.tx.destroy(); }); ftButtons = [];[ftBackdrop, ftPanel, ftTitle, ftClose].forEach(o => o.setVisible(false)); }
 
   // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
-  function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; renderInventory(); }
+  function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; invScroll = 0; renderInventory(); }
   function refreshInventory() { if (state.inventoryOpen) renderInventory(); }
   // Zentriertes Charakter-Panel: Ausrüstung + Werte links, Grid-Inventar rechts
   function invLayout() {
@@ -950,9 +953,11 @@
     const gap = 5, cols = 4;
     const cell = Math.floor((rightW - (cols - 1) * gap - 4) / cols);
     const gy0 = colTop + 22;
-    const rows = Math.max(6, Math.floor((colBottom - gy0 + gap) / (cell + gap)));
+    const rows = Math.max(6, Math.floor((colBottom - gy0 + gap) / (cell + gap)));   // sichtbare Zeilen
+    const rowsTotal = rows * 2;                                                       // doppelte Kapazität (scrollbar)
+    const cap = cols * rowsTotal;
     const gridW = cols * cell + (cols - 1) * gap, gx0 = rightX + Math.round((rightW - gridW) / 2);
-    return { size, px, py, pw, ph, headH, colTop, colBottom, leftW, rightX, rightW, gap, cols, rows, cell, gx0, gy0, bx: px + leftW / 2, dollTop: colTop + 4, statsTop: colTop + 246 };
+    return { size, px, py, pw, ph, headH, colTop, colBottom, leftW, rightX, rightW, gap, cols, rows, rowsTotal, cap, cell, gx0, gy0, bx: px + leftW / 2, dollTop: colTop + 4, statsTop: colTop + 246 };
   }
   function gridItems() {   // alles, was im Grid liegt: Gear (Fußabdruck) + Material-/Trank-Stapel (1 Slot)
     const items = [];
@@ -975,7 +980,7 @@
     return placed;
   }
   function gridUsedCells() { let n = 0; for (const it of gridItems()) n += it.foot[0] * it.foot[1]; return n; }
-  function gridFree() { const L = invLayout(); return L.cols * L.rows - gridUsedCells(); }
+  function gridFree() { return invLayout().cap - gridUsedCells(); }
   function renderInventory() {
     invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];
     const L = invLayout(), add = o => { invSlots.push(o); return o; };
@@ -994,13 +999,28 @@
     add(sceneRef.add.text(bx, ty + 120 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     // ---- Links unten: Werte-Blatt ----
     drawStatsSheet(L, add);
-    // ---- Rechts: Grid-Inventar ----
-    add(sceneRef.add.text(L.rightX, L.colTop, '🎒  Inventar  (' + gridUsedCells() + '/' + (L.cols * L.rows) + ')', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    // ---- Rechts: Grid-Inventar (doppelte Kapazität, scrollbar) ----
+    const maxScroll = Math.max(0, L.rowsTotal - L.rows);
+    invScroll = Math.max(0, Math.min(invScroll, maxScroll));
+    add(sceneRef.add.text(L.rightX, L.colTop, '🎒  Inventar  (' + gridUsedCells() + '/' + L.cap + ')', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    // sichtbare Zellen
     for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
       const cx = L.gx0 + c * (L.cell + L.gap), cy = L.gy0 + r * (L.cell + L.gap);
       add(sceneRef.add.rectangle(cx, cy, L.cell, L.cell, 0x1b2431, 0.85).setStrokeStyle(1, 0xf3e9d2, 0.18).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
     }
-    for (const p of packGrid(L.cols, L.rows)) drawGridItem(p, L, add);
+    // nur vollständig sichtbare Items im Fenster [invScroll, invScroll+rows) zeichnen
+    for (const p of packGrid(L.cols, L.rowsTotal)) {
+      if (p.gy < invScroll || p.gy + p.h > invScroll + L.rows) continue;
+      drawGridItem({ it: p.it, gx: p.gx, gy: p.gy - invScroll, w: p.w, h: p.h }, L, add);
+    }
+    // Scroll-Pfeile (rechts vom Grid), wenn mehr Zeilen als sichtbar
+    invScrollBtns = [];
+    if (maxScroll > 0) {
+      const ax = L.gx0 + L.cols * (L.cell + L.gap) + 4;
+      const up = add(sceneRef.add.text(ax, L.gy0 + 4, invScroll > 0 ? '▲' : '△', { fontFamily: 'system-ui', fontSize: '18px', color: invScroll > 0 ? '#f3e9d2' : '#5a5348' }).setOrigin(0, 0).setScrollFactor(0).setDepth(54));
+      const dn = add(sceneRef.add.text(ax, L.gy0 + L.rows * (L.cell + L.gap) - 22, invScroll < maxScroll ? '▼' : '▽', { fontFamily: 'system-ui', fontSize: '18px', color: invScroll < maxScroll ? '#f3e9d2' : '#5a5348' }).setOrigin(0, 0).setScrollFactor(0).setDepth(54));
+      invScrollBtns.push({ obj: up, dir: -1 }, { obj: dn, dir: 1 });
+    }
   }
   function drawStatsSheet(L, add) {
     const x = L.px + 12, w = L.leftW - 20, y = L.statsTop, h = L.colBottom - y;
@@ -1013,7 +1033,7 @@
       ['🛡️ Rüstung', playerArmor()],
       ['· Schutz', Math.round((1 - dmgTakenMul()) * 100) + '%'],
       ['🥾 Tempo', Math.round(moveSpeed())],
-      ['🎒 Plätze', gridUsedCells() + '/' + (L.cols * L.rows)]
+      ['🎒 Plätze', gridUsedCells() + '/' + L.cap]
     ];
     const step = Math.min(30, (h - 52) / rows.length); let ry = y + 34;
     rows.forEach(r => {
@@ -1130,9 +1150,15 @@
       if (dlgBtn.visible && inRect(p, dlgBtn.x - dlgBtn.width / 2, dlgBtn.y - dlgBtn.height / 2, dlgBtn.width, dlgBtn.height)) { const a = dlgBtnAction; if (a) a(); return; }
       advanceDialogue(); return;
     }
+    if (state.chestOpen) {
+      if (chestCloseRef && Phaser.Math.Distance.Between(p.x, p.y, chestCloseRef.x, chestCloseRef.y) <= 24) { closeChest(); return; }
+      for (const b of chestButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'take') takeChestItem(b.idx); else takeAllChest(); return; }
+      if (chestPanelRef && !inRect(p, chestPanelRef.x - chestPanelRef.width / 2, chestPanelRef.y, chestPanelRef.width, chestPanelRef.height)) closeChest();
+      return;
+    }
     if (state.storeOpen) {
       if (storeCloseRef && Phaser.Math.Distance.Between(p.x, p.y, storeCloseRef.x, storeCloseRef.y) <= 24) { closeStore(); return; }
-      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else if (b.action === 'sellGear') sellGearByRarity(b.rarity); else buyPotion(); return; }
+      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else if (b.action === 'sellGear') sellGearByRarity(b.rarity); else if (b.action === 'buyGear') buyMerchantGear(b.idx); else buyPotion(); return; }
       if (storePanelRef && !inRect(p, storePanelRef.x - storePanelRef.width / 2, storePanelRef.y, storePanelRef.width, storePanelRef.height)) closeStore();
       return;
     }
@@ -1156,6 +1182,7 @@
     }
     if (state.inventoryOpen) {
       if (hit(invClose, p, 26)) { closeInventory(); return; }
+      for (const b of invScrollBtns) if (Phaser.Math.Distance.Between(p.x, p.y, b.obj.x + 9, b.obj.y + 9) <= 20) { invScroll += b.dir; renderInventory(); return; }
       for (const es of equipSlotRects) if (es.gear && inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { beginDrag(es.gear, { type: 'equip', slot: es.slot }, p); return; }
       for (const bs of bagSlotRects) if (bs.gear && inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { beginDrag(bs.gear, { type: 'bag', idx: bs.idx }, p); return; }
       if (invPanel && !inRect(p, invPanel.x - invPanel.width / 2, invPanel.y, invPanel.width, invPanel.height)) closeInventory();
@@ -1451,9 +1478,10 @@
     state.storeOpen = true; hideContext();
     const size = sceneRef.scale.gameSize, ids = Object.keys(ITEMS);
     const gearRar = ['common', 'rare', 'epic'].filter(r => state.gearBag.some(g => g.rarity === r));
-    const rowH = 46, headH = 52, buyH = 52, footH = 40, gearHeadH = gearRar.length ? 26 : 0, gearRowH = 40;
+    const wares = merchantStock();
+    const rowH = 46, headH = 52, buyH = 52, footH = 40, gearHeadH = gearRar.length ? 26 : 0, gearRowH = 40, waresHeadH = 26, waresRowH = 40;
     const pw = Math.min(340, size.width * 0.92);
-    const ph = headH + ids.length * (rowH + 6) + gearHeadH + gearRar.length * (gearRowH + 6) + buyH + footH;
+    const ph = headH + ids.length * (rowH + 6) + gearHeadH + gearRar.length * (gearRowH + 6) + waresHeadH + Math.max(1, wares.length) * (waresRowH + 6) + buyH + footH;
     const px = size.width / 2, py = (size.height - ph) / 2;
     const add = o => { storeUI.push(o); return o; };
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
@@ -1482,6 +1510,18 @@
         y += gearRowH + 6;
       });
     }
+    // Händler-Waren: Ausrüstung zum Kaufen (primär Handel, nicht nur Verkauf)
+    add(sceneRef.add.text(px - pw / 2 + 16, y + 4, '🛒  Waren des Händlers', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    y += waresHeadH;
+    if (wares.length === 0) { add(sceneRef.add.text(px, y + waresRowH / 2, 'Ausverkauft — komm später wieder.', { fontFamily: 'system-ui', fontSize: '12px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52)); y += waresRowH + 6; }
+    wares.forEach((offer, idx) => {
+      const g = offer.gear, afford = state.gold >= offer.price, col = RARITY[g.rarity].color;
+      add(sceneRef.add.text(px - pw / 2 + 16, y + waresRowH / 2, g.icon + '  ' + RARITY[g.rarity].name + ' ' + g.name + '  +' + g.stat.val, { fontFamily: 'system-ui', fontSize: '12px', color: css(col) }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      const btn = add(sceneRef.add.rectangle(px + pw / 2 - 56, y + waresRowH / 2, 92, 30, afford ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(btn.x, btn.y, 'kaufen ' + offer.price + ' 💰', { fontFamily: 'system-ui', fontSize: '11px', color: afford ? '#f3e9d2' : '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      storeButtons.push({ rect: btn, action: 'buyGear', idx });
+      y += waresRowH + 6;
+    });
     const buyBtn = add(sceneRef.add.rectangle(px, y + buyH / 2, pw - 40, 38, 0x7c2d12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
     add(sceneRef.add.text(buyBtn.x, buyBtn.y, '🍶  ' + T('potion') + ' kaufen — ' + POTION_PRICE + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     storeButtons.push({ rect: buyBtn, action: 'buyPotion' });
@@ -1498,6 +1538,30 @@
     if (state.gold < POTION_PRICE) { toast('Nicht genug Gold'); return; }
     state.gold -= POTION_PRICE; state.potions++; updateGold(); updateAbilityUI();
     toast('🍶 ' + T('potion') + ' gekauft'); save(); refreshStore();
+  }
+  // Händler-Warenlager: pro Basis ein kleines Angebot an Ausrüstung zum Kaufen.
+  // Preis = Verkaufswert × Aufschlag (Kauf teurer als Verkauf). Bias hebt bessere Qualität.
+  const MERCHANT_BUY_MULT = 4, MERCHANT_STOCK = 3;
+  function merchantBias(mapId) { return ({ fort_freedom: 0.4, sektor01: 0.6, rogues_landing: 0.9, rustwater: 0.3 })[mapId] || 0.4; }
+  function rollMerchantStock(mapId) {
+    const bias = merchantBias(mapId), types = Object.keys(GEAR_SLOTS), out = [];
+    for (let i = 0; i < MERCHANT_STOCK; i++) {
+      const g = makeGear(types[Phaser.Math.Between(0, types.length - 1)], rollRarity(bias));
+      out.push({ gear: g, price: Math.round(gearValue(g) * MERCHANT_BUY_MULT) });
+    }
+    return out;
+  }
+  function merchantStock() {
+    if (!state.merchant[state.map]) { state.merchant[state.map] = rollMerchantStock(state.map); save(); }
+    return state.merchant[state.map];
+  }
+  function buyMerchantGear(idx) {
+    const stock = state.merchant[state.map]; if (!stock) return;
+    const offer = stock[idx]; if (!offer) return;
+    if (state.gold < offer.price) { toast('Nicht genug Gold'); return; }
+    state.gold -= offer.price; state.gearBag.push(offer.gear); stock.splice(idx, 1);
+    updateGold(); toast('🛒 gekauft: ' + RARITY[offer.gear.rarity].name + ' ' + offer.gear.name);
+    save(); refreshStore();
   }
 
   // ---- Gegner / Boss -----------------------------------------
@@ -1728,20 +1792,85 @@
       spawnChest(w.x, w.y, Math.random() < 0.22 ? 'rare' : 'normal');
     }
   }
+  function rollGear(bias) {
+    const types = Object.keys(GEAR_SLOTS);
+    return makeGear(types[Phaser.Math.Between(0, types.length - 1)], rollRarity(bias));
+  }
+  // Kiste öffnen: Inhalt würfeln, Gold sofort gutschreiben, Rest im Beute-Fenster anwählbar.
   function openChest(chest) {
-    const t = CHEST_TIERS[chest.tier] || CHEST_TIERS.normal, x = chest.c.x, y = chest.c.y;
+    if (state.chestOpen) return;
+    const t = CHEST_TIERS[chest.tier] || CHEST_TIERS.normal;
+    const items = [];
     const s = Phaser.Math.Between(t.schrott[0], t.schrott[1]);
-    for (let i = 0; i < s; i++) dropLoot(x, y, 'schrott');
-    if (Math.random() < t.zahnrad) dropLoot(x, y, 'zahnrad');
-    if (Math.random() < t.zahnrad && chest.tier !== 'normal') dropLoot(x, y, 'zahnrad');
-    if (Math.random() < t.dampfkern) dropLoot(x, y, 'dampfkern');
-    // Ausrüstung: Kisten-Tier bestimmt die Chance & Qualität
-    if (chest.tier === 'boss') dropGearRoll(x, y, 1.6, 1);
-    else if (chest.tier === 'rare') { if (Math.random() < 0.55) dropGearRoll(x, y, 0.7, 1); }
-    else if (Math.random() < 0.15) dropGearRoll(x, y, 0, 1);
-    popLoot(x, y - 6, t.icon);
+    if (s > 0) items.push({ kind: 'mat', id: 'schrott', count: s });
+    let zr = 0; if (Math.random() < t.zahnrad) zr++; if (Math.random() < t.zahnrad && chest.tier !== 'normal') zr++;
+    if (zr > 0) items.push({ kind: 'mat', id: 'zahnrad', count: zr });
+    if (Math.random() < t.dampfkern) items.push({ kind: 'mat', id: 'dampfkern', count: 1 });
+    if (chest.tier === 'boss') items.push({ kind: 'gear', gear: rollGear(1.6) });
+    else if (chest.tier === 'rare') { if (Math.random() < 0.55) items.push({ kind: 'gear', gear: rollGear(0.7) }); }
+    else if (Math.random() < 0.15) items.push({ kind: 'gear', gear: rollGear(0) });
+    const gold = chest.tier === 'boss' ? Phaser.Math.Between(40, 100) : chest.tier === 'rare' ? Phaser.Math.Between(15, 40) : Phaser.Math.Between(5, 15);
+    // Gold automatisch nehmen
+    if (gold > 0) { state.gold += gold; updateGold(); }
+    // Kiste aus der Welt entfernen
     const i = chests.indexOf(chest); if (i !== -1) chests.splice(i, 1);
-    chest.c.destroy(); toast('📦 Kiste geplündert');
+    chest.c.destroy();
+    state.chestLoot = { gold, items, icon: t.icon };
+    state.chestOpen = true; hideContext();
+    renderChest();
+  }
+  function renderChest() {
+    chestUI.forEach(o => o.destroy()); chestUI = []; chestButtons = [];
+    const size = sceneRef.scale.gameSize, add = o => { chestUI.push(o); return o; };
+    const loot = state.chestLoot, n = loot.items.length;
+    const pw = Math.min(360, size.width * 0.92), rowH = 46, headH = 74, footH = 52;
+    const ph = headH + Math.max(1, n) * (rowH + 6) + footH;
+    const px = size.width / 2, py = (size.height - ph) / 2;
+    add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
+    chestPanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
+    add(sceneRef.add.text(px, py + 12, loot.icon + '  Beute', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 36, '💰 +' + loot.gold + ' automatisch  ·  antippen zum Nehmen', { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    chestCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 14, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+    let y = py + headH;
+    if (n === 0) add(sceneRef.add.text(px, y + rowH / 2, 'Nur Gold — schon eingesammelt.', { fontFamily: 'system-ui', fontSize: '13px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+    loot.items.forEach((it, idx) => {
+      const isGear = it.kind === 'gear';
+      const col = isGear ? RARITY[it.gear.rarity].color : 0xf3e9d2;
+      const label = isGear ? (RARITY[it.gear.rarity].name + ' ' + it.gear.name + '  +' + it.gear.stat.val) : (ITEMS[it.id].icon + '  ' + ITEMS[it.id].name + '  ×' + it.count);
+      add(sceneRef.add.text(px - pw / 2 + 16, y + rowH / 2, (isGear ? it.gear.icon + '  ' : '') + label, { fontFamily: 'system-ui', fontSize: '13px', color: isGear ? css(col) : '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      const btn = add(sceneRef.add.rectangle(px + pw / 2 - 52, y + rowH / 2, 84, 32, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(btn.x, btn.y, 'Nehmen', { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      chestButtons.push({ rect: btn, action: 'take', idx });
+      y += rowH + 6;
+    });
+    if (n > 0) {
+      const allBtn = add(sceneRef.add.rectangle(px, y + 20, pw - 40, 36, 0x7c4a12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(allBtn.x, allBtn.y, '⬇  Alles nehmen', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      chestButtons.push({ rect: allBtn, action: 'takeAll' });
+    }
+  }
+  function closeChest() { state.chestOpen = false; state.chestLoot = null; chestUI.forEach(o => o.destroy()); chestUI = []; chestButtons = []; chestCloseRef = null; chestPanelRef = null; }
+  function refreshChest() { if (state.chestLoot && state.chestLoot.items.length > 0) renderChest(); else closeChest(); }
+  function takeChestItem(idx) {
+    const loot = state.chestLoot; if (!loot) return; const it = loot.items[idx]; if (!it) return;
+    if (it.kind === 'gear') {
+      if (gearCells(it.gear) > gridFree()) { toast('🎒 Inventar voll'); return; }
+      state.gearBag.push(it.gear); toast(RARITY[it.gear.rarity].name + ': ' + it.gear.name); loot.items.splice(idx, 1);
+    } else {
+      const room = INV_CAP - invCount(); if (room <= 0) { toast('🎒 Inventar voll — Truhe leeren'); return; }
+      const take = Math.min(it.count, room); state.inventory[it.id] = (state.inventory[it.id] || 0) + take; it.count -= take;
+      if (it.count <= 0) loot.items.splice(idx, 1);
+    }
+    save(); refreshChest();
+  }
+  function takeAllChest() {
+    const loot = state.chestLoot; if (!loot) return;
+    for (let i = loot.items.length - 1; i >= 0; i--) {
+      const it = loot.items[i];
+      if (it.kind === 'gear') { if (gearCells(it.gear) <= gridFree()) { state.gearBag.push(it.gear); loot.items.splice(i, 1); } }
+      else { const room = INV_CAP - invCount(); if (room > 0) { const take = Math.min(it.count, room); state.inventory[it.id] = (state.inventory[it.id] || 0) + take; it.count -= take; if (it.count <= 0) loot.items.splice(i, 1); } }
+    }
+    save(); refreshChest();
   }
   function popLoot(x, y, icon) { const t = sceneRef.add.text(x, y - 8, icon, { fontSize: '15px' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 550, onComplete: () => t.destroy() }); }
   function popDamage(x, y, dmg, color) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: color ? css(color) : '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
@@ -1843,7 +1972,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.dialogueOpen || state.revealPlaying;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying;
 
     // Bewegung
     let vx = 0, vy = 0;
