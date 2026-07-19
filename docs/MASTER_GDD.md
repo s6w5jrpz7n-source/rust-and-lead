@@ -853,6 +853,31 @@ T1 Stufe 1 / 0 Pkt, T2 Stufe 5 / 2 Pkt, T3 Stufe 10 / 4 Pkt):
 Effekte greifen direkt in die Kern-Formeln (Schaden, Feuerrate, Krit, Rüstung, Regen,
 Munitions-Cap, Drop-Menge, Granaten-Cooldown, Gold). Punkte & Ränge persistieren.
 
+### 7.5.2 Tech-Module (die 8 Slots)
+Die 8 Platten-/Tech-Slots nehmen neben **Panzerplatten** (Rüstung) jetzt auch **Tech-Module**
+auf — offensive/Utility-Boni, die den Build formen: **Schaden-Chip** (+Schaden),
+**Nachlade-Servo** (+Feuerrate), **Laufwerk-Modul** (+Tempo), **Vital-Kern** (+Leben),
+**Panzer-Kern** (+Rüstung). So wird der 8er-Block zur Build-Bank (tanky vs. offensiv). Tech
+kommt vom **Händler** (~⅓ des Angebots) und aus **Boss-Kisten/Superboss-Drops**.
+
+### 7.5.3 Perk-Synergien
+Beispiel-Synergie: **Panzerbrecher** (ignoriert Rüstung) hebt zusätzlich den
+**Krit-Multiplikator auf 2.5×** (statt 2×) — belohnt einen Krit+Durchschlags-Build.
+
+### 7.5.4 Boss-Muster (Telegraph-Angriffe)
+Elite-Bosse & Superboss kämpfen mit **telegrafierten Angriffen**: ein **Flächenschlag**
+zeichnet einen roten Warnring auf die Spielerposition, der sich füllt und nach ~0.8–0.9 s
+auflöst (Schaden nur im Radius — **wegrollen!**), begleitet von Kamera-Shake. Der
+**Superboss** ruft zusätzlich alle 3 Aktionen **Verstärkung** (Add-Spawns).
+
+### 7.5.5 Feedback (Sound & Juice) und Onboarding
+* **Sound:** synthetisierte WebAudio-SFX (keine Assets) für Schuss, Kill, Münze, Level-up,
+  Perk, Boss-Schlag, Treffer; **Mute-Knopf** (🔊/🔇) in der HUD. **Juice:** Kamera-Shake bei
+  Boss-Schlag & Treffer, Blitz beim Levelaufstieg.
+* **Onboarding:** geführte erste Minuten als **Tutorial-Banner** oben, das Schritt für
+  Schritt vorrückt (Bewegen/Schießen → Beute → Inventar → Ausrüsten → Perk setzen). Nur für
+  neue Spielstände; Fortschritt persistiert.
+
 ## 7.6 Werkstatt-Modifikationen
 Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. Namen als
 `[vor Reveal, nach Reveal]`:

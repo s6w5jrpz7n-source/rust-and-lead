@@ -59,6 +59,13 @@
   const BOSS_HP = 700, BOSS_R = 28, BOSS_SPEED = 46, BOSS_CONTACT = 28, BOSS_GOLD = 20, BOSS_KILLS_TRIGGER = 8;
   const BOSS_NAMES = ['Rost-Baron', 'Blei-Molch', 'Schrott-Koloss', 'Kaktus-König'];
   const BOUNTY_NAMES = ['Gefährlicher Vince', 'Dynamit-Dolores', 'Der Schakal', 'Öl-Otis', 'Klapperschlangen-Kate', 'Halunke Hank'];
+  const TUT_STEPS = [
+    '👣 Bewege dich mit dem Stick · 🔫 rechts halten zum Schießen',
+    '💰 Lauf über die Beute, um sie einzusammeln',
+    '🎒 Öffne dein Inventar (Knopf oben rechts)',
+    '🧤 Tippe ein Ausrüstungsteil an → „Anlegen"',
+    '✦ Steig eine Stufe auf → Reiter „Fähigkeiten" → Perk setzen'
+  ];
 
   // Farben
   const COL_PLAYER = 0x3b82f6, COL_PLAYER_S = 0x1e3a8a, COL_NOSE = 0x93c5fd;
@@ -205,7 +212,7 @@
     scharf:   { branch: 'gun',  tier: 1, max: 3, per: 4,  name: 'Scharfschütze',     desc: '+{v} Schaden pro Schuss' },
     schnell:  { branch: 'gun',  tier: 1, max: 3, per: 7,  name: 'Schnellschuss',     desc: '+{v}% Feuerrate' },
     krit:     { branch: 'gun',  tier: 2, max: 3, per: 8,  name: 'Krit-Treffer', desc: '+{v}% Krit-Chance (2× Schaden)' },
-    brecher:  { branch: 'gun',  tier: 3, max: 1, per: 10, name: 'Panzerbrecher',     desc: 'Schüsse ignorieren {v} Rüstung' },
+    brecher:  { branch: 'gun',  tier: 3, max: 1, per: 10, name: 'Panzerbrecher',     desc: 'Ignoriert {v} Rüstung · hebt Krit auf 2.5×' },
     // Kesseltreiber
     gurt:     { branch: 'tech', tier: 1, max: 3, per: 25, name: 'Munitionsgurt',     desc: '+{v} max. Munition & Kristalle' },
     aasgeier: { branch: 'tech', tier: 1, max: 3, per: 25, name: 'Aasgeier',          desc: '+{v}% mehr Munitions-Drops' },
@@ -429,7 +436,7 @@
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let xpBarBg, xpBarFill, levelBadge, levelText;                          // Erfahrung / Level
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
-  let invBtn, invBadge, invBadgeText, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
+  let invBtn, invBadge, invBadgeText, muteBtn, tutBg, tutText, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
   let equipSlotRects = [], bagSlotRects = [], invDrag = null, invScroll = 0, invScrollBtns = [];
   let invScrapRect = null, shopSellRect = null, shopBuyBtns = [];
   let perkBtns = [], charTabRects = [], itemDetailBtns = [];
@@ -450,7 +457,8 @@
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
-    level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null,
+    level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
+    tutorial: 0, tutOpenedInv: false,
     isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
@@ -552,6 +560,10 @@
     invBtn.icon = scene.add.text(0, 0, '🎒', { fontSize: '18px' }).setOrigin(0.5).setScrollFactor(0).setDepth(26);
     invBadge = scene.add.circle(0, 0, 9, 0xdc2626).setStrokeStyle(2, 0xfff1f2, 0.9).setScrollFactor(0).setDepth(27).setVisible(false);
     invBadgeText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '11px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(28).setVisible(false);
+    muteBtn = scene.add.circle(0, 0, 16, 0x1f2937, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(25);
+    muteBtn.icon = scene.add.text(0, 0, '🔊', { fontSize: '14px' }).setOrigin(0.5).setScrollFactor(0).setDepth(26);
+    tutBg = scene.add.rectangle(0, 0, 320, 30, 0x1c140c, 0.86).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(29).setVisible(false);
+    tutText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2', fontStyle: 'bold', align: 'center' }).setOrigin(0.5).setScrollFactor(0).setDepth(30).setVisible(false);
     invBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(50).setOrigin(0, 0).setVisible(false);
     invPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(51).setOrigin(0.5, 0).setVisible(false);
     invTitle = scene.add.text(0, 0, '🎒  Inventar', { fontFamily: 'system-ui', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52).setVisible(false);
@@ -643,7 +655,7 @@
     if (state.perkPoints <= 0) { toast('Keine Fähigkeitspunkte'); return; }
     if (perkRank(id) >= PERKS[id].max) { toast('Perk voll ausgebaut'); return; }
     if (!perkTierOk(id)) { const t = PERK_TIER[PERKS[id].tier]; toast('🔒 Stufe ' + t.lvl + ' & ' + t.inv + ' Punkte im Zweig'); return; }
-    state.perks[id] = perkRank(id) + 1; state.perkPoints--;
+    state.perks[id] = perkRank(id) + 1; state.perkPoints--; sfx('perk');
     applyUpgrades(); updateLife(); updateWeaponUI(); updateInvBadge();
     toast('✦ ' + PERKS[id].name + ' Rang ' + state.perks[id]); save();
     if (state.inventoryOpen) renderInventory();
@@ -653,6 +665,7 @@
   function weaponAcid() { return curWeapon().acid + weaponLvl('saeure') * 2; }
   function fireMs() { return Math.max(60, Math.round((curWeapon().fireMs - state.upgrades.firerate * 22 - equipStat('firerate')) * (1 - perkVal('schnell') / 100))); }
   function critChance() { return perkVal('krit') / 100; }
+  function critMult() { return 2 + (perkRank('brecher') ? 0.5 : 0); }   // Synergie: Panzerbrecher hebt Krit-Schaden auf 2.5×
   function armorPen() { return perkVal('brecher'); }
   function ammoCap(kind) { return AMMO[kind].cap + perkVal('gurt'); }
   function lootMul() { return 1 + perkVal('pluender') / 100; }   // Gold-Bonus (Plünderer)
@@ -678,7 +691,7 @@
     if (state.level >= LEVEL_MAX) return;
     state.xp += n; let leveled = 0;
     while (state.level < LEVEL_MAX && state.xp >= xpToNext(state.level)) { state.xp -= xpToNext(state.level); state.level++; leveled++; }
-    if (leveled) { state.perkPoints += leveled; applyUpgrades(); state.hp = state.maxHp; updateLife(); updateInvBadge(); toast('⭐ Stufe ' + state.level + ' — +' + leveled + ' Fähigkeitspunkt' + (leveled > 1 ? 'e' : '')); }
+    if (leveled) { state.perkPoints += leveled; applyUpgrades(); state.hp = state.maxHp; updateLife(); updateInvBadge(); sfx('level'); if (sceneRef) sceneRef.cameras.main.flash(240, 40, 30, 10); toast('⭐ Stufe ' + state.level + ' — +' + leveled + ' Fähigkeitspunkt' + (leveled > 1 ? 'e' : '')); }
     updateLevelUI();
   }
   function xpForKill(e) { return e.isSuperBoss ? 300 : e.elite ? 50 : Math.max(3, Math.round(e.maxHp / 11)); }
@@ -705,6 +718,23 @@
     lines.push(['💰 Wert', '' + gearValue(g)]);
     return lines;
   }
+  // ---- Tech-Module: passen in die 8 Platten-/Tech-Slots; offensive/Utility-Boni statt Rüstung ----
+  const TECH_TYPES = {
+    schaden:  { name: 'Schaden-Chip',   icon: '🎯', stat: 'damage',   base: 5,  desc: 'Justiert den Lauf auf tödliche Präzision.' },
+    nachlade: { name: 'Nachlade-Servo', icon: '🔁', stat: 'firerate', base: 12, desc: 'Ein Servo, das den Hahn im Akkord spannt.' },
+    laufwerk: { name: 'Laufwerk-Modul', icon: '🦿', stat: 'speed',    base: 16, desc: 'Hydraulische Gelenke für mehr Tempo.' },
+    vital:    { name: 'Vital-Kern',     icon: '💚', stat: 'hp',       base: 12, desc: 'Ein pochender Dampfkern, der dich am Leben hält.' },
+    panzer:   { name: 'Panzer-Kern',    icon: '🔩', stat: 'armor',    base: 3,  desc: 'Verstärkt die Chassis-Platten von innen.' }
+  };
+  const TECH_KEYS = Object.keys(TECH_TYPES);
+  function makeTech(type, rarity) {
+    const t = TECH_TYPES[type] || TECH_TYPES.schaden, r = RARITY[rarity];
+    return { uid: gearUid++, slot: 'tech', techType: type, rarity, req: r.req, icon: t.icon, name: RARITY[rarity].name + ' ' + t.name, stat: { key: t.stat, val: Math.max(1, Math.round(t.base * r.mult)) }, desc: t.desc };
+  }
+  function rollTech(bias) { return makeTech(TECH_KEYS[Phaser.Math.Between(0, TECH_KEYS.length - 1)], rollRarity(bias)); }
+  function slotName(g) { return g.slot === 'tech' ? 'Tech-Modul' : (GEAR_SLOTS[g.slot] ? GEAR_SLOTS[g.slot].name : g.slot); }
+  // Ein Platten-Slot nimmt Platten UND Tech-Module; sonst nur der exakte Typ.
+  function slotAccepts(equipSlot, gearSlot) { const t = slotType(equipSlot); return t === 'plate' ? (gearSlot === 'plate' || gearSlot === 'tech') : t === gearSlot; }
   function gearReq(g) { return g.req || RARITY[g.rarity].req || 1; }
   // Grid-Fußabdruck [Spalten, Zeilen]: Rüstung 4, Waffe 2, sehr große Waffe 3, Kleinteile 1
   function gearFoot(g) { if (g.slot === 'armor') return [2, 2]; if (g.slot === 'weapon') return g.big ? [3, 1] : [2, 1]; return [1, 1]; }
@@ -718,7 +748,7 @@
   }
   function slotType(equipSlot) { return equipSlot.startsWith('plate') ? 'plate' : equipSlot; }   // plate1/2/3 -> 'plate'
   function slotDef(equipSlot) { return GEAR_SLOTS[slotType(equipSlot)]; }
-  function equipSlotsForType(type) { return type === 'plate' ? PLATE_SLOTS : [type]; }
+  function equipSlotsForType(type) { return (type === 'plate' || type === 'tech') ? PLATE_SLOTS : [type]; }
   function equipGear(gearOrIdx, targetSlot) {
     const idx = typeof gearOrIdx === 'number' ? gearOrIdx : state.gearBag.indexOf(gearOrIdx);
     if (idx < 0 || idx >= state.gearBag.length) return;
@@ -739,7 +769,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -751,9 +781,12 @@
       if (s.weaponLvl) for (const k in state.weaponLvl) if (typeof s.weaponLvl[k] === 'number') state.weaponLvl[k] = s.weaponLvl[k];
       if (s.stash) for (const k in state.stash) if (typeof s.stash[k] === 'number') state.stash[k] = s.stash[k];
       if (s.equip) for (const k in state.equip) if (s.equip[k] && GEAR_SLOTS[slotType(k)]) state.equip[k] = s.equip[k];
-      if (Array.isArray(s.gearBag)) state.gearBag = s.gearBag.filter(g => g && GEAR_SLOTS[g.slot]);
+      if (Array.isArray(s.gearBag)) state.gearBag = s.gearBag.filter(g => g && (GEAR_SLOTS[g.slot] || g.slot === 'tech'));
       state.level = Math.max(1, s.level || 1); state.xp = s.xp || 0;
       state.perkPoints = s.perkPoints || 0; state.perks = (s.perks && typeof s.perks === 'object') ? s.perks : {};
+      state.tutorial = (typeof s.tutorial === 'number') ? s.tutorial : TUT_STEPS.length;   // Altstände: Tutorial gilt als erledigt
+      state.tutOpenedInv = !!s.tutOpenedInv; state.muted = !!s.muted;
+      if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
@@ -778,7 +811,7 @@
     state.bounds = { minX: -(m.rows - 1) * HALF_W, maxX: (m.cols - 1) * HALF_W, minY: 0, maxY: (m.cols - 1 + m.rows - 1) * HALF_H };
 
     mapObjects.forEach(o => o.destroy()); mapObjects.length = 0;
-    enemies.forEach(e => { if (e.marker) e.marker.destroy(); e.c.destroy(); }); enemies.length = 0;
+    enemies.forEach(e => { if (e.marker) e.marker.destroy(); clearTelegraph(e); e.c.destroy(); }); enemies.length = 0;
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
     eBullets.forEach(b => b.sprite.destroy()); eBullets.length = 0;
     coins.forEach(c => c.s.destroy()); coins.length = 0;
@@ -1068,7 +1101,7 @@
   function closeTravel() { state.travelOpen = false; ftButtons.forEach(b => { if (b.bg) b.bg.destroy(); if (b.tx) b.tx.destroy(); }); ftButtons = [];[ftBackdrop, ftPanel, ftTitle, ftClose].forEach(o => o.setVisible(false)); }
 
   // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
-  function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; state.shopMode = false; state.storeOpen = false; invScroll = 0; renderInventory(); }
+  function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; state.shopMode = false; state.storeOpen = false; state.tutOpenedInv = true; invScroll = 0; renderInventory(); }
   function refreshInventory() { if (state.inventoryOpen) renderInventory(); }
   // Zentriertes Charakter-Panel: Ausrüstung + Werte links, Grid-Inventar rechts
   function invLayout() {
@@ -1188,7 +1221,7 @@
     add(sceneRef.add.rectangle(0, 0, L.size.width, L.size.height, 0x000000, 0.55).setOrigin(0, 0).setScrollFactor(0).setDepth(60));
     add(sceneRef.add.rectangle(cx, cy, cw, ch, 0x14120e, 0.99).setStrokeStyle(3, col, 0.9).setScrollFactor(0).setDepth(61).setOrigin(0.5, 0));
     add(sceneRef.add.text(cx, cy + 14, g.icon + '  ' + g.name, { fontFamily: 'system-ui', fontSize: '15px', color: css(col), fontStyle: 'bold', wordWrap: { width: cw - 24 }, align: 'center' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(62));
-    add(sceneRef.add.text(cx, cy + 44, RARITY[g.rarity].name + ' · ' + GEAR_SLOTS[g.slot].name + ' · ab Stufe ' + gearReq(g), { fontFamily: 'system-ui', fontSize: '10px', color: '#a8a090' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(62));
+    add(sceneRef.add.text(cx, cy + 44, RARITY[g.rarity].name + ' · ' + slotName(g) + ' · ab Stufe ' + gearReq(g), { fontFamily: 'system-ui', fontSize: '10px', color: '#a8a090' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(62));
     let ay = cy + 66;
     attrs.forEach(row => {
       add(sceneRef.add.text(cx - cw / 2 + 16, ay, row[0], { fontFamily: 'system-ui', fontSize: '11px', color: '#cbd5e1' }).setOrigin(0, 0).setScrollFactor(0).setDepth(62));
@@ -1277,7 +1310,7 @@
       shopBuyBtns.push({ rect: bg, action, idx: extra.idx, kind: extra.kind });
       y += 40;
     };
-    merchantStock().forEach((offer, idx) => offerRow(offer.gear.icon + ' ' + RARITY[offer.gear.rarity].name.slice(0, 6) + ' ' + GEAR_SLOTS[offer.gear.slot].name, '+' + offer.gear.stat.val + ' ' + offer.gear.stat.key, RARITY[offer.gear.rarity].color, 'buyGear', { price: offer.price, idx }));
+    merchantStock().forEach((offer, idx) => offerRow(offer.gear.icon + ' ' + RARITY[offer.gear.rarity].name.slice(0, 6) + ' ' + slotName(offer.gear), '+' + offer.gear.stat.val + ' ' + offer.gear.stat.key, RARITY[offer.gear.rarity].color, 'buyGear', { price: offer.price, idx }));
     ['muni', 'kristall'].forEach(kind => { const a = AMMO[kind]; offerRow(a.icon + ' ' + a.name.slice(0, 10) + ' +' + a.pack, ammoOf(kind) + '/' + ammoCap(kind), a.color, 'buyAmmo', { price: a.price, kind }); });
     offerRow('🍶 ' + T('potion'), 'Heilung', 0x16a34a, 'buyPotion', { price: POTION_PRICE });
     // ---- Verkaufszone (Item aus dem Inventar hierher ziehen) ----
@@ -1352,8 +1385,8 @@
       if (!overSlot) for (const bs of bagSlotRects) if (inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { overBag = true; break; }
     }
     if (overSlot && d.gear) {
-      if (slotType(overSlot.slot) === d.gear.slot) { if (d.from.type === 'bag') equipGear(d.gear, overSlot.slot); }
-      else toast('Passt nur in den ' + GEAR_SLOTS[d.gear.slot].name + '-Slot');
+      if (slotAccepts(overSlot.slot, d.gear.slot)) { if (d.from.type === 'bag') equipGear(d.gear, overSlot.slot); }
+      else toast('Passt nur in den ' + slotName(d.gear) + '-Slot');
     } else if (overBag && d.from.type === 'equip') {
       unequipGear(d.from.slot);
     }
@@ -1428,7 +1461,8 @@
     miniTitle.setPosition(x + 6, y + 4); miniGfx.setPosition(x + 6, y + 18);
     miniCollapse.setPosition(x + P - 12, y + 9); miniExpand.setPosition(w - 24, y + 16);
 
-    if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); if (invBadge) { invBadge.setPosition(w - 16, iy - 14); invBadgeText.setPosition(w - 16, iy - 14); } }
+    if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); if (invBadge) { invBadge.setPosition(w - 16, iy - 14); invBadgeText.setPosition(w - 16, iy - 14); } if (muteBtn) { muteBtn.setPosition(w - 30, iy + 42); muteBtn.icon.setPosition(w - 30, iy + 42); } }
+    if (tutBg) { const ty = 12 + P + 66; tutBg.setPosition(w / 2, ty); tutText.setPosition(w / 2, ty); }
 
     // Dialog-Box (unten)
     if (dlgBg && dlgBg.visible) {
@@ -1449,6 +1483,7 @@
 
   // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
+    initAudio();   // Audio-Kontext bei erster Nutzer-Geste starten
     if (state.revealPlaying) { advanceReveal(); return; }   // Cutscene: höchste Priorität
     if (state.dialogueOpen) {
       if (dlgBtn.visible && inRect(p, dlgBtn.x - dlgBtn.width / 2, dlgBtn.y - dlgBtn.height / 2, dlgBtn.width, dlgBtn.height)) { const a = dlgBtnAction; if (a) a(); return; }
@@ -1505,6 +1540,7 @@
     if (state.fullMapOpen) { closeFullMap(); return; }
     if (ctxBg.visible && inRect(p, ctxBg.x - ctxBg.width / 2, ctxBg.y - ctxBg.height / 2, ctxBg.width, ctxBg.height)) { doContext(); return; }
     if (hit(invBtn, p, 24)) { openInventory(); return; }
+    if (muteBtn && Phaser.Math.Distance.Between(p.x, p.y, muteBtn.x, muteBtn.y) <= 20) { state.muted = !state.muted; muteBtn.icon.setText(state.muted ? '🔇' : '🔊'); if (!state.muted) sfx('coin'); return; }
     if (state.miniCollapsed) { if (hit(miniExpand, p, 22)) { state.miniCollapsed = false; setMiniVisible(true); miniDirty = true; return; } }
     else {
       if (hit(miniCollapse, p, 18)) { state.miniCollapsed = true; setMiniVisible(false); return; }
@@ -1803,9 +1839,9 @@
   const MERCHANT_BUY_MULT = 4, MERCHANT_STOCK = 3;
   function merchantBias(mapId) { return ({ fort_freedom: 0.4, sektor01: 0.6, rogues_landing: 0.9, rustwater: 0.3 })[mapId] || 0.4; }
   function rollMerchantStock(mapId) {
-    const bias = merchantBias(mapId), types = Object.keys(GEAR_SLOTS), out = [];
+    const bias = merchantBias(mapId), types = Object.keys(GEAR_SLOTS).filter(s => s !== 'plate'), out = [];
     for (let i = 0; i < MERCHANT_STOCK; i++) {
-      const g = makeGear(types[Phaser.Math.Between(0, types.length - 1)], rollRarity(bias));
+      const g = Math.random() < 0.34 ? rollTech(bias) : makeGear(types[Phaser.Math.Between(0, types.length - 1)], rollRarity(bias));   // ~1/3 Tech-Module
       out.push({ gear: g, price: Math.round(gearValue(g) * MERCHANT_BUY_MULT) });
     }
     return out;
@@ -1861,6 +1897,36 @@
     const e = addEnemy(w.x, w.y, { r: BOSS_R + 12, barW: 74, hp: BOSS_HP * mult, color: 0x7f1d1d, stroke: 0x2a0505, contact: Math.round(BOSS_CONTACT * 1.6), speed: BOSS_SPEED - 6, isBoss: true, isSuperBoss: true, name: 'Minen-Titan', gold: BOSS_GOLD * mult, armor: 25, cls: 'MECHANICAL', sub: 'goliath', frontImmune: true });
     state.boss = e; setBossBar(e);
   }
+  // ---- Boss-Muster: telegrafierte Flächenschläge + Add-Spawns (Superboss) ----
+  function clearTelegraph(e) { if (e.tel) { if (e.tel.ring) e.tel.ring.destroy(); if (e.tel.fill) e.tel.fill.destroy(); e.tel = null; } }
+  function bossAI(e, now) {
+    if (now < (e.stunUntil || 0)) return;   // Kurzschluss: keine Angriffe
+    if (e.tel) {   // laufender Telegraph -> füllen, dann auflösen
+      const prog = Math.min(1, (now - e.tel.start) / (e.tel.resolveAt - e.tel.start));
+      if (e.tel.fill) e.tel.fill.setRadius(Math.max(2, e.tel.r * prog)).setFillStyle(0xff3b30, 0.18 + prog * 0.32);
+      if (now >= e.tel.resolveAt) {
+        const inside = Phaser.Math.Distance.Between(player.x, player.y, e.tel.x, e.tel.y) < e.tel.r + PLAYER_R;
+        const fl = sceneRef.add.circle(e.tel.x, e.tel.y, e.tel.r, 0xff3b30, 0.5).setDepth(4);
+        sceneRef.tweens.add({ targets: fl, alpha: 0, scale: 1.15, duration: 260, onComplete: () => fl.destroy() });
+        clearTelegraph(e); sceneRef.cameras.main.shake(180, 0.012); sfx('slam');
+        if (inside && now > state.invulnUntil) { const dmg = (e.isSuperBoss ? 40 : 22); state.hp -= dmg * dmgTakenMul(); state.lastDamage = now; updateLife(); if (state.hp <= 0) respawnPlayer(); }
+      }
+      return;
+    }
+    if (e.atkAt === undefined) e.atkAt = now + 2600;
+    if (now < e.atkAt || Phaser.Math.Distance.Between(player.x, player.y, e.c.x, e.c.y) > 470) return;
+    e.atkStep = (e.atkStep || 0) + 1;
+    if (e.isSuperBoss && e.atkStep % 3 === 0) {   // Superboss ruft alle 3 Aktionen Verstärkung
+      for (let i = 0; i < 2; i++) { const a = Math.random() * Math.PI * 2; spawnTyped(pickEnemyType(), e.c.x + Math.cos(a) * 72, e.c.y + Math.sin(a) * 72, { aggro: true }); }
+      toast('☢ ' + e.name + ' ruft Verstärkung!'); e.atkAt = now + 4600;
+    } else {   // Flächenschlag: Telegraph auf die aktuelle Spielerposition — wegrollen!
+      const tx = player.x, ty = player.y, r = e.isSuperBoss ? 112 : 84;
+      const ring = sceneRef.add.circle(tx, ty, r, 0x000000, 0).setStrokeStyle(3, 0xff3b30, 0.9).setDepth(4);
+      const fill = sceneRef.add.circle(tx, ty, 2, 0xff3b30, 0.2).setDepth(4);
+      e.tel = { x: tx, y: ty, r, start: now, resolveAt: now + (e.isSuperBoss ? 900 : 820), ring, fill };
+      e.atkAt = now + (e.isSuperBoss ? 3800 : 4900);
+    }
+  }
 
   // ---- Schuss / Spezial-Attacken -----------------------------
   function fireBulletAngle(a) {
@@ -1884,7 +1950,7 @@
       if (now > (state.noAmmoAt || 0)) { toast(AMMO[kind].icon + ' ' + AMMO[kind].name + ' leer — nachladen!'); state.noAmmoAt = now + 1500; }
       return;
     }
-    state.ammo[kind]--;
+    state.ammo[kind]--; sfx('shoot');
     const a = aimAngle(); player.facing = a; player.rotation = a; fireBulletAngle(a);   // Auto-Ziel auf nächsten Gegner
     updateWeaponUI();
   }
@@ -1946,6 +2012,21 @@
     const n = state.perkPoints || 0;
     invBadge.setVisible(n > 0); invBadgeText.setVisible(n > 0).setText(n > 9 ? '9+' : '' + n);
   }
+  // Onboarding: geführte erste Minuten; Schritte rücken bei erfüllten Bedingungen vor.
+  function updateTutorial() {
+    if (!tutText) return;
+    if (state.tutorial >= TUT_STEPS.length) { tutText.setVisible(false); tutBg.setVisible(false); return; }
+    const s = state.tutorial;
+    let done = false;
+    if (s === 0) done = kills >= 1;
+    else if (s === 1) done = state.gold >= 1 || invCount() > 0 || state.gearBag.length > 0;
+    else if (s === 2) done = state.tutOpenedInv;
+    else if (s === 3) done = ['helmet', 'armor', 'weapon', 'gadget', 'boots'].some(k => state.equip[k]) || PLATE_SLOTS.some(k => state.equip[k]);
+    else if (s === 4) done = Object.values(state.perks || {}).some(v => v > 0);
+    if (done) { state.tutorial++; save(); if (state.tutorial >= TUT_STEPS.length) toast('🎉 Bereit! Viel Erfolg, Grenzgänger.'); }
+    const cur = state.tutorial < TUT_STEPS.length ? TUT_STEPS[state.tutorial] : '';
+    if (cur) { tutText.setText(cur).setVisible(true); tutBg.setSize(Math.max(240, tutText.width + 24), 30).setVisible(true); } else { tutText.setVisible(false); tutBg.setVisible(false); }
+  }
   function updateWeaponUI() {
     if (!weaponBtn) return;
     const w = curWeapon(), t = DMG_TYPES[w.type];
@@ -2006,11 +2087,12 @@
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
       const bx = e.c.x, by = e.c.y;
       if (e.marker) { e.marker.destroy(); e.marker = null; }
+      clearTelegraph(e);
       if (e.bountyTarget && state.bounty && state.bounty.id === e.bountyId && !state.bounty.done) {
         state.bounty.done = true; save();
         toast('🎯 Kopfgeld-Ziel „' + e.name + '" erlegt! Belohnung im Saloon abholen');
       }
-      dropGold(bx, by, Math.round(e.gold * lootMul())); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); gainXp(xpForKill(e));
+      dropGold(bx, by, Math.round(e.gold * lootMul())); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); sfx('kill'); gainXp(xpForKill(e));
       if (e.isSuperBoss) {
         state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
         spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'rare');
@@ -2045,6 +2127,7 @@
       dropAmmo(e.c.x, e.c.y, 'muni', Phaser.Math.Between(30, 50));
       dropAmmo(e.c.x, e.c.y, 'kristall', Phaser.Math.Between(20, 35));
       dropGearRoll(e.c.x, e.c.y, 3.5, 3);
+      dropGear(e.c.x, e.c.y, rollTech(2.0));   // Superboss: garantiertes Tech-Modul
       return;
     }
     const elite = e.elite || e.isBoss;
@@ -2106,7 +2189,7 @@
     let zr = 0; if (Math.random() < t.zahnrad) zr++; if (Math.random() < t.zahnrad && chest.tier !== 'normal') zr++;
     if (zr > 0) items.push({ kind: 'mat', id: 'zahnrad', count: zr });
     if (Math.random() < t.dampfkern) items.push({ kind: 'mat', id: 'dampfkern', count: 1 });
-    if (chest.tier === 'boss') items.push({ kind: 'gear', gear: rollGear(1.6) });
+    if (chest.tier === 'boss') { items.push({ kind: 'gear', gear: rollGear(1.6) }); if (Math.random() < 0.6) items.push({ kind: 'gear', gear: rollTech(1.2) }); }   // Bosskisten: auch Tech-Module
     else if (chest.tier === 'rare') { if (Math.random() < 0.55) items.push({ kind: 'gear', gear: rollGear(0.7) }); }
     else if (Math.random() < 0.15) items.push({ kind: 'gear', gear: rollGear(0) });
     const gold = Math.round((chest.tier === 'boss' ? Phaser.Math.Between(40, 100) : chest.tier === 'rare' ? Phaser.Math.Between(15, 40) : Phaser.Math.Between(5, 15)) * lootMul());
@@ -2323,6 +2406,31 @@
     closeTycoon(); openTycoon();
   }
   function toast(msg) { const t = sceneRef.add.text(sceneRef.scale.width / 2, sceneRef.scale.height * 0.3, msg, { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(60); sceneRef.tweens.add({ targets: t, alpha: 0, y: '-=18', delay: 900, duration: 700, onComplete: () => t.destroy() }); }
+  // ---- Sound-Effekte (WebAudio, synthetisiert — keine externen Dateien) ----
+  let audioCtx = null, lastSfx = {};
+  function initAudio() { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; } } if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
+  const SFX = {
+    shoot: { f: 300, f2: 170, d: 0.05, type: 'square', v: 0.035, gap: 55 },
+    kill:  { f: 190, f2: 80, d: 0.16, type: 'sawtooth', v: 0.08 },
+    coin:  { f: 950, f2: 1350, d: 0.07, type: 'sine', v: 0.04, gap: 40 },
+    level: { seq: [523, 659, 784, 1047], d: 0.11, type: 'sine', v: 0.09 },
+    perk:  { f: 680, f2: 1040, d: 0.12, type: 'triangle', v: 0.08 },
+    slam:  { f: 95, f2: 38, d: 0.28, type: 'sawtooth', v: 0.12 },
+    hurt:  { f: 170, f2: 70, d: 0.13, type: 'square', v: 0.09, gap: 180 }
+  };
+  function sfx(name) {
+    if (state.muted) return; const s = SFX[name]; if (!s) return; initAudio(); if (!audioCtx) return;
+    const now = audioCtx.currentTime * 1000; if (s.gap && now - (lastSfx[name] || 0) < s.gap) return; lastSfx[name] = now;
+    const t0 = audioCtx.currentTime;
+    const play = (freq, at, dur) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = s.type; o.frequency.setValueAtTime(freq, at);
+      if (s.f2 && !s.seq) o.frequency.exponentialRampToValueAtTime(Math.max(20, s.f2), at + dur);
+      g.gain.setValueAtTime(s.v, at); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+      o.connect(g).connect(audioCtx.destination); o.start(at); o.stop(at + dur + 0.02);
+    };
+    if (s.seq) s.seq.forEach((f, i) => play(f, t0 + i * s.d, s.d)); else play(s.f, t0, s.d);
+  }
 
   // ---- Joystick ----------------------------------------------
   function updateStick(px, py) {
@@ -2395,8 +2503,9 @@
       if (d > PLAYER_R + e.r) { e.c.x += (ex / d) * e.speed * dt; e.c.y += (ey / d) * e.speed * dt; }
       else if (!uiBlocked && now > state.invulnUntil) { state.hp -= e.contact * dt * dmgTakenMul(); state.lastDamage = now; touched = true; }
     }
-    if (touched) { updateLife(); if (state.hp <= 0) respawnPlayer(); }
+    if (touched) { updateLife(); sfx('hurt'); sceneRef.cameras.main.shake(90, 0.005); if (state.hp <= 0) respawnPlayer(); }
     else if (now - state.lastDamage > REGEN_DELAY && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + regenRate() * dt); updateLife(); }
+    if (!uiBlocked && !state.transitioning) for (const e of enemies) if (e.isBoss) bossAI(e, now);   // Boss-Muster (Telegraph-Angriffe)
     if (state.boss) updateBossBar();
 
     // Status-Effekte über Zeit (Verbluten / Überhitzung) — Rückwärts-Index, da Gegner sterben können
@@ -2414,7 +2523,7 @@
       for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) {
         const res = calcDamage(b.type, e, b.base, armorPen());
         let dmg = res.dmg, crit = false;
-        if (dmg > 0 && Math.random() < critChance()) { dmg = Math.round(dmg * 2); crit = true; }   // Kritischer-Treffer-Perk
+        if (dmg > 0 && Math.random() < critChance()) { dmg = Math.round(dmg * critMult()); crit = true; }   // Krit-Perk (+ Panzerbrecher-Synergie)
         if (res.effect) applyStatus(e, res.effect, b.acid);
         damageEnemy(e, dmg, { color: crit ? 0xfde047 : DMG_TYPES[b.type].color, immune: res.immune });
         hitE = true; break;
@@ -2452,7 +2561,7 @@
         } else if (co.ammo) {
           const a = AMMO[co.ammo]; addAmmo(co.ammo, co.n || 1); updateWeaponUI();
           popLoot(co.s.x, co.s.y, a.icon); co.s.destroy(); coins.splice(i, 1); continue;
-        } else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
+        } else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); sfx('coin'); co.s.destroy(); coins.splice(i, 1); continue; }
       }
       const blocked = (co.item && !canTakeMat(co.item)) || (co.gear && gearCells(co.gear) > gridFree());
       if (d < magnetDist() && !blocked) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
@@ -2460,7 +2569,7 @@
 
     if (!uiBlocked && !state.transitioning) updateContext();
     if (miniDirty) { refreshMaps(); miniDirty = false; }
-    updateQuestTracker();
+    updateQuestTracker(); updateTutorial();
   }
 
   function updateContext() {
