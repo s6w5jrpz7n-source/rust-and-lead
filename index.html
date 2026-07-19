@@ -58,6 +58,7 @@
   // Boss
   const BOSS_HP = 700, BOSS_R = 28, BOSS_SPEED = 46, BOSS_CONTACT = 28, BOSS_GOLD = 20, BOSS_KILLS_TRIGGER = 8;
   const BOSS_NAMES = ['Rost-Baron', 'Blei-Molch', 'Schrott-Koloss', 'Kaktus-König'];
+  const BOUNTY_NAMES = ['Gefährlicher Vince', 'Dynamit-Dolores', 'Der Schakal', 'Öl-Otis', 'Klapperschlangen-Kate', 'Halunke Hank'];
 
   // Farben
   const COL_PLAYER = 0x3b82f6, COL_PLAYER_S = 0x1e3a8a, COL_NOSE = 0x93c5fd;
@@ -123,9 +124,12 @@
   };
   const WEAPON_ORDER = ['karabiner', 'voltgun', 'saeure', 'brenner'];
   // Munitions-Typen: begrenzter Vorrat, damit man nicht dauerhaft feuern kann.
+  // Balancing (Playtest): Munition ~36 s Dauerfeuer aus vollem Magazin, in aktivem Nahkampf
+  // netto-positiv durch Drops. Energiekristalle knapper (starke Energiewaffen), aber nach
+  // Playtest von Start 45→60 / Drop [2,4]→[3,5] angehoben, damit sie sich nicht zu karg spielen.
   const AMMO = {
     muni:     { name: 'Munition',        icon: '🧨', cap: 180, start: 90, drop: [3, 6], price: 24, pack: 30, color: 0xfbbf24 },
-    kristall: { name: 'Energiekristalle', icon: '🔷', cap: 120, start: 45, drop: [2, 4], price: 36, pack: 20, color: 0x38bdf8 }
+    kristall: { name: 'Energiekristalle', icon: '🔷', cap: 130, start: 60, drop: [3, 5], price: 36, pack: 24, color: 0x38bdf8 }
   };
   // Gegner-Klassifizierung & Verhalten (siehe GDD Kap. 10).
   const ENEMY_TYPES = {
@@ -249,11 +253,34 @@
       ]
     },
     dungeon1: {
-      name: 'Mine', cols: 26, rows: 26, enemies: true, minimap: 'small',
+      name: 'Mine — Ebene 1', cols: 26, rows: 26, enemies: true, minimap: 'small', depth: 1,
       floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x4b5563, bg: 0x15171b,
-      portals: [ { tx: 12, ty: 23, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Verlassen', label: '🚪  Mine verlassen', mini: 0x38bdf8 } ],
-      stations: [], decor: [ { tx: 13, ty: 11, w: 60, h: 40, color: 0x3a2f22, label: 'SCHATZKAMMER' } ],
-      caches: [ { tx: 13, ty: 13, count: 5, tier: 'rare' } ], elites: 1, superboss: { tx: 13, ty: 9 }
+      portals: [
+        { tx: 2, ty: 2, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Raus', label: '🚪  Mine verlassen', mini: 0x38bdf8 },
+        { tx: 23, ty: 23, to: 'dungeon2', spawn: { c: 13, r: 3 }, short: 'Tiefer', label: '🕳️  Abstieg → Ebene 2', mini: 0x8b5cf6 }
+      ],
+      stations: [], decor: [ { tx: 13, ty: 13, w: 44, h: 30, color: 0x3a2f22, label: 'STOLLEN' } ],
+      caches: [ { tx: 4, ty: 22, count: 3, tier: 'rare' } ], elites: 1
+    },
+    dungeon2: {
+      name: 'Mine — Ebene 2', cols: 26, rows: 26, enemies: true, minimap: 'small', depth: 2,
+      floorA: 0x434b56, floorB: 0x373d47, grid: 0x24282f, mini: 0x434b56, bg: 0x111318,
+      portals: [
+        { tx: 2, ty: 2, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Hoch', label: '🪜  Aufstieg → Ebene 1', mini: 0x38bdf8 },
+        { tx: 23, ty: 23, to: 'dungeon3', spawn: { c: 13, r: 3 }, short: 'Tiefer', label: '🕳️  Abstieg → Tiefe', mini: 0x8b5cf6 }
+      ],
+      stations: [], decor: [ { tx: 13, ty: 13, w: 48, h: 32, color: 0x33291d, label: 'SCHACHT' } ],
+      caches: [ { tx: 4, ty: 22, count: 4, tier: 'rare' } ], elites: 2
+    },
+    dungeon3: {
+      name: 'Mine — Tiefe (Ebene 3)', cols: 26, rows: 26, enemies: true, minimap: 'small', depth: 3,
+      floorA: 0x3a3340, floorB: 0x2f2935, grid: 0x201a28, mini: 0x3a3340, bg: 0x0e0b13,
+      portals: [
+        { tx: 2, ty: 2, to: 'dungeon2', spawn: { c: 13, r: 3 }, short: 'Hoch', label: '🪜  Aufstieg → Ebene 2', mini: 0x38bdf8 },
+        { tx: 23, ty: 2, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Schacht', label: '🚪  Fluchtschacht → Wüste', mini: 0x38bdf8 }
+      ],
+      stations: [], decor: [ { tx: 13, ty: 13, w: 64, h: 44, color: 0x2a2130, label: 'SCHATZKAMMER' } ],
+      caches: [ { tx: 4, ty: 22, count: 5, tier: 'rare' } ], elites: 1, superboss: { tx: 13, ty: 14 }
     },
     fort_freedom: {
       name: 'Fort Freedom', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
@@ -648,7 +675,7 @@
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
-      state.bounty = (s.bounty && typeof s.bounty === 'object') ? s.bounty : null;
+      state.bounty = (s.bounty && typeof s.bounty === 'object' && s.bounty.id) ? s.bounty : null;   // altes Kill-Zähler-Format verwerfen
       state.ammo = { muni: AMMO.muni.start, kristall: AMMO.kristall.start };
       if (s.ammo) for (const k in state.ammo) if (typeof s.ammo[k] === 'number') state.ammo[k] = Math.min(AMMO[k].cap, s.ammo[k]);
       state.discovered = new Set(s.discovered || []);
@@ -669,7 +696,7 @@
     state.bounds = { minX: -(m.rows - 1) * HALF_W, maxX: (m.cols - 1) * HALF_W, minY: 0, maxY: (m.cols - 1 + m.rows - 1) * HALF_H };
 
     mapObjects.forEach(o => o.destroy()); mapObjects.length = 0;
-    enemies.forEach(e => e.c.destroy()); enemies.length = 0;
+    enemies.forEach(e => { if (e.marker) e.marker.destroy(); e.c.destroy(); }); enemies.length = 0;
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
     eBullets.forEach(b => b.sprite.destroy()); eBullets.length = 0;
     coins.forEach(c => c.s.destroy()); coins.length = 0;
@@ -754,7 +781,8 @@
     if (m.streamed) streamChunks(9);   // sichtbaren Bereich (radius 1) sofort, Rest folgt vorausschauend
     if (m.enemies) scatterEnemies(m);
     scatterChests(m);
-    if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty);
+    if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth);
+    spawnBountyTarget();   // aktives Kopfgeld-Ziel in der Wüste aufstellen
   }
 
   // ---- Palisade (Stockade) -----------------------------------
@@ -877,19 +905,23 @@
       contact: t.contact, speed: t.speed, gold: g, cls: t.cls, sub: t.sub, armor: t.armor, frontImmune: t.frontImmune, ranged: t.ranged,
       isBoss: !!t.isBoss, name: (opts && opts.name) || t.name, aggro: !!(opts && opts.aggro) });
   }
+  // Dungeon-Tiefe erhöht Gegner-Zähigkeit & -Dichte (Ebene 1→3).
+  function mapHpMul(m) { return 1 + (Math.max(1, m.depth || 1) - 1) * 0.5; }   // Ebene1 1.0, Ebene2 1.5, Ebene3 2.0
+  function scaleEnemyHp(e, mul) { if (mul <= 1 || !e) return e; e.maxHp = Math.round(e.maxHp * mul); e.hp = e.maxHp; e.hpFill.width = e.barW; return e; }
   function scatterEnemies(m) {
-    const count = Math.min(ENEMY_MAX, Math.round(m.cols * m.rows / ENEMY_PER_TILES));
+    const mul = mapHpMul(m), dens = 1 + (Math.max(1, m.depth || 1) - 1) * 0.2;
+    const count = Math.min(ENEMY_MAX, Math.round(m.cols * m.rows / ENEMY_PER_TILES * dens));
     for (let i = 0; i < count; i++) {
       const c = Phaser.Math.Between(1, m.cols - 2), r = Phaser.Math.Between(1, m.rows - 2), w = tileToWorld(c, r);
       if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 220) continue;   // Startbereich frei halten
-      spawnTyped(pickEnemyType(), w.x, w.y);
+      scaleEnemyHp(spawnTyped(pickEnemyType(), w.x, w.y), mul);
     }
     // Elite-Bosse stehen verteilt in der Karte (mit Gefolge) — kein Kill-Zähler mehr
     const elites = m.elites !== undefined ? m.elites : ELITE_PER_MAP;
     for (let i = 0; i < elites; i++) {
       const c = Phaser.Math.Between(3, m.cols - 4), r = Phaser.Math.Between(3, m.rows - 4), w = tileToWorld(c, r);
       if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 360) continue;
-      spawnElite(w.x, w.y);
+      scaleEnemyHp(spawnElite(w.x, w.y), mul);
     }
   }
 
@@ -1430,7 +1462,11 @@
   function updateQuestTracker() {
     if (!questText) return;
     let s = '';
-    for (const n of npcSprites) { const q = currentQuestOf(n.def); if (q && questStateOf(q.id) === 'active') { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
+    if (state.bounty) {
+      if (state.bounty.done) s = '🎯 Kopfgeld fällig: „' + state.bounty.name + '" — im Saloon abholen';
+      else { const tgt = enemies.find(e => e.bountyTarget); s = tgt ? ('🎯 Kopfgeld: „' + state.bounty.name + '" — ' + Math.round(Phaser.Math.Distance.Between(player.x, player.y, tgt.c.x, tgt.c.y)) + ' entfernt') : ('🎯 Kopfgeld: „' + state.bounty.name + '" — in der Wüste jagen'); }
+    }
+    if (!s) for (const n of npcSprites) { const q = currentQuestOf(n.def); if (q && questStateOf(q.id) === 'active') { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
     // auch außerhalb der Stadt: erste aktive Quest global finden
     if (!s) for (const id in state.quests) if (state.quests[id] === 'active') { const q = findQuest(id); if (q) { s = '📜 ' + q.title + '  ' + questProgress(q); break; } }
     if (questText.text !== s) questText.setText(s);
@@ -1629,10 +1665,10 @@
     for (let i = 0; i < 3; i++) { const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 50; spawnTyped(pickEnemyType(), ex + Math.cos(a) * d, ey + Math.sin(a) * d); }
     return e;
   }
-  // Dungeon-Superboss: 4× so stark wie ein normaler Boss, wartet im Dungeon.
-  function spawnSuperBoss(tx, ty) {
-    const w = tileToWorld(tx, ty);
-    const e = addEnemy(w.x, w.y, { r: BOSS_R + 12, barW: 74, hp: BOSS_HP * SUPERBOSS_MULT, color: 0x7f1d1d, stroke: 0x2a0505, contact: Math.round(BOSS_CONTACT * 1.6), speed: BOSS_SPEED - 6, isBoss: true, isSuperBoss: true, name: 'Minen-Titan', gold: BOSS_GOLD * SUPERBOSS_MULT, armor: 25, cls: 'MECHANICAL', sub: 'goliath', frontImmune: true });
+  // Dungeon-Superboss: wartet in der tiefsten Ebene; skaliert mit der Tiefe (Ebene 3 → 6×).
+  function spawnSuperBoss(tx, ty, depth) {
+    const w = tileToWorld(tx, ty), mult = SUPERBOSS_MULT + (Math.max(1, depth || 1) - 1);   // Ebene3: 4+2 = 6×
+    const e = addEnemy(w.x, w.y, { r: BOSS_R + 12, barW: 74, hp: BOSS_HP * mult, color: 0x7f1d1d, stroke: 0x2a0505, contact: Math.round(BOSS_CONTACT * 1.6), speed: BOSS_SPEED - 6, isBoss: true, isSuperBoss: true, name: 'Minen-Titan', gold: BOSS_GOLD * mult, armor: 25, cls: 'MECHANICAL', sub: 'goliath', frontImmune: true });
     state.boss = e; setBossBar(e);
   }
 
@@ -1774,6 +1810,11 @@
     if (e.hp <= 0) {
       const i = enemies.indexOf(e); if (i !== -1) enemies.splice(i, 1);
       const bx = e.c.x, by = e.c.y;
+      if (e.marker) { e.marker.destroy(); e.marker = null; }
+      if (e.bountyTarget && state.bounty && state.bounty.id === e.bountyId && !state.bounty.done) {
+        state.bounty.done = true; save();
+        toast('🎯 Kopfgeld-Ziel „' + e.name + '" erlegt! Belohnung im Saloon abholen');
+      }
       dropGold(bx, by, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); gainXp(xpForKill(e));
       if (e.isSuperBoss) {
         state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
@@ -2022,26 +2063,43 @@
   }
   // Kurzer Hinweis auf die aktuelle Primärfunktion je Gebäude
   function tycoonPrimaryHint(id) {
-    if (id === 'saloon') { const bo = state.bounty; return bo ? (bountyDone() ? 'Kopfgeld fällig — abholen' : 'Kopfgeld läuft ' + bountyProgress()) : 'neues Kopfgeld annehmen'; }
+    if (id === 'saloon') { const bo = state.bounty; return bo ? (bo.done ? 'Kopfgeld fällig — abholen' : 'Ziel jagen: ' + bo.name) : 'neues Kopfgeld annehmen'; }
     if (id === 'forge') return 'Materialien & Ausrüstung handeln';
     if (id === 'distillery') return 'Tränke ' + distilleryPotionPrice() + ' 💰';
     return '';
   }
-  // --- Saloon: Kopfgeld-Auftragsbrett (wiederholbar; skaliert mit Saloon-Stufe) ---
-  function bountyProgress() { const bo = state.bounty; if (!bo) return ''; return Math.min(kills - bo.base, bo.count) + '/' + bo.count; }
-  function bountyDone() { const bo = state.bounty; return !!bo && (kills - bo.base) >= bo.count; }
+  // --- Saloon: Kopfgeld — jagt ein benanntes Elite-Ziel in der Wüste (kein Kill-Zähler) ---
+  function bountyDone() { return !!state.bounty && state.bounty.done; }
   function saloonBounty() {
     const lvl = state.economy.saloon.level;
     if (!state.bounty) {
-      const count = BOUNTY_BASE_KILLS + lvl * 2, reward = BOUNTY_BASE_GOLD + lvl * 30;
-      state.bounty = { base: kills, count, reward };
-      toast('📜 Kopfgeld: ' + count + ' Gegner → ' + reward + ' 💰'); save(); refreshTycoon(); return;
+      const name = BOUNTY_NAMES[Phaser.Math.Between(0, BOUNTY_NAMES.length - 1)];
+      const reward = BOUNTY_BASE_GOLD + lvl * 30;
+      state.bounty = { id: 'b' + Math.floor(sceneRef.time.now) + '_' + Phaser.Math.Between(100, 999), name, reward, done: false };
+      toast('📜 Kopfgeld auf „' + name + '" — in der Wüste aufspüren'); save(); refreshTycoon();
+      if (state.map === 'overworld') spawnBountyTarget();
+      return;
     }
-    if (!bountyDone()) { toast('🎯 Kopfgeld: ' + bountyProgress() + ' Gegner'); return; }
+    if (!state.bounty.done) { toast('🎯 „' + state.bounty.name + '" lebt noch — in der Wüste jagen'); return; }
     const r = state.bounty.reward, xp = Math.round(r * 0.6);
     state.gold += r; updateGold(); gainXp(xp);
-    toast('✅ Kopfgeld erledigt! +' + r + ' Gold · +' + xp + ' XP');
+    toast('✅ Kopfgeld kassiert: „' + state.bounty.name + '" +' + r + ' Gold · +' + xp + ' XP');
     state.bounty = null; save(); refreshTycoon();
+  }
+  // Setzt das aktive Kopfgeld-Ziel als markierten Elite-Boss in der Wüste (nur dort, einmalig).
+  function spawnBountyTarget() {
+    if (!sceneRef || !player) return;
+    if (!state.bounty || state.bounty.done || state.map !== 'overworld') return;
+    if (enemies.some(e => e.bountyTarget)) return;
+    const m = MAPS.overworld; let w = null;
+    for (let t = 0; t < 40; t++) {
+      const c = Phaser.Math.Between(6, m.cols - 6), r = Phaser.Math.Between(6, m.rows - 6); w = tileToWorld(c, r);
+      if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) > 520) break;
+    }
+    const e = addEnemy(w.x, w.y, { r: BOSS_R + 6, barW: 66, hp: Math.round(BOSS_HP * 1.8), color: 0xca8a04, stroke: 0x4a2f04, contact: Math.round(BOSS_CONTACT * 1.2), speed: BOSS_SPEED + 4, isBoss: true, name: state.bounty.name, gold: BOSS_GOLD * 2, cls: 'BIOLOGICAL', sub: 'outlaw' });
+    e.elite = true; e.bountyTarget = true; e.bountyId = state.bounty.id;
+    e.marker = sceneRef.add.text(e.c.x, e.c.y - e.r - 18, '🎯', { fontSize: '18px' }).setOrigin(0.5).setDepth(8);
+    for (let i = 0; i < 3; i++) { const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 50; spawnTyped(pickEnemyType(), e.c.x + Math.cos(a) * d, e.c.y + Math.sin(a) * d, { aggro: true }); }
   }
   // --- Destille: Vorrat (Tränke, günstiger je Stufe) ---
   function distilleryPotionPrice() { return Math.max(12, POTION_PRICE - state.economy.distillery.level * 4); }
@@ -2123,6 +2181,7 @@
     // Gegner: idle bis nah -> dann verfolgen + Kontaktschaden
     let touched = false;
     for (const e of enemies) {
+      if (e.marker) e.marker.setPosition(e.c.x, e.c.y - e.r - 18);
       const ex = player.x - e.c.x, ey = player.y - e.c.y, d = Math.hypot(ex, ey) || 1;
       const stunned = now < e.stunUntil;
       if (e.body) e.body.setFillStyle(stunned ? 0x7dd3fc : e.baseColor);   // Kurzschluss sichtbar machen

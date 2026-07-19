@@ -127,6 +127,14 @@ Ebene tiefer; ein Aufzug/Ausgang führt zurück an die Oberfläche.
 * **Prozedural + handgesetzt:** Ebenen werden prozedural aus handgebauten 3D-Modulen
   zusammengesetzt; feste Anker (Boss-Arena, Schacht, Schatzkammer) sind garantiert.
 
+> **Prototyp-Stand:** Die **Schrott-Minen** sind im Web-Prototyp als **3 absteigende
+> Ebenen** umgesetzt (`dungeon1` → `dungeon2` → `dungeon3`). Abstieg per 🕳️-Portal,
+> Aufstieg per 🪜-Portal, aus der Tiefe zusätzlich ein 🚪-Fluchtschacht zur Wüste.
+> Tiefen-Skalierung: Gegner-HP ×`(1 + (Tiefe−1)·0.5)` (Ebene 1/2/3 = 1.0/1.5/2.0) und
+> steigende Pack-Dichte/Elite-Zahl. Der **Superboss „Minen-Titan"** wartet **nur** auf der
+> tiefsten Ebene und skaliert mit der Tiefe (`SUPERBOSS_MULT + (Tiefe−1)` → Ebene 3 = 6×
+> Boss-HP, 4200 HP) plus reichem Beute-Cache.
+
 ## 1.7 Progressions-Gating & Umwelt-Barrieren
 Narrativer Sog ohne immersionsbrechende unsichtbare Wände — stattdessen mechanische,
 umweltbasierte und fraktionsbasierte Tore.
@@ -526,16 +534,20 @@ Progression (Gold, XP, Loot, Wirtschafts-Boosts) speisen. Vier Kategorien.
   (weniger Instabilität = mehr Gold/XP).
 * **Design-Ziel:** belohnt sauberes, ausweichlastiges Fahren statt Dauer-Tanken.
 
-## 5.3 Kopfgeld & Ausrottung (Bounty / Extermination)
-* **Fantasy:** Ein benannter Gesetzloser, ein Elite-Automat oder eine Fauna-Plage bedroht
-  einen Sektor.
-* **Mechanik:** Zwei Ausprägungen —
-  * **Ausrottung:** eine bestimmte Anzahl eines Gegnertyps ausschalten (z. B. „5
-    Schrott-Ratten", „12 Wegelagerer"). Fortschritt = Kill-Zähler − Basis.
-  * **Kopfgeld-Ziel:** ein einzelner, verstärkter **Elite-Boss** (Boss-Statistik, steht
-    mit Gefolge in der Welt). Sein Tod droppt ein Beute-Bündel (Loot-Kisten) und
-    garantierte Ausrüstung.
-* **Belohnung:** Gold + XP (Elite 50 XP), hochwertige Ausrüstung, Materialien.
+## 5.3 Kopfgeld (Bounty) — benanntes Elite-Ziel im Saloon
+* **Fantasy:** Ein benannter Gesetzloser (z. B. „Dynamit-Dolores", „Der Schakal") wird im
+  **Gatling-Saloon** (Auftragsbrett, §2.2) zur Fahndung ausgeschrieben.
+* **Mechanik (kein Kill-Zähler):**
+  1. **Annehmen** am Saloon → ein **benanntes Kopfgeld-Ziel** wird erstellt (Belohnung
+     skaliert mit Saloon-Stufe: `BOUNTY_BASE_GOLD + level·30`).
+  2. Beim Betreten der **Wüste** erscheint das Ziel als **markierter Elite-Boss**
+     (🎯-Marker über dem Kopf, ~1.8× Boss-HP, mit Gefolge), an zufälliger Position abseits
+     des Spielers. Ein **HUD-Tracker** zeigt Name und Restdistanz. Es existiert immer nur
+     **ein** aktives Ziel.
+  3. **Erlegen** setzt das Kopfgeld auf „fällig". Der Spieler **kassiert die Belohnung**
+     (Gold + XP ≈ 0.6× Gold) zurück im Saloon; danach ist ein neues Kopfgeld annehmbar.
+* Zusätzlich droppt das Ziel (als Elite) ein Beute-Bündel (Loot-Kisten) und Ausrüstung.
+* Der Kopfgeld-Zustand persistiert; das alte Kill-Zähler-Format wird beim Laden verworfen.
 
 ## 5.4 Tycoon-Booster (mit wirtschaftlichen Kettenreaktionen)
 * **Fantasy:** Aufträge, die die Township direkt stärken — Rohstoff-Lieferungen,
