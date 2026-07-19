@@ -794,7 +794,19 @@ stapelbar).
 **Grid-Fußabdruck (Inventar-Plätze):** Rüstung **2×2 (4)**, Waffe **2×1 (2)**, sehr große
 Waffe **3×1 (3)** (ca. 30 % der Waffen, +40 % Schaden), Helm/Stiefel/Gadget/Panzerplatte
 sowie Material-/Trank-Stapel je **1×1 (1)**. Vollbild-Charakter-Panel: Ausrüstung + Werte
-links, gepacktes Grid-Inventar rechts; Anlegen per Ziehen oder Antippen.
+links, gepacktes Grid-Inventar rechts; Anlegen per Ziehen oder Antippen. Das Grid ist
+**5 Spalten breit** mit **3-facher Kapazität** (scrollbar).
+
+**Ablegen/Verschrotten:** Jedes Grid-Item ist ziehbar. Eine **Ablage-Zone** (🗑️) unten
+links nimmt gezogene Items entgegen — **Ausrüstung** wird zu Schrott recycelt (1–4 🔩 je
+Seltenheit), Material/Trank stückweise verworfen. So flutet das Inventar nicht über.
+
+### 7.4.1 Händler als Charakter-Panel (Drag-Handel)
+Der Händler öffnet **dasselbe Panel im Shop-Modus**: **links das Händler-Angebot**
+(Ausrüstung, Munition, Kristalle, Tränke — Kauf per Tipp), **rechts das eigene
+Grid-Inventar**. **Verkaufen geschieht direkt aus dem Inventar per Ziehen** eines Items in
+die grüne **Verkaufszone**: Ausrüstung → Einzelwert, Material → ganzer Stapel; **legendäre
+Ausrüstung ist geschützt** (nicht verkaufbar). Kein Kategorie-Sammelverkauf mehr.
 
 **Verkauf:** Händler kauft Ausrüstung im Bulk je Seltenheit (Gewöhnlich/Selten/Episch);
 **legendäre Teile sind geschützt** und werden nie im Bulk verkauft.

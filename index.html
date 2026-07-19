@@ -378,7 +378,6 @@
   let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;
   let ctxBg, ctxText;
   let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
-  let storeUI = [], storeButtons = [], storeCloseRef = null, storePanelRef = null;
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
@@ -390,6 +389,7 @@
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
   let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
   let equipSlotRects = [], bagSlotRects = [], invDrag = null, invScroll = 0, invScrollBtns = [];
+  let invScrapRect = null, shopSellRect = null, shopBuyBtns = [];
   let abilities = [];
   let cursors, wasd;
 
@@ -408,7 +408,7 @@
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null }, gearBag: [],
     level: 1, xp: 0,
-    isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
+    isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
@@ -986,7 +986,7 @@
   function closeTravel() { state.travelOpen = false; ftButtons.forEach(b => { if (b.bg) b.bg.destroy(); if (b.tx) b.tx.destroy(); }); ftButtons = [];[ftBackdrop, ftPanel, ftTitle, ftClose].forEach(o => o.setVisible(false)); }
 
   // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
-  function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; invScroll = 0; renderInventory(); }
+  function openInventory() { if (state.travelOpen || state.fullMapOpen) return; state.inventoryOpen = true; state.shopMode = false; state.storeOpen = false; invScroll = 0; renderInventory(); }
   function refreshInventory() { if (state.inventoryOpen) renderInventory(); }
   // Zentriertes Charakter-Panel: Ausrüstung + Werte links, Grid-Inventar rechts
   function invLayout() {
@@ -995,12 +995,12 @@
     const ph = Math.min(size.height - 20, Math.round(size.height * 0.86));
     const px = Math.round((size.width - pw) / 2), py = Math.round((size.height - ph) / 2);
     const headH = 56, colTop = py + headH, colBottom = py + ph - 12;
-    const leftW = Math.round(pw * 0.44), rightX = px + leftW + 10, rightW = pw - leftW - 14;
-    const gap = 5, cols = 4;
+    const leftW = Math.round(pw * 0.42), rightX = px + leftW + 10, rightW = pw - leftW - 14;
+    const gap = 5, cols = 5;
     const cell = Math.floor((rightW - (cols - 1) * gap - 4) / cols);
     const gy0 = colTop + 22;
     const rows = Math.max(6, Math.floor((colBottom - gy0 + gap) / (cell + gap)));   // sichtbare Zeilen
-    const rowsTotal = rows * 2;                                                       // doppelte Kapazität (scrollbar)
+    const rowsTotal = rows * 3;                                                       // dreifache Kapazität (scrollbar)
     const cap = cols * rowsTotal;
     const gridW = cols * cell + (cols - 1) * gap, gx0 = rightX + Math.round((rightW - gridW) / 2);
     return { size, px, py, pw, ph, headH, colTop, colBottom, leftW, rightX, rightW, gap, cols, rows, rowsTotal, cap, cell, gx0, gy0, bx: px + leftW / 2, dollTop: colTop + 4, statsTop: colTop + 246 };
@@ -1032,23 +1032,26 @@
     const L = invLayout(), add = o => { invSlots.push(o); return o; };
     invBackdrop.setSize(L.size.width, L.size.height).setPosition(0, 0).setVisible(true);
     invPanel.setPosition(L.size.width / 2, L.py).setSize(L.pw, L.ph).setVisible(true);
-    invTitle.setPosition(L.px + 12, L.py + 10).setOrigin(0, 0).setVisible(true);
+    invTitle.setText(state.shopMode ? '🛒 Händler' : '🎒 Inventar').setPosition(L.px + 12, L.py + 10).setOrigin(0, 0).setVisible(true);
     invClose.setPosition(L.px + L.pw - 22, L.py + 16).setVisible(true);
     invText.setText('⭐ Lv ' + state.level + '   (' + state.xp + ' / ' + xpToNext(state.level) + ' XP)      💰 ' + state.gold).setPosition(L.px + 12, L.py + 34).setOrigin(0, 0).setVisible(true);
-    // ---- Links: Ausrüstung (Paper-Doll) ----
-    const bx = L.bx, ty = L.dollTop, S = 44;
-    add(sceneRef.add.circle(bx, ty + 12, 13, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-    add(sceneRef.add.rectangle(bx, ty + 96, 28, 120, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-    const pos = { helmet: [bx, ty + 2], weapon: [bx - 56, ty + 58], armor: [bx, ty + 58], gadget: [bx + 56, ty + 58], boots: [bx, ty + 186] };
-    for (const slot in pos) drawEquipSlot(slot, pos[slot][0], pos[slot][1], S, add);
-    PLATE_SLOTS.forEach((slot, k) => drawEquipSlot(slot, bx + (k - 1) * 50, ty + 120, S, add, false));
-    add(sceneRef.add.text(bx, ty + 120 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-    // ---- Links unten: Werte-Blatt ----
-    drawStatsSheet(L, add);
-    // ---- Rechts: Grid-Inventar (doppelte Kapazität, scrollbar) ----
+    invScrapRect = null; shopSellRect = null; shopBuyBtns = [];
+    if (state.shopMode) drawShopColumn(L, add);   // ---- Links: Händler-Angebot + Verkaufszone ----
+    else {
+      // ---- Links: Ausrüstung (Paper-Doll) ----
+      const bx = L.bx, ty = L.dollTop, S = 44;
+      add(sceneRef.add.circle(bx, ty + 12, 13, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.rectangle(bx, ty + 96, 28, 120, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
+      const pos = { helmet: [bx, ty + 2], weapon: [bx - 56, ty + 58], armor: [bx, ty + 58], gadget: [bx + 56, ty + 58], boots: [bx, ty + 186] };
+      for (const slot in pos) drawEquipSlot(slot, pos[slot][0], pos[slot][1], S, add);
+      PLATE_SLOTS.forEach((slot, k) => drawEquipSlot(slot, bx + (k - 1) * 50, ty + 120, S, add, false));
+      add(sceneRef.add.text(bx, ty + 120 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      drawStatsSheet(L, add);   // Werte-Blatt inkl. Ablage-Zone
+    }
+    // ---- Rechts: Grid-Inventar (scrollbar) ----
     const maxScroll = Math.max(0, L.rowsTotal - L.rows);
     invScroll = Math.max(0, Math.min(invScroll, maxScroll));
-    add(sceneRef.add.text(L.rightX, L.colTop, '🎒  Inventar  (' + gridUsedCells() + '/' + L.cap + ')', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(L.rightX, L.colTop, (state.shopMode ? '🎒 Mein Inventar  (' : '🎒  Inventar  (') + gridUsedCells() + '/' + L.cap + ')', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
     // sichtbare Zellen
     for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
       const cx = L.gx0 + c * (L.cell + L.gap), cy = L.gy0 + r * (L.cell + L.gap);
@@ -1069,7 +1072,7 @@
     }
   }
   function drawStatsSheet(L, add) {
-    const x = L.px + 12, w = L.leftW - 20, y = L.statsTop, h = L.colBottom - y;
+    const x = L.px + 12, w = L.leftW - 20, y = L.statsTop, scrapH = 56, h = L.colBottom - y - scrapH - 8;
     add(sceneRef.add.rectangle(x, y, w, h, 0x161d28, 0.9).setStrokeStyle(2, 0xc9a24a, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
     add(sceneRef.add.text(x + 10, y + 8, '📋  Werte', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
     const rows = [
@@ -1081,13 +1084,42 @@
       ['🥾 Tempo', Math.round(moveSpeed())],
       ['🎒 Plätze', gridUsedCells() + '/' + L.cap]
     ];
-    const step = Math.min(30, (h - 52) / rows.length); let ry = y + 34;
+    const step = Math.min(28, (h - 44) / rows.length); let ry = y + 34;
     rows.forEach(r => {
       add(sceneRef.add.text(x + 10, ry, r[0], { fontFamily: 'system-ui', fontSize: '12px', color: '#cbd5e1' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
       add(sceneRef.add.text(x + w - 10, ry, '' + r[1], { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(1, 0).setScrollFactor(0).setDepth(53));
       ry += step;
     });
-    add(sceneRef.add.text(x + w / 2, L.colBottom - 12, 'Ziehen/Antippen zum Anlegen', { fontFamily: 'system-ui', fontSize: '9px', color: '#8a8172' }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(53));
+    // ---- Ablage-/Verschrottungs-Zone (Item hierher ziehen) ----
+    const sy = L.colBottom - scrapH;
+    add(sceneRef.add.rectangle(x, sy, w, scrapH, 0x3a1d1d, 0.9).setStrokeStyle(2, 0xb45309, 0.7).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+    add(sceneRef.add.text(x + w / 2, sy + 14, '🗑️  Ablegen', { fontFamily: 'system-ui', fontSize: '12px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    add(sceneRef.add.text(x + w / 2, sy + 36, 'Item hierher ziehen · Gear → 🔩', { fontFamily: 'system-ui', fontSize: '9px', color: '#cbb894' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    invScrapRect = { x, y: sy, w, h: scrapH };
+  }
+  // Händler-Spalte im Shop-Modus: Angebot (kaufen per Tipp) + Verkaufszone (Item hierher ziehen).
+  function drawShopColumn(L, add) {
+    const x = L.px + 12, w = L.leftW - 18; let y = L.colTop;
+    add(sceneRef.add.text(x, y, '🛒  Angebot', { fontFamily: 'system-ui', fontSize: '11px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    y += 20;
+    const offerRow = (label, sub, col, action, extra) => {
+      const afford = state.gold >= extra.price;
+      const bg = add(sceneRef.add.rectangle(x + w / 2, y + 17, w, 34, afford ? 0x24401a : 0x2a2f3a, 0.95).setStrokeStyle(1.5, 0xf3e9d2, 0.3).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(x + 8, y + 10, label, { fontFamily: 'system-ui', fontSize: '11px', color: afford ? css(col) : '#8a8172' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(x + 8, y + 25, sub, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(x + w - 8, y + 17, extra.price + ' 💰', { fontFamily: 'system-ui', fontSize: '11px', color: afford ? '#fde047' : '#8a8172', fontStyle: 'bold' }).setOrigin(1, 0.5).setScrollFactor(0).setDepth(53));
+      shopBuyBtns.push({ rect: bg, action, idx: extra.idx, kind: extra.kind });
+      y += 40;
+    };
+    merchantStock().forEach((offer, idx) => offerRow(offer.gear.icon + ' ' + RARITY[offer.gear.rarity].name.slice(0, 6) + ' ' + GEAR_SLOTS[offer.gear.slot].name, '+' + offer.gear.stat.val + ' ' + offer.gear.stat.key, RARITY[offer.gear.rarity].color, 'buyGear', { price: offer.price, idx }));
+    ['muni', 'kristall'].forEach(kind => { const a = AMMO[kind]; offerRow(a.icon + ' ' + a.name.slice(0, 10) + ' +' + a.pack, ammoOf(kind) + '/' + a.cap, a.color, 'buyAmmo', { price: a.price, kind }); });
+    offerRow('🍶 ' + T('potion'), 'Heilung', 0x16a34a, 'buyPotion', { price: POTION_PRICE });
+    // ---- Verkaufszone (Item aus dem Inventar hierher ziehen) ----
+    const sy = L.colBottom - 66;
+    add(sceneRef.add.rectangle(x, sy, w, 66, 0x14331f, 0.92).setStrokeStyle(2, 0x3f9e3f, 0.8).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+    add(sceneRef.add.text(x + w / 2, sy + 18, '💰  Verkaufen', { fontFamily: 'system-ui', fontSize: '13px', color: '#86efac', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    add(sceneRef.add.text(x + w / 2, sy + 42, 'Item aus dem Inventar\nhierher ziehen', { fontFamily: 'system-ui', fontSize: '9px', color: '#cbb894', align: 'center' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    shopSellRect = { x, y: sy, w, h: 66 };
   }
   function drawGridItem(p, L, add) {
     const ix = L.gx0 + p.gx * (L.cell + L.gap), iy = L.gy0 + p.gy * (L.cell + L.gap);
@@ -1098,11 +1130,12 @@
       add(sceneRef.add.rectangle(cx, cy, iw - 2, ih - 2, col, 0.28).setStrokeStyle(2, col, 0.95).setScrollFactor(0).setDepth(53));
       add(sceneRef.add.text(cx, cy - big * 0.14, g.icon, { fontSize: Math.round(big * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(54).setAlpha(locked ? 0.4 : 1));
       add(sceneRef.add.text(cx, cy + ih / 2 - 10, locked ? '🔒Lv' + gearReq(g) : '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: locked ? '#f87171' : css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
-      bagSlotRects.push({ x: cx, y: cy, w: iw, h: ih, gear: g });
+      bagSlotRects.push({ x: cx, y: cy, w: iw, h: ih, payload: { kind: 'gear', gear: g } });
     } else {
       const isMat = p.it.kind === 'mat', icon = isMat ? ITEMS[p.it.id].icon : '🍶', cnt = isMat ? state.inventory[p.it.id] : state.potions;
       add(sceneRef.add.text(cx, cy - 5, icon, { fontSize: Math.round(L.cell * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
       add(sceneRef.add.text(cx, cy + L.cell / 2 - 9, '×' + cnt, { fontFamily: 'system-ui', fontSize: '10px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      bagSlotRects.push({ x: cx, y: cy, w: iw, h: ih, payload: isMat ? { kind: 'mat', id: p.it.id, icon: ITEMS[p.it.id].icon } : { kind: 'potion', icon: '🍶' } });
     }
   }
   function drawEquipSlot(slot, x, y, S, add, label) {
@@ -1115,25 +1148,65 @@
     if (label !== false) add(sceneRef.add.text(x, y + S / 2 + 8, label || def.name, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     equipSlotRects.push({ x, y, w: S, h: S, slot, gear: g });
   }
-  function beginDrag(gear, from, p) {
-    invDrag = { gear, from, moved: false, startX: p.x, startY: p.y, ghost: sceneRef.add.text(p.x, p.y, gear.icon, { fontSize: '28px' }).setOrigin(0.5).setScrollFactor(0).setDepth(61) };
+  function beginDrag(payload, from, p) {
+    const icon = payload.kind === 'gear' ? payload.gear.icon : payload.icon;
+    invDrag = { payload, gear: payload.kind === 'gear' ? payload.gear : null, from, moved: false, startX: p.x, startY: p.y, ghost: sceneRef.add.text(p.x, p.y, icon, { fontSize: '28px' }).setOrigin(0.5).setScrollFactor(0).setDepth(61) };
   }
   function endDrag(p) {
     const d = invDrag; invDrag = null; if (d.ghost) d.ghost.destroy();
+    const pay = d.payload;
+    // Verkaufen: Item auf die Händler-Seite ziehen (Shop-Modus)
+    if (state.shopMode && shopSellRect && inRect(p, shopSellRect.x, shopSellRect.y, shopSellRect.w, shopSellRect.h)) { sellPayload(pay); refreshInventory(); return; }
+    // Verschrotten/Ablegen: Item auf die Ablage-Zone ziehen (normales Inventar)
+    if (!state.shopMode && invScrapRect && inRect(p, invScrapRect.x, invScrapRect.y, invScrapRect.w, invScrapRect.h)) { scrapPayload(pay, d.from); refreshInventory(); return; }
+    // Nur Ausrüstung interagiert mit den Anlege-Slots
     let overSlot = null, overBag = false;
-    for (const es of equipSlotRects) if (inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { overSlot = es; break; }
-    if (!overSlot) for (const bs of bagSlotRects) if (inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { overBag = true; break; }
-    if (overSlot) {
+    if (pay.kind === 'gear') {
+      for (const es of equipSlotRects) if (inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { overSlot = es; break; }
+      if (!overSlot) for (const bs of bagSlotRects) if (inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { overBag = true; break; }
+    }
+    if (overSlot && d.gear) {
       if (slotType(overSlot.slot) === d.gear.slot) { if (d.from.type === 'bag') equipGear(d.gear, overSlot.slot); else if (d.from.type === 'equip' && !d.moved) unequipGear(d.from.slot); }
       else toast('Passt nur in den ' + GEAR_SLOTS[d.gear.slot].name + '-Slot');
-    } else if (overBag) {
-      if (d.from.type === 'equip') unequipGear(d.from.slot);
-    } else if (!d.moved) {   // Tippen ohne Ziehen
-      if (d.from.type === 'bag') equipGear(d.gear); else unequipGear(d.from.slot);
+    } else if (overBag && d.from.type === 'equip') {
+      unequipGear(d.from.slot);
+    } else if (!d.moved) {   // Tippen ohne Ziehen: Ausrüstung an-/ablegen
+      if (d.gear) { if (d.from.type === 'bag') equipGear(d.gear); else unequipGear(d.from.slot); }
     }
     refreshInventory();
   }
-  function closeInventory() { state.inventoryOpen = false; if (invDrag && invDrag.ghost) { invDrag.ghost.destroy(); invDrag = null; } invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
+  // Verkauft ein Grid-Item an den Händler (Gear: Einzelstück, Material: ganzer Stapel).
+  function sellPayload(pay) {
+    if (pay.kind === 'gear') {
+      const g = pay.gear;
+      if (g.rarity === 'legendary') { toast('Legendär — zu wertvoll zum Verkaufen'); return; }
+      const i = state.gearBag.indexOf(g); if (i === -1) return;
+      const v = gearValue(g); state.gearBag.splice(i, 1); state.gold += v; updateGold();
+      toast('💰 +' + v + ' für ' + RARITY[g.rarity].name + ' ' + g.name); save();
+    } else if (pay.kind === 'mat') {
+      const cnt = state.inventory[pay.id] || 0; if (cnt <= 0) return;
+      const v = cnt * ITEMS[pay.id].value; state.inventory[pay.id] = 0; state.gold += v; updateGold();
+      toast('💰 +' + v + ' für ' + cnt + '× ' + ITEMS[pay.id].name); save();
+    } else toast('Tränke lassen sich nicht verkaufen');
+  }
+  // Legt ein Item ab: Ausrüstung wird zu etwas Schrott recycelt, Material/Trank verworfen.
+  function scrapPayload(pay, from) {
+    if (pay.kind === 'gear') {
+      if (from && from.type === 'equip') { toast('Erst ablegen, dann verschrotten'); return; }
+      const g = pay.gear, i = state.gearBag.indexOf(g); if (i === -1) return;
+      const scrap = 1 + RARITY_ORDER.indexOf(g.rarity);   // 1–4 Schrott je Seltenheit
+      state.gearBag.splice(i, 1);
+      if (invCount() < INV_CAP) state.inventory.schrott = (state.inventory.schrott || 0) + scrap;
+      toast('🗑️ ' + g.name + ' verschrottet · +' + scrap + ' 🔩'); save();
+    } else if (pay.kind === 'mat') {
+      const cnt = state.inventory[pay.id] || 0; if (cnt <= 0) return;
+      state.inventory[pay.id] = Math.max(0, cnt - 1);   // ein Stück verwerfen
+      toast('🗑️ 1× ' + ITEMS[pay.id].name + ' abgelegt'); save();
+    } else if (pay.kind === 'potion') {
+      if (state.potions > 0) { state.potions--; updateAbilityUI(); toast('🗑️ 1 Trank abgelegt'); save(); }
+    }
+  }
+  function closeInventory() { state.inventoryOpen = false; state.shopMode = false; state.storeOpen = false; invScrapRect = null; shopSellRect = null; shopBuyBtns = []; if (invDrag && invDrag.ghost) { invDrag.ghost.destroy(); invDrag = null; } invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
 
   // ---- Karten-Wechsel ----------------------------------------
   function transitionTo(mapId, spawn) {
@@ -1203,12 +1276,6 @@
       if (chestPanelRef && !inRect(p, chestPanelRef.x - chestPanelRef.width / 2, chestPanelRef.y, chestPanelRef.width, chestPanelRef.height)) closeChest();
       return;
     }
-    if (state.storeOpen) {
-      if (storeCloseRef && Phaser.Math.Distance.Between(p.x, p.y, storeCloseRef.x, storeCloseRef.y) <= 24) { closeStore(); return; }
-      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else if (b.action === 'sellGear') sellGearByRarity(b.rarity); else if (b.action === 'buyGear') buyMerchantGear(b.idx); else if (b.action === 'buyAmmo') buyAmmo(b.kind); else buyPotion(); return; }
-      if (storePanelRef && !inRect(p, storePanelRef.x - storePanelRef.width / 2, storePanelRef.y, storePanelRef.width, storePanelRef.height)) closeStore();
-      return;
-    }
     if (state.tycoonOpen) {
       if (tyCloseRef && Phaser.Math.Distance.Between(p.x, p.y, tyCloseRef.x, tyCloseRef.y) <= 24) { closeTycoon(); return; }
       for (const b of tyButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'primary') tycoonPrimary(b.k); else buyBuilding(b.k); return; }
@@ -1228,11 +1295,12 @@
       return;
     }
     if (state.inventoryOpen) {
-      if (hit(invClose, p, 26)) { closeInventory(); return; }
+      if (hit(invClose, p, 26)) { state.shopMode ? closeStore() : closeInventory(); return; }
       for (const b of invScrollBtns) if (Phaser.Math.Distance.Between(p.x, p.y, b.obj.x + 9, b.obj.y + 9) <= 20) { invScroll += b.dir; renderInventory(); return; }
-      for (const es of equipSlotRects) if (es.gear && inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { beginDrag(es.gear, { type: 'equip', slot: es.slot }, p); return; }
-      for (const bs of bagSlotRects) if (bs.gear && inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { beginDrag(bs.gear, { type: 'bag', idx: bs.idx }, p); return; }
-      if (invPanel && !inRect(p, invPanel.x - invPanel.width / 2, invPanel.y, invPanel.width, invPanel.height)) closeInventory();
+      if (state.shopMode) for (const b of shopBuyBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'buyGear') buyMerchantGear(b.idx); else if (b.action === 'buyAmmo') buyAmmo(b.kind); else buyPotion(); return; }
+      for (const es of equipSlotRects) if (es.gear && inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { beginDrag({ kind: 'gear', gear: es.gear }, { type: 'equip', slot: es.slot }, p); return; }
+      for (const bs of bagSlotRects) if (bs.payload && inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { beginDrag(bs.payload, { type: 'bag' }, p); return; }
+      if (invPanel && !inRect(p, invPanel.x - invPanel.width / 2, invPanel.y, invPanel.width, invPanel.height)) { state.shopMode ? closeStore() : closeInventory(); return; }
       return;
     }
     if (state.travelOpen) {
@@ -1514,88 +1582,16 @@
     toast('🔧 Neue Armaturen: Volt-Karabiner, Säure-Sprüher, Dampf-Brenner');
   }
 
-  // ---- Store (verkaufen & kaufen) ----------------------------
+  // ---- Store: als Charakter-Panel im Shop-Modus (links Händler, rechts Inventar) ----
   function gearValue(g) { return Math.round(RARITY[g.rarity].mult * 15 + g.stat.val); }
-  function sellGearByRarity(rarity) {
-    const keep = [], sold = state.gearBag.filter(g => g.rarity === rarity);
-    if (sold.length === 0) return;
-    let gain = 0; for (const g of sold) gain += gearValue(g);
-    state.gearBag = state.gearBag.filter(g => g.rarity !== rarity);
-    state.gold += gain; updateGold();
-    toast('+' + gain + ' Gold für ' + sold.length + '× ' + RARITY[rarity].name); save(); refreshStore();
-  }
   function openStore() {
-    if (state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
-    state.storeOpen = true; hideContext();
-    const size = sceneRef.scale.gameSize, ids = Object.keys(ITEMS);
-    const gearRar = ['common', 'rare', 'epic'].filter(r => state.gearBag.some(g => g.rarity === r));
-    const wares = merchantStock();
-    const rowH = 46, headH = 52, buyH = 52, ammoH = 62, footH = 40, gearHeadH = gearRar.length ? 26 : 0, gearRowH = 40, waresHeadH = 26, waresRowH = 40;
-    const pw = Math.min(340, size.width * 0.92);
-    const ph = headH + ids.length * (rowH + 6) + gearHeadH + gearRar.length * (gearRowH + 6) + waresHeadH + Math.max(1, wares.length) * (waresRowH + 6) + ammoH + buyH + footH;
-    const px = size.width / 2, py = (size.height - ph) / 2;
-    const add = o => { storeUI.push(o); return o; };
-    add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
-    storePanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
-    add(sceneRef.add.text(px, py + 12, '🛒  Händler — ' + MAPS[state.map].name, { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
-    storeCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 14, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
-    let y = py + headH;
-    ids.forEach(id => {
-      const it = ITEMS[id], cnt = state.inventory[id] || 0, on = cnt > 0;
-      add(sceneRef.add.text(px - pw / 2 + 16, y + rowH / 2, it.icon + '  ' + it.name + '  ×' + cnt, { fontFamily: 'system-ui', fontSize: '15px', color: on ? '#f3e9d2' : '#8a8172' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
-      const btn = add(sceneRef.add.rectangle(px + pw / 2 - 62, y + rowH / 2, 104, 32, on ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
-      add(sceneRef.add.text(btn.x, btn.y, on ? ('verkaufen +' + (cnt * it.value)) : '—', { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      if (on) storeButtons.push({ rect: btn, action: 'sell', id });
-      y += rowH + 6;
-    });
-    // Ausrüstung verkaufen (Bulk je Seltenheit; legendäre bleiben geschützt)
-    if (gearRar.length) {
-      add(sceneRef.add.text(px - pw / 2 + 16, y + 4, '⚔  Ausrüstung verkaufen', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
-      y += gearHeadH;
-      gearRar.forEach(r => {
-        const items = state.gearBag.filter(g => g.rarity === r); let sum = 0; for (const g of items) sum += gearValue(g);
-        add(sceneRef.add.text(px - pw / 2 + 16, y + gearRowH / 2, RARITY[r].name + '  ×' + items.length, { fontFamily: 'system-ui', fontSize: '14px', color: css(RARITY[r].color) }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
-        const btn = add(sceneRef.add.rectangle(px + pw / 2 - 62, y + gearRowH / 2, 104, 30, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
-        add(sceneRef.add.text(btn.x, btn.y, 'verkaufen +' + sum, { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-        storeButtons.push({ rect: btn, action: 'sellGear', rarity: r });
-        y += gearRowH + 6;
-      });
-    }
-    // Händler-Waren: Ausrüstung zum Kaufen (primär Handel, nicht nur Verkauf)
-    add(sceneRef.add.text(px - pw / 2 + 16, y + 4, '🛒  Waren des Händlers', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
-    y += waresHeadH;
-    if (wares.length === 0) { add(sceneRef.add.text(px, y + waresRowH / 2, 'Ausverkauft — komm später wieder.', { fontFamily: 'system-ui', fontSize: '12px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52)); y += waresRowH + 6; }
-    wares.forEach((offer, idx) => {
-      const g = offer.gear, afford = state.gold >= offer.price, col = RARITY[g.rarity].color;
-      add(sceneRef.add.text(px - pw / 2 + 16, y + waresRowH / 2, g.icon + '  ' + RARITY[g.rarity].name + ' ' + g.name + '  +' + g.stat.val, { fontFamily: 'system-ui', fontSize: '12px', color: css(col) }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
-      const btn = add(sceneRef.add.rectangle(px + pw / 2 - 56, y + waresRowH / 2, 92, 30, afford ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
-      add(sceneRef.add.text(btn.x, btn.y, 'kaufen ' + offer.price + ' 💰', { fontFamily: 'system-ui', fontSize: '11px', color: afford ? '#f3e9d2' : '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      storeButtons.push({ rect: btn, action: 'buyGear', idx });
-      y += waresRowH + 6;
-    });
-    // Munition & Energiekristalle kaufen (Nachschub)
-    add(sceneRef.add.text(px - pw / 2 + 16, y + 4, '🎯  Nachschub', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
-    y += 22;
-    ['muni', 'kristall'].forEach((kind, i) => {
-      const a = AMMO[kind], afford = state.gold >= a.price, bx = i === 0 ? px - pw / 4 + 4 : px + pw / 4 - 4;
-      const btn = add(sceneRef.add.rectangle(bx, y + 16, pw / 2 - 20, 34, afford ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
-      add(sceneRef.add.text(btn.x, btn.y - 6, a.icon + ' +' + a.pack + '  ' + a.price + ' 💰', { fontFamily: 'system-ui', fontSize: '11px', color: afford ? '#f3e9d2' : '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      add(sceneRef.add.text(btn.x, btn.y + 8, ammoOf(kind) + '/' + a.cap, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-      storeButtons.push({ rect: btn, action: 'buyAmmo', kind });
-    });
-    y += 40;
-    const buyBtn = add(sceneRef.add.rectangle(px, y + buyH / 2, pw - 40, 38, 0x7c2d12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
-    add(sceneRef.add.text(buyBtn.x, buyBtn.y, '🍶  ' + T('potion') + ' kaufen — ' + POTION_PRICE + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-    storeButtons.push({ rect: buyBtn, action: 'buyPotion' });
-    add(sceneRef.add.text(px, py + ph - 26, '💰 ' + state.gold + '   ·   🍶 ' + state.potions + '   ·   🧨 ' + ammoOf('muni') + '   ·   🔷 ' + ammoOf('kristall'), { fontFamily: 'system-ui', fontSize: '13px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    if (state.travelOpen || state.fullMapOpen) return;
+    hideContext(); merchantStock();
+    state.storeOpen = true; state.inventoryOpen = true; state.shopMode = true; invScroll = 0;
+    renderInventory();
   }
-  function closeStore() { state.storeOpen = false; storeUI.forEach(o => o.destroy()); storeUI = []; storeButtons = []; storeCloseRef = null; storePanelRef = null; }
-  function refreshStore() { closeStore(); openStore(); }
-  function sellAll(id) {
-    const cnt = state.inventory[id] || 0; if (cnt <= 0) return;
-    const g = cnt * ITEMS[id].value; state.gold += g; state.inventory[id] = 0; updateGold();
-    toast('+' + g + ' Gold für ' + cnt + '× ' + ITEMS[id].name); save(); refreshStore();
-  }
+  function closeStore() { state.storeOpen = false; state.shopMode = false; closeInventory(); }
+  function refreshStore() { if (state.inventoryOpen) renderInventory(); }
   function buyPotion() {
     if (state.gold < POTION_PRICE) { toast('Nicht genug Gold'); return; }
     state.gold -= POTION_PRICE; state.potions++; updateGold(); updateAbilityUI();
