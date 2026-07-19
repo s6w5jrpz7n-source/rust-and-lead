@@ -920,6 +920,14 @@ auflöst (Schaden nur im Radius — **wegrollen!**), begleitet von Kamera-Shake.
   Schritt vorrückt (Bewegen/Schießen → Beute → Inventar → Ausrüsten → Perk setzen). Nur für
   neue Spielstände; Fortschritt persistiert.
 
+### 7.5.7 Atmosphäre-Barks (Story-Bibel im Spiel)
+Schwebende, kursive Sprechzeilen (`sayBark`) speisen die Welt mit der Stimme aus
+`docs/STORY_BIBLE.md` (Teil C). Pools (`BARKS`): **town** (Stadtbewohner, alle 7–12 s an einem
+zufälligen NPC), **hero_idle** (Held-Monolog in menschenleerer Wüste), **hero_kill_bio/_mech**
+(14 % Chance beim Kill, je nach Gegner-Klassifizierung) und **enemy_bio/_mech** (20 % beim ersten
+Aggro, blau=mechanisch / rot=biologisch). Rein diegetisch, kein UI-Block; bei offenem Dialog/Reveal
+pausiert. Erweiterbar durch Anhängen an die Pools — Quelle bleibt die Bibel.
+
 ## 7.6 Werkstatt-Modifikationen
 Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. Namen als
 `[vor Reveal, nach Reveal]`:
