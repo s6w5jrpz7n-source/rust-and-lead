@@ -780,8 +780,12 @@ Bewegung), Aggro/Leash-Radien, Kontakt- und Projektilschaden.
 
 ## 7.4 Ausrüstung, Seltenheit & Grid-Inventar
 **Ausrüstungs-Slots (Paper-Doll):** Helm (`hp`), Rüstung (`armor`), Waffe (`damage`),
-Gadget (`firerate`), Stiefel (`speed`) + **drei Panzerplatten** (`plate1/2/3`, je `armor`,
-stapelbar).
+Gadget (`firerate`), Stiefel (`speed`) + **acht Platten-/Tech-Slots** (`plate1…plate8`).
+
+**Charakter-Panel (Diablo-Immortal-Stil):** Ausrüstungs-Spalte links, daneben ein
+**2×4-Block aus 8 „Gem-Card"-Slots** (hohe Karten mit Seltenheits-Glühen) — aktuell für
+**Panzerplatten** (`armor`, stapelbar), **später für Tech-Upgrades** reserviert; rechts das
+gepackte Grid-Inventar. Frei zwischen Tasche und Slots per Ziehen/Antippen.
 
 **Seltenheit (Stat-Multiplikator & Level-Voraussetzung):**
 | Seltenheit | Farbe | Stat-Mult | Mindest-Level |

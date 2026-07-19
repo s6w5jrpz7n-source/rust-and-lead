@@ -92,7 +92,8 @@
     boots:  { name: 'Stiefel', icon: '🥾', stat: 'speed',    base: 18, unit: '+{v} Tempo',        order: 4 },
     plate:  { name: 'Panzerplatte', icon: '🔳', stat: 'armor', base: 3, unit: '+{v} Rüstung',    order: 5 }
   };
-  const PLATE_SLOTS = ['plate1', 'plate2', 'plate3'];   // drei stapelbare Panzerplatten-Slots
+  // Acht Platten-/Tech-Slots (2×4-Block, Diablo-Immortal-Stil): aktuell Panzerplatten, später Tech-Upgrades
+  const PLATE_SLOTS = ['plate1', 'plate2', 'plate3', 'plate4', 'plate5', 'plate6', 'plate7', 'plate8'];
   const RARITY = {
     common:    { name: 'Gewöhnlich', color: 0x9ca3af, mult: 1.0, w: 58, req: 1 },
     rare:      { name: 'Selten',     color: 0x38bdf8, mult: 1.8, w: 26, req: 3 },
@@ -406,7 +407,7 @@
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
-    equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null }, gearBag: [],
+    equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0,
     isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
@@ -1038,14 +1039,18 @@
     invScrapRect = null; shopSellRect = null; shopBuyBtns = [];
     if (state.shopMode) drawShopColumn(L, add);   // ---- Links: Händler-Angebot + Verkaufszone ----
     else {
-      // ---- Links: Ausrüstung (Paper-Doll) ----
-      const bx = L.bx, ty = L.dollTop, S = 44;
-      add(sceneRef.add.circle(bx, ty + 12, 13, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-      add(sceneRef.add.rectangle(bx, ty + 96, 28, 120, 0x2b3444, 0.6).setStrokeStyle(2, 0x475569, 0.6).setScrollFactor(0).setDepth(52));
-      const pos = { helmet: [bx, ty + 2], weapon: [bx - 56, ty + 58], armor: [bx, ty + 58], gadget: [bx + 56, ty + 58], boots: [bx, ty + 186] };
-      for (const slot in pos) drawEquipSlot(slot, pos[slot][0], pos[slot][1], S, add);
-      PLATE_SLOTS.forEach((slot, k) => drawEquipSlot(slot, bx + (k - 1) * 50, ty + 120, S, add, false));
-      add(sceneRef.add.text(bx, ty + 120 + S / 2 + 8, 'Panzerplatten', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      // ---- Links: Charakter (Diablo-Immortal-Stil): Ausrüstungs-Spalte + 8 Platten/Tech-Slots ----
+      const lx = L.px + 10, eqX = lx + 22, ES = 36;
+      add(sceneRef.add.text(eqX, L.colTop + 2, '⚔', { fontFamily: 'system-ui', fontSize: '11px', color: '#c9a24a' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(53));
+      ['helmet', 'armor', 'weapon', 'gadget', 'boots'].forEach((slot, k) => drawEquipSlot(slot, eqX, L.colTop + 34 + k * 44, ES, add, false));
+      // 8 Platten-/Tech-Slots als 2×4-Gem-Cards, rechts neben der Ausrüstung
+      const pbX = eqX + 34, cardW = 32, cardH = 40, pgap = 6, pTop = L.colTop + 22;
+      const filled = PLATE_SLOTS.filter(s => state.equip[s]).length;
+      add(sceneRef.add.text(pbX, L.colTop + 2, 'Platten ' + filled + '/8', { fontFamily: 'system-ui', fontSize: '9px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+      PLATE_SLOTS.forEach((slot, k) => {
+        const c = k % 2, r = Math.floor(k / 2);
+        drawPlateCard(slot, pbX + c * (cardW + pgap) + cardW / 2, pTop + r * (cardH + pgap) + cardH / 2, cardW, cardH, add);
+      });
       drawStatsSheet(L, add);   // Werte-Blatt inkl. Ablage-Zone
     }
     // ---- Rechts: Grid-Inventar (scrollbar) ----
@@ -1147,6 +1152,16 @@
     } else add(sceneRef.add.text(x, y, def.icon, { fontSize: '17px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(0.4));
     if (label !== false) add(sceneRef.add.text(x, y + S / 2 + 8, label || def.name, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     equipSlotRects.push({ x, y, w: S, h: S, slot, gear: g });
+  }
+  // Platten-/Tech-Slot als hohe Gem-Card (Diablo-Immortal-Stil)
+  function drawPlateCard(slot, x, y, w, h, add) {
+    const g = state.equip[slot], col = g ? RARITY[g.rarity].color : 0x6b5836;
+    add(sceneRef.add.rectangle(x, y, w, h, g ? col : 0x161310, g ? 0.30 : 0.85).setStrokeStyle(2, g ? col : 0xc9a24a, g ? 0.95 : 0.45).setScrollFactor(0).setDepth(52));
+    if (g) {
+      add(sceneRef.add.text(x, y - h * 0.16, g.icon, { fontSize: Math.round(w * 0.5) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(x, y + h * 0.28, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '9px', color: css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    } else add(sceneRef.add.text(x, y, '🔩', { fontSize: Math.round(w * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(0.32));
+    equipSlotRects.push({ x, y, w, h, slot, gear: g });
   }
   function beginDrag(payload, from, p) {
     const icon = payload.kind === 'gear' ? payload.gear.icon : payload.icon;
