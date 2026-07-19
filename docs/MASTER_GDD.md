@@ -192,8 +192,25 @@ Implementierungsregel: **jede** menschlich klingende Beschriftung durchläuft di
 Auflösung `T(key) = TERMS[key][is_revealed ? 1 : 0]`. Neue Begriffe werden ausschließlich
 über diese Tabelle eingeführt, nie hartkodiert.
 
-## 2.2 Asynchrone Tycoon-Unabhängigkeit (nur aktive Spielzeit)
-Die Wirtschaft der Township **Rustwater** läuft auf einem **eigenständigen
+## 2.2 Stadt-Gebäude: Primär Aufträge & Handel, Wirtschaft als Add-on
+**Design-Leitsatz:** Die Gebäude der Township sind **kein reines Wirtschaftssystem**. Ihre
+**Primärfunktion** ist es, **Aufträge zu starten** oder **Handel zu treiben**. Das
+Tycoon-/Einkommens-System ist ein **optionales Investitions-Add-on** für Spieler mit
+Gold-Überschuss — es ergänzt die Primärfunktion (bessere Kopfgelder, günstigere Waren),
+ersetzt sie aber nicht und ist nie die Haupt-Interaktion.
+
+| Gebäude | Rolle (primär) | Primär-Aktion | Investitions-Add-on (sekundär) |
+| :-- | :-- | :-- | :-- |
+| `saloon` Gatling-Saloon | **Auftragsbrett** | Wiederholbares **Kopfgeld** annehmen/abholen (Gold + XP); Umfang/Belohnung skalieren mit der Saloon-Stufe | Passives Einkommen; höhere Stufe = größere Kopfgelder |
+| `forge` Eiserne Schmiede | **Handelsposten** | **Handeln** — öffnet den Händler (Materialien & Ausrüstung kaufen/verkaufen) | Passives Einkommen |
+| `distillery` Mondschein-Destille | **Vorratslager** | **Vorrat** — Tränke kaufen (Preis sinkt je Stufe) | Passives Einkommen; höhere Stufe = günstigere Tränke |
+
+Auch der **Händler** ist ein aktiver Handelsknoten: Er **verkauft** ein pro Basis
+persistentes **Warenlager an Ausrüstung** (Qualität nach Basis-Tier gestaffelt) und kauft
+Beute an — Handel ist damit beidseitig, nicht nur Verkauf.
+
+### Wirtschafts-Tick (Add-on)
+Das optionale Einkommen der Township läuft auf einem **eigenständigen
 Hintergrund-Intervall-Tick** (1 Sekunde), der **ausschließlich während der aktiven
 Spielzeit** feuert. Er ist entkoppelt von Kampf, Kapitel- oder Gildenwahl, aber an die
 laufende In-Game-Simulation gebunden.

@@ -166,12 +166,16 @@
   };
   const WEAPON_UP = { base: 55, max: 5, per: 5 };   // pro Waffe: +5 Basisschaden/Stufe (Säure zusätzlich +2 Potenz)
 
-  // Tycoon: neutrale Rustwater-Gebäude. Einkommen/Sek = level * incomePer. Ausbau-Kosten = baseCost * (level+1).
+  // Stadt-Gebäude: PRIMÄR Aufträge (Saloon) & Handel (Schmiede/Destille).
+  // Das Wirtschafts-/Einkommens-System ist ein optionales Investitions-Add-on (Überschuss-Gold anlegen),
+  // das die Primärfunktion zusätzlich verbessert (bessere Kopfgelder / günstigere Waren).
+  // Einkommen/Sek = level * incomePer. Ausbau-Kosten = baseCost * (level+1).
   const BUILDINGS = {
-    saloon:     { name: 'Gatling-Saloon',      icon: '🍺', baseCost: 100, incomePer: 1, max: 5 },
-    forge:      { name: 'Eiserne Schmiede',    icon: '🔨', baseCost: 220, incomePer: 2, max: 5 },
-    distillery: { name: 'Mondschein-Destille', icon: '🥃', baseCost: 400, incomePer: 4, max: 5 }
+    saloon:     { name: 'Gatling-Saloon',      icon: '🍺', role: 'Auftragsbrett', primary: 'bounty', act: '📜 Kopfgeld', baseCost: 100, incomePer: 1, max: 5 },
+    forge:      { name: 'Eiserne Schmiede',    icon: '🔨', role: 'Handelsposten', primary: 'trade',  act: '🛒 Handeln',  baseCost: 220, incomePer: 2, max: 5 },
+    distillery: { name: 'Mondschein-Destille', icon: '🥃', role: 'Vorratslager',  primary: 'supply', act: '🍶 Vorrat',   baseCost: 400, incomePer: 4, max: 5 }
   };
+  const BOUNTY_BASE_KILLS = 6, BOUNTY_BASE_GOLD = 60;
 
   const GUILDS = { rebels: { name: 'Rebellengilde' }, corp: { name: 'Eiserne Gilde' }, smugglers: { name: 'Schmugglergilde' } };
 
@@ -372,7 +376,7 @@
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null }, gearBag: [],
     level: 1, xp: 0,
     isRevealed: false, storeOpen: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
-    chestOpen: false, chestLoot: null, merchant: {},
+    chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
@@ -620,7 +624,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -637,6 +641,7 @@
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
+      state.bounty = (s.bounty && typeof s.bounty === 'object') ? s.bounty : null;
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       state.economy = { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } };
@@ -1164,7 +1169,7 @@
     }
     if (state.tycoonOpen) {
       if (tyCloseRef && Phaser.Math.Distance.Between(p.x, p.y, tyCloseRef.x, tyCloseRef.y) <= 24) { closeTycoon(); return; }
-      for (const b of tyButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { buyBuilding(b.k); return; }
+      for (const b of tyButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'primary') tycoonPrimary(b.k); else buyBuilding(b.k); return; }
       if (tyPanelRef && !inRect(p, tyPanelRef.x - tyPanelRef.width / 2, tyPanelRef.y, tyPanelRef.width, tyPanelRef.height)) closeTycoon();
       return;
     }
@@ -1922,31 +1927,74 @@
     if (state.storeOpen || state.workshopOpen || state.travelOpen || state.inventoryOpen || state.fullMapOpen) return;
     state.tycoonOpen = true; hideContext();
     const size = sceneRef.scale.gameSize, ids = Object.keys(BUILDINGS);
-    const pw = Math.min(360, size.width * 0.94), rowH = 50, headH = 66, footH = 42;
+    const pw = Math.min(360, size.width * 0.94), rowH = 78, headH = 72, footH = 42;
     const ph = headH + ids.length * (rowH + 6) + footH;
     const px = size.width / 2, py = (size.height - ph) / 2;
     const add = o => { tyUI.push(o); return o; };
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
     tyPanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
-    add(sceneRef.add.text(px, py + 10, '🏙️  Rustwater — Investitionen', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
-    add(sceneRef.add.text(px, py + 34, 'Neutrale Wirtschaft · Einkommen läuft immer', { fontFamily: 'system-ui', fontSize: '12px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 10, '🏙️  Rustwater — Aufträge & Handel', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 34, 'Kopfgeld & Handel · Investieren ist optionales Add-on', { fontFamily: 'system-ui', fontSize: '12px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
     tyCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 12, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
     let y = py + headH;
     ids.forEach(id => {
       const b = BUILDINGS[id], lvl = state.economy[id].level, maxed = lvl >= b.max, cost = b.baseCost * (lvl + 1);
-      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 - 8, b.icon + '  ' + b.name, { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
-      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 + 10, 'Stufe ' + lvl + '/' + b.max + '   +' + (lvl * b.incomePer) + '/Sek', { fontFamily: 'system-ui', fontSize: '11px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      // Zeile: Name + Rolle (primär) oben, Primär-Aktion links, Invest-Add-on rechts
+      add(sceneRef.add.text(px - pw / 2 + 14, y + 12, b.icon + '  ' + b.name, { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(px - pw / 2 + 14, y + 29, b.role + '  ·  ' + tycoonPrimaryHint(id), { fontFamily: 'system-ui', fontSize: '10px', color: '#c9a24a' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+      // Primär-Aktion (groß, links unten)
+      const pBtn = add(sceneRef.add.rectangle(px - pw / 4 + 6, y + 56, pw / 2 - 24, 30, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.45).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(pBtn.x, pBtn.y, b.act, { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      tyButtons.push({ rect: pBtn, k: id, action: 'primary' });
+      // Invest-Add-on (kleiner, rechts unten)
       if (!maxed) {
         const can = state.gold >= cost;
-        const btn = add(sceneRef.add.rectangle(px + pw / 2 - 58, y + rowH / 2, 96, 34, can ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
-        add(sceneRef.add.text(btn.x, btn.y - 7, lvl > 0 ? 'ausbauen' : 'kaufen', { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-        add(sceneRef.add.text(btn.x, btn.y + 7, cost + ' 💰', { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-        tyButtons.push({ rect: btn, k: id });
-      } else add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, 'MAX', { fontFamily: 'system-ui', fontSize: '13px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+        const iBtn = add(sceneRef.add.rectangle(px + pw / 4 - 6, y + 56, pw / 2 - 24, 30, can ? 0x3a3a2a : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.3).setScrollFactor(0).setDepth(52));
+        add(sceneRef.add.text(iBtn.x, iBtn.y - 6, (lvl > 0 ? 'investieren' : 'errichten') + '  ' + cost + ' 💰', { fontFamily: 'system-ui', fontSize: '10px', color: can ? '#fde047' : '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        add(sceneRef.add.text(iBtn.x, iBtn.y + 7, 'Stufe ' + lvl + '/' + b.max + ' · +' + (lvl * b.incomePer) + '/Sek', { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        tyButtons.push({ rect: iBtn, k: id, action: 'invest' });
+      } else add(sceneRef.add.text(px + pw / 4 - 6, y + 56, 'Investition MAX · +' + (lvl * b.incomePer) + '/Sek', { fontFamily: 'system-ui', fontSize: '10px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
       y += rowH + 6;
     });
-    add(sceneRef.add.text(px, py + ph - 28, '📈 ' + incomePerSec() + '/Sek   ·   💰 ' + state.gold, { fontFamily: 'system-ui', fontSize: '14px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + ph - 28, '📈 Add-on-Einkommen ' + incomePerSec() + '/Sek   ·   💰 ' + state.gold, { fontFamily: 'system-ui', fontSize: '13px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
   }
+  // Kurzer Hinweis auf die aktuelle Primärfunktion je Gebäude
+  function tycoonPrimaryHint(id) {
+    if (id === 'saloon') { const bo = state.bounty; return bo ? (bountyDone() ? 'Kopfgeld fällig — abholen' : 'Kopfgeld läuft ' + bountyProgress()) : 'neues Kopfgeld annehmen'; }
+    if (id === 'forge') return 'Materialien & Ausrüstung handeln';
+    if (id === 'distillery') return 'Tränke ' + distilleryPotionPrice() + ' 💰';
+    return '';
+  }
+  // --- Saloon: Kopfgeld-Auftragsbrett (wiederholbar; skaliert mit Saloon-Stufe) ---
+  function bountyProgress() { const bo = state.bounty; if (!bo) return ''; return Math.min(kills - bo.base, bo.count) + '/' + bo.count; }
+  function bountyDone() { const bo = state.bounty; return !!bo && (kills - bo.base) >= bo.count; }
+  function saloonBounty() {
+    const lvl = state.economy.saloon.level;
+    if (!state.bounty) {
+      const count = BOUNTY_BASE_KILLS + lvl * 2, reward = BOUNTY_BASE_GOLD + lvl * 30;
+      state.bounty = { base: kills, count, reward };
+      toast('📜 Kopfgeld: ' + count + ' Gegner → ' + reward + ' 💰'); save(); refreshTycoon(); return;
+    }
+    if (!bountyDone()) { toast('🎯 Kopfgeld: ' + bountyProgress() + ' Gegner'); return; }
+    const r = state.bounty.reward, xp = Math.round(r * 0.6);
+    state.gold += r; updateGold(); gainXp(xp);
+    toast('✅ Kopfgeld erledigt! +' + r + ' Gold · +' + xp + ' XP');
+    state.bounty = null; save(); refreshTycoon();
+  }
+  // --- Destille: Vorrat (Tränke, günstiger je Stufe) ---
+  function distilleryPotionPrice() { return Math.max(12, POTION_PRICE - state.economy.distillery.level * 4); }
+  function distillerySupply() {
+    const price = distilleryPotionPrice();
+    if (state.gold < price) { toast('Nicht genug Gold'); return; }
+    state.gold -= price; state.potions++; updateGold(); updateAbilityUI();
+    toast('🍶 Trank gekauft (' + price + ' 💰)'); save(); refreshTycoon();
+  }
+  function tycoonPrimary(id) {
+    if (id === 'saloon') saloonBounty();
+    else if (id === 'forge') { closeTycoon(); openStore(); }       // Handelsposten → Händler
+    else if (id === 'distillery') distillerySupply();
+  }
+  function refreshTycoon() { closeTycoon(); openTycoon(); }
   function closeTycoon() { state.tycoonOpen = false; tyUI.forEach(o => o.destroy()); tyUI = []; tyButtons = []; tyCloseRef = null; tyPanelRef = null; }
   function buyBuilding(k) {
     const b = BUILDINGS[k], lvl = state.economy[k].level;
