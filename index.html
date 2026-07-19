@@ -114,13 +114,19 @@
     THERMAL:    { name: 'Thermisch',     icon: '🔥', color: 0xf97316 }
   };
   // Waffen des Spielers. Karabiner immer verfügbar, Rest nach dem Reveal (Steampunk-Armaturen).
+  // ammo: 'muni' = physische Munition (Blei-Karabiner), 'kristall' = Energiekristalle (Energiewaffen).
   const WEAPONS = {
-    karabiner: { name: 'Blei-Karabiner',           type: 'KINETIC',    base: 20, fireMs: 200, bulletColor: 0xfbbf24, acid: 0, always: true },
-    voltgun:   { name: 'Leydener Volt-Karabiner',  type: 'GALVANIC',   base: 16, fireMs: 240, bulletColor: 0x38bdf8, acid: 0 },
-    saeure:    { name: 'Säure-Sprüher',            type: 'ALCHEMICAL', base: 12, fireMs: 210, bulletColor: 0x84cc16, acid: 10 },
-    brenner:   { name: 'Dampf-Brenner',            type: 'THERMAL',    base: 14, fireMs: 170, bulletColor: 0xf97316, acid: 0 }
+    karabiner: { name: 'Blei-Karabiner',           type: 'KINETIC',    base: 20, fireMs: 200, bulletColor: 0xfbbf24, acid: 0, always: true, ammo: 'muni' },
+    voltgun:   { name: 'Leydener Volt-Karabiner',  type: 'GALVANIC',   base: 16, fireMs: 240, bulletColor: 0x38bdf8, acid: 0, ammo: 'kristall' },
+    saeure:    { name: 'Säure-Sprüher',            type: 'ALCHEMICAL', base: 12, fireMs: 210, bulletColor: 0x84cc16, acid: 10, ammo: 'kristall' },
+    brenner:   { name: 'Dampf-Brenner',            type: 'THERMAL',    base: 14, fireMs: 170, bulletColor: 0xf97316, acid: 0, ammo: 'kristall' }
   };
   const WEAPON_ORDER = ['karabiner', 'voltgun', 'saeure', 'brenner'];
+  // Munitions-Typen: begrenzter Vorrat, damit man nicht dauerhaft feuern kann.
+  const AMMO = {
+    muni:     { name: 'Munition',        icon: '🧨', cap: 180, start: 90, drop: [3, 6], price: 24, pack: 30, color: 0xfbbf24 },
+    kristall: { name: 'Energiekristalle', icon: '🔷', cap: 120, start: 45, drop: [2, 4], price: 36, pack: 20, color: 0x38bdf8 }
+  };
   // Gegner-Klassifizierung & Verhalten (siehe GDD Kap. 10).
   const ENEMY_TYPES = {
     outlaw:    { name: 'Grenzgänger',       cls: 'BIOLOGICAL', sub: 'outlaw',    r: 15, hp: 55,  speed: 82,  armor: 0,  contact: 12, gold: [1, 3] },
@@ -340,7 +346,7 @@
   // ---- Laufzeit-Zustand --------------------------------------
   let sceneRef, player, shadow;
   let stickBase, stickThumb, hint, shootBtn, killText, goldText, mapNameText;
-  let weaponBtn, weaponIcon, weaponName;
+  let weaponBtn, weaponIcon, weaponName, ammoText;
   let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;
   let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;
   let ctxBg, ctxText;
@@ -382,7 +388,7 @@
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
-    potions: POTION_START, cd: { spread: 0, dash: 0, acid: 0, shock: 0 },
+    potions: POTION_START, ammo: { muni: AMMO.muni.start, kristall: AMMO.kristall.start }, cd: { spread: 0, dash: 0, acid: 0, shock: 0 },
     boss: null, killsSinceBoss: 0, weapon: 'karabiner',
     weaponLvl: { karabiner: 0, voltgun: 0, saeure: 0, brenner: 0 },
     ctx: null
@@ -412,6 +418,7 @@
     // Haupt-Angriff
     shootBtn = scene.add.circle(0, 0, 46, COL_ENEMY, 0.85).setStrokeStyle(3, 0xffffff, 0.55).setScrollFactor(0).setDepth(20);
     scene.add.text(0, 0, '🔫', { fontSize: '24px' }).setOrigin(0.5).setScrollFactor(0).setDepth(21).setName('mainIcon');
+    ammoText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(22);
 
     // Spezial-Attacken
     const abilDefs = [
@@ -624,7 +631,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -642,6 +649,8 @@
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
       state.bounty = (s.bounty && typeof s.bounty === 'object') ? s.bounty : null;
+      state.ammo = { muni: AMMO.muni.start, kristall: AMMO.kristall.start };
+      if (s.ammo) for (const k in state.ammo) if (typeof s.ammo[k] === 'number') state.ammo[k] = Math.min(AMMO[k].cap, s.ammo[k]);
       state.discovered = new Set(s.discovered || []);
       state.explored = {}; for (const k in (s.explored || {})) state.explored[k] = new Set(s.explored[k]);
       state.economy = { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } };
@@ -1108,6 +1117,7 @@
     const w = size.width, h = size.height;
     const mc = { x: w - 80, y: h - 100 };
     if (shootBtn) { shootBtn.setPosition(mc.x, mc.y); if (shootBtn.icon) shootBtn.icon.setPosition(mc.x, mc.y); }
+    if (ammoText) ammoText.setPosition(mc.x, mc.y + 62);
     for (const ab of abilities) { const bx = mc.x + ab.off.x, by = mc.y + ab.off.y; ab.btn.setPosition(bx, by); ab.icon.setPosition(bx, by); ab.cdText.setPosition(bx, by + (ab.id === 'potion' ? 16 : 0)); }
     if (weaponBtn) { const wx = mc.x - 48, wy = mc.y - 150; weaponBtn.setPosition(wx, wy); weaponIcon.setPosition(wx, wy); weaponName.setPosition(wx, wy + 22); }
     if (mapNameText) mapNameText.setX(w / 2);
@@ -1163,7 +1173,7 @@
     }
     if (state.storeOpen) {
       if (storeCloseRef && Phaser.Math.Distance.Between(p.x, p.y, storeCloseRef.x, storeCloseRef.y) <= 24) { closeStore(); return; }
-      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else if (b.action === 'sellGear') sellGearByRarity(b.rarity); else if (b.action === 'buyGear') buyMerchantGear(b.idx); else buyPotion(); return; }
+      for (const b of storeButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'sell') sellAll(b.id); else if (b.action === 'sellGear') sellGearByRarity(b.rarity); else if (b.action === 'buyGear') buyMerchantGear(b.idx); else if (b.action === 'buyAmmo') buyAmmo(b.kind); else buyPotion(); return; }
       if (storePanelRef && !inRect(p, storePanelRef.x - storePanelRef.width / 2, storePanelRef.y, storePanelRef.width, storePanelRef.height)) closeStore();
       return;
     }
@@ -1484,9 +1494,9 @@
     const size = sceneRef.scale.gameSize, ids = Object.keys(ITEMS);
     const gearRar = ['common', 'rare', 'epic'].filter(r => state.gearBag.some(g => g.rarity === r));
     const wares = merchantStock();
-    const rowH = 46, headH = 52, buyH = 52, footH = 40, gearHeadH = gearRar.length ? 26 : 0, gearRowH = 40, waresHeadH = 26, waresRowH = 40;
+    const rowH = 46, headH = 52, buyH = 52, ammoH = 62, footH = 40, gearHeadH = gearRar.length ? 26 : 0, gearRowH = 40, waresHeadH = 26, waresRowH = 40;
     const pw = Math.min(340, size.width * 0.92);
-    const ph = headH + ids.length * (rowH + 6) + gearHeadH + gearRar.length * (gearRowH + 6) + waresHeadH + Math.max(1, wares.length) * (waresRowH + 6) + buyH + footH;
+    const ph = headH + ids.length * (rowH + 6) + gearHeadH + gearRar.length * (gearRowH + 6) + waresHeadH + Math.max(1, wares.length) * (waresRowH + 6) + ammoH + buyH + footH;
     const px = size.width / 2, py = (size.height - ph) / 2;
     const add = o => { storeUI.push(o); return o; };
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
@@ -1527,10 +1537,21 @@
       storeButtons.push({ rect: btn, action: 'buyGear', idx });
       y += waresRowH + 6;
     });
+    // Munition & Energiekristalle kaufen (Nachschub)
+    add(sceneRef.add.text(px - pw / 2 + 16, y + 4, '🎯  Nachschub', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    y += 22;
+    ['muni', 'kristall'].forEach((kind, i) => {
+      const a = AMMO[kind], afford = state.gold >= a.price, bx = i === 0 ? px - pw / 4 + 4 : px + pw / 4 - 4;
+      const btn = add(sceneRef.add.rectangle(bx, y + 16, pw / 2 - 20, 34, afford ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+      add(sceneRef.add.text(btn.x, btn.y - 6, a.icon + ' +' + a.pack + '  ' + a.price + ' 💰', { fontFamily: 'system-ui', fontSize: '11px', color: afford ? '#f3e9d2' : '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(btn.x, btn.y + 8, ammoOf(kind) + '/' + a.cap, { fontFamily: 'system-ui', fontSize: '9px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      storeButtons.push({ rect: btn, action: 'buyAmmo', kind });
+    });
+    y += 40;
     const buyBtn = add(sceneRef.add.rectangle(px, y + buyH / 2, pw - 40, 38, 0x7c2d12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
     add(sceneRef.add.text(buyBtn.x, buyBtn.y, '🍶  ' + T('potion') + ' kaufen — ' + POTION_PRICE + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     storeButtons.push({ rect: buyBtn, action: 'buyPotion' });
-    add(sceneRef.add.text(px, py + ph - 26, '💰 ' + state.gold + '   ·   🍶 ' + state.potions, { fontFamily: 'system-ui', fontSize: '14px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + ph - 26, '💰 ' + state.gold + '   ·   🍶 ' + state.potions + '   ·   🧨 ' + ammoOf('muni') + '   ·   🔷 ' + ammoOf('kristall'), { fontFamily: 'system-ui', fontSize: '13px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
   }
   function closeStore() { state.storeOpen = false; storeUI.forEach(o => o.destroy()); storeUI = []; storeButtons = []; storeCloseRef = null; storePanelRef = null; }
   function refreshStore() { closeStore(); openStore(); }
@@ -1543,6 +1564,13 @@
     if (state.gold < POTION_PRICE) { toast('Nicht genug Gold'); return; }
     state.gold -= POTION_PRICE; state.potions++; updateGold(); updateAbilityUI();
     toast('🍶 ' + T('potion') + ' gekauft'); save(); refreshStore();
+  }
+  function buyAmmo(kind) {
+    const a = AMMO[kind]; if (!a) return;
+    if (ammoOf(kind) >= a.cap) { toast(a.icon + ' Vorrat voll'); return; }
+    if (state.gold < a.price) { toast('Nicht genug Gold'); return; }
+    state.gold -= a.price; addAmmo(kind, a.pack); updateGold(); updateWeaponUI();
+    toast(a.icon + ' +' + a.pack + ' ' + a.name); save(); refreshStore();
   }
   // Händler-Warenlager: pro Basis ein kleines Angebot an Ausrüstung zum Kaufen.
   // Preis = Verkaufswert × Aufschlag (Kauf teurer als Verkauf). Bias hebt bessere Qualität.
@@ -1621,7 +1649,19 @@
     return best;
   }
   function aimAngle() { const t = nearestEnemy(AIM_RANGE); return t ? Math.atan2(t.c.y - player.y, t.c.x - player.x) : player.facing; }
-  function fireBullet() { const a = aimAngle(); player.facing = a; player.rotation = a; fireBulletAngle(a); }   // Auto-Ziel auf nächsten Gegner
+  function ammoOf(kind) { return state.ammo[kind] || 0; }
+  function addAmmo(kind, n) { if (!AMMO[kind]) return; state.ammo[kind] = Math.min(AMMO[kind].cap, ammoOf(kind) + n); }
+  function fireBullet() {
+    const kind = curWeapon().ammo || 'muni';
+    if (ammoOf(kind) <= 0) {                          // leer -> nicht feuern, gedrosselter Hinweis
+      const now = sceneRef.time.now;
+      if (now > (state.noAmmoAt || 0)) { toast(AMMO[kind].icon + ' ' + AMMO[kind].name + ' leer — nachladen!'); state.noAmmoAt = now + 1500; }
+      return;
+    }
+    state.ammo[kind]--;
+    const a = aimAngle(); player.facing = a; player.rotation = a; fireBulletAngle(a);   // Auto-Ziel auf nächsten Gegner
+    updateWeaponUI();
+  }
   function castSpread() { const base = aimAngle(); for (let i = 0; i < SPREAD_COUNT; i++) fireBulletAngle(base - SPREAD_ARC / 2 + SPREAD_ARC * (i / (SPREAD_COUNT - 1))); }
   function castDash() {
     const a = player.facing;
@@ -1680,6 +1720,10 @@
     const w = curWeapon(), t = DMG_TYPES[w.type];
     weaponBtn.setFillStyle(t.color, 0.9); weaponIcon.setText(t.icon); weaponName.setText(t.name);
     weaponBtn.setAlpha(WEAPON_ORDER.filter(weaponUnlocked).length <= 1 ? 0.55 : 0.95);
+    if (ammoText) {
+      const a = AMMO[w.ammo] || AMMO.muni, n = ammoOf(w.ammo);
+      ammoText.setText(a.icon + ' ' + n).setColor(n <= 0 ? '#f87171' : (n <= 10 ? '#fbbf24' : '#f3e9d2'));
+    }
   }
   // ---- Spieler-Leben -----------------------------------------
   function updateLife() { if (!lifeBarFill) return; lifeBarFill.width = LIFE_W * Math.max(state.hp, 0) / state.maxHp; lifeText.setText(Math.ceil(Math.max(state.hp, 0)) + ' / ' + state.maxHp); }
@@ -1744,6 +1788,7 @@
   }
   function dropGold(x, y, n) { for (let i = 0; i < n; i++) coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 5, COL_GOLD).setStrokeStyle(1.5, COL_GOLD_S).setDepth(3), item: null }); }
   function dropLoot(x, y, id) { const it = ITEMS[id]; coins.push({ s: sceneRef.add.circle(x + Phaser.Math.Between(-14, 14), y + Phaser.Math.Between(-14, 14), 5, it.color).setStrokeStyle(1.5, 0x1f2937).setDepth(3), item: id }); }
+  function dropAmmo(x, y, kind, n) { const a = AMMO[kind]; coins.push({ s: sceneRef.add.star(x + Phaser.Math.Between(-14, 14), y + Phaser.Math.Between(-14, 14), 4, 3, 6, a.color).setStrokeStyle(1.5, 0x1f2937).setDepth(3), ammo: kind, n }); }
   function dropGear(x, y, gear) {
     const col = RARITY[gear.rarity].color;
     const s = sceneRef.add.circle(x + Phaser.Math.Between(-16, 16), y + Phaser.Math.Between(-14, 14), 7, col).setStrokeStyle(2, 0xffffff, 0.85).setDepth(3);
@@ -1761,6 +1806,8 @@
       for (let i = 0; i < 10; i++) dropLoot(e.c.x, e.c.y, 'schrott');
       for (let i = 0; i < 4; i++) dropLoot(e.c.x, e.c.y, 'zahnrad');
       for (let i = 0; i < 3; i++) dropLoot(e.c.x, e.c.y, 'dampfkern');
+      dropAmmo(e.c.x, e.c.y, 'muni', Phaser.Math.Between(30, 50));
+      dropAmmo(e.c.x, e.c.y, 'kristall', Phaser.Math.Between(20, 35));
       dropGearRoll(e.c.x, e.c.y, 3.5, 3);
       return;
     }
@@ -1769,8 +1816,19 @@
     for (let i = 0; i < base; i++) dropLoot(e.c.x, e.c.y, 'schrott');
     if (Math.random() < (elite ? 1 : 0.18)) dropLoot(e.c.x, e.c.y, 'zahnrad');
     if (elite || Math.random() < 0.04) dropLoot(e.c.x, e.c.y, 'dampfkern');
+    dropAmmoFor(e, elite);                                      // Nachschub für die aktuelle Waffe
     if (elite) dropGearRoll(e.c.x, e.c.y, 1.2, 1);              // Elite: garantiert ein Teil
     else if (Math.random() < 0.08) dropGearRoll(e.c.x, e.c.y, 0, 1);
+  }
+  // Gegner lassen Munition/Kristalle fallen — meist für die getragene Waffe, Elite beides.
+  function dropAmmoFor(e, elite) {
+    const kind = curWeapon().ammo || 'muni', a = AMMO[kind];
+    if (elite) {
+      dropAmmo(e.c.x, e.c.y, 'muni', Phaser.Math.Between(6, 10));
+      dropAmmo(e.c.x, e.c.y, 'kristall', Phaser.Math.Between(4, 7));
+    } else if (Math.random() < 0.5) {
+      dropAmmo(e.c.x, e.c.y, kind, Phaser.Math.Between(a.drop[0], a.drop[1]));
+    }
   }
   function invCount() { let n = 0; for (const k in state.inventory) n += state.inventory[k] || 0; return n; }
   // ---- Loot-Kisten -------------------------------------------
@@ -1815,12 +1873,16 @@
     else if (chest.tier === 'rare') { if (Math.random() < 0.55) items.push({ kind: 'gear', gear: rollGear(0.7) }); }
     else if (Math.random() < 0.15) items.push({ kind: 'gear', gear: rollGear(0) });
     const gold = chest.tier === 'boss' ? Phaser.Math.Between(40, 100) : chest.tier === 'rare' ? Phaser.Math.Between(15, 40) : Phaser.Math.Between(5, 15);
-    // Gold automatisch nehmen
+    // Munition/Kristalle als Bonus (wie Gold automatisch)
+    const mul = chest.tier === 'boss' ? 3 : chest.tier === 'rare' ? 2 : 1;
+    const muni = Phaser.Math.Between(6, 12) * mul, kristall = Phaser.Math.Between(3, 7) * mul;
+    // Gold + Munition automatisch nehmen
     if (gold > 0) { state.gold += gold; updateGold(); }
+    addAmmo('muni', muni); addAmmo('kristall', kristall); updateWeaponUI();
     // Kiste aus der Welt entfernen
     const i = chests.indexOf(chest); if (i !== -1) chests.splice(i, 1);
     chest.c.destroy();
-    state.chestLoot = { gold, items, icon: t.icon };
+    state.chestLoot = { gold, muni, kristall, items, icon: t.icon };
     state.chestOpen = true; hideContext();
     renderChest();
   }
@@ -1834,7 +1896,7 @@
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
     chestPanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
     add(sceneRef.add.text(px, py + 12, loot.icon + '  Beute', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
-    add(sceneRef.add.text(px, py + 36, '💰 +' + loot.gold + ' automatisch  ·  antippen zum Nehmen', { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 36, '💰 +' + loot.gold + '  🧨 +' + (loot.muni || 0) + '  🔷 +' + (loot.kristall || 0) + ' automatisch  ·  antippen zum Nehmen', { fontFamily: 'system-ui', fontSize: '11px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
     chestCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 14, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
     let y = py + headH;
     if (n === 0) add(sceneRef.add.text(px, y + rowH / 2, 'Nur Gold — schon eingesammelt.', { fontFamily: 'system-ui', fontSize: '13px', color: '#a8a090' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
@@ -2130,6 +2192,9 @@
             state.inventory[co.item] = (state.inventory[co.item] || 0) + 1; popLoot(co.s.x, co.s.y, ITEMS[co.item].icon);
             co.s.destroy(); coins.splice(i, 1); continue;
           }
+        } else if (co.ammo) {
+          const a = AMMO[co.ammo]; addAmmo(co.ammo, co.n || 1); updateWeaponUI();
+          popLoot(co.s.x, co.s.y, a.icon); co.s.destroy(); coins.splice(i, 1); continue;
         } else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); co.s.destroy(); coins.splice(i, 1); continue; }
       }
       const blocked = (co.item && invCount() >= INV_CAP) || (co.gear && gearCells(co.gear) > gridFree());

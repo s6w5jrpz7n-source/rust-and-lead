@@ -726,6 +726,22 @@ Karabiner immer verfügbar; die übrigen drei erst **nach dem Reveal** (Steampun
 Waffen-Armaturen (Werkstatt): pro Waffe +5 Basisschaden/Stufe (max 5); Säure-Sprüher
 zusätzlich +2 Säure-Potenz/Stufe.
 
+### 7.1.1 Munition & Energiekristalle (begrenzter Vorrat)
+Feuern verbraucht Vorrat — **Dauerfeuer ist nicht möglich**. Zwei Munitions-Pools:
+
+| Typ | Icon | Für | Cap | Start | Preis (Pack) |
+| :-- | :-: | :-- | --: | --: | :-- |
+| `muni` Munition | 🧨 | Blei-Karabiner (KINETIC) | 180 | 90 | 24 💰 (+30) |
+| `kristall` Energiekristalle | 🔷 | Volt / Säure / Brenner (Energiewaffen) | 120 | 45 | 36 💰 (+20) |
+
+* **Verbrauch:** 1 pro Schuss aus dem Pool der getragenen Waffe; bei 0 kein Schuss
+  (gedrosselter „nachladen"-Hinweis). Der aktuelle Vorrat steht unter dem Schuss-Button
+  (gelb ≤ 10, rot bei 0).
+* **Nachschub:** (a) **Gegner-Drops** — meist der getragene Typ, Elite/Boss beide; als
+  aufsammelbare Stern-Pickups (Magnet). (b) **Kisten** — Munition/Kristalle automatisch
+  als Bonus (wie Gold), Menge nach Truhen-Tier. (c) **Händler** — Nachschub-Kauf beider
+  Typen. Vorrat persistiert im Spielstand.
+
 ## 7.2 Fähigkeiten & Granaten
 * **Spezialschuss (Spread):** Fächer aus 7 Projektilen der aktuellen Schadensart.
 * **Ausweich-Dash:** kurze Sprint-Ausweichrolle mit I-Frames.
