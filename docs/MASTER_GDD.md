@@ -832,8 +832,23 @@ Jedes Ausrüstungsteil hat **Attribute + eine Flavor-Beschreibung**, sichtbar in
   Tempo). Beide Attribute zählen in die Werte (`equipStat` summiert Haupt + Zusatz).
 * **Abgeleitet:** Bauart (Standard/Schwer bei Waffen), belegte **Plätze**, **Wert**,
   Seltenheit, **Mindest-Level**.
-* **Weitere sinnvolle Waffen-Attribute für Godot** (noch nicht im Prototyp): Reichweite,
-  Streuung/Präzision, Krit-Multiplikator, Durchschlag, Statuseffekt-Chance, Munitionstyp.
+* **Weitere sinnvolle Waffen-Attribute für Godot**: Reichweite, Streuung/Präzision,
+  Statuseffekt-Chance, Munitionstyp (Durchschlag & Krit sind bereits im Prototyp).
+
+### 7.4.3 Itemization-Motor: Affixe & legendäre Kräfte (Diablo-Achse)
+Der Loot-Kern: Items rollen **gestaffelte Affixe mit Wertespannen** statt fester Werte.
+* **Affix-Zahl je Seltenheit:** Gewöhnlich 0, Selten 1, Episch 2, Legendär 3 (jeweils
+  zusätzlich zum Haupt-Attribut). Affix-Pool je Slot (Waffe: Feuerrate/Krit/Schaden usw.).
+* **Roll-Varianz:** jeder Affix rollt **70–130 %** seines Erwartungswerts; die
+  **Roll-Güte** wird als **★–★★★** in der Detailkarte angezeigt („fast perfekt gerollt!").
+* **Manufaktur-Stempel-Namen** aus dem stärksten Affix (z. B. „Präzisionsgefräster
+  Doppelkessel-Karabiner des Grenzgängers").
+* **Legendäre Kräfte (Regeländerung, nicht nur Stats):** jedes legendäre Teil trägt eine
+  **benannte Kraft** — z. B. *Dolores' letzte Trommel* (Spread feuert 11 statt 7),
+  *Iron-Rail-Durchschlag* (Kugeln durchschlagen +1 Gegner), *Ballistischer Rechenkern*
+  (Krits prallen ab), *Sparventil-Uhr* (25 % kein Munitionsverbrauch), *Blutdampf-Kessel*
+  (Kills heilen), *Titan-Kolben-Panzer* (halbe Boss-Schläge), *Plünderer-Sohlen* (+Gold/Magnet),
+  *Kupferlinsen-Visier* (+Grund-Krit).
 
 ## 7.5 Progression (Level & Erfahrung)
 * XP aus **Kills** (Standard `max(3, maxHp/11)`, Elite 50, Superboss 300) und
@@ -861,6 +876,24 @@ T1 Stufe 1 / 0 Pkt, T2 Stufe 5 / 2 Pkt, T3 Stufe 10 / 4 Pkt):
 
 Effekte greifen direkt in die Kern-Formeln (Schaden, Feuerrate, Krit, Rüstung, Regen,
 Munitions-Cap, Drop-Menge, Granaten-Cooldown, Gold). Punkte & Ränge persistieren.
+
+**Kapsteine (Tier 4, Stufe 14 / 6 Punkte im Zweig) — nur EINER aktiv (Exklusiv-Gruppe) =
+deine „Klasse":**
+* 🔫 **Ballistischer Rechenkern** — +10 % Krit; Krits prallen zu einem 2. Ziel ab.
+* ⚙️ **Überhitzter Kessel** — unter 30 % Leben: +50 % Feuerrate, Schüsse kosten Leben statt
+  Munition (High-Risk).
+* 🤠 **Eisernes Chassis** — −20 % erlittener Schaden, +20 % max. Leben, Stun-immun.
+
+**Respec** („Neuverdrahtung des Rechenkerns") — Punkte-Reset gegen Gold + 1 Dampfkern,
+**nur nach dem Reveal** (Maschinen-Fiktion; zugleich Gold-/Dampfkern-Sink).
+
+### 7.5.6 Endgame: „Der Abstieg" (endloser Minen-Rift)
+Nach dem Superboss der Schrott-Mine öffnet ein 🕳️-Portal **„Der Abstieg"**: eine **endlose,
+skalierende** Minen-Ebenenfolge. Jede tiefere Ebene erhöht Gegner-Zähigkeit/-Dichte und
+zieht einen **zufälligen Modifikator** (👥 Andrang / 💪 Überdruck / 💨 Rasende Meute /
+☠ Elite-Nest). **Alle 3 Ebenen** wartet ein mit der Tiefe skalierender **Minen-Titan**
+(Ebene 6 ≈ 6300 HP). Ein **Tiefenrekord** wird geführt und im Saloon (Tycoon-Panel)
+ausgehängt. „Wie tief kommst du?" ist der wiederholbare Post-Kampagnen-Loop.
 
 ### 7.5.2 Tech-Module (die 8 Slots)
 Die 8 Platten-/Tech-Slots nehmen neben **Panzerplatten** (Rüstung) jetzt auch **Tech-Module**

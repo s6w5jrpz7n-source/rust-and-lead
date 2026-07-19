@@ -59,6 +59,13 @@
   const BOSS_HP = 700, BOSS_R = 28, BOSS_SPEED = 46, BOSS_CONTACT = 28, BOSS_GOLD = 20, BOSS_KILLS_TRIGGER = 8;
   const BOSS_NAMES = ['Rost-Baron', 'Blei-Molch', 'Schrott-Koloss', 'Kaktus-König'];
   const BOUNTY_NAMES = ['Gefährlicher Vince', 'Dynamit-Dolores', 'Der Schakal', 'Öl-Otis', 'Klapperschlangen-Kate', 'Halunke Hank'];
+  // „Der Abstieg": pro Ebene ein zufälliger Modifikator, der die Begegnung würzt.
+  const ABYSS_MODS = [
+    { id: 'horde',   name: 'Andrang',      icon: '👥', desc: 'mehr Gegner' },
+    { id: 'brute',   name: 'Überdruck',    icon: '💪', desc: 'zäher & härter' },
+    { id: 'swift',   name: 'Rasende Meute', icon: '💨', desc: 'schnellere Gegner' },
+    { id: 'elite',   name: 'Elite-Nest',   icon: '☠', desc: 'mehr Elite-Bosse' }
+  ];
   const TUT_STEPS = [
     '👣 Bewege dich mit dem Stick · sprich mit Mabel (⚙️) für deinen Auftrag',
     '🚪 Verlasse die Stadt durchs Tor (Norden) & besiege Gegner in der Wüste',
@@ -109,11 +116,40 @@
   };
   const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'];
   const GEAR_ADJ = { common: ['Rostiger', 'Abgenutzter', 'Einfacher'], rare: ['Kupferner', 'Verstärkter', 'Gehärteter'], epic: ['Dampfbetriebener', 'Alchemistischer', 'Präzisions-'], legendary: ['Titanischer', 'Legendärer', 'Iron-Rail-'] };
-  // Item-Attribute: lesbare Namen + Basiswerte für das Zusatz-Attribut (roll ab „selten").
-  const STAT_LABEL = { damage: 'Schaden', firerate: 'Feuerrate', hp: 'Leben', armor: 'Rüstung', speed: 'Tempo' };
-  const STAT_UNIT = { damage: '', firerate: '', hp: '', armor: '', speed: '' };
-  const SUB_BASE = { damage: 5, firerate: 10, hp: 12, armor: 3, speed: 14 };
-  const SUB_POOL = { weapon: ['firerate', 'damage'], armor: ['hp', 'speed'], helmet: ['armor', 'hp'], gadget: ['damage', 'firerate'], boots: ['armor', 'hp'] };   // plate: kein Zusatz
+  // Item-Attribute: lesbare Namen + Basiswerte für gerollte Affixe (Diablo-Itemization-Motor).
+  const STAT_LABEL = { damage: 'Schaden', firerate: 'Feuerrate', hp: 'Leben', armor: 'Rüstung', speed: 'Tempo', crit: 'Krit %' };
+  const STAT_UNIT = { damage: '', firerate: '', hp: '', armor: '', speed: '', crit: '%' };
+  const SUB_BASE = { damage: 5, firerate: 10, hp: 12, armor: 3, speed: 14, crit: 5 };
+  // Welche Zusatz-Affixe pro Slot rollen können (der Haupt-Stat ergibt sich aus GEAR_SLOTS).
+  const AFFIX_POOL = { weapon: ['firerate', 'crit', 'damage'], armor: ['hp', 'speed', 'armor'], helmet: ['armor', 'hp', 'crit'], gadget: ['damage', 'firerate', 'crit'], boots: ['armor', 'hp', 'speed'] };
+  const SUB_POOL = AFFIX_POOL;   // (Legacy-Alias)
+  // Anzahl gerollter Zusatz-Affixe je Seltenheit (zusätzlich zum Haupt-Attribut).
+  const AFFIX_COUNT = { common: 0, rare: 1, epic: 2, legendary: 3 };
+  // Affix-Namensteile (Manufaktur-Stempel) — Präfix je Stat, Suffix zur Würze.
+  const AFFIX_PREFIX = { damage: 'Bleigefütterter', firerate: 'Doppelkessel-', crit: 'Präzisionsgefräster', hp: 'Gepanzerter', armor: 'Vernieteter', speed: 'Leichtlauf-' };
+  const AFFIX_SUFFIX = ['des Grenzgängers', 'aus Rogue\'s Landing', 'vom Kessel-Friedhof', 'der Eisernen Gilde', 'des Revolverhelden'];
+  // Legendäre mit BENANNTER KRAFT (Regeländerung, nicht nur Stats) — je Slot mind. eine.
+  const LEGENDARIES = {
+    weapon: [
+      { power: 'spread11', name: 'Dolores\' letzte Trommel',    desc: 'Spezialschuss feuert 11 statt 7 Projektile.' },
+      { power: 'pierce',   name: 'Iron-Rail-Durchschlag',       desc: 'Kugeln durchschlagen einen zusätzlichen Gegner.' },
+      { power: 'galvcrit', name: 'Galvanische Trommel',         desc: 'Kritische Treffer lösen einen Kurzschluss (Stun) aus.' },
+      { power: 'critchain', name: 'Ballistischer Rechenkern',   desc: 'Krits prallen zu einem zweiten Ziel ab.' }
+    ],
+    armor: [
+      { power: 'slamward', name: 'Titan-Kolben-Panzer',         desc: 'Boss-Flächenschläge treffen dich nur halb so hart.' },
+      { power: 'lifekill', name: 'Blutdampf-Kessel',            desc: 'Jeder Kill heilt dich um 3 % deines Lebens.' }
+    ],
+    gadget: [
+      { power: 'ammothrift', name: 'Sparventil-Uhr',            desc: '25 % Chance, keine Munition zu verbrauchen.' }
+    ],
+    boots: [
+      { power: 'plunder', name: 'Plünderer-Sohlen',             desc: '+25 % Gold und ein stärkerer Loot-Magnet.' }
+    ],
+    helmet: [
+      { power: 'critbase', name: 'Kupferlinsen-Visier',         desc: '+8 % Grund-Kritchance auf alle Treffer.' }
+    ]
+  };
   const GEAR_FLAVOR = {
     weapon: ['Präzise gefertigter Lauf, gemacht für die Grenze.', 'Der Rückstoß erzählt Geschichten.', 'Zuverlässig, bis das letzte Zahnrad bricht.'],
     armor:  ['Vernietete Platten, gehärtet im Kesselfeuer.', 'Hat schon manchen Hinterhalt überstanden.', 'Schwer, aber es hält dich am Leben.'],
@@ -205,8 +241,8 @@
     { id: 'tech', name: 'Kesseltreiber', icon: '⚙️', color: 0x38bdf8, blurb: 'Dampf & Energie' },
     { id: 'grit', name: 'Grenzgänger',   icon: '🤠', color: 0x84cc16, blurb: 'Zähigkeit & Beute' }
   ];
-  // reqLevel & reqBranch (investierte Punkte im Zweig) staffeln die Tiers.
-  const PERK_TIER = { 1: { lvl: 1, inv: 0 }, 2: { lvl: 5, inv: 2 }, 3: { lvl: 10, inv: 4 } };
+  // reqLevel & reqBranch (investierte Punkte im Zweig) staffeln die Tiers. Tier 4 = Kapstein.
+  const PERK_TIER = { 1: { lvl: 1, inv: 0 }, 2: { lvl: 5, inv: 2 }, 3: { lvl: 10, inv: 4 }, 4: { lvl: 14, inv: 6 } };
   const PERKS = {
     // Revolverheld
     scharf:   { branch: 'gun',  tier: 1, max: 3, per: 4,  name: 'Scharfschütze',     desc: '+{v} Schaden pro Schuss' },
@@ -222,7 +258,11 @@
     zaeh:     { branch: 'grit', tier: 1, max: 3, per: 25, name: 'Zähigkeit',         desc: '+{v} max. Leben' },
     panzer:   { branch: 'grit', tier: 1, max: 3, per: 4,  name: 'Panzerhaut',        desc: '+{v} Rüstung' },
     heilung:  { branch: 'grit', tier: 2, max: 3, per: 3,  name: 'Selbstheilung',     desc: '+{v} Leben/s Regeneration' },
-    pluender: { branch: 'grit', tier: 3, max: 1, per: 25, name: 'Plünderer',         desc: '+{v}% Gold & stärkerer Loot-Magnet' }
+    pluender: { branch: 'grit', tier: 3, max: 1, per: 25, name: 'Plünderer',         desc: '+{v}% Gold & stärkerer Loot-Magnet' },
+    // Kapsteine (Tier 4) — nur EINER aktiv (xor 'cap'): das ist deine „Klasse".
+    cap_gun:  { branch: 'gun',  tier: 4, max: 1, per: 0, xor: 'cap', name: 'Ballistischer Rechenkern', desc: '+10% Krit · Krits prallen zu einem 2. Ziel ab' },
+    cap_tech: { branch: 'tech', tier: 4, max: 1, per: 0, xor: 'cap', name: 'Überhitzter Kessel',       desc: 'Unter 30% Leben: +50% Feuerrate, Schüsse kosten Leben statt Munition' },
+    cap_grit: { branch: 'grit', tier: 4, max: 1, per: 0, xor: 'cap', name: 'Eisernes Chassis',         desc: '−20% erlittener Schaden · +20% max. Leben · Stun-Immun' }
   };
 
   // Stadt-Gebäude: PRIMÄR Aufträge (Saloon) & Handel (Schmiede/Destille).
@@ -333,10 +373,22 @@
       floorA: 0x3a3340, floorB: 0x2f2935, grid: 0x201a28, mini: 0x3a3340, bg: 0x0e0b13,
       portals: [
         { tx: 2, ty: 2, to: 'dungeon2', spawn: { c: 13, r: 3 }, short: 'Hoch', label: '🪜  Aufstieg → Ebene 2', mini: 0x38bdf8 },
-        { tx: 23, ty: 2, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Schacht', label: '🚪  Fluchtschacht → Wüste', mini: 0x38bdf8 }
+        { tx: 23, ty: 2, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Schacht', label: '🚪  Fluchtschacht → Wüste', mini: 0x38bdf8 },
+        { tx: 13, ty: 23, to: '__abyss', spawn: { c: 13, r: 3 }, short: 'Abstieg', label: '🕳️  DER ABSTIEG (endlos)', mini: 0xdc2626 }
       ],
       stations: [], decor: [ { tx: 13, ty: 13, w: 64, h: 44, color: 0x2a2130, label: 'SCHATZKAMMER' } ],
       caches: [ { tx: 4, ty: 22, count: 5, tier: 'rare' } ], elites: 1, superboss: { tx: 13, ty: 14 }
+    },
+    // „Der Abstieg" — endloser skalierender Minen-Modus (Rift-Loop). Tiefe/Modifikator dynamisch.
+    abyss: {
+      name: 'Der Abstieg', cols: 26, rows: 26, enemies: true, minimap: 'small', depth: 1,
+      floorA: 0x2a2233, floorB: 0x221b2b, grid: 0x171021, mini: 0x2a2233, bg: 0x090610,
+      portals: [
+        { tx: 2, ty: 2, to: 'overworld', spawn: { c: 60, r: 60 }, short: 'Raus', label: '🚪  Aufzug → Wüste', mini: 0x38bdf8 },
+        { tx: 23, ty: 23, to: '__deeper', spawn: { c: 13, r: 3 }, short: 'Tiefer', label: '🕳️  Noch tiefer', mini: 0xdc2626 }
+      ],
+      stations: [], decor: [ { tx: 13, ty: 13, w: 48, h: 32, color: 0x1a1226, label: 'STOLLEN' } ],
+      caches: [ { tx: 4, ty: 22, count: 3, tier: 'rare' } ], elites: 1
     },
     fort_freedom: {
       name: 'Fort Freedom', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
@@ -465,7 +517,7 @@
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
-    tutorial: 0, tutOpenedInv: false,
+    tutorial: 0, tutOpenedInv: false, abyssDepth: 0, abyssMod: null, abyssBest: 0,
     isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
@@ -658,30 +710,48 @@
   function perkVal(id) { return perkRank(id) * (PERKS[id] ? PERKS[id].per : 0); }
   function branchPoints(branch) { let s = 0; for (const id in PERKS) if (PERKS[id].branch === branch) s += perkRank(id); return s; }
   function perkTierOk(id) { const t = PERK_TIER[PERKS[id].tier]; return state.level >= t.lvl && branchPoints(PERKS[id].branch) >= t.inv; }
-  function perkCanBuy(id) { return state.perkPoints > 0 && perkRank(id) < PERKS[id].max && perkTierOk(id); }
+  // Exklusiv-Gruppe (z. B. Kapsteine): schon ein ANDERER Perk der Gruppe aktiv?
+  function xorBlocked(id) { const x = PERKS[id].xor; if (!x) return false; for (const k in PERKS) if (k !== id && PERKS[k].xor === x && perkRank(k) > 0) return true; return false; }
+  function hasCap(branch) { return perkRank('cap_' + branch) > 0; }
+  function perkCanBuy(id) { return state.perkPoints > 0 && perkRank(id) < PERKS[id].max && perkTierOk(id) && !xorBlocked(id); }
   function buyPerk(id) {
     if (!PERKS[id]) return;
     if (state.perkPoints <= 0) { toast('Keine Fähigkeitspunkte'); return; }
     if (perkRank(id) >= PERKS[id].max) { toast('Perk voll ausgebaut'); return; }
     if (!perkTierOk(id)) { const t = PERK_TIER[PERKS[id].tier]; toast('🔒 Stufe ' + t.lvl + ' & ' + t.inv + ' Punkte im Zweig'); return; }
+    if (xorBlocked(id)) { toast('🔒 Schließt sich mit deinem Kapstein aus'); return; }
     state.perks[id] = perkRank(id) + 1; state.perkPoints--; sfx('perk');
     applyUpgrades(); updateLife(); updateWeaponUI(); updateInvBadge();
-    toast('✦ ' + PERKS[id].name + ' Rang ' + state.perks[id]); save();
+    toast('✦ ' + PERKS[id].name + (PERKS[id].tier === 4 ? ' — Klasse gewählt!' : ' Rang ' + state.perks[id])); save();
     if (state.inventoryOpen) renderInventory();
+  }
+  // Respec: „Neuverdrahtung des Rechenkerns" — nur nach dem Reveal (Maschinen-Fiktion). Kostet Gold + 1 Dampfkern.
+  function respecCost() { return { gold: 150 + state.level * 20, kern: 1 }; }
+  function doRespec() {
+    if (!state.isRevealed) { toast('🔒 Neuverdrahtung erst nach dem Erwachen'); return; }
+    const c = respecCost();
+    if (state.gold < c.gold || (state.inventory.dampfkern || 0) < c.kern) { toast('Braucht ' + c.gold + ' 💰 + ' + c.kern + ' Dampfkern'); return; }
+    let refunded = 0; for (const k in state.perks) refunded += state.perks[k] || 0;
+    state.gold -= c.gold; state.inventory.dampfkern -= c.kern; state.perks = {}; state.perkPoints += refunded;
+    applyUpgrades(); updateLife(); updateWeaponUI(); updateGold(); updateInvBadge(); sfx('perk');
+    toast('🔧 Neuverdrahtet — ' + refunded + ' Punkte zurück'); save(); if (state.inventoryOpen) renderInventory();
   }
   const energyWeapon = () => curWeapon().ammo === 'kristall';
   function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5 + equipStat('damage') + perkVal('scharf') + (energyWeapon() ? perkVal('ueberlad') : 0); }
   function weaponAcid() { return curWeapon().acid + weaponLvl('saeure') * 2; }
-  function fireMs() { return Math.max(60, Math.round((curWeapon().fireMs - state.upgrades.firerate * 22 - equipStat('firerate')) * (1 - perkVal('schnell') / 100))); }
-  function critChance() { return perkVal('krit') / 100; }
+  const kesselRush = () => hasCap('tech') && state.hp < state.maxHp * 0.3;   // Überhitzter Kessel aktiv?
+  function fireMs() { return Math.max(50, Math.round((curWeapon().fireMs - state.upgrades.firerate * 22 - equipStat('firerate')) * (1 - perkVal('schnell') / 100) * (kesselRush() ? 0.67 : 1))); }
+  function critChance() { return perkVal('krit') / 100 + equipStat('crit') / 100 + (hasPower('critbase') ? 0.08 : 0) + (hasCap('gun') ? 0.10 : 0); }
   function critMult() { return 2 + (perkRank('brecher') ? 0.5 : 0); }   // Synergie: Panzerbrecher hebt Krit-Schaden auf 2.5×
   function armorPen() { return perkVal('brecher'); }
   function ammoCap(kind) { return AMMO[kind].cap + perkVal('gurt'); }
-  function lootMul() { return 1 + perkVal('pluender') / 100; }   // Gold-Bonus (Plünderer)
-  // Ausrüstungs-Boni: Summe aus Haupt- und Zusatz-Attribut aller angelegten Teile
-  function equipStat(key) { let s = 0; for (const sl in state.equip) { const g = state.equip[sl]; if (!g) continue; if (g.stat.key === key) s += g.stat.val; if (g.sub && g.sub.key === key) s += g.sub.val; } return s; }
+  function lootMul() { return 1 + perkVal('pluender') / 100 + (hasPower('plunder') ? 0.25 : 0); }   // Gold-Bonus (Plünderer-Perk & Legendär)
+  // Ausrüstungs-Boni: Summe aller Affixe (Haupt + Zusatz + Legacy) über alle angelegten Teile
+  function equipStat(key) { let s = 0; for (const sl in state.equip) { const g = state.equip[sl]; if (g) s += gearStatOf(g, key); } return s; }
   function playerArmor() { return equipStat('armor') + perkVal('panzer'); }
-  function dmgTakenMul() { return 100 / (100 + playerArmor() * 9); }   // Rüstung senkt eingehenden Schaden
+  // Legendäre Kraft aktiv? (irgendein angelegtes Teil trägt sie)
+  function hasPower(id) { for (const sl in state.equip) { const g = state.equip[sl]; if (g && g.legendaryPower === id) return true; } return false; }
+  function dmgTakenMul() { return (100 / (100 + playerArmor() * 9)) * (hasCap('grit') ? 0.8 : 1); }   // Rüstung + Eisernes Chassis (−20%)
   function cycleWeapon() {
     const avail = WEAPON_ORDER.filter(weaponUnlocked);
     if (avail.length <= 1) { toast('🔒 Weitere Waffen nach dem Erwachen'); return; }
@@ -692,8 +762,8 @@
   }
   function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30 + equipStat('speed'); }
   function regenRate() { return REGEN_RATE + state.upgrades.regen * 4 + perkVal('heilung'); }
-  function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0); }
-  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS + perkVal('zaeh'); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
+  function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0) + (hasPower('plunder') ? 60 : 0); }
+  function applyUpgrades() { state.maxHp = Math.round((PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS + perkVal('zaeh')) * (hasCap('grit') ? 1.2 : 1)); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
   // ---- Erfahrung & Level -------------------------------------
   function xpToNext(lv) { return 40 + lv * 30; }   // Level 1->2: 70 XP, danach +30/Stufe
   function gainXp(n) {
@@ -706,27 +776,48 @@
   function xpForKill(e) { return e.isSuperBoss ? 300 : e.elite ? 50 : Math.max(3, Math.round(e.maxHp / 11)); }
   // ---- Ausrüstung erzeugen & anlegen -------------------------
   let gearUid = 1;
+  // Rollt einen Affix-Wert innerhalb einer Spanne (70–130 % vom Erwartungswert) und merkt die Roll-Qualität.
+  function rollAffix(key, mult, factor) {
+    const base = (SUB_BASE[key] || 5) * mult * (factor || 1), q = 0.7 + Math.random() * 0.6;   // q: 0.7..1.3
+    return { key, val: Math.max(1, Math.round(base * q)), q: Math.min(1, (q - 0.7) / 0.6) };     // q normalisiert 0..1 (Roll-Qualität)
+  }
   function makeGear(slot, rarity) {
     const def = GEAR_SLOTS[slot], r = RARITY[rarity], adj = GEAR_ADJ[rarity];
-    let val = Math.max(1, Math.round(def.base * r.mult)), big = false, name = adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name;
-    if (slot === 'weapon' && Math.random() < 0.3) { big = true; val = Math.round(val * 1.4); name = 'Schwere ' + name; }   // sehr große Waffe: 3 Slots, mehr Schaden
-    const g = { uid: gearUid++, slot, rarity, req: r.req, big, icon: def.icon, name, stat: { key: def.stat, val }, desc: GEAR_FLAVOR[slot][Phaser.Math.Between(0, GEAR_FLAVOR[slot].length - 1)] };
-    // Zusatz-Attribut ab „selten" (nicht für Platten): zweiter, kleinerer Bonus
-    if (SUB_POOL[slot] && rarity !== 'common' && Math.random() < 0.6) {
-      const key = SUB_POOL[slot][Phaser.Math.Between(0, SUB_POOL[slot].length - 1)];
-      g.sub = { key, val: Math.max(1, Math.round(SUB_BASE[key] * r.mult * 0.4)) };
+    let big = false, baseName = adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name, extraMul = 1;
+    if (slot === 'weapon' && Math.random() < 0.3) { big = true; extraMul = 1.4; baseName = 'Schwere ' + baseName; }   // sehr große Waffe: 3 Slots, mehr Schaden
+    // Haupt-Attribut mit Roll-Varianz
+    const primary = rollAffix(def.stat, r.mult, (def.base / (SUB_BASE[def.stat] || def.base)) * extraMul);
+    const g = { uid: gearUid++, slot, rarity, req: r.req, big, icon: def.icon, name: baseName, stat: { key: primary.key, val: primary.val, q: primary.q }, affixes: [], desc: GEAR_FLAVOR[slot][Phaser.Math.Between(0, GEAR_FLAVOR[slot].length - 1)] };
+    // Zusatz-Affixe je Seltenheit (nicht für Platten), keine Doppelung des Haupt-Stats bevorzugt
+    const pool = (AFFIX_POOL[slot] || []).slice(), n = AFFIX_COUNT[rarity] || 0;
+    for (let i = 0; i < n && pool.length; i++) {
+      const key = pool.splice(Phaser.Math.Between(0, pool.length - 1), 1)[0];
+      g.affixes.push(rollAffix(key, r.mult, 0.4));
+    }
+    // Legendär: benannte Kraft + Manufaktur-Name
+    if (rarity === 'legendary' && LEGENDARIES[slot]) {
+      const leg = LEGENDARIES[slot][Phaser.Math.Between(0, LEGENDARIES[slot].length - 1)];
+      g.legendaryPower = leg.power; g.name = leg.name; g.legDesc = leg.desc; g.desc = leg.desc;
+    } else if (rarity !== 'common' && g.affixes[0]) {   // Manufaktur-Stempel-Name aus dem stärksten Affix
+      const pre = AFFIX_PREFIX[g.affixes[0].key];
+      if (pre) g.name = pre + ' ' + def.name + (rarity === 'epic' ? ' ' + AFFIX_SUFFIX[Phaser.Math.Between(0, AFFIX_SUFFIX.length - 1)] : '');
     }
     return g;
   }
   // Menschlich lesbare Attribut-Zeilen eines Items (für Detail-Ansicht)
+  function qStars(q) { return q === undefined ? '' : '  ' + '★'.repeat(1 + Math.round((q || 0) * 2)); }   // 1–3 Sterne = Roll-Güte
   function gearAttrs(g) {
-    const lines = [['⭐ ' + STAT_LABEL[g.stat.key], '+' + g.stat.val]];
-    if (g.sub) lines.push(['＋ ' + STAT_LABEL[g.sub.key], '+' + g.sub.val]);
+    const lines = [['⭐ ' + STAT_LABEL[g.stat.key] + qStars(g.stat.q), (g.stat.key === 'crit' ? '' : '+') + g.stat.val + (STAT_UNIT[g.stat.key] || '')]];
+    (g.affixes || []).forEach(a => lines.push(['＋ ' + STAT_LABEL[a.key] + qStars(a.q), '+' + a.val + (STAT_UNIT[a.key] || '')]));
+    if (g.sub) lines.push(['＋ ' + STAT_LABEL[g.sub.key], '+' + g.sub.val]);   // Legacy-Spielstände
+    if (g.legendaryPower && g.legDesc) lines.push(['✦ Legendär', g.legDesc]);
     if (g.slot === 'weapon') lines.push(['🎯 Bauart', g.big ? 'Schwer (3 Slots)' : 'Standard (2 Slots)']);
     lines.push(['🎒 Plätze', '' + gearCells(g)]);
     lines.push(['💰 Wert', '' + gearValue(g)]);
     return lines;
   }
+  // Zählt alle Affixe (Haupt + Zusatz + Legacy-sub) eines Items für einen Stat-Key.
+  function gearStatOf(g, key) { let s = 0; if (g.stat && g.stat.key === key) s += g.stat.val; if (g.affixes) for (const a of g.affixes) if (a.key === key) s += a.val; if (g.sub && g.sub.key === key) s += g.sub.val; return s; }
   // ---- Tech-Module: passen in die 8 Platten-/Tech-Slots; offensive/Utility-Boni statt Rüstung ----
   const TECH_TYPES = {
     schaden:  { name: 'Schaden-Chip',   icon: '🎯', stat: 'damage',   base: 5,  desc: 'Justiert den Lauf auf tödliche Präzision.' },
@@ -778,7 +869,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -795,6 +886,7 @@
       state.perkPoints = s.perkPoints || 0; state.perks = (s.perks && typeof s.perks === 'object') ? s.perks : {};
       state.tutorial = (typeof s.tutorial === 'number') ? s.tutorial : TUT_STEPS.length;   // Altstände: Tutorial gilt als erledigt
       state.tutOpenedInv = !!s.tutOpenedInv; state.muted = !!s.muted;
+      state.abyssBest = s.abyssBest || 0; state.abyssDepth = 0; state.abyssMod = null;
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
@@ -900,13 +992,17 @@
     reveal(spawn.c, spawn.r);
 
     state.miniSize = m.minimap === 'small' ? 100 : 140;
-    mapNameText.setText(m.name);
+    const abyss = id === 'abyss';
+    const mod = abyss ? ABYSS_MODS.find(x => x.id === state.abyssMod) : null;
+    mapNameText.setText(abyss ? ('🕳️ Abstieg — Ebene ' + state.abyssDepth) : m.name);
     layoutUI(sceneRef.scale.gameSize);
-    miniDirty = true; toast(m.name);
+    miniDirty = true;
+    toast(abyss ? ('🕳️ Ebene ' + state.abyssDepth + (mod ? ' · ' + mod.icon + ' ' + mod.name : '') + '  ·  Rekord: ' + (state.abyssBest || 0)) : m.name);
     if (m.streamed) streamChunks(9);   // sichtbaren Bereich (radius 1) sofort, Rest folgt vorausschauend
     if (m.enemies) scatterEnemies(m);
     scatterChests(m);
     if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth);
+    if (abyss && state.abyssDepth % 3 === 0) spawnSuperBoss(13, 13, state.abyssDepth);   // alle 3 Ebenen ein Titan
     spawnBountyTarget();   // aktives Kopfgeld-Ziel in der Wüste aufstellen
   }
 
@@ -1031,18 +1127,21 @@
       isBoss: !!t.isBoss, name: (opts && opts.name) || t.name, aggro: !!(opts && opts.aggro) });
   }
   // Dungeon-Tiefe erhöht Gegner-Zähigkeit & -Dichte (Ebene 1→3).
-  function mapHpMul(m) { return 1 + (Math.max(1, m.depth || 1) - 1) * 0.5; }   // Ebene1 1.0, Ebene2 1.5, Ebene3 2.0
-  function scaleEnemyHp(e, mul) { if (mul <= 1 || !e) return e; e.maxHp = Math.round(e.maxHp * mul); e.hp = e.maxHp; e.hpFill.width = e.barW; return e; }
+  function curDepth(m) { return state.map === 'abyss' ? Math.max(1, state.abyssDepth || 1) : (m.depth || 1); }
+  function mapHpMul(m) { let mul = 1 + (Math.max(1, curDepth(m)) - 1) * 0.5; if (state.map === 'abyss' && state.abyssMod === 'brute') mul *= 1.3; return mul; }   // Tiefe + Modifikator
+  function scaleEnemyHp(e, mul) { if (mul <= 1 || !e) return e; e.maxHp = Math.round(e.maxHp * mul); e.hp = e.maxHp; e.hpFill.width = e.barW; if (state.map === 'abyss' && state.abyssMod === 'swift') e.speed = Math.round(e.speed * 1.25); return e; }
   function scatterEnemies(m) {
-    const mul = mapHpMul(m), dens = 1 + (Math.max(1, m.depth || 1) - 1) * 0.2;
+    const depth = curDepth(m), mul = mapHpMul(m); let dens = 1 + (depth - 1) * 0.2;
+    if (state.map === 'abyss' && state.abyssMod === 'horde') dens *= 1.5;
     const count = Math.min(ENEMY_MAX, Math.round(m.cols * m.rows / ENEMY_PER_TILES * dens));
     for (let i = 0; i < count; i++) {
       const c = Phaser.Math.Between(1, m.cols - 2), r = Phaser.Math.Between(1, m.rows - 2), w = tileToWorld(c, r);
       if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 220) continue;   // Startbereich frei halten
       scaleEnemyHp(spawnTyped(pickEnemyType(), w.x, w.y), mul);
     }
-    // Elite-Bosse stehen verteilt in der Karte (mit Gefolge) — kein Kill-Zähler mehr
-    const elites = m.elites !== undefined ? m.elites : ELITE_PER_MAP;
+    // Elite-Bosse stehen verteilt in der Karte (mit Gefolge)
+    let elites = m.elites !== undefined ? m.elites : ELITE_PER_MAP;
+    if (state.map === 'abyss') { elites += Math.floor(depth / 3); if (state.abyssMod === 'elite') elites += 2; }
     for (let i = 0; i < elites; i++) {
       const c = Phaser.Math.Between(3, m.cols - 4), r = Phaser.Math.Between(3, m.rows - 4), w = tileToWorld(c, r);
       if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 360) continue;
@@ -1251,7 +1350,13 @@
   }
   // ---- Fähigkeitenbaum: 3 Zweig-Spalten mit Perk-Karten ----
   function renderPerks(L, add) {
-    add(sceneRef.add.text(L.px + 12, L.colTop - 2, '✦ Fähigkeitspunkte: ' + state.perkPoints + '   ·   jede Stufe bringt +1', { fontFamily: 'system-ui', fontSize: '12px', color: state.perkPoints > 0 ? '#fde047' : '#a8a090', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+    add(sceneRef.add.text(L.px + 12, L.colTop - 2, '✦ Fähigkeitspunkte: ' + state.perkPoints, { fontFamily: 'system-ui', fontSize: '12px', color: state.perkPoints > 0 ? '#fde047' : '#a8a090', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+    // Respec-Knopf (nur nach dem Reveal — Maschinen-Neuverdrahtung)
+    if (state.isRevealed) {
+      const c = respecCost(), rb = add(sceneRef.add.rectangle(L.px + L.pw - 78, L.colTop + 15, 128, 22, 0x3a1d1d, 0.92).setStrokeStyle(2, 0xb45309, 0.7).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(rb.x, rb.y, '🔧 Respec ' + c.gold + '💰+1⚙', { fontFamily: 'system-ui', fontSize: '9px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      perkBtns.push({ rect: rb, id: '__respec' });
+    }
     const colW = Math.floor((L.pw - 24) / 3), x0 = L.px + 12, top = L.colTop + 22;
     PERK_BRANCHES.forEach((br, bi) => {
       const cx = x0 + bi * colW, cw = colW - 6;
@@ -1436,7 +1541,16 @@
   function closeInventory() { state.inventoryOpen = false; state.shopMode = false; state.storeOpen = false; state.itemDetail = null; invScrapRect = null; shopSellRect = null; shopBuyBtns = []; if (invDrag && invDrag.ghost) { invDrag.ghost.destroy(); invDrag = null; } invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
 
   // ---- Karten-Wechsel ----------------------------------------
+  // „Der Abstieg": eine neue, zufällig modifizierte Ebene betreten; Tiefe & Rekord führen.
+  function enterAbyss(depth) {
+    state.abyssDepth = depth;
+    state.abyssMod = ABYSS_MODS[Phaser.Math.Between(0, ABYSS_MODS.length - 1)].id;
+    if (depth > (state.abyssBest || 0)) state.abyssBest = depth;
+    save(); transitionTo('abyss', { c: 13, r: 3 });
+  }
   function transitionTo(mapId, spawn) {
+    if (mapId === '__abyss') { enterAbyss(1); return; }                       // Eingang aus dungeon3
+    if (mapId === '__deeper') { enterAbyss((state.abyssDepth || 0) + 1); return; }   // eine Ebene tiefer
     if (state.transitioning) return;
     state.transitioning = true; hideContext();
     const keepFacing = player.facing;                    // Laufrichtung übernehmen
@@ -1531,7 +1645,7 @@
       if (hit(invClose, p, 26)) { state.shopMode ? closeStore() : closeInventory(); return; }
       for (const t of charTabRects) if (inRect(p, t.rect.x, t.rect.y - t.rect.height / 2, t.rect.width, t.rect.height)) { state.charTab = t.tab; renderInventory(); return; }
       if (state.charTab === 'perks' && !state.shopMode) {
-        for (const b of perkBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { buyPerk(b.id); return; }
+        for (const b of perkBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { b.id === '__respec' ? doRespec() : buyPerk(b.id); return; }
         if (invPanel && !inRect(p, invPanel.x - invPanel.width / 2, invPanel.y, invPanel.width, invPanel.height)) closeInventory();
         return;
       }
@@ -1824,7 +1938,7 @@
   }
 
   // ---- Store: als Charakter-Panel im Shop-Modus (links Händler, rechts Inventar) ----
-  function gearValue(g) { return Math.round(RARITY[g.rarity].mult * 15 + g.stat.val); }
+  function gearValue(g) { let a = 0; if (g.affixes) for (const x of g.affixes) a += x.val; if (g.sub) a += g.sub.val; return Math.round(RARITY[g.rarity].mult * 15 + g.stat.val + a * 0.8 + (g.legendaryPower ? 60 : 0)); }
   function openStore() {
     if (state.travelOpen || state.fullMapOpen) return;
     hideContext(); merchantStock();
@@ -1920,7 +2034,7 @@
         const fl = sceneRef.add.circle(e.tel.x, e.tel.y, e.tel.r, 0xff3b30, 0.5).setDepth(4);
         sceneRef.tweens.add({ targets: fl, alpha: 0, scale: 1.15, duration: 260, onComplete: () => fl.destroy() });
         clearTelegraph(e); sceneRef.cameras.main.shake(180, 0.012); sfx('slam');
-        if (inside && now > state.invulnUntil) { const dmg = (e.isSuperBoss ? 40 : 22); state.hp -= dmg * dmgTakenMul(); state.lastDamage = now; updateLife(); if (state.hp <= 0) respawnPlayer(); }
+        if (inside && now > state.invulnUntil) { const dmg = (e.isSuperBoss ? 40 : 22) * (hasPower('slamward') ? 0.5 : 1); state.hp -= dmg * dmgTakenMul(); state.lastDamage = now; updateLife(); if (state.hp <= 0) respawnPlayer(); }   // Titan-Kolben-Panzer halbiert Schläge
       }
       return;
     }
@@ -1944,7 +2058,7 @@
     if (!sceneRef || !player || state.transitioning) return;
     const w = curWeapon(), dx = Math.cos(a), dy = Math.sin(a);
     const sprite = sceneRef.add.circle(player.x + dx * (PLAYER_R + 6), player.y + dy * (PLAYER_R + 6), BULLET_R, w.bulletColor).setStrokeStyle(2, 0x1f2937, 0.6).setDepth(6);
-    bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE, type: w.type, base: dmgPerBullet(), acid: weaponAcid() });
+    bullets.push({ sprite, vx: dx * BULLET_SPEED, vy: dy * BULLET_SPEED, life: BULLET_LIFE, type: w.type, base: dmgPerBullet(), acid: weaponAcid(), pierce: hasPower('pierce') ? 1 : 0 });   // Iron-Rail-Durchschlag: 1× durchschlagen
   }
   function nearestEnemy(range) {
     let best = null, bd = (range === undefined ? Infinity : range);
@@ -1956,16 +2070,21 @@
   function addAmmo(kind, n) { if (!AMMO[kind]) return; state.ammo[kind] = Math.min(ammoCap(kind), ammoOf(kind) + n); }
   function fireBullet() {
     const kind = curWeapon().ammo || 'muni';
-    if (ammoOf(kind) <= 0) {                          // leer -> nicht feuern, gedrosselter Hinweis
-      const now = sceneRef.time.now;
-      if (now > (state.noAmmoAt || 0)) { toast(AMMO[kind].icon + ' ' + AMMO[kind].name + ' leer — nachladen!'); state.noAmmoAt = now + 1500; }
-      return;
+    if (kesselRush()) {   // Überhitzter Kessel: unter 30% Leben feuern Schüsse auf Lebenskosten, ohne Munition
+      if (state.hp > 6) { state.hp -= state.maxHp * 0.006; updateLife(); }
+    } else {
+      if (ammoOf(kind) <= 0) {                          // leer -> nicht feuern, gedrosselter Hinweis
+        const now = sceneRef.time.now;
+        if (now > (state.noAmmoAt || 0)) { toast(AMMO[kind].icon + ' ' + AMMO[kind].name + ' leer — nachladen!'); state.noAmmoAt = now + 1500; }
+        return;
+      }
+      if (!(hasPower('ammothrift') && Math.random() < 0.25)) state.ammo[kind]--;   // Sparventil-Uhr: 25 % kein Verbrauch
     }
-    state.ammo[kind]--; sfx('shoot');
+    sfx('shoot');
     const a = aimAngle(); player.facing = a; player.rotation = a; fireBulletAngle(a);   // Auto-Ziel auf nächsten Gegner
     updateWeaponUI();
   }
-  function castSpread() { const base = aimAngle(); for (let i = 0; i < SPREAD_COUNT; i++) fireBulletAngle(base - SPREAD_ARC / 2 + SPREAD_ARC * (i / (SPREAD_COUNT - 1))); }
+  function castSpread() { const base = aimAngle(), n = SPREAD_COUNT + (hasPower('spread11') ? 4 : 0); for (let i = 0; i < n; i++) fireBulletAngle(base - SPREAD_ARC / 2 + SPREAD_ARC * (i / (n - 1))); }   // Dolores' letzte Trommel: +4 Projektile
   function castDash() {
     const a = player.facing;
     const nx = Phaser.Math.Clamp(player.x + Math.cos(a) * DASH_DIST, state.bounds.minX, state.bounds.maxX);
@@ -2103,6 +2222,7 @@
         state.bounty.done = true; save();
         toast('🎯 Kopfgeld-Ziel „' + e.name + '" erlegt! Belohnung im Saloon abholen');
       }
+      if (hasPower('lifekill') && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + state.maxHp * 0.03); updateLife(); }   // Blutdampf-Kessel
       dropGold(bx, by, Math.round(e.gold * lootMul())); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); sfx('kill'); gainXp(xpForKill(e));
       if (e.isSuperBoss) {
         state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
@@ -2349,7 +2469,8 @@
       } else add(sceneRef.add.text(px + pw / 4 - 6, y + 56, 'Investition MAX · +' + (lvl * b.incomePer) + '/Sek', { fontFamily: 'system-ui', fontSize: '10px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
       y += rowH + 6;
     });
-    add(sceneRef.add.text(px, py + ph - 28, '📈 Add-on-Einkommen ' + incomePerSec() + '/Sek   ·   💰 ' + state.gold, { fontFamily: 'system-ui', fontSize: '13px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + ph - 42, '🕳️ Abstieg-Rekord: Ebene ' + (state.abyssBest || 0), { fontFamily: 'system-ui', fontSize: '12px', color: '#f87171', fontStyle: 'bold' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + ph - 26, '📈 Add-on-Einkommen ' + incomePerSec() + '/Sek   ·   💰 ' + state.gold, { fontFamily: 'system-ui', fontSize: '13px', color: '#fde047' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
   }
   // Kurzer Hinweis auf die aktuelle Primärfunktion je Gebäude
   function tycoonPrimaryHint(id) {
@@ -2531,13 +2652,19 @@
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
       let hitE = false;
-      for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) {
+      for (const e of enemies) if (!(b.hitSet && b.hitSet.has(e)) && Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) {
         const res = calcDamage(b.type, e, b.base, armorPen());
         let dmg = res.dmg, crit = false;
         if (dmg > 0 && Math.random() < critChance()) { dmg = Math.round(dmg * critMult()); crit = true; }   // Krit-Perk (+ Panzerbrecher-Synergie)
         if (res.effect) applyStatus(e, res.effect, b.acid);
+        if (crit && b.type === 'KINETIC' && hasPower('galvcrit')) applyStatus(e, 'STUN');   // Galvanische Trommel
         damageEnemy(e, dmg, { color: crit ? 0xfde047 : DMG_TYPES[b.type].color, immune: res.immune });
-        hitE = true; break;
+        if (crit && (hasPower('critchain') || hasCap('gun'))) {                              // Rechenkern (Legendär/Kapstein): Krit prallt ab
+          let best = null, bd = 220; for (const o of enemies) { if (o === e || o.hp <= 0) continue; const d2 = Phaser.Math.Distance.Between(e.c.x, e.c.y, o.c.x, o.c.y); if (d2 < bd) { bd = d2; best = o; } }
+          if (best) { popLoot(best.c.x, best.c.y - best.r, '⚡'); damageEnemy(best, Math.round(dmg * 0.6), { color: 0xfde047 }); }
+        }
+        if (b.pierce > 0) { b.pierce--; (b.hitSet || (b.hitSet = new Set())).add(e); } else { hitE = true; }   // Durchschlag: nicht sofort verschwinden
+        break;
       }
       if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
     }
