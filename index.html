@@ -60,8 +60,8 @@
   const BOSS_NAMES = ['Rost-Baron', 'Blei-Molch', 'Schrott-Koloss', 'Kaktus-König'];
   const BOUNTY_NAMES = ['Gefährlicher Vince', 'Dynamit-Dolores', 'Der Schakal', 'Öl-Otis', 'Klapperschlangen-Kate', 'Halunke Hank'];
   const TUT_STEPS = [
-    '👣 Bewege dich mit dem Stick · 🔫 rechts halten zum Schießen',
-    '💰 Lauf über die Beute, um sie einzusammeln',
+    '👣 Bewege dich mit dem Stick · sprich mit Mabel (⚙️) für deinen Auftrag',
+    '🚪 Verlasse die Stadt durchs Tor (Norden) & besiege Gegner in der Wüste',
     '🎒 Öffne dein Inventar (Knopf oben rechts)',
     '🧤 Tippe ein Ausrüstungsteil an → „Anlegen"',
     '✦ Steig eine Stufe auf → Reiter „Fähigkeiten" → Perk setzen'
@@ -278,27 +278,34 @@
         { id: 'mabel', name: 'Mamma „Rusty" Mabel', short: 'Mabel', tx: 8, ty: 9, color: 0xd97706,
           linesPre: ['„Na, Fremder. Setz dich an die Bar."', 'Sie schiebt dir ein Glas hin: „Kaktus-Schnaps aufs Haus — den ersten geb ich jedem Neuen."', '„Pass auf dich auf da draußen. Die Wüste frisst Männer wie dich zum Frühstück."'],
           linesPost: ['Mabel starrt dich an, flucht kurz — dann lacht sie rau.', '„Hätte mir gleich auffallen müssen, dass du keinen Kater kriegst, Kleiner!"', 'Sie schiebt dir statt Schnaps eine Dose Schmieröl rüber: „Trink aus. Geht aufs Haus."'],
-          quest: { id: 'q_bounty', title: 'Kopfgeld: Wegelagerer', kind: 'kill', count: 8, rewardGold: 120, rewardItem: 'zahnrad',
-            offerText: '„Ein paar Wegelagerer machen die Pfade unsicher. Besieg 8 von dem Gesindel, dann gibt\'s Kopfgeld."',
-            activeText: '„Noch nicht fertig? Da draußen ist es immer noch dreckig."',
-            completeText: '„Sauber gemacht! Hier, dein wohlverdientes Kopfgeld."',
-            doneText: '„Läuft wieder rund in Rustwater. Danke, Fremder."' } },
+          quests: [
+            { id: 'q_bounty', title: 'Kopfgeld: Wegelagerer', kind: 'kill', count: 8, rewardGold: 120, rewardItem: 'zahnrad', chapter: 1, advanceTo: 2,
+              offerText: '„Willkommen in Rustwater, Fremder. Erste Regel: mach dich nützlich. Ein paar Wegelagerer draußen in der Wüste machen die Pfade unsicher — besieg 8 von dem Gesindel."',
+              activeText: '„Noch nicht fertig? Geh durchs Tor nach Norden in die Wüste. Da wimmelt\'s von dem Pack."',
+              completeText: '„Sauber gemacht! Hier, dein wohlverdientes Kopfgeld. Und geh mal zu Silas, dem Schmied — der sucht Hände."',
+              doneText: '„Silas steht drüben an der Esse. Sag ihm, Mabel schickt dich."' },
+            { id: 'q_delve', title: 'Hinab in die Schrott-Mine', kind: 'kill', count: 10, rewardGold: 240, rewardItem: 'dampfkern', chapter: 4, advanceTo: 5,
+              offerText: '„Doc hat recht — irgendwas in der alten Schrott-Mine im Osten stimmt nicht. Steig hinab und mach dem ein Ende. Besieg 10 von dem, was da unten haust."',
+              activeText: '„Die Mine liegt im Osten der Wüste (🕳️). Geh tiefer, wenn du dich traust."',
+              completeText: '„Du lebst noch? Und siehst … anders aus. Setz dich, das muss ich mir ansehen."',
+              doneText: '„Was auch immer da unten passiert ist — du bist jetzt jemand anderes. Die Gilden werden von dir hören."' }
+          ] },
         { id: 'silas', name: 'Silas „Kupferauge" Finch', short: 'Silas', tx: 8, ty: 16, color: 0x9ca3af,
           linesPre: ['Der einäugige Schmied mustert dich durch seine Kupferlinse.', '„Ich brauch seltene Erze aus den Minen, sonst wächst diese Stadt nie."', '„Bring mir was Brauchbares — dann schmied ich dir was Brauchbares."'],
           linesPost: ['„Ah. Einer von den Eisernen." Er grinst schief. „Erklärt so einiges."', '„Bring mir Spezial-Zahnräder vom Kessel-Friedhof — dann bau ich dir Chassis-Panzerplatten."'],
-          quest: { id: 'q_scrap', title: 'Baumaterial: Schrott', kind: 'collect', item: 'schrott', count: 12, rewardGold: 90, rewardItem: null,
-            offerText: '„Bring mir 12 Schrott vom Ödland — Baumaterial für den Stadtausbau."',
-            activeText: '„Ich brauch den Schrott, sonst steht die Schmiede still."',
-            completeText: '„Genau das Richtige. Nimm dein Gold, ehrlich verdient."',
-            doneText: '„Die Schmiede glüht wieder. Gute Arbeit."' } },
+          quest: { id: 'q_scrap', title: 'Baumaterial: Schrott', kind: 'collect', item: 'schrott', count: 12, rewardGold: 90, rewardItem: null, chapter: 2, advanceTo: 3,
+            offerText: '„Mabel schickt dich? Gut. Bring mir 12 Schrott aus der Wüste — Gegner lassen ihn fallen. Baumaterial für den Stadtausbau."',
+            activeText: '„Ich brauch den Schrott, sonst steht die Schmiede still. Schlag Gegner, sammel die Beute ein."',
+            completeText: '„Genau das Richtige. Nimm dein Gold, ehrlich verdient. Und red mal mit Doc — der ist in Sorge."',
+            doneText: '„Die Schmiede glüht wieder. Doc Aris findest du in der Mitte der Stadt."' } },
         { id: 'doc', name: 'Doktor „Doc" Aris', short: 'Doc Aris', tx: 13, ty: 13, color: 0xe5e7eb,
           linesPre: ['„Zu viele Verletzte da draußen und viel zu wenig Hände."', '„Hol mir Heilkräuter aus der Alchemistischen Oase, dann reden wir weiter."'],
           linesPost: ['„Bei dir kann ich mir das Verarzten sparen." Er klopft auf dein Stahl-Chassis.', '„Aber ich weiß, wie man so ein Ding wieder flickt. Bring mir Material."'],
-          quest: { id: 'q_rats', title: 'Plage: Schrott-Ratten', kind: 'kill', count: 5, rewardGold: 70, rewardItem: 'potion',
-            offerText: '„Schrott-Ratten fressen die Leitungen unter der Stadt. Mach 5 davon platt."',
+          quest: { id: 'q_rats', title: 'Plage: Schrott-Ratten', kind: 'kill', count: 5, rewardGold: 70, rewardItem: 'potion', chapter: 3, advanceTo: 4,
+            offerText: '„Schrott-Ratten fressen die Leitungen unter der Stadt. Mach 5 davon platt — dann können wir reden."',
             activeText: '„Die Viecher sind zäh, was? Bleib dran."',
-            completeText: '„Endlich Ruhe da unten. Hier, für dein Wohl."',
-            doneText: '„Die Leitungen halten wieder. Danke."' } }
+            completeText: '„Endlich Ruhe. Hör zu: In der alten Mine im Osten geht etwas um. Sag Mabel Bescheid — sie soll dich hinschicken."',
+            doneText: '„Geh zu Mabel. Was in der Mine lauert, ist größer als ein paar Ratten."' } }
       ]
     },
     dungeon1: {
@@ -625,14 +632,16 @@
 
     scene.scale.on('resize', (size) => layoutUI(size));
 
-    load();
+    const hadSave = load();
     applyUpgrades();
     if (state.isRevealed) applyRevealVisual();   // bereits erwachter Spielstand -> Optik sofort
     state.hp = state.maxHp; state.potions = POTION_START;
     updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateLevelUI(); updateAbilityUI(); updateWeaponUI(); updateInvBadge();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
-    loadMap('overworld', { c: 40, r: 40 });
+    // Neue Runde startet in Rustwater (Story-Heimat, Mabel gibt den ersten Auftrag); Rückkehrer in der Wüste.
+    if (hadSave) loadMap('overworld', { c: 40, r: 40 });
+    else loadMap('rustwater', { c: 11, r: 12 });
   }
 
   // ---- Wirtschaft: Speichern / Laden / Einkommen -------------
@@ -774,7 +783,7 @@
   }
   function load() {
     try {
-      const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
+      const raw = localStorage.getItem(SAVE_KEY); if (!raw) return false;
       const s = JSON.parse(raw);
       state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1; state.chosenGuild = s.guild || null;
       state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
@@ -800,7 +809,8 @@
       else if (s.saloon) state.economy.saloon.level = 1;   // Migration alter Spielstände
       // Kein Offline-Ertrag: Beim Laden wird KEINE verstrichene Realzeit geprüft und kein
       // rückwirkendes Gold vergeben. Die Wirtschaft läuft nur während aktiver Spielzeit.
-    } catch (e) { }
+      return true;
+    } catch (e) { return false; }
   }
 
   // ---- Karte laden -------------------------------------------
@@ -1780,6 +1790,7 @@
   // ---- Reveal-Event (Ende Kapitel 4) -------------------------
   function triggerReveal() {
     if (state.isRevealed || state.revealPlaying) return;
+    if (state.currentChapter < 4 && state.level < 6) return;   // Reveal erst nach dem Stadt-Bogen (oder für Grinder ab Stufe 6)
     state.revealPlaying = true; hideContext();
     sceneRef.cameras.main.shake(500, 0.012);
     sceneRef.cameras.main.flash(400, 255, 60, 30);
@@ -2018,8 +2029,8 @@
     if (state.tutorial >= TUT_STEPS.length) { tutText.setVisible(false); tutBg.setVisible(false); return; }
     const s = state.tutorial;
     let done = false;
-    if (s === 0) done = kills >= 1;
-    else if (s === 1) done = state.gold >= 1 || invCount() > 0 || state.gearBag.length > 0;
+    if (s === 0) done = Object.keys(state.quests || {}).length > 0 || kills >= 1;   // Auftrag angenommen oder erster Kill
+    else if (s === 1) done = kills >= 1 && state.map === 'overworld';
     else if (s === 2) done = state.tutOpenedInv;
     else if (s === 3) done = ['helmet', 'armor', 'weapon', 'gadget', 'boots'].some(k => state.equip[k]) || PLATE_SLOTS.some(k => state.equip[k]);
     else if (s === 4) done = Object.values(state.perks || {}).some(v => v > 0);

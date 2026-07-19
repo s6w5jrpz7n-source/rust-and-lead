@@ -350,6 +350,15 @@ Reveal in Kapitel 4 alles zerbricht. `is_revealed` steuert dabei die gesamte Wah
 
 ## AKT I — DIE FLEISCH-ILLUSION (Kapitel 1–4) · `is_revealed = false`
 
+> **Prototyp-Stand (früher Spielbogen):** Neue Runden **starten in Rustwater** (Rückkehrer
+> in der Wüste). Ein geführtes **Tutorial-Banner** und **verkettete Stadt-Quests** tragen
+> durch Akt I: **Mabel** „Kopfgeld: Wegelagerer" (Kap. 1 → 2) → **Silas** „Baumaterial:
+> Schrott" (Kap. 2 → 3) → **Doc** „Plage: Schrott-Ratten" (Kap. 3 → 4) → **Mabel** „Hinab in
+> die Schrott-Mine" (Kap. 4). Quest-Abgaben schalten das nächste Kapitel frei; jeder NPC
+> weist zum nächsten. Der **Reveal ist an den Bogen gekoppelt**: das Erwachen zündet erst ab
+> **Kapitel 4** (oder als Sicherheitsnetz ab Spielerstufe 6) beim Tod eines Elite-/Bosses in
+> der Mine und setzt `is_revealed → true`, `currentChapter → 5` (Gilden werden frei).
+
 **Kapitel 1 — „Staub & Blei".**
 Tutorial und Weltanschluss. Der Held erwacht am Rand der Wüste, scheinbar ein Mensch mit
 Kopfschmerzen und lückenhafter Erinnerung. Er erreicht **Rustwater**, lernt Bewegung,
