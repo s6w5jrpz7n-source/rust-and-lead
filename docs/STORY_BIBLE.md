@@ -628,8 +628,352 @@ Begrüßung: „Kaufen, verkaufen oder nur am Feuer wärmen? Zwei von drei koste
 ---
 
 ## NOCH ZU SCHREIBEN (Fortsetzungs-Backlog)
-Die Bibel ist in allen vier Teilen tragfähig; folgende Erweiterungen als nächste Schreibrunden:
-1. **Teil A:** Nicht-Kino-Standarddialoge (Questgeber-Menütexte: offer/active/complete/done) für Kap. 2, 3, 6, 9–11 in allen drei Gildenfärbungen.
-2. **Teil B:** Eine achte Nebenstory („Der Garten aus Rost" — die Kaktus-Wächterin, verknüpft mit der Smog-Linie) plus je 2–3 „Danach"-Barks für alle sieben Bögen.
-3. **Teil C:** Erweiterung des Ambiente-Pools auf 50+ (Sektor-3-/Endgame-Barks), Barks für den „Abstieg"-Endlosmodus (Tiefenrekord-Sprüche), Kampf-Barks (Gegner-Callouts nach Roster §7.3).
-4. **Teil D:** Aussprache-/Casting-Notizen je Sprecherrolle (Stimmalter, Tempo, Referenzstimmen) für die Vertonung.
+✅ **ERLEDIGT** — alle vier Punkte sind ausgeschrieben (siehe „FORTSETZUNG"-Abschnitte weiter unten):
+1. ✅ **Teil A:** Questgeber-Menütexte (offer/active/complete/done) für Kap. 2, 3, 6, 9, 10, 11 inkl. Gildenfärbungen.
+2. ✅ **Teil B:** 8. Nebenstory „Der Garten aus Rost" plus „Danach"-Barks für alle acht Bögen.
+3. ✅ **Teil C:** Ambiente-Pool auf 60+ erweitert (Sektor 3 / Endgame / Walzen-Archiv), 16 Abstieg-Barks, 24 Kampf-Barks/Callouts.
+4. ✅ **Teil D:** Casting-Notizen für neun Sprecherrollen (Stimmalter, Tempo, Textur, Referenz-Vibe, Tell-Moment).
+
+### Verbleibende optionale Runden
+- Standarddialoge auch für die Nebenstory-Questgeber (B1–B8) als offer/active/complete/done.
+- Zweite Gilden-Variante der Kinoszene in Kap. 7 (aktuell nur REBELLEN-Variante).
+- Vertonungs-Skript-Export (Zeilennummerierung + Timecodes) für ein Audio-Studio.
+
+---
+
+## FORTSETZUNG — TEIL A (Questgeber-Menütexte)
+
+*Format: `offer` (Angebot) · `active` (läuft) · `complete` (Abgabe) · `done` (erledigt/Wiederholung). Sprechbar, 1–3 Sätze, in-character. Kap. 2–3 liegen vor Reveal und Gildenwahl — keine Färbung. Ab Kap. 6 sind gildengefärbte Zusatzzeilen angegeben; sie werden an den Grundtext angehängt oder ersetzen dessen letzten Satz.*
+
+---
+
+### KAPITEL 2 — `q_scrap` „Sand im Räderwerk" · Questgeber: SILAS (Schmiede)
+
+**offer:** „Zwölf Stück Schrott, Junge. Die Wüste liegt voll davon — der Konzern wirft weg, was nicht in seine Bücher passt. Bring's mir, und ich zeig dir, was ehrliches Eisen aus Abfall macht."
+
+**active:** „Zähl ich falsch, oder sind das noch keine zwölf? Beim Rattengestrüpp rostet mehr Geschichte, als Rustwater Häuser hat. Geh's holen, bevor der Sand es begräbt."
+
+**complete:** „Zwölf. Aufs Gramm. *(wiegt ein Stück in der Hand)* Weißt du, was ich an Schrott mag? Er lügt nicht über sein Alter. Hier, dein Lohn — und die Werkbank steht dir ab jetzt offen."
+
+**done:** „Die Palisade steht, der Amboss glüht. Findest du wieder was Rostiges: Ich zahl immer. Rost ist bloß Eisen, das gelebt hat."
+
+---
+
+### KAPITEL 3 — `q_rats` „Plage: Schrott-Ratten" · Questgeber: DOC ARIS (Feldlazarett)
+
+**offer:** „Ölfresser-Ratten in den Minen. Sie nagen Stützbalken an und saufen Lampenöl, und die Knappen bringen mir mehr Brüche, als ich Schienen habe. Dünnen Sie den Bestand aus — betrachten Sie es als Präventivmedizin."
+
+**active:** „Es quiekt noch in Ebene eins, ich höre es bis hierher. Bildlich gesprochen. Und falls Sie unten bluten: Ich habe Sprechstunde. *(putzt die Brille)* Nicht, dass Sie je geblutet hätten."
+
+**complete:** „Still unten? Gut. Wo die Ratte stirbt, schläft der Balken ruhig — das sagen die Knappen nicht, aber sie sollten. Ihr Honorar. Und lassen Sie sich bei Gelegenheit anschauen. Reine Routine. Reine … Neugier."
+
+**done:** „Die Unfallkurve sinkt. Als Arzt freut mich das; als Wissenschaftler langweilt es mich beinah. Bleiben Sie in der Nähe — Sie sind der gesündeste Patient meiner Laufbahn, und genau das beunruhigt mich."
+
+---
+
+### KAPITEL 6 — `q_mods6` „Maßarbeit" · Questgeber: SILAS (Werkstatt, nach Reveal)
+
+**offer:** „Panzerplatten schmiedet man nicht aus Wetter, Junge. Ich brauch Minenkupfer und einen Dampfkern, der nicht zickt — dein Chassis kriegt Maßarbeit, kein Flickwerk. Halt nachher still, es wird warm."
+— *REBELLEN:* „Gideon lässt fragen, ob's schneller geht. Sag ihm: Gut Ding braucht Glut."
+— *EISERNE GILDE:* „Der Aufseher hat 'ne Materialfreigabe geschickt. Dreifach gestempelt. Fast rührend."
+— *SCHMUGGLER:* „Slick hat Kupfer ‚organisiert'. Ich frag nicht, wo's herkommt. Fragt ja auch keiner, wo's hingeht."
+
+**active:** „Ohne Kupfer kein Kesselkorsett. Die Konstrukte in Sektor 2 tragen das beste Material spazieren — brauchen sie nicht mehr, sobald du fertig mit ihnen bist."
+
+**complete:** „Halt still. *(Funkenregen; er zieht die letzte Schraube fest)* … Sitzt. Passt. Wackelt nur, wenn's soll. Du bist jetzt schwerer, Junge. Trag's aufrecht."
+
+**done:** „Ob die Platte hält? Was ich verschraube, bleibt. Bring mir was Legendäres, und ich montier's umsonst — aus Ehrgeiz, nicht aus Freundschaft. Na gut: aus beidem."
+
+---
+
+### KAPITEL 6 — `q_town6` „Die Stadt trägt mit" · Questgeberin: MABEL (Saloon)
+
+**offer:** „Krieg kostet, Kleiner, und Gilden fressen Gold wie der Ofen Holz. Der Saloon wirft ab, wenn er wächst: Besorg Bauholz und zwölf ehrliche Hände Schrott, dann zahlt Rustwater deine Rechnungen mit."
+— *REBELLEN:* „Und stell zwei Fässer extra kalt. Gideons Leute reden nicht viel, aber sie haben Durst für drei."
+— *EISERNE GILDE:* „Und sag dem Quentin, meine Bücher prüft hier keiner. Meine Bücher bin ICH."
+— *SCHMUGGLER:* „Und wenn Slick liefert: Hintertür, nach Sperrstunde. Was ich nicht seh, verzolle ich nicht."
+
+**active:** „Der Anbau steht halb, und halb ist in der Wüste dasselbe wie gar nicht. Holz, Kleiner. Schrott. Der Tresen wartet."
+
+**complete:** „Sieh dir das an — doppelt so viele Stühle, doppelt so viele Zechen, doppelt so viel für die Kriegskasse. Du kriegst den Ecktisch. Von da sieht man beide Türen. Ich denk an sowas."
+
+**done:** „Der Laden brummt. Weißt du, was das heißt, wenn ein Saloon voll ist? Dass die Leute noch an ein Morgen glauben, für das sich's zu trinken lohnt. Dein Verdienst, Kleiner. Zum Teil. Der Schnaps ist meiner."
+
+---
+
+### KAPITEL 9 — `q_goliath9` „Die Säure-Lektion" · Questgeber: DOC ARIS (Lazarett)
+
+**offer:** „Die Goliaths tragen gewalzten Konzernstahl, und darunter liegt Hydraulik — empfindlich wie ein offener Bruch. Meine Säure frisst die Naht auf; die Galvanik erledigt den Rest. Erlegen Sie einen und bringen Sie mir die Kernplatte. Ich will wissen, was der Konzern neuerdings für unverwundbar hält."
+— *REBELLEN:* „Gideon nennt das ‚Waffenprobe'. Ich nenne es Sektion am lebenden Objekt. Wir meinen dasselbe."
+— *EISERNE GILDE:* „Quentin führt die Platte als ‚Materialrückführung'. Von mir aus. Hauptsache, sie liegt auf meinem Tisch."
+— *SCHMUGGLER:* „Slick bietet bereits auf die Einzelteile. Sagen Sie ihm: Die Wissenschaft hat Vorkaufsrecht."
+
+**active:** „Das Testgelände liegt bei sechshundert zu siebzehnhundertfünfzig — verzeihen Sie, ich rede in Koordinaten, wenn ich nervös bin. Merken Sie sich die Reihenfolge: erst Säure, dann Galvanik. Andersherum verschweißen Sie sich das Ziel."
+
+**complete:** „Faszinierend. Und beunruhigend: Die Legierung ist neu — sie bauen also noch, und zwar schneller, als wir zerlegen. *(hält inne)* Sehen Sie genau hin: Ich putze dabei nicht einmal die Brille. So ehrlich ist meine Sorge."
+
+**done:** „Jede Kernplatte ist ein Goliath weniger und eine Erkenntnis mehr — bessere Wechselkurse finden Sie nirgends im Territorium. Bringen Sie mir, was die Wüste hergibt."
+
+---
+
+### KAPITEL 10 — „Sabotage" · drei Gilden-Questgeber (voll ausgeschrieben)
+
+#### REBELLEN — `q_reb10` „Sprengt die Trasse" · GIDEON (Fort Freedom, Wall)
+
+**offer:** „Drei Ziele: Pipeline, Relaisfeld, Waffenlager. Wir sprengen alle drei. Keine Reden, keine Fahnen — Fracht hinbringen, Feuer sehen, heimkommen. Fragen?"
+
+**active:** „Die Pipeline brennt noch nicht. Ich seh's vom Wall aus. Beweg dich, Maschine — die Nacht ist kurz, und der Konzern zählt schnell."
+
+**complete:** „Rauch über drei Sektoren. Gut. Der Konzern verliert kein Blut — er verliert Takt. Und ohne Takt marschiert keine Armee. Die nächste Fracht wartet schon."
+
+**done:** „Die Trasse ist tot: kein Nachschub, keine Ernter, keine Ausreden. Wenn du Ruhe suchst — auf dem Wall ist Platz. Ruhe ist da oben nur anders verteilt."
+
+#### EISERNE GILDE — `q_corp10` „Requirierung" · QUENTIN (Sektor 01, Kontrollhalle)
+
+**offer:** „Wir sprengen nicht. Wir übernehmen. Drei Objekte, drei Inventarlisten: Sie neutralisieren die abtrünnigen Wachmannschaften — bedauerlich, aber verbucht —, meine Buchhalter folgen. Der Unterschied zwischen Raub und Requirierung ist ein Stempel. Ich besitze den Stempel."
+
+**active:** „Objekt zwei meldet Gegenwehr. Erinnern Sie die Anlage daran, wem sie ab heute gehört. Höflich, wo möglich. Endgültig, wo nötig."
+
+**complete:** „Drei Objekte, null Totalverluste, Übergabe protokolliert. Akzeptabel. *(Beat)* Das ist ein Orden, falls Sie es nicht wussten. Ich verleihe keine anderen."
+
+**done:** „Die Anlagen laufen unter neuer Führung — unserer. Vane verliert nicht bloß Material; er verliert die Gewissheit, dass seine Bücher stimmen. Das trifft ihn tiefer als jedes Dynamit."
+
+#### SCHMUGGLER — `q_smug10` „Die große Umleitung" · SLICK (Rogue's Landing)
+
+**offer:** „Sprengen? Barbarei. Requirieren? Papierkram. Wir leiten UM, Freund: dieselbe Pipeline, dieselben Kerne — nur dass am Ende unsere Fässer voll sind und der Konzern eine Lieferbestätigung von einem Depot kriegt, das es nie gab. Drei Ventile, drei Handgriffe. Kein Anschlag. Ein Missverständnis."
+
+**active:** „Ventil zwei klemmt? Dafür hast du Werkzeug dabei. Deins wiegt sechs Pfund und hat 'nen Abzug. Aber leise, ja? Umleitungen leben von Diskretion."
+
+**complete:** „Drei Ströme fließen in die richtige Richtung — unsere. Und das Schönste: Der Konzern sucht jetzt einen Rechenfehler. Monatelang. *(hebt das Glas)* Auf die Buchhaltung."
+
+**done:** „Das Öl fließt, das Gold auch, und offiziell ist nie was passiert. Perfektes Verbrechen? Nein. Perfektes GESCHÄFT. Verbrechen wär's ja nur, wenn's auffiele."
+
+#### ALLE GILDEN — `q_defend10` „Ernter vor der Stadt" · MABEL (Verteidigungs-Event)
+
+**offer:** „Kleiner, die Ernter kommen. Konzernblech, groß wie Scheunentore, und die ernten kein Korn. Rustwater hat eine Mauer, dich und mich mit der Doppelflinte. Ich sag's, wie's ist: Die Reihenfolge der Aufzählung ist auch die Rangfolge."
+
+**active:** „Sie sind an der Palisade! Halt sie von meinem Tresen fern — da stehen dreißig Jahre Arbeit und EIN sauberes Glas!"
+
+**complete:** „Die Stadt steht. Angesengt, aber sie steht. Komm her, Kleiner — heute gibt's das gute Öl. Das aus der untersten Schublade."
+
+**done:** „Die Palisade ist geflickt, die Kinder spielen wieder draußen. Weißt du, wie man hier neuerdings ‚sicher' sagt? Man sagt deinen Namen. Den, den wir dir gegeben haben."
+
+---
+
+### KAPITEL 11 — `q_filter11` „Atem für den Norden" · Questgeber: SILAS & DOC ARIS (gemeinsame Werkbank)
+
+**offer (Silas):** „Der Smog frisst Lungen und Ventile ohne Unterschied — endlich mal gerecht, der Mist. Doc macht die Chemie, ich das Gehäuse. Uns fehlen Kaktus-Destillat aus der Raffinerie, Stufe drei, und ein Dampfkern, der nicht zickt. Dann kriegst du Atem für den Norden."
+— *REBELLEN:* „Und Gideon will Filter für zwanzig Mann. Er sagt nicht ‚bitte'. Er sagt ‚zwanzig'. Bei ihm ist das dasselbe."
+— *EISERNE GILDE:* „Quentin hat die Stückzahl schriftlich angefragt. Mit Frist. Ich hab die Frist eingerahmt und arbeite trotzdem so schnell wie immer."
+— *SCHMUGGLER:* „Slick wollte die Filter ‚exklusiv vertreiben'. Ich hab Nein gesagt. Er hat gelächelt. Behalt dein Exemplar im Auge."
+
+**active (Doc):** „Das Destillat will in Reinform transportiert werden: Schütteln verboten, Stürzen verboten, Einatmen … nun, Sie haben es gut, Sie können es lassen. Die Raffinerie wartet."
+
+**complete (beide, an der Werkbank):**
+**SILAS:** „Gehäuse sitzt."
+**DOC:** „Chemie hält."
+**SILAS:** „Dann sag's du ihm."
+**DOC** *(nimmt die Brille ab — er putzt sie nicht):* „Der Filter funktioniert. Sie können durch die Smog-Linie. Und die, die mit Ihnen gehen, auch."
+
+**done (Silas):** „Die Filter hängen am Haken, gewartet und geölt. Der Norden wartet, Junge. Und wenn du's hinter dir hast: Die Esse bleibt warm. Für dich sowieso."
+
+---
+
+## FORTSETZUNG — TEIL B8 + Danach-Barks
+
+### B8 — „Der Garten aus Rost"
+
+**Hook:** An der Smog-Linie gibt es einen Fleck, an dem der grüne Nebel *zurückweicht* — die Karawanenführer nennen ihn „das Loch im Gift" und machen Umwege, um ihn nicht zu verbrauchen. Wer ihm folgt, findet eine Senke voller Kakteen, gepflanzt in geborstene Kessel, Konstrukthelme und die Rippenbögen ausgeschlachteter Chassis: den Garten aus Rost. Mittendrin: **Agata Dorn**, die Kaktus-Wächterin — siebzig, Haut wie Fensterleder, Gießkanne aus einer halbierten Granate. Sie zählt beim Reden halblaut mit, immer, alles: Schritte, Tropfen, Knospen.
+
+**Emotionaler Kern/Twist:** Agatas Kakteen binden den Smog — wo sie wurzeln, wird die Luft sauber. Der Konzern hat die Senke als „Entlüftungskorridor Süd" vermessen: Hier soll der Überdruck der Smog-Linie abgeblasen werden, planiert wird nächste Woche. Der wahre Kern liegt tiefer: Der älteste Kaktus des Gartens, den Agata nur **„den Alten"** nennt, wächst durch das kniende Chassis von **PSALM-Einheit 4** — einer Maschine, die vor Jahrzehnten desertierte, in die Wüste ging, um zu verlöschen, und stattdessen den Kessel auf kleinster Flamme weiterbrennen ließ. Seine Restwärme bringt den Garten durch die Frostnächte. Der Garten lebt, weil eine Maschine beschlossen hat, nicht als Waffe zu enden, sondern als Spalier. Agata weiß es. Sie gießt ihn mit — Wasser links, Öl rechts.
+
+**Verknüpfung:** Agatas Dornen-Destillat ist die fehlende Reinsubstanz für den Alchemie-Filter aus Kap. 11 (Silas & Doc beziehen es fortan von ihr); der wartende Kaktus-Beobachter aus dem Ambiente-Pool („alle sieben Jahre…") verweist auf diesen Bogen.
+
+**Schritte:** (1) Dem „Loch im Gift" folgen, den Garten finden → (2) der Vermessungstrupp steckt Pfähle → (3) Nachtverteidigung gegen das Planier-Kommando (Ernter + Konstrukte; Kampf zwischen den Beeten, zerstörte Pflanzen reduzieren die Belohnung) → (4) die Siebenjahresblüte.
+
+**Schritt 1 — AGATA** *(gießt, ohne sich umzudrehen; sie hat ihn längst gehört):* „Dreiundzwanzig, vierundzwanzig … Sie stehen auf dem Beet, junger Mann. Ja, Sie. Ich rieche heißes Blech auf zehn Schritt. *(dreht sich um, mustert ihn; nickt, als wäre nichts)* Na also. Endlich schickt mir die Wüste mal Besuch, der nicht trampelt, wenn man's ihm sagt. Kommen Sie. Aber auf den Steinen bleiben — hier unten schläft alles Mögliche."
+**HELD:** „Der Smog weicht hier zurück. Wieso?"
+**AGATA:** „Weil hier einer zählt, was wiederkommt. Der Konzern zählt nur, was er nimmt — deshalb wird's bei dem immer weniger und bei mir immer mehr. *(tippt gegen einen Kaktus, zärtlich, wie an ein Barometer)* Die hier trinken das Grün aus der Luft und schwitzen es als Morgen wieder aus. Fragen Sie mich nicht nach der Chemie. Ich bin keine Apothekerin. Ich bin eine Wache."
+
+**Schritt 2 — DER VERMESSER** *(Konzerngrau, Messlatte, Lochkarten-Klemmbrett; hinter ihm zwei Konstrukte, die synchron die Köpfe drehen):* „Parzelle vierzig-elf bis vierzig-neunzehn, Entlüftungskorridor Süd. Räumungsfrist: sieben Tage. Die Vegetation ist … nicht verzeichnet."
+**AGATA** *(stellt die Gießkanne ab; zum ersten Mal zählt sie NICHT):* „Dann verzeichnen Sie mal, junger Mann. Zweihundertsechzehn Pflanzen. Vierzig Jahre. Eine alte Frau. Und dahinter — *(sie deutet auf die Smog-Wand am Horizont)* — Ihr Lebenswerk. Schreiben Sie ruhig alles auf. Papier hält den Nebel nicht auf, aber meine Dornen tun's."
+**VERMESSER** *(unsicher; er sieht auf sein Klemmbrett, als könnte es ihn retten):* „Ich … mache nur die Zahlen."
+**AGATA:** „Ich auch. Meine gehen bloß nicht auf Null zu."
+
+**Schritt 3 — Nachtverteidigung.** *(Scheinwerferkegel im Staub, das Kreischen einer Planierraupe. Während des Kampfes bricht ein Ernter durch das älteste Beet — und hält inne: Vor ihm ragt „der Alte" auf, das kniende, überwachsene Chassis, aus dessen Brustkorb der Säulenkaktus wächst. Das Okular des Alten glimmt schwach auf — einmal, wie ein Wachhund, der ein Auge öffnet. Der Ernter weicht einen halben Schritt zurück. Maschinen haben keinen Aberglauben. Dieser hier schon.)*
+**AGATA** *(im Feuerschein, lädt eine Vogelflinte, die älter ist als sie):* „Vierzig Jahre gieße ich ihn: Wasser links, Öl rechts. Er hat sich hingekniet, als der Konzern ihn Waffe nennen wollte, und ist nie wieder aufgestanden. *(Blick zum Helden, trocken)* Er ist nicht tot, junger Mann. Er hat den Beruf gewechselt."
+**HELD** *(nach dem Kampf; er steht lange vor dem Alten; dann kniet er sich hin — Chassis vor Chassis, und aus seinen Schulterventilen entweicht ein langer, ruhiger Dampfstoß — Erleichterung):* „Einheit 4. Du hast's früher begriffen als ich. Man muss nicht das werden, wozu man gebaut ist. *(legt eine Hand auf die überwachsene Schulter)* Wärm sie weiter. Ich halt dir den Rücken frei."
+
+**Schritt 4 — Die Siebenjahresblüte** *(Nacht; die gesamte Senke blüht auf einmal auf, weiße Kelche im Mondlicht, und über den Beeten hängt zum ersten Mal seit Menschengedenken KLARE Luft — man sieht Sterne, bis hinüber zur Smog-Wand. Auch der Beobachter aus Rustwater ist da; er weint und kartiert gleichzeitig.)*
+**AGATA** *(drückt dem Helden eine versiegelte Flasche in die Hand — Dornen-Destillat — und einen einzelnen Samen in die andere):* „Das Destillat bringen Sie dem Schmied und dem Doktor, die basteln doch an ihren Atemdingern — sagen Sie ihnen: nicht schütteln, nicht strecken, nicht bedanken. Und der Samen … *(sie schließt seine Stahlfinger darum)* … der ist für hinterher. Irgendwo liegt Erde, die auf Sie wartet. Pflanzen Sie ihn dort. Maschinen können nicht weinen, ich weiß. Aber gießen können sie. Läuft aufs Selbe raus."
+**HELD:** „Woher wissen Sie, dass es ein Hinterher gibt?"
+**AGATA** *(sieht zur Smog-Wand; zählt wieder, ganz leise):* „Weil ich seit vierzig Jahren gegen die da anzähle, junger Mann. Und ich führe."
+
+**Belohnung:** Rezeptfreischaltung **„Dornen-Destillat"** (verbessert den Alchemie-Filter aus Kap. 11: permanente Smog-Resistenz +) · Talisman **„Die Siebenjahresblüte"** (Ausrüstungsgegenstand: regeneriert Kesseldruck langsam, solange man stillsteht — „Wer wartet, wurzelt") · der Samen (Schlüsselgegenstand; wird im Rebellen-Epilog in Providence Cut einpflanzbar).
+
+---
+
+### Danach-Barks (Wiederhör-Zeilen nach Abschluss, B1–B8)
+
+**B1 — „Das Uhrwerk-Herz":**
+- **OLIVER** *(sitzt vor dem Laden):* „Ich hab heute bis vierzigtausend getickt und mich kein einziges Mal verzählt. Herr Vater sagt, das ist kein Kunststück. Aber er hat's eingerahmt."
+- **THORN:** „Er fragt Dinge, auf die kein Uhrmacher eine Antwort hat. Gestern: warum der Wind nicht müde wird. *(Pause)* Zwölf Jahre hatte ich Angst vor der falschen Stille. Jetzt komm ich vor Fragen nicht mehr zum Fürchten."
+- **OLIVER** *(wenn der Held vorbeigeht):* „Du klickst heute anders als letzte Woche. Tiefer. Herr Vater sagt, das heißt bei Werken wie uns: Es hat sich was gesetzt."
+
+**B2 — „Die Witwe und der Automat":**
+- **CORAH** *(an der Wäscheleine):* „Ich wasche jetzt auch für Fort Freedom. Doppelte Arbeit, halbe Grübelei. Die Hände wissen am besten, wie Weiterleben geht."
+- **CORAH:** „Am Signalposten steht ein neues Konstrukt. Es zieht keine Mütze. Ich hab hingesehen, extra. Nichts. *(glättet ein Laken)* Gut so. Einmal Abschied reicht für ein Leben."
+- **CORAH** *(leiser, wenn der Held nah steht):* „Sie waren sanft mit ihm, das hat man mir erzählt. Merken Sie sich das von sich selbst, falls mal wer behauptet, in Ihnen wär nur Blech."
+
+**B3 — „Der zweite Lauf":**
+- **VESPER:** „Blechmann. Munition kaufen. Hinter dir wird's nie leise bleiben — dafür kenn ich die Welt zu gut." *(bestehende Zeile, kanonisch)*
+- **VESPER** *(am Auftragsbrett, ohne aufzusehen):* „Der Schakal-Zettel hängt wieder. Nachahmer. Ich lass ihn dir übrig — ich jag keine Kopien, ich jag Originale."
+- **VESPER** *(im Vorbeigehen, fast beiläufig):* „Meine Liste ist kürzer geworden. Schlecht fürs Geschäft. *(Beat)* Gut für alles andere."
+
+**B4 — „Die Kirche der Fleischwerdung":**
+- **HABAKUK** *(in blankem Stahl vor dem Zelt):* „Gesegnet sei, was rostet — denn es war draußen im Regen und ist geblieben." *(bestehende Zeile, kanonisch)*
+- **GEMEINDEMITGLIED (Mensch):** „Ich sitz sonntags zwischen zwei Blechbrüdern und einer Witwe. Der Prediger sagt, Tragen verbindet. Ich sag: Die Bank ist hart für alle. Das auch."
+- **HABAKUK** *(wenn der Held vorbeikommt, mit ehrlicher Blechstimme):* „Bruder! Die Silbe hält. Ich predige sie jeden Sonntag: nicht ertragen — **tragen**. Manche verstehen's erst beim dritten Mal. Ich hab's erst beim dritten Leben verstanden."
+
+**B5 — „Der blinde Projektionist":**
+- **LOMAX** *(baut den Projektor auf):* „Vorstellung um acht! Heute: eine Komödie. Das Publikum braucht was zu lachen, und ich brauch das Lachen — daran seh ich, wo alle sitzen."
+- **LOMAX** *(wenn der Held den Saloon betritt):* „Erste Reihe, Mitte, ist frei, Junge. Bleibt sie auch. Für immer heißt für immer — ich bin blind, nicht wortbrüchig."
+- **LOMAX:** „Neulich hat einer gefragt, ob ich die Rolle von damals nochmal zeige. Ich hab Nein gesagt. Manche Bilder gehören keinem Publikum mehr. Nur noch einem."
+
+**B6 — „Der Schutzengel von Rustwater":**
+- **PIP:** „Das ist mein Engel. Der rostet nur, wenn er traurig ist. Also fütter ich ihn mit Witzen." *(bestehende Zeile, kanonisch)*
+- **PIP** *(zu anderen Kindern, laut genug, dass er's hört):* „Meiner ist der einzige Engel im Territorium mit Wartungsvertrag. Ich spuck auf den Lappen, und dann wird's Auge geputzt. STILLHALTEN muss er dabei."
+- **PIP** *(abends, an der Öldose neben ihm):* „Wenn ich groß bin, werd ich auch Schutzengel. Silas sagt, dafür gibt's keine Lehre. Ich sag: Doch. Ich bin ja grad in einer."
+
+**B7 — „Dolores' letzte Trommel":**
+- **MABEL** *(Blick zum Auftragsbrett mit dem Zündschnur-Trauerflor):* „Der Zettel bleibt hängen. Manche Kopfgelder zahlt man nicht aus. Manche zahlt man zurück — in Andenken."
+- **MINENWAISE** *(vor dem Waisenhaus, neuer Mantel, neue Stiefel):* „Ein anonymer Gönner, sagt die Vorsteherin. Aber auf der Kiste mit den Wintersachen war 'ne Zündschnur als Schleife. Wir wissen schon. Wir sagen's bloß nicht laut."
+- **STAMMGAST** *(hebt das Glas):* „Auf Dolores! Drei Worte hat die Zeitung gedruckt, wie sie's wollte. ‚Sie ging mit Donner.' Mehr Platz braucht Ehrlichkeit nicht."
+
+**B8 — „Der Garten aus Rost":**
+- **AGATA** *(gießt; Wasser links, Öl rechts):* „Zweihundertsiebzehn Pflanzen jetzt. Der Neuzugang ist störrisch. Ich mag ihn."
+- **DER BEOBACHTER** *(aus dem Ambiente-Pool, jetzt mit blühendem Kaktus-Setzling unterm Arm):* „Ich hab sie gesehen! Die Siebenjahresblüte! Sieben Jahre gewartet, eine Nacht geweint, kein Wort bereut. Nächste Blüte in sieben Jahren — ich warte ab sofort."
+- **DER VERMESSER** *(desertiert; steht jetzt mit Gießkanne im Garten, die graue Uniform ohne Abzeichen):* „Ich mache immer noch nur die Zahlen. Aber jetzt gehen sie in die richtige Richtung. — Vierundvierzig, fünfundvierzig …"
+
+---
+
+## FORTSETZUNG — TEIL C (Erweiterung)
+
+### C3-Erweiterung — Ambiente-Barks: Sektor 3 / Endgame *(erweitert den Pool auf 50+)*
+
+**Smog-Grenzland & Sektor 3, Siedler und Grenzgänger (10):**
+1. „Hier draußen flüstert man. Nicht aus Angst. Der Nebel schluckt laute Stimmen ZUERST — frag nicht, woher wir das wissen."
+2. „Sieh dir den Himmel an. Grün wie alte Bronze. Mein Vater hat noch Blau gekannt. Ich kenn's von seinen Beschreibungen."
+3. „Filter auf, Klappe zu. Die zwei Regeln von Sektor drei. Es gibt keine dritte — wer eine dritte braucht, kommt zurück und erzählt sie keinem."
+4. „Nachts hörst du's stampfen. Dumm-dumm. Dumm-dumm. Die Neuen sagen: ein Maschinenwerk. Die Alten sagen: das Herz. Die ganz Alten sagen gar nichts mehr."
+5. „Im Nebel stehen Konstrukte, die seit Jahren keiner abgeholt hat. Voll aufgezogen. Wartend. Auf was? Eben. AUF WAS."
+6. „Ich hab am Zaun vom Eisernen Herzen gearbeitet. Eine Woche. Dann hab ich gekündigt. Der Lohn war gut. Die Träume nicht."
+7. „Der Boden vibriert hier im Takt. Stell dein Glas auf den Tisch und zähl die Ringe im Wasser. Dann weißt du, wie nah du dran bist."
+8. „Sie sagen, der Blechmann von Rustwater zieht nach Norden. Wenn du ihn siehst: aus dem Weg. Nicht aus Angst. Aus RESPEKT. Ist ein Unterschied, den lernt man hier draußen."
+9. „Hier wächst nichts außer dem, was die alte Dorn pflanzt. Merk dir: Wo ein Kaktus steht, kannst du atmen. Wo keiner steht, beeil dich."
+10. „Der Smog nimmt zuerst die Farben, dann die Geräusche, dann die Namen. Ich heiße … *(Pause)* … Siehst du? GENAU deshalb geh ich wieder nach Süden."
+
+**Endgame — nach dem Sturm auf die Iron Rail (8, endings-neutral):**
+1. „Hast du's gemerkt, letzte Nacht? Das Stampfen aus dem Norden ist anders. Manche sagen weg, manche sagen leiser. Alle sagen: ENDLICH anders."
+2. „Ich war dabei, als der Zug damals die Sprengtore durchbrach. Jetzt erzähl ich's meinen Enkeln. Die Hälfte glauben sie mir. Die falsche Hälfte."
+3. „In Providence Cut hat einer das Ortsschild gerade gerückt und was drunter geschrieben. Keiner rührt es an. Manche Rechnungen lässt man stehen — als Quittung."
+4. „Der Himmel über der Smog-Linie reißt auf. Nur ein Streifen. Aber mein Junge hat gestern zum ersten Mal Sterne gezählt. Bis vierzig. Dann kamen ihm die Tränen, mir auch, und wir haben aufgehört zu zählen."
+5. „Was aus den ganzen Konstrukten wird, fragst du? Geh in die Kirche der Tragenden. Sonntags. Da sitzen sie. Und ich sitz daneben, und es ist in Ordnung."
+6. „Mabel hat 'ne neue Zeile über den Tresen genagelt: WER HIER TRINKT, IST WER. Drunter steht kleiner: EGAL WORAUS."
+7. „Man sieht ihn manchmal am Stadtrand stehen, stundenlang, reglos, Richtung Norden. Früher hätt ich gesagt: unheimlich. Heute sag ich: Der hält Wache. Schlaf gut."
+8. „Wie's weitergeht? Weiß keiner. Aber zum ersten Mal, seit ich denken kann, ist ‚weiter' ein Wort ohne Fahrplan. Ich probier's mal aus."
+
+**Walzen-Archiv / Inneres des Eisernen Herzens (6, Flüster-Fragmente aus den Leerlauf-Walzen — Sounddesign-Pool):**
+1. „…vergiss die Stiefel nicht, es hat geregnet, hörst du, es hat wirklich…"
+2. „…sag ihr, dass ich… sag ihr einfach, dass ich…"
+3. „…eins, zwei, drei — und beim dritten Läuten bist du längst zu Haus…"
+4. „…der Kaffee wird kalt, Aaron, der Kaffee wird…"
+5. „…noch eine Geschichte, Pa, die mit dem Zug, aber diesmal ohne das Ende…"
+6. „…wenn der Wind aus Süden kommt, riecht's wie früher, riecht's wie…"
+
+### C6 — „Der Abstieg" (Endlosmodus): Tiefen- & Rekord-Barks
+
+**Buchmacher-Sprüche, Wettstation Rogue's Landing (5):**
+1. „Einsätze, Leute, Einsätze! Wie tief steigt das Blech heute? Ebene neun zahlt drei zu eins, Ebene zwölf zahlt Beileid!"
+2. „Neuer Rekord im Umlauf! Wer dagegen hält, hält gegen einen Kessel, der nicht müde wird. Ich sag's nur. Ich nehm die Wette trotzdem."
+3. „Regel eins der Wettstation: Der Schacht gewinnt immer. Regel zwei: Außer neuerdings. Regel zwei macht mich ARM, Freundchen."
+4. „Er ist unten, die Quoten laufen! Und denkt dran: Wer auf ‚kommt nie wieder rauf' setzt, kriegt den Gewinn nur, wenn er sich IRRT. Hausregel. Denkt drüber nach."
+5. „Ebene fünfzehn?! Zahl ich aus, zahl ich aus … *(zählt Scheine, leidend)* … und ab morgen heißt die Wette nicht mehr WIE TIEF. Sondern OB ÜBERHAUPT ein Boden kommt."
+
+**Tiefen-Meilenstein-Zeilen (Overlay/Ausrufer beim Erreichen einer Ebene, 6):**
+1. *(Ebene 5)* „Fünf Ebenen. Hier unten endet das Tageslicht. Es hat sich ordentlich verabschiedet."
+2. *(Ebene 10)* „Zehn Ebenen. Die Karten der Minengesellschaft enden hier. Ab jetzt zeichnest du."
+3. *(Ebene 15)* „Fünfzehn Ebenen. Der Fels wird warm. Frag nicht, woran er lehnt."
+4. *(Ebene 20)* „Zwanzig Ebenen. Selbst das Echo braucht jetzt zwei Anläufe nach oben."
+5. *(Neuer Tiefenrekord)* „TIEFENREKORD. Irgendwo über dir verliert ein Buchmacher gerade sehr viel Geld."
+6. *(Rekord gebrochen, Wiederholung)* „Schon wieder Rekord. Der Schacht fängt an, dich persönlich zu nehmen."
+
+**Held-Selbstgespräche in der Tiefe (leise, Ventil-Untermalung, 5):**
+1. „Ebene zwölf. Ich zähle nicht für den Konzern. Ich zähle für mich. Das ist der ganze Unterschied — und der ganze Sieg."
+2. „Kein Licht. Kein Wind. Kein Wetter. *(Ventilzischen)* Und trotzdem nehm ich alle drei mit runter. So funktioniert Erinnerung, wenn sie einem endlich selbst gehört."
+3. „Hier unten fragt keiner, was ich bin. Der Fels behandelt alle gleich: nach Härte."
+4. „Irgendwo da oben schenkt Mabel gerade aus. *(Beat)* Weiter. Wer ein Oben hat, kann beliebig tief."
+5. „Es dröhnt unter mir. Immer noch. Gut. Solang da unten was wartet, bin ich hier richtig — warten kann ich länger."
+
+### C7 — Kampf-Barks & Gegner-Callouts
+
+**Held-Callouts (8):**
+1. *(Nachladen)* „Sechs neue Argumente."
+2. *(Kill, mechanischer Gegner)* „Stillgelegt. Nichts Persönliches — an niemanden Bestimmten."
+3. *(Kill, menschlicher Gegner)* „Du hättest liegen bleiben können. Zweimal biete ich's nicht an."
+4. *(Kesseldruck kritisch)* „Kessel auf Rot. *(Ventilstoß)* Nicht jetzt. Nicht HIER."
+5. *(Elite gesichtet)* „Groß. Teuer. *(Zylinder klickt)* Der Konzern soll ruhig sehen, wo sein Geld verrostet."
+6. *(Säureschaden verursacht)* „Die Naht ist offen. Docs Rezept wirkt."
+7. *(Galvanik-Treffer verursacht)* „Blitz gegen Blech. Ich weiß, wie sich das anfühlt — deswegen zieh ich's durch."
+8. *(Überhitzung/nach hartem Treffer)* „Nur eine Delle. Silas macht Schlimmeres wieder gerade. Hat er versprochen."
+
+**Menschliche Gegner — Wegelagerer, Revolverhelden, Bahnschutz (8):**
+1. „Da! Der von den Steckbriefen — der BLECHMANN!"
+2. „Zielt auf die Gelenke! Auf die — ach, zielt einfach IRGENDWOHIN und betet!"
+3. „Er blutet nicht! Chef, ich schwör's, er blutet nicht, er TROPFT nur schwarz!"
+4. „Hundert Doppelkronen auf seinen Kopf! … Keiner will kassieren? KEINER?!"
+5. *(Flucht)* „Ich hab Frau und Kinder! Beides gelogen, aber ich hab ein LEBEN!"
+6. „Nachladen! Deckung! Und wehe, einer von euch zählt mit, wie oft ich danebengeschossen hab!"
+7. *(Bahnschutz)* „Im Namen des Konzerns: Halt! *(Beat)* Im Namen von sonst irgendwem: BITTE halt!"
+8. *(letzter Überlebender)* „Schon gut! Schon gut! Die Straße gehört dir — sag Mabel, wir sind konvertiert! Zu FEIGLINGEN!"
+
+**Mechanische Gegner — Konstrukte, Ernter, Elite-Chassis (8):**
+1. *(monoton)* „Ziel erfasst. Kategorie: unbezahlt. Einziehung eingeleitet."
+2. „Direktive zwölf: Widerstand ist Sachbeschädigung. An Konzerneigentum. Also an Ihnen."
+3. *(Erkennung, mit Störgeräusch)* „Signatur bekannt. Einheit Eins-Drei. Status: — Status: — *(Ratschen wie ein Karteikasten)* — Status: FEHLT IM BESTAND."
+4. „Sie werden gezählt. Sie wurden immer gezählt. Die Zählung endet heute."
+5. *(Ernter, tief, langsam)* „Erntegut identifiziert. Metallanteil: erheblich. Der Direktor dankt im Voraus."
+6. *(Elite-Chassis, an den Helden, tonlos)* „Bruder-Einheit. Kehr um. Im Norden ist Wartung. Im Norden ist Ruhe. Im Norden ist —" *(Feuerbefehl unterbricht die eigene Zeile)*
+7. *(beschädigt, Stimme zerfällt in Walzen-Flüstern)* „Schaden kritisch. Protokoll — Proto — …vergiss die Stiefel nicht, es hat geregnet…"
+8. *(Deaktivierung)* „Buchung abgeschlossen. Restwert: … *(Ventil-Seufzen)* … null."
+
+---
+
+## FORTSETZUNG — TEIL D (Casting)
+
+**DER HELD / EINHEIT 13 („Jeremiah Hale")**
+Stimmalter 35–45. Tempo: langsam, mit langen, bewohnten Pausen — er spricht, wie Leone schneidet. Textur: trockener, staubiger Bariton; nach dem Reveal wird die identische Performance durch einen zweiten, metallischen Resonanzkanal gedoppelt (technisch: zugemischtes Blech-Timbre, keine veränderte Spielweise — der Mensch bleibt hörbar UNTER dem Metall, nie umgekehrt). Referenz-Vibe: der wortkarge Western-Fremde mit müder Güte darunter; nach dem Reveal derselbe Mann hinter Glas. **Tell-Moment:** Kap. 4, „Ich hab doch **geträumt**" — der Satz beginnt menschlich und kippt mitten im Wort ins Doppel-Timbre; der Take muss klingen wie eine Stimme, die durch sich selbst hindurchbricht.
+
+**MABEL**
+Stimmalter 50–60. Tempo: zügig, tresenfest, Befehle wie Handgriffe; wird sie warm, wird sie LANGSAMER, nie leiser. Textur: rauer Whiskey-Alt, Lachfalten hörbar, tragfähig genug, um einen vollen Saloon ohne Anstrengung zu übertönen. Referenz-Vibe: die Grenzland-Wirtin, die alle beerdigt hat, die sie liebte, und trotzdem jeden Abend aufsperrt. **Tell-Moment:** Kap. 11, „Komm heim." — zwei Worte, mit vollem Wissen um ihre Vorgeschichte gesetzt: kein Zittern, keine Träne, nur eine Hundertstel Pause davor, in der sie sich entscheidet, es GENAU SO zu sagen.
+
+**SILAS „KUPFERAUGE" FINCH**
+Stimmalter 60+. Tempo: Schmiede-Rhythmus — Satz, Schlag, Pause; Aphorismen fallen beiläufig wie Werkzeug, das er blind greift. Textur: Kies und Ofenwärme, tiefer Bass-Bariton, leichtes Schnaufen von alter Minenlunge. Referenz-Vibe: der alte Handwerker, dem man erst nach Jahren anhört, dass jeder zweite Spruch ein Vermächtnis ist. **Tell-Moment:** Kap. 6 — in dem Moment, wo er die Linse abnimmt, fällt alles Beiläufige aus der Stimme: halbe Lautstärke, halbes Tempo, und zum einzigen Mal hört man den Atem VOR dem Satz („Wann genau hätt ich aufgehört, Silas zu sein?").
+
+**DOC ARIS**
+Stimmalter 45–55. Tempo: schnell, präzise, Diagnose-Stakkato; Ironie als Taktgeber, nie als Pointe ausgestellt. Textur: heller, trockener Tenor-Bariton, akademisch gefärbt, immer eine Idee zu kontrolliert. Referenz-Vibe: der Frontarzt, der Witze macht, damit die Hände nicht zittern. **Tell-Moment:** Die Lügen-Signatur: Immer wenn er die Brille putzt, steigt die Stimme um einen Viertelton und wird eine Spur ZU flüssig — der Spieler soll das Muster unbewusst lernen, damit sein ehrlichster Satz (Kap. 11: „Der Filter funktioniert") gerade dadurch wirkt, dass die Signatur ausbleibt.
+
+**GIDEON CROSS**
+Stimmalter 40–50. Tempo: kurze Hauptsätze, kein Anlauf, kein Nachklang; Befehle ohne Lautstärke — er ist der Leiseste im Raum und klingt trotzdem wie der Lauteste. Textur: dunkler, geschlossener Bariton, kein Vibrato, Kante von altem Rauch und Narbengewebe. Referenz-Vibe: der Kommandant, der jede Rede hasst und deshalb keine hält. **Tell-Moment:** Kap. 8, die Hand auf der Stahlschulter — „Du kannst sie tragen — oder du kannst sie **liefern**": das einzige Mal, dass er ein Wort dehnt; die ganze Zuneigung des Mannes liegt in einer einzigen gedehnten Silbe.
+
+**AUFSEHER QUENTIN**
+Stimmalter 35–45. Tempo: Verwaltungslegato — gleichmäßig, gemessen, Kommas hörbar gesetzt; er beschleunigt nie, auch nicht unter Feuer. Textur: glatter, kühler Tenor, tadellose Artikulation, Höflichkeitsform wie gebügelt. Referenz-Vibe: der Buchhalter, der gefährlicher ist als jeder Revolverheld, weil er nie blufft. **Tell-Moment:** Das Wort „Akzeptabel" — mit einer Mikropause davor, die verrät, dass es sein Superlativ ist. Und Kap. 8: Das Geständnis („Ich wusste es") kommt ohne einen einzigen Nebensatz — bei einem Mann, der sonst in Klauseln spricht, IST der Verzicht auf Klauseln das Gefühl.
+
+**„SLICK" STERLING**
+Stimmalter 30–40. Tempo: synkopiert, Verkäufer-Swing, Selbstunterbrechungen als Stilmittel; er spricht, wie andere jonglieren. Textur: geschmeidiger, heller Bariton mit Grinsen im Klang — man muss das Lächeln HÖREN, auch im Blindtest. Referenz-Vibe: der charmante Hehler, dem man wissentlich zu viel bezahlt und es nicht bereut. **Tell-Moment:** Der eine Moment ohne Grinsen pro Akt (Kap. 8: „Sag's keinem. Ruiniert mir den Ruf."): Das Tempo fällt auf die Hälfte, der Swing verschwindet vollständig — und für genau zwei Sätze klingt er zehn Jahre älter. Danach schnappt der Rhythmus zurück wie ein Hosenträger.
+
+**DIREKTOR CORNELIUS VANE**
+Stimmalter: zeitlos 50–70. Tempo: Prediger-Kadenz — weite Bögen, wiegende Betonungen, Pausen wie ausgestreckte Hände; er wird NIE laut, unter keinen Umständen, auch nicht im Bosskampf. Textur: warmes Maschinenöl — runder, samtiger Bass-Bariton ohne jede Reibung; unheimlich durch Makellosigkeit: keine Atemgeräusche, keine Versprecher, kein Altern im Klang. Referenz-Vibe: der Wanderprediger und der Konzernpatriarch in einer Kehle; Güte als Verpackungsmaterial. **Tell-Moment:** Kap. 12, die Spiegelscherbe — „Ich bin nicht… ich bin der **Direktor**—": der erste und einzige unsaubere Einsatz seines Lebens, ein hörbarer Atemzug VOR dem Wort, wo hundert Jahre lang keiner war. Dieser eine geatmete Moment ist der ganze Reveal.
+
+**PIP**
+Stimmalter: neun (Casting: junge erwachsene Sprecherin mit tragfähiger Kinderstimme — die Rolle braucht Timing, das Kinder selten halten). Tempo: vorlaut, atemlos, Sätze mit Anlauf und ohne Bremse; Großbuchstaben hörbar machen („quasi dein BERUF"). Textur: hell, kratzig, Zahnlücken-S; furchtlos, nie niedlich — Rotz vor Zucker. Referenz-Vibe: das Grenzland-Kind, das zu früh zu viel gesehen hat und daraus Frechheit statt Angst gemacht hat. **Tell-Moment:** „Das ist nur der Kessel, Pip." — „Ja. **Sag ich ja.**": Die zwei Worte müssen vollkommen selbstverständlich kommen, ohne jede Rührung — Pip beweist nichts, Pip WEISS. Die Gänsehaut entsteht beim Zuhörer, nie bei ihr.
