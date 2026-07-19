@@ -812,8 +812,19 @@ Grid-Inventar**. **Verkaufen geschieht direkt aus dem Inventar per Ziehen** eine
 die grüne **Verkaufszone**: Ausrüstung → Einzelwert, Material → ganzer Stapel; **legendäre
 Ausrüstung ist geschützt** (nicht verkaufbar). Kein Kategorie-Sammelverkauf mehr.
 
-**Verkauf:** Händler kauft Ausrüstung im Bulk je Seltenheit (Gewöhnlich/Selten/Episch);
-**legendäre Teile sind geschützt** und werden nie im Bulk verkauft.
+### 7.4.2 Item-Attribute & Beschreibung
+Jedes Ausrüstungsteil hat **Attribute + eine Flavor-Beschreibung**, sichtbar in einer
+**Item-Detailkarte** (Antippen eines Teils in Tasche/Slots; Ziehen bleibt die Schnellaktion):
+
+* **Haupt-Attribut** je Slot: Waffe → **Schaden**, Rüstung → **Rüstung**, Helm → **Leben**,
+  Gadget → **Feuerrate**, Stiefel → **Tempo**, Platte → **Rüstung**.
+* **Zusatz-Attribut** (ab Seltenheit *Selten*, 60 % Chance, nicht bei Platten): ein zweiter,
+  kleinerer Bonus aus einem Slot-Pool (z. B. Waffe zusätzlich Feuerrate; Rüstung zusätzlich
+  Tempo). Beide Attribute zählen in die Werte (`equipStat` summiert Haupt + Zusatz).
+* **Abgeleitet:** Bauart (Standard/Schwer bei Waffen), belegte **Plätze**, **Wert**,
+  Seltenheit, **Mindest-Level**.
+* **Weitere sinnvolle Waffen-Attribute für Godot** (noch nicht im Prototyp): Reichweite,
+  Streuung/Präzision, Krit-Multiplikator, Durchschlag, Statuseffekt-Chance, Munitionstyp.
 
 ## 7.5 Progression (Level & Erfahrung)
 * XP aus **Kills** (Standard `max(3, maxHp/11)`, Elite 50, Superboss 300) und
@@ -822,6 +833,25 @@ Ausrüstung ist geschützt** (nicht verkaufbar). Kein Kategorie-Sammelverkauf me
   Levelaufstieg heilt voll. Level-Cap **30**.
 * Level gated hochwertige Ausrüstung (siehe 7.4) und ist die Kern-Fortschrittsachse
   neben Ausrüstung, Waffen-Armaturen und Werkstatt-Körper-Mods.
+
+### 7.5.1 Fähigkeitenbaum (Fallout-inspiriert)
+Nach Fallout-Vorbild (Perk-Chart): **jede Stufe gibt 1 Fähigkeitspunkt**; Perks haben
+**Ränge**; höhere Tiers werden durch **Charakterstufe + investierte Punkte im Zweig**
+freigeschaltet. Geöffnet über den Reiter **„Fähigkeiten"** im Charakter-Screen (das
+Inventar-Panel hat die Reiter *Ausrüstung / Fähigkeiten*); ein **roter Punkt-Zähler** am
+Inventar-Knopf signalisiert offene Punkte.
+
+Drei thematische Zweige mit je vier Perks (Tier 1–3, Freischalt-Gate `PERK_TIER`:
+T1 Stufe 1 / 0 Pkt, T2 Stufe 5 / 2 Pkt, T3 Stufe 10 / 4 Pkt):
+
+| Zweig | Perks (Rang × Wert) |
+| :-- | :-- |
+| 🔫 **Revolverheld** | Scharfschütze (+4 Schaden), Schnellschuss (+7% Feuerrate), Krit-Treffer (+8% Krit, 2×), Panzerbrecher (ignoriert 10 Rüstung) |
+| ⚙️ **Kesseltreiber** | Munitionsgurt (+25 Muni-/Kristall-Cap), Aasgeier (+25% Ammo-Drops), Überladung (+5 Schaden Energiewaffen), Granatmeister (−35% Granaten-CD) |
+| 🤠 **Grenzgänger** | Zähigkeit (+25 Leben), Panzerhaut (+4 Rüstung), Selbstheilung (+3 Leben/s), Plünderer (+25% Gold & Loot-Magnet) |
+
+Effekte greifen direkt in die Kern-Formeln (Schaden, Feuerrate, Krit, Rüstung, Regen,
+Munitions-Cap, Drop-Menge, Granaten-Cooldown, Gold). Punkte & Ränge persistieren.
 
 ## 7.6 Werkstatt-Modifikationen
 Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. Namen als

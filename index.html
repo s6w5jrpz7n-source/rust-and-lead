@@ -102,6 +102,19 @@
   };
   const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'];
   const GEAR_ADJ = { common: ['Rostiger', 'Abgenutzter', 'Einfacher'], rare: ['Kupferner', 'Verstärkter', 'Gehärteter'], epic: ['Dampfbetriebener', 'Alchemistischer', 'Präzisions-'], legendary: ['Titanischer', 'Legendärer', 'Iron-Rail-'] };
+  // Item-Attribute: lesbare Namen + Basiswerte für das Zusatz-Attribut (roll ab „selten").
+  const STAT_LABEL = { damage: 'Schaden', firerate: 'Feuerrate', hp: 'Leben', armor: 'Rüstung', speed: 'Tempo' };
+  const STAT_UNIT = { damage: '', firerate: '', hp: '', armor: '', speed: '' };
+  const SUB_BASE = { damage: 5, firerate: 10, hp: 12, armor: 3, speed: 14 };
+  const SUB_POOL = { weapon: ['firerate', 'damage'], armor: ['hp', 'speed'], helmet: ['armor', 'hp'], gadget: ['damage', 'firerate'], boots: ['armor', 'hp'] };   // plate: kein Zusatz
+  const GEAR_FLAVOR = {
+    weapon: ['Präzise gefertigter Lauf, gemacht für die Grenze.', 'Der Rückstoß erzählt Geschichten.', 'Zuverlässig, bis das letzte Zahnrad bricht.'],
+    armor:  ['Vernietete Platten, gehärtet im Kesselfeuer.', 'Hat schon manchen Hinterhalt überstanden.', 'Schwer, aber es hält dich am Leben.'],
+    helmet: ['Schützt Schädel und Verstand vor der Wüste.', 'Ein gutes Visier ist die halbe Miete.', 'Verbeult, aber standhaft.'],
+    gadget: ['Dampfgetriebene Spielerei mit echtem Nutzen.', 'Tickt, zischt und funktioniert meistens.', 'Der Tüftler-Vorteil im Gefecht.'],
+    boots:  ['Federnde Sohlen für schnelle Ausweichrollen.', 'Getragen auf tausend Meilen Staub.', 'Halten dich flink und aufrecht.'],
+    plate:  ['Zusätzliche Panzerung für die harten Fälle.', 'Ein Schild aus Schrott und Sturheit.', 'Reserviert — bald auch für Tech-Module.']
+  };
   const GEARBAG_CAP = 12;
   const LEVEL_MAX = 30, LEVEL_HP_BONUS = 8;   // Erfahrungssystem: Level durch Kills & Quests
   // Elite-Bosse (stehen mitten in Gegnergruppen) & Dungeon-Superboss
@@ -176,6 +189,34 @@
     magnet:   { name: ['—', 'Magnet-Spule'], icon: '🧲', desc: 'Loot-Magnet', base: 40, max: 4, bodyMod: true }
   };
   const WEAPON_UP = { base: 55, max: 5, per: 5 };   // pro Waffe: +5 Basisschaden/Stufe (Säure zusätzlich +2 Potenz)
+
+  // ---- Fähigkeitenbaum (Fallout-inspiriert): 3 Zweige, je 4 Perks in Rängen ----
+  // Fallout-Prinzip: pro Stufe 1 Fähigkeitspunkt; Perks in Rängen; höhere Tiers durch
+  // Charakterstufe + investierte Punkte im Zweig freigeschaltet. Effekte = rank × per.
+  const PERK_BRANCHES = [
+    { id: 'gun',  name: 'Revolverheld',  icon: '🔫', color: 0xf59e0b, blurb: 'Blei & Präzision' },
+    { id: 'tech', name: 'Kesseltreiber', icon: '⚙️', color: 0x38bdf8, blurb: 'Dampf & Energie' },
+    { id: 'grit', name: 'Grenzgänger',   icon: '🤠', color: 0x84cc16, blurb: 'Zähigkeit & Beute' }
+  ];
+  // reqLevel & reqBranch (investierte Punkte im Zweig) staffeln die Tiers.
+  const PERK_TIER = { 1: { lvl: 1, inv: 0 }, 2: { lvl: 5, inv: 2 }, 3: { lvl: 10, inv: 4 } };
+  const PERKS = {
+    // Revolverheld
+    scharf:   { branch: 'gun',  tier: 1, max: 3, per: 4,  name: 'Scharfschütze',     desc: '+{v} Schaden pro Schuss' },
+    schnell:  { branch: 'gun',  tier: 1, max: 3, per: 7,  name: 'Schnellschuss',     desc: '+{v}% Feuerrate' },
+    krit:     { branch: 'gun',  tier: 2, max: 3, per: 8,  name: 'Krit-Treffer', desc: '+{v}% Krit-Chance (2× Schaden)' },
+    brecher:  { branch: 'gun',  tier: 3, max: 1, per: 10, name: 'Panzerbrecher',     desc: 'Schüsse ignorieren {v} Rüstung' },
+    // Kesseltreiber
+    gurt:     { branch: 'tech', tier: 1, max: 3, per: 25, name: 'Munitionsgurt',     desc: '+{v} max. Munition & Kristalle' },
+    aasgeier: { branch: 'tech', tier: 1, max: 3, per: 25, name: 'Aasgeier',          desc: '+{v}% mehr Munitions-Drops' },
+    ueberlad: { branch: 'tech', tier: 2, max: 3, per: 5,  name: 'Überladung',        desc: '+{v} Schaden mit Energiewaffen' },
+    granat:   { branch: 'tech', tier: 3, max: 1, per: 35, name: 'Granatmeister',     desc: '-{v}% Granaten-Abklingzeit' },
+    // Grenzgänger
+    zaeh:     { branch: 'grit', tier: 1, max: 3, per: 25, name: 'Zähigkeit',         desc: '+{v} max. Leben' },
+    panzer:   { branch: 'grit', tier: 1, max: 3, per: 4,  name: 'Panzerhaut',        desc: '+{v} Rüstung' },
+    heilung:  { branch: 'grit', tier: 2, max: 3, per: 3,  name: 'Selbstheilung',     desc: '+{v} Leben/s Regeneration' },
+    pluender: { branch: 'grit', tier: 3, max: 1, per: 25, name: 'Plünderer',         desc: '+{v}% Gold & stärkerer Loot-Magnet' }
+  };
 
   // Stadt-Gebäude: PRIMÄR Aufträge (Saloon) & Handel (Schmiede/Destille).
   // Das Wirtschafts-/Einkommens-System ist ein optionales Investitions-Add-on (Überschuss-Gold anlegen),
@@ -388,9 +429,10 @@
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
   let xpBarBg, xpBarFill, levelBadge, levelText;                          // Erfahrung / Level
   let bossName, bossBarBg, bossBarFill, bossHpText;                       // Boss-Leben
-  let invBtn, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
+  let invBtn, invBadge, invBadgeText, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
   let equipSlotRects = [], bagSlotRects = [], invDrag = null, invScroll = 0, invScrollBtns = [];
   let invScrapRect = null, shopSellRect = null, shopBuyBtns = [];
+  let perkBtns = [], charTabRects = [], itemDetailBtns = [];
   let abilities = [];
   let cursors, wasd;
 
@@ -408,7 +450,7 @@
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, transitioning: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
-    level: 1, xp: 0,
+    level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null,
     isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
@@ -508,6 +550,8 @@
     // Inventar-Button + Overlay
     invBtn = scene.add.circle(0, 0, 20, 0x1f2937, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(25);
     invBtn.icon = scene.add.text(0, 0, '🎒', { fontSize: '18px' }).setOrigin(0.5).setScrollFactor(0).setDepth(26);
+    invBadge = scene.add.circle(0, 0, 9, 0xdc2626).setStrokeStyle(2, 0xfff1f2, 0.9).setScrollFactor(0).setDepth(27).setVisible(false);
+    invBadgeText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '11px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(28).setVisible(false);
     invBackdrop = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.72).setScrollFactor(0).setDepth(50).setOrigin(0, 0).setVisible(false);
     invPanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.96).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(51).setOrigin(0.5, 0).setVisible(false);
     invTitle = scene.add.text(0, 0, '🎒  Inventar', { fontFamily: 'system-ui', fontSize: '18px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52).setVisible(false);
@@ -573,7 +617,7 @@
     applyUpgrades();
     if (state.isRevealed) applyRevealVisual();   // bereits erwachter Spielstand -> Optik sofort
     state.hp = state.maxHp; state.potions = POTION_START;
-    updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateLevelUI(); updateAbilityUI(); updateWeaponUI();
+    updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateLevelUI(); updateAbilityUI(); updateWeaponUI(); updateInvBadge();
     scene.time.addEvent({ delay: 1000, loop: true, callback: incomeTick });
 
     loadMap('overworld', { c: 40, r: 40 });
@@ -588,12 +632,33 @@
   function curWeapon() { return WEAPONS[state.weapon] || WEAPONS.karabiner; }
   function weaponUnlocked(id) { return WEAPONS[id].always || state.isRevealed; }
   function weaponLvl(id) { return (state.weaponLvl && state.weaponLvl[id]) || 0; }
-  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5 + equipStat('damage'); }
+  // ---- Perks / Fähigkeitenbaum ----
+  function perkRank(id) { return (state.perks && state.perks[id]) || 0; }
+  function perkVal(id) { return perkRank(id) * (PERKS[id] ? PERKS[id].per : 0); }
+  function branchPoints(branch) { let s = 0; for (const id in PERKS) if (PERKS[id].branch === branch) s += perkRank(id); return s; }
+  function perkTierOk(id) { const t = PERK_TIER[PERKS[id].tier]; return state.level >= t.lvl && branchPoints(PERKS[id].branch) >= t.inv; }
+  function perkCanBuy(id) { return state.perkPoints > 0 && perkRank(id) < PERKS[id].max && perkTierOk(id); }
+  function buyPerk(id) {
+    if (!PERKS[id]) return;
+    if (state.perkPoints <= 0) { toast('Keine Fähigkeitspunkte'); return; }
+    if (perkRank(id) >= PERKS[id].max) { toast('Perk voll ausgebaut'); return; }
+    if (!perkTierOk(id)) { const t = PERK_TIER[PERKS[id].tier]; toast('🔒 Stufe ' + t.lvl + ' & ' + t.inv + ' Punkte im Zweig'); return; }
+    state.perks[id] = perkRank(id) + 1; state.perkPoints--;
+    applyUpgrades(); updateLife(); updateWeaponUI(); updateInvBadge();
+    toast('✦ ' + PERKS[id].name + ' Rang ' + state.perks[id]); save();
+    if (state.inventoryOpen) renderInventory();
+  }
+  const energyWeapon = () => curWeapon().ammo === 'kristall';
+  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5 + equipStat('damage') + perkVal('scharf') + (energyWeapon() ? perkVal('ueberlad') : 0); }
   function weaponAcid() { return curWeapon().acid + weaponLvl('saeure') * 2; }
-  function fireMs() { return Math.max(60, curWeapon().fireMs - state.upgrades.firerate * 22 - equipStat('firerate')); }
-  // Ausrüstungs-Boni: Summe der Stat-Werte aller angelegten Teile
-  function equipStat(key) { let s = 0; for (const sl in state.equip) { const g = state.equip[sl]; if (g && g.stat.key === key) s += g.stat.val; } return s; }
-  function playerArmor() { return equipStat('armor'); }
+  function fireMs() { return Math.max(60, Math.round((curWeapon().fireMs - state.upgrades.firerate * 22 - equipStat('firerate')) * (1 - perkVal('schnell') / 100))); }
+  function critChance() { return perkVal('krit') / 100; }
+  function armorPen() { return perkVal('brecher'); }
+  function ammoCap(kind) { return AMMO[kind].cap + perkVal('gurt'); }
+  function lootMul() { return 1 + perkVal('pluender') / 100; }   // Gold-Bonus (Plünderer)
+  // Ausrüstungs-Boni: Summe aus Haupt- und Zusatz-Attribut aller angelegten Teile
+  function equipStat(key) { let s = 0; for (const sl in state.equip) { const g = state.equip[sl]; if (!g) continue; if (g.stat.key === key) s += g.stat.val; if (g.sub && g.sub.key === key) s += g.sub.val; } return s; }
+  function playerArmor() { return equipStat('armor') + perkVal('panzer'); }
   function dmgTakenMul() { return 100 / (100 + playerArmor() * 9); }   // Rüstung senkt eingehenden Schaden
   function cycleWeapon() {
     const avail = WEAPON_ORDER.filter(weaponUnlocked);
@@ -604,16 +669,16 @@
     toast(t.icon + ' ' + w.name + ' (' + t.name + ')'); save(); updateWeaponUI();
   }
   function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30 + equipStat('speed'); }
-  function regenRate() { return REGEN_RATE + state.upgrades.regen * 4; }
-  function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45; }
-  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS; if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
+  function regenRate() { return REGEN_RATE + state.upgrades.regen * 4 + perkVal('heilung'); }
+  function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0); }
+  function applyUpgrades() { state.maxHp = PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS + perkVal('zaeh'); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
   // ---- Erfahrung & Level -------------------------------------
   function xpToNext(lv) { return 40 + lv * 30; }   // Level 1->2: 70 XP, danach +30/Stufe
   function gainXp(n) {
     if (state.level >= LEVEL_MAX) return;
-    state.xp += n; let leveled = false;
-    while (state.level < LEVEL_MAX && state.xp >= xpToNext(state.level)) { state.xp -= xpToNext(state.level); state.level++; leveled = true; }
-    if (leveled) { applyUpgrades(); state.hp = state.maxHp; updateLife(); toast('⭐ Stufe ' + state.level + ' erreicht!'); }
+    state.xp += n; let leveled = 0;
+    while (state.level < LEVEL_MAX && state.xp >= xpToNext(state.level)) { state.xp -= xpToNext(state.level); state.level++; leveled++; }
+    if (leveled) { state.perkPoints += leveled; applyUpgrades(); state.hp = state.maxHp; updateLife(); updateInvBadge(); toast('⭐ Stufe ' + state.level + ' — +' + leveled + ' Fähigkeitspunkt' + (leveled > 1 ? 'e' : '')); }
     updateLevelUI();
   }
   function xpForKill(e) { return e.isSuperBoss ? 300 : e.elite ? 50 : Math.max(3, Math.round(e.maxHp / 11)); }
@@ -623,7 +688,22 @@
     const def = GEAR_SLOTS[slot], r = RARITY[rarity], adj = GEAR_ADJ[rarity];
     let val = Math.max(1, Math.round(def.base * r.mult)), big = false, name = adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name;
     if (slot === 'weapon' && Math.random() < 0.3) { big = true; val = Math.round(val * 1.4); name = 'Schwere ' + name; }   // sehr große Waffe: 3 Slots, mehr Schaden
-    return { uid: gearUid++, slot, rarity, req: r.req, big, icon: def.icon, name, stat: { key: def.stat, val } };
+    const g = { uid: gearUid++, slot, rarity, req: r.req, big, icon: def.icon, name, stat: { key: def.stat, val }, desc: GEAR_FLAVOR[slot][Phaser.Math.Between(0, GEAR_FLAVOR[slot].length - 1)] };
+    // Zusatz-Attribut ab „selten" (nicht für Platten): zweiter, kleinerer Bonus
+    if (SUB_POOL[slot] && rarity !== 'common' && Math.random() < 0.6) {
+      const key = SUB_POOL[slot][Phaser.Math.Between(0, SUB_POOL[slot].length - 1)];
+      g.sub = { key, val: Math.max(1, Math.round(SUB_BASE[key] * r.mult * 0.4)) };
+    }
+    return g;
+  }
+  // Menschlich lesbare Attribut-Zeilen eines Items (für Detail-Ansicht)
+  function gearAttrs(g) {
+    const lines = [['⭐ ' + STAT_LABEL[g.stat.key], '+' + g.stat.val]];
+    if (g.sub) lines.push(['＋ ' + STAT_LABEL[g.sub.key], '+' + g.sub.val]);
+    if (g.slot === 'weapon') lines.push(['🎯 Bauart', g.big ? 'Schwer (3 Slots)' : 'Standard (2 Slots)']);
+    lines.push(['🎒 Plätze', '' + gearCells(g)]);
+    lines.push(['💰 Wert', '' + gearValue(g)]);
+    return lines;
   }
   function gearReq(g) { return g.req || RARITY[g.rarity].req || 1; }
   // Grid-Fußabdruck [Spalten, Zeilen]: Rüstung 4, Waffe 2, sehr große Waffe 3, Kleinteile 1
@@ -659,7 +739,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -673,6 +753,7 @@
       if (s.equip) for (const k in state.equip) if (s.equip[k] && GEAR_SLOTS[slotType(k)]) state.equip[k] = s.equip[k];
       if (Array.isArray(s.gearBag)) state.gearBag = s.gearBag.filter(g => g && GEAR_SLOTS[g.slot]);
       state.level = Math.max(1, s.level || 1); state.xp = s.xp || 0;
+      state.perkPoints = s.perkPoints || 0; state.perks = (s.perks && typeof s.perks === 'object') ? s.perks : {};
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
@@ -1036,10 +1117,23 @@
     const L = invLayout(), add = o => { invSlots.push(o); return o; };
     invBackdrop.setSize(L.size.width, L.size.height).setPosition(0, 0).setVisible(true);
     invPanel.setPosition(L.size.width / 2, L.py).setSize(L.pw, L.ph).setVisible(true);
-    invTitle.setText(state.shopMode ? '🛒 Händler' : '🎒 Inventar').setPosition(L.px + 12, L.py + 10).setOrigin(0, 0).setVisible(true);
+    invTitle.setText(state.shopMode ? '🛒 Händler' : '🎒').setPosition(L.px + 12, L.py + 10).setOrigin(0, 0).setVisible(true);
     invClose.setPosition(L.px + L.pw - 22, L.py + 16).setVisible(true);
     invText.setText('⭐ Lv ' + state.level + '   (' + state.xp + ' / ' + xpToNext(state.level) + ' XP)      💰 ' + state.gold).setPosition(L.px + 12, L.py + 34).setOrigin(0, 0).setVisible(true);
-    invScrapRect = null; shopSellRect = null; shopBuyBtns = [];
+    invScrapRect = null; shopSellRect = null; shopBuyBtns = []; perkBtns = []; charTabRects = [];
+    // ---- Reiter: Ausrüstung / Fähigkeiten (nur außerhalb des Shops) ----
+    if (!state.shopMode) {
+      const tabs = [['gear', 'Ausrüstung'], ['perks', '✦ Fähigkeiten' + (state.perkPoints > 0 ? ' (' + state.perkPoints + ')' : '')]];
+      const tw = 116, th = 24, tx0 = L.px + L.pw / 2 - tw - 6;
+      tabs.forEach(([id, label], i) => {
+        const active = state.charTab === id, tx = tx0 + i * (tw + 12);
+        const r = add(sceneRef.add.rectangle(tx, L.py + 16, tw, th, active ? 0x7c4a12 : 0x2a2f3a, 0.95).setStrokeStyle(2, active ? 0xf3e9d2 : 0x556, 0.6).setScrollFactor(0).setDepth(52).setOrigin(0, 0.5));
+        add(sceneRef.add.text(tx + tw / 2, L.py + 16, label, { fontFamily: 'system-ui', fontSize: '11px', color: active ? '#f3e9d2' : '#9aa', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        charTabRects.push({ rect: r, tab: id });
+      });
+    }
+    // ---- Fähigkeiten-Tab: Perk-Baum statt Ausrüstung/Grid ----
+    if (!state.shopMode && state.charTab === 'perks') { renderPerks(L, add); invScrollBtns = []; return; }
     if (state.shopMode) drawShopColumn(L, add);   // ---- Links: Händler-Angebot + Verkaufszone ----
     else {
       // ---- Links: Charakter (Diablo-Immortal-Stil): Ausrüstungs-Spalte + 8 Platten/Tech-Slots ----
@@ -1077,6 +1171,70 @@
       const up = add(sceneRef.add.text(ax, L.gy0 + 4, invScroll > 0 ? '▲' : '△', { fontFamily: 'system-ui', fontSize: '18px', color: invScroll > 0 ? '#f3e9d2' : '#5a5348' }).setOrigin(0, 0).setScrollFactor(0).setDepth(54));
       const dn = add(sceneRef.add.text(ax, L.gy0 + L.rows * (L.cell + L.gap) - 22, invScroll < maxScroll ? '▼' : '▽', { fontFamily: 'system-ui', fontSize: '18px', color: invScroll < maxScroll ? '#f3e9d2' : '#5a5348' }).setOrigin(0, 0).setScrollFactor(0).setDepth(54));
       invScrollBtns.push({ obj: up, dir: -1 }, { obj: dn, dir: 1 });
+    }
+    drawItemDetail(L, add);   // ggf. Item-Detailkarte oben drauf
+  }
+  // Item-Detailkarte (Beschreibung + Attribute) über dem Panel
+  function drawItemDetail(L, add) {
+    itemDetailBtns = [];
+    const det = state.itemDetail; if (!det || !det.gear) return;
+    const g = det.gear, col = RARITY[g.rarity].color;
+    const equipped = det.from && det.from.type === 'equip';
+    // Detail nur zeigen, wenn Item noch existiert (angelegt oder in der Tasche)
+    if (!equipped && !state.gearBag.includes(g)) { state.itemDetail = null; return; }
+    const cw = Math.min(300, L.pw - 40), attrs = gearAttrs(g);
+    const ch = 96 + attrs.length * 18 + 52;
+    const cx = L.size.width / 2, cy = L.py + Math.max(40, (L.ph - ch) / 2);
+    add(sceneRef.add.rectangle(0, 0, L.size.width, L.size.height, 0x000000, 0.55).setOrigin(0, 0).setScrollFactor(0).setDepth(60));
+    add(sceneRef.add.rectangle(cx, cy, cw, ch, 0x14120e, 0.99).setStrokeStyle(3, col, 0.9).setScrollFactor(0).setDepth(61).setOrigin(0.5, 0));
+    add(sceneRef.add.text(cx, cy + 14, g.icon + '  ' + g.name, { fontFamily: 'system-ui', fontSize: '15px', color: css(col), fontStyle: 'bold', wordWrap: { width: cw - 24 }, align: 'center' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(62));
+    add(sceneRef.add.text(cx, cy + 44, RARITY[g.rarity].name + ' · ' + GEAR_SLOTS[g.slot].name + ' · ab Stufe ' + gearReq(g), { fontFamily: 'system-ui', fontSize: '10px', color: '#a8a090' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(62));
+    let ay = cy + 66;
+    attrs.forEach(row => {
+      add(sceneRef.add.text(cx - cw / 2 + 16, ay, row[0], { fontFamily: 'system-ui', fontSize: '11px', color: '#cbd5e1' }).setOrigin(0, 0).setScrollFactor(0).setDepth(62));
+      add(sceneRef.add.text(cx + cw / 2 - 16, ay, row[1], { fontFamily: 'system-ui', fontSize: '11px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(1, 0).setScrollFactor(0).setDepth(62));
+      ay += 18;
+    });
+    add(sceneRef.add.text(cx, ay + 4, '„' + g.desc + '"', { fontFamily: 'system-ui', fontSize: '10px', color: '#9a8f7a', fontStyle: 'italic', wordWrap: { width: cw - 28 }, align: 'center' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(62));
+    // Aktions-Buttons
+    const by = cy + ch - 34, bw = (cw - 40) / 2;
+    const primary = equipped ? ['unequip', 'Ablegen', 0x7c4a12] : (state.shopMode ? ['sell', 'Verkaufen', 0x14612a] : ['equip', 'Anlegen', 0x3f6212]);
+    const b1 = add(sceneRef.add.rectangle(cx - bw / 2 - 4, by, bw, 30, primary[2], 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(62));
+    add(sceneRef.add.text(b1.x, b1.y, primary[1], { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(63));
+    itemDetailBtns.push({ rect: b1, action: primary[0] });
+    const b2 = add(sceneRef.add.rectangle(cx + bw / 2 + 4, by, bw, 30, 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.3).setScrollFactor(0).setDepth(62));
+    add(sceneRef.add.text(b2.x, b2.y, 'Schließen', { fontFamily: 'system-ui', fontSize: '12px', color: '#cbd5e1' }).setOrigin(0.5).setScrollFactor(0).setDepth(63));
+    itemDetailBtns.push({ rect: b2, action: 'close' });
+  }
+  // ---- Fähigkeitenbaum: 3 Zweig-Spalten mit Perk-Karten ----
+  function renderPerks(L, add) {
+    add(sceneRef.add.text(L.px + 12, L.colTop - 2, '✦ Fähigkeitspunkte: ' + state.perkPoints + '   ·   jede Stufe bringt +1', { fontFamily: 'system-ui', fontSize: '12px', color: state.perkPoints > 0 ? '#fde047' : '#a8a090', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+    const colW = Math.floor((L.pw - 24) / 3), x0 = L.px + 12, top = L.colTop + 22;
+    PERK_BRANCHES.forEach((br, bi) => {
+      const cx = x0 + bi * colW, cw = colW - 6;
+      add(sceneRef.add.rectangle(cx, top, cw, 30, br.color, 0.22).setStrokeStyle(2, br.color, 0.8).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+      add(sceneRef.add.text(cx + cw / 2, top + 8, br.icon + ' ' + br.name, { fontFamily: 'system-ui', fontSize: '11px', color: css(br.color), fontStyle: 'bold' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(cx + cw / 2, top + 20, br.blurb, { fontFamily: 'system-ui', fontSize: '8px', color: '#a8a090' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(53));
+      const list = Object.keys(PERKS).filter(id => PERKS[id].branch === br.id).sort((a, b) => PERKS[a].tier - PERKS[b].tier);
+      let y = top + 38;
+      const cardH = Math.min(104, Math.floor((L.colBottom - y - 6) / list.length) - 6);
+      list.forEach(id => { drawPerkCard(id, cx, y, cw, cardH, br.color, add); y += cardH + 6; });
+    });
+  }
+  function drawPerkCard(id, x, y, w, h, brColor, add) {
+    const p = PERKS[id], rank = perkRank(id), maxed = rank >= p.max, unlocked = perkTierOk(id), canBuy = perkCanBuy(id);
+    add(sceneRef.add.rectangle(x, y, w, h, unlocked ? 0x1b2431 : 0x141210, 0.92).setStrokeStyle(2, maxed ? brColor : (unlocked ? 0x556070 : 0x333), unlocked ? 0.7 : 0.4).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+    add(sceneRef.add.text(x + 7, y + 8, p.name, { fontFamily: 'system-ui', fontSize: '11px', color: unlocked ? '#f3e9d2' : '#6b675e', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+    add(sceneRef.add.text(x + w - 6, y + 7, rank + '/' + p.max, { fontFamily: 'system-ui', fontSize: '10px', color: css(brColor), fontStyle: 'bold' }).setOrigin(1, 0).setScrollFactor(0).setDepth(53));
+    const curV = rank * p.per, nextV = (rank + 1) * p.per;
+    const eff = p.desc.replace('{v}', maxed ? '' + curV : (rank > 0 ? curV + '→' + nextV : '' + nextV));
+    add(sceneRef.add.text(x + 7, y + 26, eff, { fontFamily: 'system-ui', fontSize: '9px', color: unlocked ? '#aab4c2' : '#6b675e', wordWrap: { width: w - 14 } }).setOrigin(0, 0).setScrollFactor(0).setDepth(53));
+    if (!unlocked) { const t = PERK_TIER[p.tier]; add(sceneRef.add.text(x + 7, y + h - 14, '🔒 Stufe ' + t.lvl + ' · ' + t.inv + ' Pkt/Zweig', { fontFamily: 'system-ui', fontSize: '8px', color: '#f87171' }).setOrigin(0, 0).setScrollFactor(0).setDepth(53)); }
+    else if (maxed) { add(sceneRef.add.text(x + w / 2, y + h - 13, '✓ MAX', { fontFamily: 'system-ui', fontSize: '10px', color: css(brColor), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53)); }
+    else {
+      const btn = add(sceneRef.add.rectangle(x + w / 2, y + h - 14, w - 12, 22, canBuy ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, canBuy ? 0.5 : 0.25).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(btn.x, btn.y, canBuy ? '＋ ausbauen' : (state.perkPoints <= 0 ? 'kein Punkt' : 'gesperrt'), { fontFamily: 'system-ui', fontSize: '10px', color: canBuy ? '#f3e9d2' : '#8a8172', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      perkBtns.push({ rect: btn, id });
     }
   }
   function drawStatsSheet(L, add) {
@@ -1120,7 +1278,7 @@
       y += 40;
     };
     merchantStock().forEach((offer, idx) => offerRow(offer.gear.icon + ' ' + RARITY[offer.gear.rarity].name.slice(0, 6) + ' ' + GEAR_SLOTS[offer.gear.slot].name, '+' + offer.gear.stat.val + ' ' + offer.gear.stat.key, RARITY[offer.gear.rarity].color, 'buyGear', { price: offer.price, idx }));
-    ['muni', 'kristall'].forEach(kind => { const a = AMMO[kind]; offerRow(a.icon + ' ' + a.name.slice(0, 10) + ' +' + a.pack, ammoOf(kind) + '/' + a.cap, a.color, 'buyAmmo', { price: a.price, kind }); });
+    ['muni', 'kristall'].forEach(kind => { const a = AMMO[kind]; offerRow(a.icon + ' ' + a.name.slice(0, 10) + ' +' + a.pack, ammoOf(kind) + '/' + ammoCap(kind), a.color, 'buyAmmo', { price: a.price, kind }); });
     offerRow('🍶 ' + T('potion'), 'Heilung', 0x16a34a, 'buyPotion', { price: POTION_PRICE });
     // ---- Verkaufszone (Item aus dem Inventar hierher ziehen) ----
     const sy = L.colBottom - 66;
@@ -1166,6 +1324,14 @@
     } else add(sceneRef.add.text(x, y, '🔩', { fontSize: Math.round(w * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(53).setAlpha(0.32));
     equipSlotRects.push({ x, y, w, h, slot, gear: g });
   }
+  function doItemDetailAction(action) {
+    const det = state.itemDetail; if (!det) return;
+    const g = det.gear;
+    if (action === 'equip') equipGear(g);
+    else if (action === 'unequip') unequipGear(det.from.slot);
+    else if (action === 'sell') sellPayload({ kind: 'gear', gear: g });
+    state.itemDetail = null; refreshInventory();
+  }
   function beginDrag(payload, from, p) {
     const icon = payload.kind === 'gear' ? payload.gear.icon : payload.icon;
     invDrag = { payload, gear: payload.kind === 'gear' ? payload.gear : null, from, moved: false, startX: p.x, startY: p.y, ghost: sceneRef.add.text(p.x, p.y, icon, { fontSize: '28px' }).setOrigin(0.5).setScrollFactor(0).setDepth(61) };
@@ -1173,6 +1339,8 @@
   function endDrag(p) {
     const d = invDrag; invDrag = null; if (d.ghost) d.ghost.destroy();
     const pay = d.payload;
+    // Tippen ohne Ziehen auf ein Ausrüstungsteil -> Item-Details anzeigen
+    if (!d.moved && pay.kind === 'gear') { state.itemDetail = { gear: pay.gear, from: d.from }; refreshInventory(); return; }
     // Verkaufen: Item auf die Händler-Seite ziehen (Shop-Modus)
     if (state.shopMode && shopSellRect && inRect(p, shopSellRect.x, shopSellRect.y, shopSellRect.w, shopSellRect.h)) { sellPayload(pay); refreshInventory(); return; }
     // Verschrotten/Ablegen: Item auf die Ablage-Zone ziehen (normales Inventar)
@@ -1184,12 +1352,10 @@
       if (!overSlot) for (const bs of bagSlotRects) if (inRect(p, bs.x - bs.w / 2, bs.y - bs.h / 2, bs.w, bs.h)) { overBag = true; break; }
     }
     if (overSlot && d.gear) {
-      if (slotType(overSlot.slot) === d.gear.slot) { if (d.from.type === 'bag') equipGear(d.gear, overSlot.slot); else if (d.from.type === 'equip' && !d.moved) unequipGear(d.from.slot); }
+      if (slotType(overSlot.slot) === d.gear.slot) { if (d.from.type === 'bag') equipGear(d.gear, overSlot.slot); }
       else toast('Passt nur in den ' + GEAR_SLOTS[d.gear.slot].name + '-Slot');
     } else if (overBag && d.from.type === 'equip') {
       unequipGear(d.from.slot);
-    } else if (!d.moved) {   // Tippen ohne Ziehen: Ausrüstung an-/ablegen
-      if (d.gear) { if (d.from.type === 'bag') equipGear(d.gear); else unequipGear(d.from.slot); }
     }
     refreshInventory();
   }
@@ -1224,7 +1390,7 @@
       if (state.potions > 0) { state.potions--; updateAbilityUI(); toast('🗑️ 1 Trank abgelegt'); save(); }
     }
   }
-  function closeInventory() { state.inventoryOpen = false; state.shopMode = false; state.storeOpen = false; invScrapRect = null; shopSellRect = null; shopBuyBtns = []; if (invDrag && invDrag.ghost) { invDrag.ghost.destroy(); invDrag = null; } invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
+  function closeInventory() { state.inventoryOpen = false; state.shopMode = false; state.storeOpen = false; state.itemDetail = null; invScrapRect = null; shopSellRect = null; shopBuyBtns = []; if (invDrag && invDrag.ghost) { invDrag.ghost.destroy(); invDrag = null; } invSlots.forEach(s => s.destroy()); invSlots = []; equipSlotRects = []; bagSlotRects = [];[invBackdrop, invPanel, invTitle, invClose, invText].forEach(o => o.setVisible(false)); }
 
   // ---- Karten-Wechsel ----------------------------------------
   function transitionTo(mapId, spawn) {
@@ -1262,7 +1428,7 @@
     miniTitle.setPosition(x + 6, y + 4); miniGfx.setPosition(x + 6, y + 18);
     miniCollapse.setPosition(x + P - 12, y + 9); miniExpand.setPosition(w - 24, y + 16);
 
-    if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); }
+    if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); if (invBadge) { invBadge.setPosition(w - 16, iy - 14); invBadgeText.setPosition(w - 16, iy - 14); } }
 
     // Dialog-Box (unten)
     if (dlgBg && dlgBg.visible) {
@@ -1313,7 +1479,17 @@
       return;
     }
     if (state.inventoryOpen) {
+      if (state.itemDetail) {   // Item-Detailkarte hat Vorrang
+        for (const b of itemDetailBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { doItemDetailAction(b.action); return; }
+        state.itemDetail = null; renderInventory(); return;
+      }
       if (hit(invClose, p, 26)) { state.shopMode ? closeStore() : closeInventory(); return; }
+      for (const t of charTabRects) if (inRect(p, t.rect.x, t.rect.y - t.rect.height / 2, t.rect.width, t.rect.height)) { state.charTab = t.tab; renderInventory(); return; }
+      if (state.charTab === 'perks' && !state.shopMode) {
+        for (const b of perkBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { buyPerk(b.id); return; }
+        if (invPanel && !inRect(p, invPanel.x - invPanel.width / 2, invPanel.y, invPanel.width, invPanel.height)) closeInventory();
+        return;
+      }
       for (const b of invScrollBtns) if (Phaser.Math.Distance.Between(p.x, p.y, b.obj.x + 9, b.obj.y + 9) <= 20) { invScroll += b.dir; renderInventory(); return; }
       if (state.shopMode) for (const b of shopBuyBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'buyGear') buyMerchantGear(b.idx); else if (b.action === 'buyAmmo') buyAmmo(b.kind); else buyPotion(); return; }
       for (const es of equipSlotRects) if (es.gear && inRect(p, es.x - es.w / 2, es.y - es.h / 2, es.w, es.h)) { beginDrag({ kind: 'gear', gear: es.gear }, { type: 'equip', slot: es.slot }, p); return; }
@@ -1617,7 +1793,7 @@
   }
   function buyAmmo(kind) {
     const a = AMMO[kind]; if (!a) return;
-    if (ammoOf(kind) >= a.cap) { toast(a.icon + ' Vorrat voll'); return; }
+    if (ammoOf(kind) >= ammoCap(kind)) { toast(a.icon + ' Vorrat voll'); return; }
     if (state.gold < a.price) { toast('Nicht genug Gold'); return; }
     state.gold -= a.price; addAmmo(kind, a.pack); updateGold(); updateWeaponUI();
     toast(a.icon + ' +' + a.pack + ' ' + a.name); save(); refreshStore();
@@ -1700,7 +1876,7 @@
   }
   function aimAngle() { const t = nearestEnemy(AIM_RANGE); return t ? Math.atan2(t.c.y - player.y, t.c.x - player.x) : player.facing; }
   function ammoOf(kind) { return state.ammo[kind] || 0; }
-  function addAmmo(kind, n) { if (!AMMO[kind]) return; state.ammo[kind] = Math.min(AMMO[kind].cap, ammoOf(kind) + n); }
+  function addAmmo(kind, n) { if (!AMMO[kind]) return; state.ammo[kind] = Math.min(ammoCap(kind), ammoOf(kind) + n); }
   function fireBullet() {
     const kind = curWeapon().ammo || 'muni';
     if (ammoOf(kind) <= 0) {                          // leer -> nicht feuern, gedrosselter Hinweis
@@ -1751,8 +1927,8 @@
     if (id === 'spread') { if (state.cd.spread > 0) return; castSpread(); state.cd.spread = SPREAD_CD; }
     else if (id === 'dash') { if (state.cd.dash > 0) return; castDash(); state.cd.dash = DASH_CD; }
     else if (id === 'potion') { usePotion(); }
-    else if (id === 'acid') { if (!state.isRevealed) { toast('🔒 Ordnung nach dem Erwachen'); return; } if (state.cd.acid > 0) return; throwGrenade('acid'); state.cd.acid = ACID_CD; }
-    else if (id === 'shock') { if (!state.isRevealed) { toast('🔒 Ordnung nach dem Erwachen'); return; } if (state.cd.shock > 0) return; throwGrenade('shock'); state.cd.shock = SHOCK_CD; }
+    else if (id === 'acid') { if (!state.isRevealed) { toast('🔒 Ordnung nach dem Erwachen'); return; } if (state.cd.acid > 0) return; throwGrenade('acid'); state.cd.acid = ACID_CD * (1 - perkVal('granat') / 100); }
+    else if (id === 'shock') { if (!state.isRevealed) { toast('🔒 Ordnung nach dem Erwachen'); return; } if (state.cd.shock > 0) return; throwGrenade('shock'); state.cd.shock = SHOCK_CD * (1 - perkVal('granat') / 100); }
     updateAbilityUI();
   }
   function updateAbilityUI() {
@@ -1765,6 +1941,11 @@
     }
   }
 
+  function updateInvBadge() {
+    if (!invBadge) return;
+    const n = state.perkPoints || 0;
+    invBadge.setVisible(n > 0); invBadgeText.setVisible(n > 0).setText(n > 9 ? '9+' : '' + n);
+  }
   function updateWeaponUI() {
     if (!weaponBtn) return;
     const w = curWeapon(), t = DMG_TYPES[w.type];
@@ -1791,9 +1972,9 @@
 
   // ---- Schaden / Loot ----------------------------------------
   // Schadens-Kalkulator: Schadensart × Gegner-Klassifizierung (GDD Kap. 11).
-  function calcDamage(type, e, base) {
+  function calcDamage(type, e, base, pen) {
     let dmg = base, effect = null, immune = false;
-    const cls = e.cls, armor = e.armor || 0;
+    const cls = e.cls, armor = Math.max(0, (e.armor || 0) - (pen || 0));   // Panzerbrecher-Perk ignoriert Rüstung
     if (cls === 'MECHANICAL') {
       if (type === 'GALVANIC') { dmg *= 2.5; if (Math.random() < 0.40) effect = 'STUN'; }              // Automaten: massiver Bonus + Kurzschluss
       else if (type === 'KINETIC') { dmg = e.frontImmune ? (armor > 0 ? 0 : dmg) : Math.max(1, dmg - armor); }  // Panzerung schluckt Blei
@@ -1829,7 +2010,7 @@
         state.bounty.done = true; save();
         toast('🎯 Kopfgeld-Ziel „' + e.name + '" erlegt! Belohnung im Saloon abholen');
       }
-      dropGold(bx, by, e.gold); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); gainXp(xpForKill(e));
+      dropGold(bx, by, Math.round(e.gold * lootMul())); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); gainXp(xpForKill(e));
       if (e.isSuperBoss) {
         state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
         spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'rare');
@@ -1876,13 +2057,14 @@
     else if (Math.random() < 0.08) dropGearRoll(e.c.x, e.c.y, 0, 1);
   }
   // Gegner lassen Munition/Kristalle fallen — meist für die getragene Waffe, Elite beides.
+  // Aasgeier-Perk erhöht die Menge.
   function dropAmmoFor(e, elite) {
-    const kind = curWeapon().ammo || 'muni', a = AMMO[kind];
+    const kind = curWeapon().ammo || 'muni', a = AMMO[kind], m = 1 + perkVal('aasgeier') / 100;
     if (elite) {
-      dropAmmo(e.c.x, e.c.y, 'muni', Phaser.Math.Between(6, 10));
-      dropAmmo(e.c.x, e.c.y, 'kristall', Phaser.Math.Between(4, 7));
+      dropAmmo(e.c.x, e.c.y, 'muni', Math.round(Phaser.Math.Between(6, 10) * m));
+      dropAmmo(e.c.x, e.c.y, 'kristall', Math.round(Phaser.Math.Between(4, 7) * m));
     } else if (Math.random() < 0.5) {
-      dropAmmo(e.c.x, e.c.y, kind, Phaser.Math.Between(a.drop[0], a.drop[1]));
+      dropAmmo(e.c.x, e.c.y, kind, Math.round(Phaser.Math.Between(a.drop[0], a.drop[1]) * m));
     }
   }
   function invCount() { let n = 0; for (const k in state.inventory) n += state.inventory[k] || 0; return n; }
@@ -1927,7 +2109,7 @@
     if (chest.tier === 'boss') items.push({ kind: 'gear', gear: rollGear(1.6) });
     else if (chest.tier === 'rare') { if (Math.random() < 0.55) items.push({ kind: 'gear', gear: rollGear(0.7) }); }
     else if (Math.random() < 0.15) items.push({ kind: 'gear', gear: rollGear(0) });
-    const gold = chest.tier === 'boss' ? Phaser.Math.Between(40, 100) : chest.tier === 'rare' ? Phaser.Math.Between(15, 40) : Phaser.Math.Between(5, 15);
+    const gold = Math.round((chest.tier === 'boss' ? Phaser.Math.Between(40, 100) : chest.tier === 'rare' ? Phaser.Math.Between(15, 40) : Phaser.Math.Between(5, 15)) * lootMul());
     // Munition/Kristalle als Bonus (wie Gold automatisch)
     const mul = chest.tier === 'boss' ? 3 : chest.tier === 'rare' ? 2 : 1;
     const muni = Phaser.Math.Between(6, 12) * mul, kristall = Phaser.Math.Between(3, 7) * mul;
@@ -2230,9 +2412,11 @@
       const b = bullets[i]; b.sprite.x += b.vx * dt; b.sprite.y += b.vy * dt; b.life -= dt;
       let hitE = false;
       for (const e of enemies) if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, e.c.x, e.c.y) < e.r + BULLET_R) {
-        const res = calcDamage(b.type, e, b.base);
+        const res = calcDamage(b.type, e, b.base, armorPen());
+        let dmg = res.dmg, crit = false;
+        if (dmg > 0 && Math.random() < critChance()) { dmg = Math.round(dmg * 2); crit = true; }   // Kritischer-Treffer-Perk
         if (res.effect) applyStatus(e, res.effect, b.acid);
-        damageEnemy(e, res.dmg, { color: DMG_TYPES[b.type].color, immune: res.immune });
+        damageEnemy(e, dmg, { color: crit ? 0xfde047 : DMG_TYPES[b.type].color, immune: res.immune });
         hitE = true; break;
       }
       if (hitE || b.life <= 0) { b.sprite.destroy(); bullets.splice(i, 1); }
