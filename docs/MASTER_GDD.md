@@ -1064,6 +1064,15 @@ NG+, Stufe, Codex-%, Abstieg-Rekord) plus **▶ Fortsetzen** / **＋ Neues Spiel
 Bestätigung, löscht den Spielstand und lädt neu). Ohne Speicherstand nur **▶ Neues Spiel**.
 `state.titleOpen` blockt Eingabe (höchste Pointer-Priorität), bis eine Wahl getroffen ist.
 
+### 7.5.12a Erinnerungs-Walzen (roter Faden über die Spielzeit)
+`MEMORIES` = 16-teilige geordnete Kette aus Jeremiah Hales Vergangenheit. Konzern-/Mechanik-Gegner
+lassen selten eine Walze fallen (`recoverMemory` im Kill-Handler: ~3 % normal, 50 % mechanische
+Bosse); jeder Fund enthüllt das nächste ungesehene Fragment und legt es im Codex unter
+**📽 Erinnerungen** ab (eigene Unteransicht mit Detail). `state.memoriesFound` persistiert; Erfolg
+**„Jeremiah Hale"** bei 16/16. Verteilt die Backstory über den gesamten (langen) Spielverlauf und
+verzahnt Grind mit dem Story-Rückgrat. Ergänzt durch Backbone-Haken in den Nebenquests (Vesper/
+Thorn/Lomax/Agata mit Providence-Cut/PSALM-Bezug) und `hero_memory`-Barks.
+
 ### 7.5.12 Story-Codex (`CODEX` / Taste K / 📖)
 Nachlese erlebter Szenen. Einträge (`CODEX`) schalten sich frei: Reveal/Providence bei
 `isRevealed`, Vane/NG+ bei `gameWon`, jede Nebenstory bei erledigter Quest, jedes Ende bei

@@ -977,3 +977,11 @@ Stimmalter: zeitlos 50–70. Tempo: Prediger-Kadenz — weite Bögen, wiegende B
 
 **PIP**
 Stimmalter: neun (Casting: junge erwachsene Sprecherin mit tragfähiger Kinderstimme — die Rolle braucht Timing, das Kinder selten halten). Tempo: vorlaut, atemlos, Sätze mit Anlauf und ohne Bremse; Großbuchstaben hörbar machen („quasi dein BERUF"). Textur: hell, kratzig, Zahnlücken-S; furchtlos, nie niedlich — Rotz vor Zucker. Referenz-Vibe: das Grenzland-Kind, das zu früh zu viel gesehen hat und daraus Frechheit statt Angst gemacht hat. **Tell-Moment:** „Das ist nur der Kessel, Pip." — „Ja. **Sag ich ja.**": Die zwei Worte müssen vollkommen selbstverständlich kommen, ohne jede Rührung — Pip beweist nichts, Pip WEISS. Die Gänsehaut entsteht beim Zuhörer, nie bei ihr.
+
+---
+
+## ROTER FADEN IM SPIEL — Die Erinnerungs-Walzen (im Code umgesetzt)
+
+Damit die Herkunft des Protagonisten über die *gesamte* (lange) Spielzeit als roter Faden trägt — nicht nur in den Kinoszenen —, lassen Konzern-/Mechanik-Gegner selten **Messing-Erinnerungswalzen** fallen (`MEMORIES` in `index.html`; ~3 % bei normalen mechanischen Gegnern, 50 % bei mechanischen Bossen). Jeder Fund enthüllt das nächste ungesehene Fragment einer geordneten 16-teiligen Kette und legt es im **Codex → Erinnerungen** ab. So zahlt jeder Kampf und jede Grind-Session aufs Story-Rückgrat ein und enthüllt Jeremiah Hales Vergangenheit Stück für Stück — vom Alltag mit Liv/Sara/Tom über den Stolleneinsturz und Vanes Angebot bis zur Aktivierung als Einheit 13 und Providence Cut. Erfolg **„Jeremiah Hale"** bei Vollsammlung.
+
+Zusätzlich zurück ins Spiel geholte **Backbone-Haken** in den Nebenquests: Vesper („Providence Cut. Hast du's gewusst?"), Thorn (sah den Helden am Grab von Providence Cut trauern), Lomax (erblindete beim Massaker; das Letzte, was er sah, war Einheit 13), Agata (der „Alte" im Garten ist PSALM-Einheit 4). Plus Faden-Auftaucher-Barks (`hero_memory`) und tiefen-nahe Abstieg-Zeilen.

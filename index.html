@@ -238,7 +238,8 @@
     depth15: 'Fünfzehn Ebenen. Der Fels wird warm. Frag nicht, woran er lehnt.',
     depth20: 'Zwanzig Ebenen. Selbst das Echo braucht zwei Anläufe nach oben.',
     depthRecord: 'TIEFENREKORD. Irgendwo über dir verliert ein Buchmacher gerade sehr viel Geld.',
-    hero_depth: ['Hier unten fragt keiner, was ich bin. Der Fels behandelt alle gleich: nach Härte.', 'Kein Licht, kein Wind — ich nehm sie trotzdem mit runter.', 'Solang da unten was wartet, bin ich hier richtig. Warten kann ich länger.']
+    hero_depth: ['Hier unten fragt keiner, was ich bin. Der Fels behandelt alle gleich: nach Härte.', 'Kein Licht, kein Wind — ich nehm sie trotzdem mit runter.', 'Solang da unten was wartet, bin ich hier richtig. Warten kann ich länger.', 'Je tiefer ich gehe, desto lauter tickt es. Als läge die Erinnerung ganz unten.', 'Irgendwo hier hab ich mich verloren. Vielleicht find ich unten den Rest.'],
+    hero_memory: ['Ein Name liegt mir auf der Zunge wie Rost. Jeremiah. Er passt zu gut.', 'Ich hab mal Nägel in einen Türrahmen geschlagen. Woher weiß ich das?', 'Manchmal riecht die Wüste nach frischem Kaffee. Um vier Uhr. In der Dunkelheit.']
   };
   const pickBark = pool => pool[Math.floor(Math.random() * pool.length)];
   // Gegner-Klassifizierung & Verhalten (siehe GDD Kap. 10).
@@ -336,6 +337,36 @@
     { id: 'ngplus', title: 'Der ewige Kreislauf', body: 'Du hast das Territorium einmal befreit — und beginnst von Neuem, härter als zuvor. Deine Kraft bleibt, die Wüste wird zäher. Vielleicht wählst du diesmal eine andere Fahne. Vielleicht keine.' }
   ];
   const CODEX_BY_ID = {}; CODEX.forEach(c => CODEX_BY_ID[c.id] = c);
+  // Erinnerungs-Walzen: Messingwalzen aus Konzern-Gegnern spielen Fragmente aus Jeremiahs Vergangenheit ab.
+  // Geordnete Kette (früh → dunkel); jeder Fund enthüllt das nächste ungesehene Fragment. Verteilt den roten Faden über die ganze Spielzeit.
+  const MEMORIES = [
+    { title: 'Der Nagel', text: 'Du schlugst einen Nagel in den Türrahmen — eine Kerbe für Saras Größe. „Halt still", sagte Liv, „sie wächst schneller, als du hämmerst." Das Holz war warm von der Sonne.' },
+    { title: 'Kaffee, zu früh', text: 'Vier Uhr, noch dunkel. Liv drückte dir den Blechbecher in die Hand, ohne die Augen aufzumachen. „Der Kaffee wird kalt, Jeremiah." Er wurde nie kalt. Du trankst ihn im Gehen.' },
+    { title: 'Toms Ohr an der Schiene', text: 'Tom legte ein Ohr auf den kalten Stahl, um den Zug zu hören, bevor man ihn sah. „Noch nicht, Pa?" — „Noch nicht." Ihr wartetet zusammen, bis die Schiene sang.' },
+    { title: 'Livs Lachen', text: 'Sie lachte immer eine Terz zu hoch. Beim Wäscheaufhängen, den Mund voll Klammern. Keinem hat\'s was ausgemacht. Dir am wenigsten.' },
+    { title: 'Das erleuchtete Fenster', text: 'Zwölf Stunden Schotter und Sonne, der Rücken ein einziger Krampf. Aber am Ende der Schicht lag Rustwater vor dir, und ein Fenster war erleuchtet. Deins.' },
+    { title: 'Der Streik', text: 'Sie kürzten den Lohn zum dritten Mal. „Wir legen die Werkzeuge nieder", sagtest du zu den Männern. Liv nähte die Transparente. Providence Cut sollte gehört werden.' },
+    { title: 'Das Versprechen', text: 'Sara fragte, ob du zum Fest zurück bist. „Bevor die Lampen an sind", sagtest du. Du hast das Versprechen nicht gebrochen, weil du es vergessen hast. Es hat dich gebrochen.' },
+    { title: 'Der Stollen', text: 'Der Balken gab nach, ohne Warnung. Ein Krachen, dann Gewicht, dann nichts mehr unterhalb der Brust. Du hörtest die Männer graben. Du hörtest Liv rennen. Du hörtest den Zug.' },
+    { title: 'Vanes Zug', text: 'Ein Waggon hielt, wo keiner halten sollte. Eine Rampe fiel. Ein Mann mit einem Gesicht wie ruhiges Öl kniete sich zu dir in den Staub. „Ich kann den Tod aufhalten", sagte er. „Fragt sich nur, ob du mir dafür dienst."' },
+    { title: 'Livs Bitte', text: 'Sie bettelte an seinem Zug um Hilfe, die Hände am kalten Messing. Vane lächelte und half — auf seine Art. Das Letzte, was du als Mensch sahst, war ihr Gesicht im Türspalt.' },
+    { title: 'Die Naht', text: 'Kälte, dann kein Körper mehr. Man hört das Ticken, bevor man das Denken hört. Eine Stimme ohne Mund: „Systemstart. Einheit 13. Willkommen im Dienst."' },
+    { title: 'Der erste Schritt', text: 'Der Boden fühlte sich nicht an. Deine Hand — nicht deine Hand — schloss sich zur Faust, und der Stahl gehorchte, bevor du es wolltest. Irgendwo unter dem Öl schrie etwas, das du warst.' },
+    { title: 'Befehl', text: 'Auf der Lochkarte stand nur: STRECKE RÄUMEN. Kein Ort. Keine Namen. Der Konzern gibt Werkzeugen keine Namen weiter. Du rolltest nordwärts, gehorsam wie ein Uhrwerk.' },
+    { title: 'Providence Cut', text: 'Die Rampe fiel. Streikposten an der Trasse. Transparente, die du kanntest, ohne zu wissen, warum. Und eine Frau trat vor — so, wie man einem Mann in den Weg tritt, den man kennt.' },
+    { title: 'Ihr Mund formte ein Wort', text: 'Kein Ton blieb auf der Walze. Aber jeder, der es je sah, liest dasselbe von ihren Lippen: „Jeremiah?" Du hast nicht angehalten. Du konntest nicht. Du warst nicht mehr du.' },
+    { title: 'Der Kaskadenfehler', text: 'Danach: ein Ticken, das zu laut wurde. Ein Rechenkern, der sich selbst zerriss, um nicht zu wissen, was er getan hatte. Du gingst in die Wüste, um zu verlöschen. Der Kessel ließ dich nicht. Also vergaßest du. Bis jetzt.' }
+  ];
+  const MEMORY_BARKS = ['Wieder eine Stimme, die meine sein könnte.', 'Messing erinnert sich besser als Fleisch. Grausam besser.', 'Ich sollte das nicht kennen. Ich kenne es trotzdem.', 'Noch ein Splitter von einem Mann, den sie eingeschmolzen haben.'];
+  function recoverMemory() {
+    if (state.memoriesFound >= MEMORIES.length) return;
+    const m = MEMORIES[state.memoriesFound]; state.memoriesFound++;
+    save();
+    toast('📽 Erinnerungswalze geborgen: „' + m.title + '"');
+    if (player) sayBark(player.x, player.y - 24, pickBark(MEMORY_BARKS), '#e7d9bf');
+    if (typeof updateLogBadge === 'function') updateLogBadge();
+    checkAchievements();
+  }
   // Erfolge — Spielziele, abgeleitet aus Fortschritt & Statistik.
   const ACHIEVEMENTS = [
     { id: 'first_blood', title: 'Erster Staub', desc: 'Besiege deinen ersten Gegner.', check: () => kills >= 1 },
@@ -349,7 +380,8 @@
     { id: 'campaign', title: 'Befreier des Territoriums', desc: 'Beende die Kampagne (drei Enden möglich).', check: () => state.gameWon },
     { id: 'ngplus3', title: 'Der ewige Kreislauf', desc: 'Erreiche New Game+ 3.', check: () => (state.ngPlus || 0) >= 3 },
     { id: 'abyss10', title: 'Tiefgänger', desc: 'Erreiche Ebene 10 im Abstieg.', check: () => (state.abyssBest || 0) >= 10 },
-    { id: 'lorekeeper', title: 'Chronist', desc: 'Vervollständige den Codex.', check: () => state.codex.size >= CODEX.length }
+    { id: 'lorekeeper', title: 'Chronist', desc: 'Vervollständige den Codex.', check: () => state.codex.size >= CODEX.length },
+    { id: 'rememberer', title: 'Jeremiah Hale', desc: 'Birg alle 16 Erinnerungswalzen — kenne dich ganz.', check: () => state.memoriesFound >= MEMORIES.length }
   ];
   function checkAchievements(silent) {
     for (const a of ACHIEVEMENTS) {
@@ -515,7 +547,8 @@
         { id: 'thorn', name: 'Thorn, der Uhrmacher', short: 'Thorn', tx: 2, ty: 3, color: 0xca8a04,
           linesPre: ['Ein Uhrmacher justiert mit zittrigen Fingern ein Kinderherz aus Messing. Daneben tickt ein Junge namens Oliver.',
             '„Zwölf Jahre hatte ich Angst vor der falschen Stille. Seit Sie durch die Stadt gehen, tickt Oliver ruhiger. Fragen Sie mich nicht, warum."'],
-          linesPost: ['Oliver sieht zu dir hoch: „Du klickst heute tiefer als letzte Woche. Herr Vater sagt, das heißt bei Werken wie uns: Es hat sich was gesetzt."'],
+          linesPost: ['„Ich hab Sie am Grab von Providence Cut gesehen — eine Maschine, die trauert. Wissen Sie, was das für Männer wie mich bedeutet? Hoffnung, mit Hemmung und Unruh."',
+            'Oliver sieht zu dir hoch: „Du klickst heute tiefer als letzte Woche. Herr Vater sagt, das heißt bei Werken wie uns: Es hat sich was gesetzt."'],
           quest: { id: 'q_uhrwerk', title: 'Das Uhrwerk-Herz', kind: 'collect', item: 'zahnrad', count: 8, rewardGold: 200, rewardItem: 'potion', chapter: 1,
             offerText: '„Olivers Uhrwerk-Herz verschleißt. Ich brauche acht saubere Zahnräder — nicht vom Konzern gestanzt, ehrlich gefallene. Bringen Sie sie, und der Junge tickt ein Jahr länger."',
             activeText: '„Acht Zahnräder, kein Rost an den Zähnen. Oliver zählt die Tage. Wörtlich."',
@@ -524,12 +557,13 @@
         { id: 'lomax', name: 'Lomax, der Projektionist', short: 'Lomax', tx: 19, ty: 3, color: 0x94a3b8,
           linesPre: ['Ein blinder Mann baut einen Projektor auf, das Gesicht zur unsichtbaren Leinwand. „Erste Reihe, Mitte, ist frei, Junge. Bleibt sie auch."',
             '„Ich sehe nichts mehr. Aber am Lachen höre ich, wo alle sitzen. Und ich höre, dass du dich anders bewegst als Fleisch."'],
-          linesPost: ['„Manche Bilder gehören keinem Publikum mehr. Nur noch einem. Frag nicht, welches."'],
+          linesPost: ['„Ich war Vorführer in Providence Cut, Junge. Das Letzte, was diese Augen je sahen, war ein glänzendes Chassis, das aus einem Konzernzug stieg. Dann kam das Feuer. Dann kam das Dunkel."',
+            '„Nimm\'s mir nicht übel, dass ich dich nicht hasse. Ich hab die Nummer gesehen, die sie dir eintätowierten. Und ich hab gesehen, wie du am Grab standest. Nur eins von beiden war deine Schuld."'],
           quest: { id: 'q_lomax', title: 'Der blinde Projektionist', kind: 'kill', count: 8, rewardGold: 150, rewardItem: 'zahnrad', chapter: 1,
-            offerText: '„Banditen haben meine Filmrollen — das Einzige, was ich noch ‚sehe\'. Acht von dem Pack lungern an der Wüstenstraße. Hol sie mir vom Hals, dann läuft die Vorstellung um acht."',
+            offerText: '„Banditen haben meine Filmrollen — das Einzige, was ich noch ‚sehe\'. Darunter eine, bei der das Publikum totenstill wird: Providence Cut, an einem Morgen davor. Acht von dem Pack lungern an der Wüstenstraße. Hol sie mir vom Hals."',
             activeText: '„Noch keine Ruhe da draußen? Das Publikum wartet. Ich auch — ich brauch das Lachen, um zu wissen, wo alle sind."',
-            completeText: '„Ich höre die Straße wieder atmen. Danke, Junge. Heute zeig ich eine Komödie. Alle brauchen was zu lachen — ich am meisten."',
-            doneText: '„Vorstellung um acht. Erste Reihe Mitte gehört dir. Für immer heißt für immer — ich bin blind, nicht wortbrüchig."' } }
+            completeText: '„Da sind sie. Ich kurbel dir eine: hörst du die Kurbel stocken? Da lacht eine Frau. Liv hieß sie — eine Terz zu hoch, und keinem hat\'s was ausgemacht." Dein Okular glüht. Er sieht es nicht. Er weiß es trotzdem.',
+            doneText: '„Erste Reihe Mitte gehört dir. Manche Bilder gehören keinem Publikum mehr — nur noch einem. Für immer heißt für immer. Ich bin blind, nicht wortbrüchig."' } }
       ]
     },
     dungeon1: {
@@ -693,13 +727,13 @@
         { id: 'vesper', name: 'Vesper Kane', short: 'Vesper', tx: 6, ty: 13, color: 0xf87171,
           linesPre: ['Eine Kopfgeldjägerin lädt einen Doppellauf, ohne aufzusehen. „Blechmann. Munition kaufen?"',
             '„Hinter dir wird\'s nie leise bleiben — dafür kenn ich die Welt zu gut. Meine Liste ist lang. Deine wird länger."'],
-          linesPost: ['„Meine Liste ist kürzer geworden, seit du hier bist. Schlecht fürs Geschäft. Gut für alles andere."',
-            '„Ich jag keine Kopien. Ich jag Originale. Du bist so eins — merk dir das."'],
+          linesPost: ['Sie öffnet die Hand über dem Colt und lässt sie leer. „Eine Frage, dann hast du gewonnen: Providence Cut. Hast du\'s gewusst, als du\'s getan hast?"',
+            'Du: „Nein. Sie haben\'s mich hinterher wissen lassen. Als Belohnung." — Vesper: „Dann üb weiter. Für den Tag, an dem wir die erschießen, die\'s gewusst haben."'],
           quest: { id: 'q_vesper', title: 'Der zweite Lauf', kind: 'kill', count: 15, rewardGold: 320, rewardItem: 'zahnrad', chapter: 1,
-            offerText: '„Ein Wettstreit, Blechmann. Der „Schakal" und seine Bande machen die Handelswege unsicher — fünfzehn Köpfe. Wer mehr räumt, hat den längeren Lauf. Ich geb dir Vorsprung. Ich brauch keinen."',
+            offerText: '„Ein Wettstreit, Blechmann. Ich jag nur Konzern-Maschinen, seit PSALM-Einheit 7 meinen Bruder holte — und dich hab ich vom ersten Tag als Nummer 13 erkannt. Fünfzehn Schergen. Wer mehr räumt, hat den längeren Lauf."',
             activeText: '„Fünfzehn, hab ich gesagt. Ich zähl mit — und ich lieg vorn. Beweg dich, sonst nehm ich dir die letzten weg."',
-            completeText: '„Fünfzehn. Sauber. Verdammt sauber sogar. Behalt das Zahnrad — von der ersten Flinte, die ich je hatte. Ich häng nicht an Dingen. Nur an Namen, die ich nicht vergesse."',
-            doneText: '„Der Schakal-Zettel hängt wieder — Nachahmer. Ich lass ihn dir übrig. Wir jagen jetzt nebeneinander, Blechmann. Nicht gegeneinander. Kleiner Unterschied. Großer."' } },
+            completeText: '„Fünfzehn. Sauber. Behalt das Zahnrad — von der ersten Flinte, die ich je hatte. Ich häng nicht an Dingen. Nur an Namen, die ich nicht vergesse. Deiner steht jetzt auf der richtigen Seite meiner Liste."',
+            doneText: '„Wir jagen jetzt nebeneinander, Nummer 13. Nicht gegeneinander. Und wenn wir Vane finden, der\'s befohlen hat — den überlass mir eine Sekunde. Nur eine."' } },
         { id: 'habakuk', name: 'Prediger Habakuk', short: 'Habakuk', tx: 9, ty: 14, color: 0xa78bfa,
           linesPre: ['Ein Prediger in blankem Stahl breitet die Arme. „Gesegnet sei, was rostet — denn es war draußen im Regen und ist geblieben."',
             '„Bruder! Die Silbe hält: nicht ertragen — tragen. Ich hab\'s erst beim dritten Leben verstanden."'],
@@ -726,8 +760,8 @@
         linesPre: ['Eine alte Frau gießt Kakteen aus einer halbierten Granate. Sie zählt halblaut mit.',
           '„Dreiundzwanzig, vierundzwanzig … Sie stehen auf dem Beet, junger Mann. Ich rieche heißes Blech auf zehn Schritt."',
           '„Der Smog weicht hier zurück, weil einer zählt, was wiederkommt. Der Konzern zählt nur, was er nimmt."'],
-        linesPost: ['„Vierzig Jahre gieße ich den Alten: Wasser links, Öl rechts. Er hat den Beruf gewechselt — von der Waffe zum Spalier."',
-          '„Sie sind aus demselben Stahl, junger Mann. Nur haben Sie noch nicht entschieden, was für ein Garten Sie werden."'],
+        linesPost: ['„Der Alte, durch den mein ältester Kaktus wächst — sehen Sie die Prägung im Brustpanzer? PSALM, Einheit 4. Er kam vor Ihnen. Weigerte sich, Waffe zu bleiben, kniete sich hin und wurde Spalier."',
+          '„Sie sind aus demselben Guss, junger Mann. Einheit 4 hat entschieden, was für ein Garten er wird. Sie haben\'s noch vor sich."'],
         quest: { id: 'q_garden', title: 'Der Garten aus Rost', kind: 'kill', count: 12, rewardGold: 400, rewardItem: 'dampfkern', chapter: 1,
           offerText: '„Ein Vermessungstrupp steckt Pfähle: „Entlüftungskorridor Süd", planiert wird nächste Woche. Zweihundertsechzehn Pflanzen, vierzig Jahre — und ein Planier-Kommando. Helfen Sie mir, den Garten zu halten. Schlagen Sie zwölf von dem Konzernblech zurück, zwischen den Beeten."',
           activeText: '„Sie kommen noch, das Kreischen der Planierraupe hören Sie doch? Bleiben Sie auf den Steinen, wo Sie können — und halten Sie sie von den Beeten fern."',
@@ -797,7 +831,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0,
+    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0, memoriesFound: 0,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -1198,7 +1232,7 @@
   }
   function serialize() {
     const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, ts: Date.now(), discovered: [...state.discovered], explored: ex };
+    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, ts: Date.now(), discovered: [...state.discovered], explored: ex };
   }
   function save() { try { localStorage.setItem(slotKey('auto'), JSON.stringify(serialize())); } catch (e) { } }   // Autospeichern -> dedizierter Auto-Slot
   function saveToManual(i) { try { localStorage.setItem(slotKey(i), JSON.stringify(serialize())); } catch (e) { } }   // manueller Snapshot
@@ -1224,6 +1258,7 @@
       state.stats = Object.assign({ bossKills: 0, legendaries: 0 }, (s.stats && typeof s.stats === 'object') ? s.stats : {});
       state.achievements = new Set(Array.isArray(s.achievements) ? s.achievements : []);
       state.mapVisit = (s.mapVisit && typeof s.mapVisit === 'object') ? s.mapVisit : {};
+      state.memoriesFound = Math.min(MEMORIES.length, s.memoriesFound || 0);
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
@@ -1823,41 +1858,49 @@
     codexAutoScan(true); state.codexOpen = true; state.codexView = 'list'; hideContext(); renderCodex();
   }
   function closeCodex() { state.codexOpen = false; state.codexView = null; clRows.forEach(o => o.destroy()); clRows = []; clRowHits = [];[clBackdrop, clPanel, clTitle, clClose].forEach(o => o.setVisible(false)); }
+  function codexDetailEntry(id) {
+    if (id && id.indexOf('mem') === 0) { const i = +id.slice(3); return MEMORIES[i] ? { title: '📽 ' + (i + 1) + '. ' + MEMORIES[i].title, body: MEMORIES[i].text } : null; }
+    return CODEX_BY_ID[id] ? { title: '📖 ' + CODEX_BY_ID[id].title, body: CODEX_BY_ID[id].body } : null;
+  }
   function renderCodex() {
     clRows.forEach(o => o.destroy()); clRows = []; clRowHits = [];
     const size = sceneRef.scale.gameSize, pw = Math.min(360, size.width * 0.92);
-    const unlocked = CODEX.filter(c => state.codex.has(c.id));
-    if (state.codexView && state.codexView !== 'list') {   // Detail-Ansicht
-      const entry = CODEX_BY_ID[state.codexView];
-      const ph = Math.min(size.height * 0.8, 320);
-      const px = size.width / 2, py = Math.max(20, (size.height - ph) / 2);
+    const view = state.codexView;
+    // ---- Detail-Ansicht (Codex-Eintrag oder Erinnerungs-Fragment) ----
+    if (view && view !== 'list' && view !== 'memories') {
+      const entry = codexDetailEntry(view); if (!entry) { state.codexView = 'list'; renderCodex(); return; }
+      const ph = Math.min(size.height * 0.8, 320), px = size.width / 2, py = Math.max(20, (size.height - ph) / 2);
       clBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
       clPanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
-      clTitle.setText('📖  ' + entry.title).setPosition(px, py + 14).setVisible(true);
+      clTitle.setText(entry.title).setPosition(px, py + 14).setVisible(true);
       clClose.setPosition(px + pw / 2 - 20, py + 16).setVisible(true);
       clRows.push(sceneRef.add.text(px, py + 52, entry.body, { fontFamily: 'system-ui', fontSize: '15px', color: '#e7d9bf', align: 'left', wordWrap: { width: pw - 40 } }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60));
-      const back = sceneRef.add.text(px, py + ph - 26, '‹ zurück zur Liste', { fontFamily: 'system-ui', fontSize: '14px', color: '#8fd0ff' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60);
-      clRows.push(back); clRowHits.push({ x: px, y: py + ph - 30, w: pw - 40, h: 28, back: true });
+      const backTo = view.indexOf('mem') === 0 ? 'memories' : 'list';
+      const back = sceneRef.add.text(px, py + ph - 26, '‹ zurück', { fontFamily: 'system-ui', fontSize: '14px', color: '#8fd0ff' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60);
+      clRows.push(back); clRowHits.push({ x: px, y: py + ph - 30, w: pw - 40, h: 28, back: backTo });
       return;
     }
-    // Listen-Ansicht
-    const rowH = 34, bodyN = Math.min(unlocked.length, 10);
-    const ph = 62 + Math.max(1, bodyN) * (rowH + 5) + 30;
-    const px = size.width / 2, py = Math.max(16, (size.height - ph) / 2);
+    // ---- Liste (Codex) oder Erinnerungs-Liste ----
+    const memMode = view === 'memories';
+    const items = memMode
+      ? MEMORIES.slice(0, state.memoriesFound).map((m, i) => ({ id: 'mem' + i, title: (i + 1) + '. ' + m.title, icon: '📽' }))
+      : (state.memoriesFound > 0 ? [{ id: '__memories', title: 'Erinnerungen  (' + state.memoriesFound + '/' + MEMORIES.length + ')', icon: '📽' }] : []).concat(CODEX.filter(c => state.codex.has(c.id)).map(c => ({ id: c.id, title: c.title, icon: '📜' })));
+    const rowH = 34, bodyN = Math.min(items.length, 10);
+    const ph = 62 + Math.max(1, bodyN) * (rowH + 5) + 34, px = size.width / 2, py = Math.max(16, (size.height - ph) / 2);
     clBackdrop.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
     clPanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
-    clTitle.setText('📖  Codex').setPosition(px, py + 14).setVisible(true);
+    clTitle.setText(memMode ? '📽  Erinnerungen' : '📖  Codex').setPosition(px, py + 14).setVisible(true);
     clClose.setPosition(px + pw / 2 - 20, py + 16).setVisible(true);
-    if (unlocked.length === 0) {
-      clRows.push(sceneRef.add.text(px, py + 70, 'Noch keine Einträge.\nErlebe die Geschichte, um den Codex zu füllen.', { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894', align: 'center' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60));
-    }
-    unlocked.slice(0, bodyN).forEach((c, i) => {
+    if (items.length === 0) clRows.push(sceneRef.add.text(px, py + 70, 'Noch keine Einträge.\nErlebe die Geschichte, um den Codex zu füllen.', { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894', align: 'center' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60));
+    items.slice(0, bodyN).forEach((c, i) => {
       const y = py + 52 + i * (rowH + 5);
       const bg = sceneRef.add.rectangle(px, y, pw - 28, rowH, 0x2a2118, 0.95).setStrokeStyle(2, 0xc9a24a, 0.3).setScrollFactor(0).setDepth(59).setOrigin(0.5, 0);
-      const t = sceneRef.add.text(px - pw / 2 + 20, y + rowH / 2, '📜  ' + c.title, { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(60);
+      const t = sceneRef.add.text(px - pw / 2 + 20, y + rowH / 2, c.icon + '  ' + c.title, { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(60);
       clRows.push(bg, t); clRowHits.push({ x: px, y, w: pw - 28, h: rowH, id: c.id });
     });
-    clRows.push(sceneRef.add.text(px, py + ph - 22, unlocked.length + '/' + CODEX.length + ' entdeckt' + (unlocked.length > bodyN ? '  ·  +' + (unlocked.length - bodyN) + ' weitere' : ''), { fontFamily: 'system-ui', fontSize: '13px', color: '#9ca684' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60));
+    const foot = memMode ? (state.memoriesFound + '/' + MEMORIES.length + ' Walzen geborgen') : (CODEX.filter(c => state.codex.has(c.id)).length + '/' + CODEX.length + ' entdeckt');
+    if (memMode) clRowHits.push({ x: px, y: py + ph - 30, w: pw - 40, h: 26, back: 'list' });
+    clRows.push(sceneRef.add.text(px, py + ph - 24, foot + (memMode ? '   ‹ zurück' : '') + (items.length > bodyN ? '  ·  +' + (items.length - bodyN) + ' weitere' : ''), { fontFamily: 'system-ui', fontSize: '13px', color: memMode ? '#8fd0ff' : '#9ca684' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(60));
   }
 
   // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
@@ -2352,7 +2395,8 @@
     if (state.codexOpen) {
       if (hit(clClose, p, 26)) { closeCodex(); return; }
       for (const r of clRowHits) if (inRect(p, r.x - r.w / 2, r.y, r.w, r.h)) {
-        if (r.back) { state.codexView = 'list'; renderCodex(); }
+        if (r.back) { state.codexView = r.back; renderCodex(); }
+        else if (r.id === '__memories') { state.codexView = 'memories'; renderCodex(); }
         else if (r.id) { state.codexView = r.id; renderCodex(); }
         return;
       }
@@ -3001,6 +3045,7 @@
       dropGold(bx, by, Math.round(e.gold * lootMul())); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); sfx('kill'); gainXp(xpForKill(e));
       if (Math.random() < 0.14) sayBark(player.x, player.y - 24, pickBark(e.cls === 'MECHANICAL' ? BARKS.hero_kill_mech : BARKS.hero_kill_bio), '#bcd0e0');   // Held-Callout
       updateLogBadge(); checkAchievements();   // evtl. Kill-Quest abgabebereit / Erfolg erreicht
+      if (e.cls === 'MECHANICAL' && state.memoriesFound < MEMORIES.length && Math.random() < (e.isBoss ? 0.5 : 0.03)) recoverMemory();   // Erinnerungswalze aus Konzern-Blech
       if (e.isVane) {
         state.stats.bossKills++; state.stats.legendaries++;
         state.boss = null; hideBossBar(); toast('☠ Direktor Vane ist gefallen. Das Wachs schmilzt.');
@@ -3196,8 +3241,9 @@
     if (inTown && Math.random() < 0.85) {                    // Stadtbewohner-Ambiente an einem NPC
       const n = npcSprites[Phaser.Math.Between(0, npcSprites.length - 1)];
       sayBark(n.x, n.y - 26, pickBark(BARKS.town));
-    } else if (!inTown && enemies.length === 0 && Math.random() < 0.5) {   // Held-Monolog in Ruhe
-      sayBark(player.x, player.y - 24, pickBark(BARKS.hero_idle), '#bcd0e0');
+    } else if (!inTown && enemies.length === 0 && Math.random() < 0.5) {   // Held-Monolog in Ruhe (mit Faden-Auftauchern, sobald Erinnerungen geborgen)
+      const pool = (state.memoriesFound > 0 && Math.random() < 0.4) ? BARKS.hero_memory : BARKS.hero_idle;
+      sayBark(player.x, player.y - 24, pickBark(pool), '#bcd0e0');
     }
   }
 
