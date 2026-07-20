@@ -30,6 +30,14 @@ Acht erfundene **Nebenstories** (Garten aus Rost, Pip der Schutzengel, die Rival
 Kane, die Kirche der Fleischwerdung, der blinde Projektionist, die Witwe & der Automat,
 Dolores' letzte Trommel, das Uhrwerk-Herz) sind als NPCs mit vollem Quest-Zyklus spielbar.
 
+**Der rote Faden — zwei Stufen.** Zerschlagene Konzern-Maschinen geben **Erinnerungs-Walzen**
+frei: Splitter von Jeremiah Hales Vergangenheit, verteilt über die gesamte Spielzeit und im
+Codex nachlesbar (der Konzern hat sein Gedächtnis als Ballast-Steuerwalzen über sein Maschinennetz
+gestreut). Nach dem Erwachen öffnet sich im Norden die verbrannte Ruine **Providence Cut** — sein
+altes Zuhause. Dort führen drei stille Erinnerungspunkte (Türrahmen, Familienfoto, drei benannte
+Gräber), ein Zeuge (der Streckenwärter Elias Roan) und das Begräbnis der Walzen den **Familien-Bogen**
+zu Ende: erst sich selbst finden, dann die Familie heimbringen.
+
 Die vollständige Story-Bibel (alle Dialoge, Kinoszenen, Casting-Notizen) liegt unter
 [`docs/STORY_BIBLE.md`](docs/STORY_BIBLE.md).
 
@@ -39,6 +47,9 @@ Die vollständige Story-Bibel (alle Dialoge, Kinoszenen, Casting-Notizen) liegt 
 
 - **Kampf:** Auto-Ziel-Schießen, 4 Schadensarten (Kinetisch/Galvanisch/Thermisch/Alchemisch)
   × Gegner-Klassifizierung (Biologisch/Mechanisch), Status-Effekte, Munition/Energiekristalle.
+- **Kampf-Lesbarkeit:** Klassen-Chip an jeder Lebensleiste (eckig+blau = Maschine, rund+rot =
+  organisch), Stark/Schwach-Hinweise am Treffer, Status-Icons (⚡🩸🔥) über dem Gegner und eine
+  nachschlagbare **Kampf-Fibel** im Codex.
 - **Sechs Gegnertypen** inkl. dem schnellen mechanischen Schwarm *Kessel-Kläffer*, plus
   Elite-Bosse, Dungeon-Superboss und benannte Boss-Wächter.
 - **Itemization (Diablo-Achse):** Seltenheiten, Affixe mit Roll-Varianz, legendäre Kräfte —
@@ -90,8 +101,11 @@ lauffähig, ohne Build-Schritt, per CDN-Phaser.
 
 - **Spielen/Testen:** `index.html` im Browser öffnen.
 - **Verifikation:** Eine Playwright-Harness fährt das Spiel headless und prüft die Systeme
-  end-to-end (aktuell **150+ Checks**, u. a. Kampf, Itemization, Perks, Quests, Reveal,
-  Finale, Enden, New Game+, Codex, Erfolge) und schlägt bei jeder Konsolen-Exception an.
+  end-to-end (aktuell **190+ Checks**, u. a. Kampf & Schadensmatrix, Itemization, Perks,
+  Quests, Reveal, Finale, Enden, New Game+, Codex, Erfolge, Erinnerungs-Walzen, Familien-Bogen)
+  und schlägt bei jeder Konsolen-Exception an. Ein zusätzlicher **Durchspiel-Test** fährt die
+  komplette Kampagne in einem Rutsch (Start → Reveal → Gilde → Kapitelkette → Vane → Ende →
+  New Game+ → Familien-Bogen).
 - **Artefakt-Build:** Ein kleines Skript inlint Phaser in eine eigenständige, verteilbare
   `rust-and-lead-play.html` (kein CDN nötig).
 
@@ -104,6 +118,7 @@ alle Systeme im Prototyp dienen zugleich als ausführbare Spezifikation.
 
 ✅ **Vollständige, wiederspielbare Kampagne.** Titelbildschirm, Story von Cold Open bis zu
 drei Enden, Zwei-Phasen-Endboss, New Game+, acht spielbare Nebenstories, zwei Nebengebiete,
-Auftragsbuch, Story-Codex, Statistik & Erfolge, Endlosmodus. Darstellung: neutrale
-Platzhalter-Geometrie — der finale Kunststil ist modernes 3D (siehe
-[`docs/MASTER_GDD.md`](docs/MASTER_GDD.md)).
+Familien-Bogen (Providence Cut) mit Erinnerungs-Walzen als rotem Faden, Auftragsbuch,
+Story-Codex inkl. Kampf-Fibel, Statistik & Erfolge, Endlosmodus. Die komplette Kampagne
+ist per Durchspiel-Test end-to-end verifiziert. Darstellung: neutrale Platzhalter-Geometrie —
+der finale Kunststil ist modernes 3D (siehe [`docs/MASTER_GDD.md`](docs/MASTER_GDD.md)).
