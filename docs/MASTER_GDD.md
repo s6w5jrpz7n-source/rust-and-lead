@@ -815,6 +815,14 @@ links, gepacktes Grid-Inventar rechts; Anlegen per Ziehen oder Antippen. Das Gri
 links nimmt gezogene Items entgegen — **Ausrüstung** wird zu Schrott recycelt (1–4 🔩 je
 Seltenheit), Material/Trank stückweise verworfen. So flutet das Inventar nicht über.
 
+### 7.4.0 Ressourcen- & Werteanzeige
+**Munition** ist jederzeit sichtbar: als HUD-Chip unter dem Feuerknopf (aktuelle Waffe,
+`Vorrat/Kapazität`, farbig bei Knappheit) **und** in der Inventar-Kopfzeile (beide Vorräte
+🧨 Munition + 🔷 Energiekristalle mit Kapazität). Das **Werte-Blatt** listet nun vollständig
+alle wirksamen Verbesserungen: Leben, Schaden, **Krit-Chance × Multiplikator**, Feuerrate,
+Rüstung, **Panzerbrecher**, Schutz (%), **Regeneration**, Tempo, Inventarplätze — keine
+Perk-/Legendary-/Tech-Wirkung bleibt mehr unsichtbar.
+
 ### 7.4.1 Händler als Charakter-Panel (Drag-Handel)
 Der Händler öffnet **dasselbe Panel im Shop-Modus**: **links das Händler-Angebot**
 (Ausrüstung, Munition, Kristalle, Tränke — Kauf per Tipp), **rechts das eigene

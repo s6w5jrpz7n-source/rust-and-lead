@@ -750,7 +750,7 @@
   // ---- Laufzeit-Zustand --------------------------------------
   let sceneRef, player, shadow;
   let stickBase, stickThumb, hint, shootBtn, killText, goldText, mapNameText;
-  let weaponBtn, weaponIcon, weaponName, ammoText;
+  let weaponBtn, weaponIcon, weaponName, ammoText, ammoBg;
   let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;
   let fmBackdrop, fmPanel, fmTitle, fmGfx, fmClose;
   let ctxBg, ctxText;
@@ -829,7 +829,8 @@
     // Haupt-Angriff
     shootBtn = scene.add.circle(0, 0, 46, COL_ENEMY, 0.85).setStrokeStyle(3, 0xffffff, 0.55).setScrollFactor(0).setDepth(20);
     scene.add.text(0, 0, '🔫', { fontSize: '24px' }).setOrigin(0.5).setScrollFactor(0).setDepth(21).setName('mainIcon');
-    ammoText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(22);
+    ammoBg = scene.add.rectangle(0, 0, 62, 24, 0x11100e, 0.82).setStrokeStyle(1.5, 0xc9a24a, 0.55).setScrollFactor(0).setDepth(21);
+    ammoText = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(22);
 
     // Spezial-Attacken
     const abilDefs = [
@@ -1825,7 +1826,10 @@
     invPanel.setPosition(L.size.width / 2, L.py).setSize(L.pw, L.ph).setVisible(true);
     invTitle.setText(state.shopMode ? '🛒 Händler' : '🎒').setPosition(L.px + 12, L.py + 10).setOrigin(0, 0).setVisible(true);
     invClose.setPosition(L.px + L.pw - 22, L.py + 16).setVisible(true);
-    invText.setText('⭐ Lv ' + state.level + '   (' + state.xp + ' / ' + xpToNext(state.level) + ' XP)      💰 ' + state.gold).setPosition(L.px + 12, L.py + 34).setOrigin(0, 0).setVisible(true);
+    invText.setText('⭐ Lv ' + state.level + '   💰 ' + state.gold).setPosition(L.px + 12, L.py + 38).setOrigin(0, 0).setVisible(true);
+    // Munitionszeile (rechts, gleiche Zeile): beide Vorräte mit Kapazität, farbig bei Knappheit (rot=leer, gelb=knapp)
+    const ammoCol = (ammoOf('muni') <= 0 || ammoOf('kristall') <= 0) ? '#f87171' : (ammoOf('muni') <= 10 || ammoOf('kristall') <= 10) ? '#fbbf24' : '#a8c0a0';
+    add(sceneRef.add.text(L.px + L.pw - 12, L.py + 38, '🧨 ' + ammoOf('muni') + '/' + ammoCap('muni') + '   🔷 ' + ammoOf('kristall') + '/' + ammoCap('kristall'), { fontFamily: 'system-ui', fontSize: '12px', color: ammoCol, fontStyle: 'bold' }).setOrigin(1, 0).setScrollFactor(0).setDepth(53));
     invScrapRect = null; shopSellRect = null; shopBuyBtns = []; perkBtns = []; charTabRects = [];
     // ---- Reiter: Ausrüstung / Fähigkeiten (nur außerhalb des Shops) ----
     if (!state.shopMode) {
@@ -1956,9 +1960,12 @@
     const rows = [
       ['❤ Leben', state.maxHp],
       ['⚔ Schaden', dmgPerBullet()],
+      ['✷ Krit', Math.round(critChance() * 100) + '%  ×' + critMult()],
       ['⚡ Feuerrate', (1000 / fireMs()).toFixed(1) + '/s'],
       ['🛡️ Rüstung', playerArmor()],
+      ['⛏ Panzerbrecher', armorPen()],
       ['· Schutz', Math.round((1 - dmgTakenMul()) * 100) + '%'],
+      ['❄ Regen', regenRate().toFixed(1) + '/s'],
       ['🥾 Tempo', Math.round(moveSpeed())],
       ['🎒 Plätze', gridUsedCells() + '/' + L.cap]
     ];
@@ -2137,7 +2144,8 @@
     const w = size.width, h = size.height;
     const mc = { x: w - 80, y: h - 100 };
     if (shootBtn) { shootBtn.setPosition(mc.x, mc.y); if (shootBtn.icon) shootBtn.icon.setPosition(mc.x, mc.y); }
-    if (ammoText) ammoText.setPosition(mc.x, mc.y + 62);
+    if (ammoText) ammoText.setPosition(mc.x, mc.y + 64);
+    if (ammoBg) ammoBg.setPosition(mc.x, mc.y + 64);
     for (const ab of abilities) { const bx = mc.x + ab.off.x, by = mc.y + ab.off.y; ab.btn.setPosition(bx, by); ab.icon.setPosition(bx, by); ab.cdText.setPosition(bx, by + (ab.id === 'potion' ? 16 : 0)); }
     if (weaponBtn) { const wx = mc.x - 48, wy = mc.y - 150; weaponBtn.setPosition(wx, wy); weaponIcon.setPosition(wx, wy); weaponName.setPosition(wx, wy + 22); }
     if (mapNameText) mapNameText.setX(w / 2);
@@ -2829,7 +2837,8 @@
     weaponBtn.setAlpha(WEAPON_ORDER.filter(weaponUnlocked).length <= 1 ? 0.55 : 0.95);
     if (ammoText) {
       const a = AMMO[w.ammo] || AMMO.muni, n = ammoOf(w.ammo);
-      ammoText.setText(a.icon + ' ' + n).setColor(n <= 0 ? '#f87171' : (n <= 10 ? '#fbbf24' : '#f3e9d2'));
+      ammoText.setText(a.icon + ' ' + n + '/' + ammoCap(w.ammo)).setColor(n <= 0 ? '#f87171' : (n <= 10 ? '#fbbf24' : '#f3e9d2'));
+      if (ammoBg) ammoBg.setSize(ammoText.width + 14, 24).setStrokeStyle(1.5, n <= 0 ? 0xf87171 : (n <= 10 ? 0xfbbf24 : 0xc9a24a), 0.6);
     }
   }
   // ---- Spieler-Leben -----------------------------------------
