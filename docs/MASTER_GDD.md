@@ -585,6 +585,12 @@ Progression (Gold, XP, Loot, Wirtschafts-Boosts) speisen. Vier Kategorien.
 | **Alchemistisch** (`ALCHEMICAL`) | Säure-Grün / Korrosions-Dampf | Panzerung/Rüstung | (Basis) | **Korrosion** (Rüstungs-Debuff) |
 | **Thermisch** (`THERMAL`) | Orange / dynamisches Feuer | Biologie & Leichtbau-Automaten | schwere Automaten (Goliath) | **Überhitzung** (DOT) |
 
+**Status-Anzeige (Politur):** Aktive Status-Effekte werden als Icon über dem Gegner (im
+Enemy-Container, `updateStatusIcon`, nur bei Änderung neu gesetzt) angezeigt — **⚡ Kurzschluss**,
+**🩸 Verbluten**, **🔥 Brennen** — sichtbar auch während der Stun-Färbung. So ist auf einen Blick
+lesbar, welcher Effekt gerade tickt. (Korrosion bleibt eine einmalige Rüstungs-Zersetzung mit
+grüner Umrandung statt eines Dauer-Icons.)
+
 ## 6.2 Exakte Wechselwirkungs-Matrix
 Zielklassen: **`BIOLOGICAL`** (blutend, verwundbar) und **`MECHANICAL`** (gepanzert,
 schmerzfrei). Reihenfolge der Faktoren wie in der Engine implementiert.

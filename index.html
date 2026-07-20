@@ -2931,8 +2931,9 @@
     const body = sceneRef.add.circle(0, 0, o.r, o.color).setStrokeStyle(3, o.stroke);
     const hpBg = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, 0x000000, 0.6).setOrigin(0, 0.5);
     const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
-    const c = sceneRef.add.container(x, y, [body, hpBg, hpFill]).setDepth(o.isBoss ? 5 : 4);
-    const e = { c, body, baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, elite: !!o.elite, isSuperBoss: !!o.isSuperBoss, isVane: !!o.isVane, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
+    const statusIcon = sceneRef.add.text(0, -o.r - 20, '', { fontFamily: 'system-ui', fontSize: '13px' }).setOrigin(0.5);   // aktive Status-Effekte (Stun/Verbluten/Brennen)
+    const c = sceneRef.add.container(x, y, [body, hpBg, hpFill, statusIcon]).setDepth(o.isBoss ? 5 : 4);
+    const e = { c, body, statusIcon, statusStr: '', baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, elite: !!o.elite, isSuperBoss: !!o.isSuperBoss, isVane: !!o.isVane, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
       cls: o.cls || 'BIOLOGICAL', sub: o.sub || 'outlaw', armor: o.armor || 0, maxArmor: o.armor || 0, frontImmune: !!o.frontImmune, stunUntil: 0, dot: null,
       ranged: o.ranged || null, fireCd: Phaser.Math.Between(300, 1200) };
     enemies.push(e); return e;
@@ -3159,6 +3160,14 @@
     else if (effect === 'BLEED') { e.dot = { type: 'BLEED', dps: Math.max(4, e.maxHp * 0.04), until: now + 3000, tick: 0, color: 0xdc2626 }; }
     else if (effect === 'BURN') { e.dot = { type: 'BURN', dps: Math.max(5, e.maxHp * 0.05), until: now + 3000, tick: 0, color: 0xf97316 }; }
     else if (effect === 'CORRODE') { e.armor = Math.max(0, e.armor - (acid || 10)); if (e.body) e.body.setStrokeStyle(3, 0x84cc16); popDamage(e.c.x, e.c.y - e.r - 4, '🧪', 0x84cc16); }
+  }
+  // Status-Icons über dem Gegner: ⚡ Kurzschluss, 🩸 Verbluten, 🔥 Brennen — nur bei Änderung neu setzen.
+  function updateStatusIcon(e, now, stunned) {
+    if (!e.statusIcon) return;
+    let s = '';
+    if (stunned) s += '⚡';
+    if (e.dot) s += (e.dot.type === 'BURN') ? '🔥' : '🩸';
+    if (s !== e.statusStr) { e.statusStr = s; e.statusIcon.setText(s); }
   }
   function damageEnemy(e, dmg, opts) {
     e.aggro = true;   // Treffer weckt den Gegner
@@ -3626,6 +3635,7 @@
       const ex = player.x - e.c.x, ey = player.y - e.c.y, d = Math.hypot(ex, ey) || 1;
       const stunned = now < e.stunUntil;
       if (e.body) e.body.setFillStyle(now < (e.flashUntil || 0) ? 0xffffff : (stunned ? 0x7dd3fc : e.baseColor));   // Treffer-Flash + Kurzschluss sichtbar machen
+      updateStatusIcon(e, now, stunned);   // aktive Status-Effekte über dem Gegner anzeigen
       if (stunned) continue;                                               // bewegungsunfähig, kein Kontaktschaden
       if (!e.aggro) { if (d < AGGRO_RANGE) { e.aggro = true; if (!e.isBoss && Math.random() < 0.2) sayBark(e.c.x, e.c.y - e.r - 22, pickBark(e.cls === 'MECHANICAL' ? BARKS.enemy_mech : BARKS.enemy_bio), e.cls === 'MECHANICAL' ? '#93c5fd' : '#fca5a5'); } else continue; }   // erst angreifen, wenn nah genug
       else if (!e.isBoss && d > LEASH_RANGE) { e.aggro = false; continue; }   // zu weit -> beruhigt sich wieder
