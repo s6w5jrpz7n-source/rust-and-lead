@@ -1003,6 +1003,13 @@ gameWon/ngPlus/abyssBest/codex/Nebenstories). `checkAchievements` läuft bei Kil
 Reveal, NG+ und (still) beim Laden; neue Erfolge kommen als Toast. Anzeige im Pause-Menü
 (🏆 Erfolge-Sub-View) mit errungen/gesperrt-Zustand und Zähler. Persistiert als `achievements`-Set.
 
+### 7.5.16a Erweiterte Legendaries & Kampf-Feedback
+Helm/Gadget/Stiefel haben nun je zwei legendäre Kräfte für mehr Build-Vielfalt: Helm
+**Kesselschädel-Haube** (`toughplate`, +15 % max. Leben), Gadget **Selbstschmier-Ventil**
+(`autovent`, +Regeneration), Stiefel **Quecksilber-Sohlen** (`quicksole`, +12 % Tempo).
+**Treffer-Flash:** jeder getroffene Gegner blitzt ~55 ms weiß auf (`e.flashUntil`, in der
+Farbsetzung des Update-Loops) — spürbareres Trefferfeedback ohne Extra-Objekte.
+
 ### 7.5.16 Boss-exklusive Legendaries & Statistik
 **Garantierte Boss-Drops:** Vane lässt den **Wachsherz-Kürass** fallen (Power `vaneward`: −15 %
 erlittener Schaden, in `dmgTakenMul`), der Schrott-Golem die **Golem-Faust** (Power `overcharge`:

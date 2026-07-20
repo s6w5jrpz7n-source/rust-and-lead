@@ -143,13 +143,16 @@
       { power: 'vaneward', name: 'Wachsherz-Kürass',            desc: 'Du erleidest 15 % weniger Schaden aus allen Quellen.', boss: 'vane' }
     ],
     gadget: [
-      { power: 'ammothrift', name: 'Sparventil-Uhr',            desc: '25 % Chance, keine Munition zu verbrauchen.' }
+      { power: 'ammothrift', name: 'Sparventil-Uhr',            desc: '25 % Chance, keine Munition zu verbrauchen.' },
+      { power: 'autovent',   name: 'Selbstschmier-Ventil',      desc: 'Regeneriert dein Leben deutlich schneller.' }
     ],
     boots: [
-      { power: 'plunder', name: 'Plünderer-Sohlen',             desc: '+25 % Gold und ein stärkerer Loot-Magnet.' }
+      { power: 'plunder', name: 'Plünderer-Sohlen',             desc: '+25 % Gold und ein stärkerer Loot-Magnet.' },
+      { power: 'quicksole', name: 'Quecksilber-Sohlen',         desc: '+12 % Bewegungstempo.' }
     ],
     helmet: [
-      { power: 'critbase', name: 'Kupferlinsen-Visier',         desc: '+8 % Grund-Kritchance auf alle Treffer.' }
+      { power: 'critbase', name: 'Kupferlinsen-Visier',         desc: '+8 % Grund-Kritchance auf alle Treffer.' },
+      { power: 'toughplate', name: 'Kesselschädel-Haube',       desc: '+15 % maximales Leben.' }
     ]
   };
   const GEAR_FLAVOR = {
@@ -1070,10 +1073,10 @@
     const w = curWeapon(), t = DMG_TYPES[w.type];
     toast(t.icon + ' ' + w.name + ' (' + t.name + ')'); save(); updateWeaponUI();
   }
-  function moveSpeed() { return PLAYER_SPEED + state.upgrades.speed * 30 + equipStat('speed'); }
-  function regenRate() { return REGEN_RATE + state.upgrades.regen * 4 + perkVal('heilung'); }
+  function moveSpeed() { return (PLAYER_SPEED + state.upgrades.speed * 30 + equipStat('speed')) * (hasPower('quicksole') ? 1.12 : 1); }   // Quecksilber-Sohlen
+  function regenRate() { return REGEN_RATE + state.upgrades.regen * 4 + perkVal('heilung') + (hasPower('autovent') ? 6 : 0); }   // Selbstschmier-Ventil
   function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0) + (hasPower('plunder') ? 60 : 0); }
-  function applyUpgrades() { state.maxHp = Math.round((PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS + perkVal('zaeh')) * (hasCap('grit') ? 1.2 : 1)); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }
+  function applyUpgrades() { state.maxHp = Math.round((PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS + perkVal('zaeh')) * (hasCap('grit') ? 1.2 : 1) * (hasPower('toughplate') ? 1.15 : 1)); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }   // Kesselschädel-Haube: +15 % Leben
   // ---- Erfahrung & Level -------------------------------------
   function xpToNext(lv) { return 40 + lv * 30; }   // Level 1->2: 70 XP, danach +30/Stufe
   function gainXp(n) {
@@ -2872,6 +2875,7 @@
   }
   function damageEnemy(e, dmg, opts) {
     e.aggro = true;   // Treffer weckt den Gegner
+    e.flashUntil = sceneRef.time.now + 55;   // kurzer weißer Treffer-Flash (Kampf-Feedback)
     e.hp -= dmg; e.hpFill.width = e.barW * Math.max(e.hp, 0) / e.maxHp;
     popDamage(e.c.x, e.c.y - e.r - 4, (opts && opts.immune) ? '⛊' : dmg, opts && opts.color);
     if (e === state.boss) updateBossBar();
@@ -3325,7 +3329,7 @@
       if (e.marker) e.marker.setPosition(e.c.x, e.c.y - e.r - 18);
       const ex = player.x - e.c.x, ey = player.y - e.c.y, d = Math.hypot(ex, ey) || 1;
       const stunned = now < e.stunUntil;
-      if (e.body) e.body.setFillStyle(stunned ? 0x7dd3fc : e.baseColor);   // Kurzschluss sichtbar machen
+      if (e.body) e.body.setFillStyle(now < (e.flashUntil || 0) ? 0xffffff : (stunned ? 0x7dd3fc : e.baseColor));   // Treffer-Flash + Kurzschluss sichtbar machen
       if (stunned) continue;                                               // bewegungsunfähig, kein Kontaktschaden
       if (!e.aggro) { if (d < AGGRO_RANGE) { e.aggro = true; if (!e.isBoss && Math.random() < 0.2) sayBark(e.c.x, e.c.y - e.r - 22, pickBark(e.cls === 'MECHANICAL' ? BARKS.enemy_mech : BARKS.enemy_bio), e.cls === 'MECHANICAL' ? '#93c5fd' : '#fca5a5'); } else continue; }   // erst angreifen, wenn nah genug
       else if (!e.isBoss && d > LEASH_RANGE) { e.aggro = false; continue; }   // zu weit -> beruhigt sich wieder
