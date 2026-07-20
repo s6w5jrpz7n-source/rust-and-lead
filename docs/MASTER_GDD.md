@@ -985,6 +985,11 @@ ist per **➤ Schnellreise** anklickbar (`transitionTo` zur Zielkarte am NPC-Til
 erscheinen erst nach der Gildenwahl. Rotes Badge am Knopf zählt abgabebereite Aufträge (live bei
 Kills/Quest-Ereignissen).
 
+### 7.5.11a New-Game+-Belohnungsskalierung
+Damit höhere Schwierigkeit Ertrag bringt: `lootMul` gibt **+35 % Gold pro NG+-Zyklus**, und
+`ngBias` (= NG+ × 0,6) hebt die Seltenheits-Rolls von Elite-/Superboss-Beute an (`rollRarity`-
+Bias). So bleibt das Risiko/Ertrag-Verhältnis über NG+ hinweg attraktiv.
+
 ### 7.5.11 New Game+ (`startNgPlus`)
 Nach dem Ende (letztes Cutscene-Bild → `closeEnding`) startet der nächste Zyklus: **Ausrüstung,
 Stufe, Perks, Gold und Stash bleiben**, die Story setzt zurück (`currentChapter = 5`,

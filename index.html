@@ -1054,7 +1054,8 @@
   function critMult() { return 2 + (perkRank('brecher') ? 0.5 : 0); }   // Synergie: Panzerbrecher hebt Krit-Schaden auf 2.5×
   function armorPen() { return perkVal('brecher'); }
   function ammoCap(kind) { return AMMO[kind].cap + perkVal('gurt'); }
-  function lootMul() { return 1 + perkVal('pluender') / 100 + (hasPower('plunder') ? 0.25 : 0); }   // Gold-Bonus (Plünderer-Perk & Legendär)
+  function lootMul() { return 1 + perkVal('pluender') / 100 + (hasPower('plunder') ? 0.25 : 0) + (state.ngPlus || 0) * 0.35; }   // Gold-Bonus (Plünderer-Perk & Legendär) + New-Game+-Ertrag
+  function ngBias() { return (state.ngPlus || 0) * 0.6; }   // härtere Zyklen -> bessere Ausrüstungs-Rolls
   // Ausrüstungs-Boni: Summe aller Affixe (Haupt + Zusatz + Legacy) über alle angelegten Teile
   function equipStat(key) { let s = 0; for (const sl in state.equip) { const g = state.equip[sl]; if (g) s += gearStatOf(g, key); } return s; }
   function playerArmor() { return equipStat('armor') + perkVal('panzer'); }
@@ -2939,7 +2940,7 @@
       for (let i = 0; i < 3; i++) dropLoot(e.c.x, e.c.y, 'dampfkern');
       dropAmmo(e.c.x, e.c.y, 'muni', Phaser.Math.Between(30, 50));
       dropAmmo(e.c.x, e.c.y, 'kristall', Phaser.Math.Between(20, 35));
-      dropGearRoll(e.c.x, e.c.y, 3.5, 3);
+      dropGearRoll(e.c.x, e.c.y, 3.5 + ngBias(), 3);
       dropGear(e.c.x, e.c.y, rollTech(2.0));   // Superboss: garantiertes Tech-Modul
       return;
     }
@@ -2949,8 +2950,8 @@
     if (Math.random() < (elite ? 1 : 0.18)) dropLoot(e.c.x, e.c.y, 'zahnrad');
     if (elite || Math.random() < 0.04) dropLoot(e.c.x, e.c.y, 'dampfkern');
     dropAmmoFor(e, elite);                                      // Nachschub für die aktuelle Waffe
-    if (elite) dropGearRoll(e.c.x, e.c.y, 1.2, 1);              // Elite: garantiert ein Teil
-    else if (Math.random() < 0.08) dropGearRoll(e.c.x, e.c.y, 0, 1);
+    if (elite) dropGearRoll(e.c.x, e.c.y, 1.2 + ngBias(), 1);   // Elite: garantiert ein Teil
+    else if (Math.random() < 0.08) dropGearRoll(e.c.x, e.c.y, ngBias(), 1);
   }
   // Gegner lassen Munition/Kristalle fallen — meist für die getragene Waffe, Elite beides.
   // Aasgeier-Perk erhöht die Menge.
