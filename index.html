@@ -216,7 +216,14 @@
     hero_kill_bio: ['Zweimal biete ich\'s nicht an.', 'Du hättest liegen bleiben können.', 'Die Straße gehört wieder den Ehrlichen.'],
     // Gegner-Zurufe beim Aggro.
     enemy_bio: ['Da! Der von den Steckbriefen — der BLECHMANN!', 'Er blutet nicht! Er TROPFT nur schwarz!', 'Zielt auf die Gelenke! Ach — zielt einfach IRGENDWOHIN!', 'Ich hab Frau und Kinder! Beides gelogen, aber ich hab ein LEBEN!'],
-    enemy_mech: ['Ziel erfasst. Kategorie: unbezahlt. Einziehung eingeleitet.', 'Signatur bekannt. Einheit Eins-Drei. Status: FEHLT IM BESTAND.', 'Widerstand ist Sachbeschädigung. An Konzerneigentum.', 'Sie werden gezählt. Die Zählung endet heute.']
+    enemy_mech: ['Ziel erfasst. Kategorie: unbezahlt. Einziehung eingeleitet.', 'Signatur bekannt. Einheit Eins-Drei. Status: FEHLT IM BESTAND.', 'Widerstand ist Sachbeschädigung. An Konzerneigentum.', 'Sie werden gezählt. Die Zählung endet heute.'],
+    // Abstieg-Endlosmodus: Tiefen-Meilensteine (an Ebene gebunden) + Held-Monolog in der Tiefe.
+    depth5: 'Fünf Ebenen. Hier unten endet das Tageslicht.',
+    depth10: 'Zehn Ebenen. Die Karten der Minengesellschaft enden hier. Ab jetzt zeichnest du.',
+    depth15: 'Fünfzehn Ebenen. Der Fels wird warm. Frag nicht, woran er lehnt.',
+    depth20: 'Zwanzig Ebenen. Selbst das Echo braucht zwei Anläufe nach oben.',
+    depthRecord: 'TIEFENREKORD. Irgendwo über dir verliert ein Buchmacher gerade sehr viel Geld.',
+    hero_depth: ['Hier unten fragt keiner, was ich bin. Der Fels behandelt alle gleich: nach Härte.', 'Kein Licht, kein Wind — ich nehm sie trotzdem mit runter.', 'Solang da unten was wartet, bin ich hier richtig. Warten kann ich länger.']
   };
   const pickBark = pool => pool[Math.floor(Math.random() * pool.length)];
   // Gegner-Klassifizierung & Verhalten (siehe GDD Kap. 10).
@@ -365,18 +372,18 @@
           linesPre: ['Der einäugige Schmied mustert dich durch seine Kupferlinse.', '„Ich brauch seltene Erze aus den Minen, sonst wächst diese Stadt nie."', '„Bring mir was Brauchbares — dann schmied ich dir was Brauchbares."'],
           linesPost: ['„Ah. Einer von den Eisernen." Er grinst schief. „Erklärt so einiges."', '„Bring mir Spezial-Zahnräder vom Kessel-Friedhof — dann bau ich dir Chassis-Panzerplatten."'],
           quest: { id: 'q_scrap', title: 'Baumaterial: Schrott', kind: 'collect', item: 'schrott', count: 12, rewardGold: 90, rewardItem: null, chapter: 2, advanceTo: 3,
-            offerText: '„Mabel schickt dich? Gut. Bring mir 12 Schrott aus der Wüste — Gegner lassen ihn fallen. Baumaterial für den Stadtausbau."',
-            activeText: '„Ich brauch den Schrott, sonst steht die Schmiede still. Schlag Gegner, sammel die Beute ein."',
-            completeText: '„Genau das Richtige. Nimm dein Gold, ehrlich verdient. Und red mal mit Doc — der ist in Sorge."',
-            doneText: '„Die Schmiede glüht wieder. Doc Aris findest du in der Mitte der Stadt."' } },
+            offerText: '„Zwölf Stück Schrott, Junge. Die Wüste liegt voll davon — der Konzern wirft weg, was nicht in seine Bücher passt. Bring\'s mir, und ich zeig dir, was ehrliches Eisen aus Abfall macht."',
+            activeText: '„Zähl ich falsch, oder sind das noch keine zwölf? Draußen rostet mehr Geschichte, als Rustwater Häuser hat. Geh\'s holen, bevor der Sand es begräbt."',
+            completeText: '„Zwölf. Aufs Gramm. Weißt du, was ich an Schrott mag? Er lügt nicht über sein Alter. Hier, dein Lohn. Und red mal mit Doc — der ist in Sorge."',
+            doneText: '„Die Palisade steht, der Amboss glüht. Rost ist bloß Eisen, das gelebt hat. Doc Aris findest du in der Mitte der Stadt."' } },
         { id: 'doc', name: 'Doktor „Doc" Aris', short: 'Doc Aris', tx: 13, ty: 13, color: 0xe5e7eb,
           linesPre: ['„Zu viele Verletzte da draußen und viel zu wenig Hände."', '„Hol mir Heilkräuter aus der Alchemistischen Oase, dann reden wir weiter."'],
           linesPost: ['„Bei dir kann ich mir das Verarzten sparen." Er klopft auf dein Stahl-Chassis.', '„Aber ich weiß, wie man so ein Ding wieder flickt. Bring mir Material."'],
           quest: { id: 'q_rats', title: 'Plage: Schrott-Ratten', kind: 'kill', count: 5, rewardGold: 70, rewardItem: 'potion', chapter: 3, advanceTo: 4,
-            offerText: '„Schrott-Ratten fressen die Leitungen unter der Stadt. Mach 5 davon platt — dann können wir reden."',
-            activeText: '„Die Viecher sind zäh, was? Bleib dran."',
-            completeText: '„Endlich Ruhe. Hör zu: In der alten Mine im Osten geht etwas um. Sag Mabel Bescheid — sie soll dich hinschicken."',
-            doneText: '„Geh zu Mabel. Was in der Mine lauert, ist größer als ein paar Ratten."' } }
+            offerText: '„Ölfresser-Ratten in den Leitungen unter der Stadt. Sie saufen Lampenöl und nagen Balken an — dünnen Sie den Bestand aus, betrachten Sie es als Präventivmedizin. Fünf Stück."',
+            activeText: '„Es quiekt noch, ich höre es bis hierher. Bildlich gesprochen. Bleiben Sie dran."',
+            completeText: '„Still jetzt. Gut. Hören Sie zu: In der alten Mine im Osten geht etwas um — größer als ein paar Ratten. Sag Mabel Bescheid, sie soll dich hinschicken."',
+            doneText: '„Geh zu Mabel. Und lassen Sie sich bei Gelegenheit anschauen — Sie sind der gesündeste Patient meiner Laufbahn, und genau das beunruhigt mich."' } }
       ]
     },
     dungeon1: {
@@ -1034,6 +1041,7 @@
     scatterChests(m);
     if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth);
     if (abyss && state.abyssDepth % 3 === 0) spawnSuperBoss(13, 13, state.abyssDepth);   // alle 3 Ebenen ein Titan
+    if (abyss) sceneRef.time.delayedCall(700, abyssDepthBark);   // Tiefen-Meilenstein-Ausruf
     spawnBountyTarget();   // aktives Kopfgeld-Ziel in der Wüste aufstellen
   }
 
@@ -1576,8 +1584,18 @@
   function enterAbyss(depth) {
     state.abyssDepth = depth;
     state.abyssMod = ABYSS_MODS[Phaser.Math.Between(0, ABYSS_MODS.length - 1)].id;
-    if (depth > (state.abyssBest || 0)) state.abyssBest = depth;
+    state.abyssNewRecord = depth > (state.abyssBest || 0);   // Rekord-Bark vor dem Überschreiben merken
+    if (state.abyssNewRecord) state.abyssBest = depth;
     save(); transitionTo('abyss', { c: 13, r: 3 });
+  }
+  // Tiefen-Meilenstein-Ausruf: Rekord schlägt Fünfer-Marke schlägt Held-Monolog.
+  function abyssDepthBark() {
+    if (state.map !== 'abyss' || !player) return;
+    const d = state.abyssDepth, x = player.x, y = player.y - 26;
+    if (state.abyssNewRecord && d >= 5) { sayBark(x, y, BARKS.depthRecord, '#fca5a5'); state.abyssNewRecord = false; return; }
+    const milestone = BARKS['depth' + d];
+    if (milestone) sayBark(x, y, milestone, '#c4b5fd');
+    else if (Math.random() < 0.4) sayBark(x, y, pickBark(BARKS.hero_depth), '#bcd0e0');
   }
   function transitionTo(mapId, spawn) {
     if (mapId === '__abyss') { enterAbyss(1); return; }                       // Eingang aus dungeon3
