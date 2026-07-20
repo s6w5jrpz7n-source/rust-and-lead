@@ -767,7 +767,7 @@
   let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
   let qlBackdrop, qlPanel, qlTitle, qlClose, logBtn, logBadge, logBadgeText; let qlRows = []; let qlRowHits = [];
   let clBackdrop, clPanel, clTitle, clClose, codexBtn; let clRows = []; let clRowHits = [];
-  let titleBg, titleName, titleSub, titleStatus; let titleBtns = [];
+  let titleBg, titleName, titleSub, titleStatus; let titleBtns = []; let titleExtra = [];
   let pauseBg, pausePanel, pauseTitle, pauseStatus, pauseBtn; let pauseBtns = [];
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
@@ -1006,9 +1006,9 @@
 
     scene.scale.on('resize', (size) => layoutUI(size));
 
-    // Boot-Intent: nach „Neues Spiel"-Reload direkt in den gewählten (leeren) Slot starten
+    // Boot-Intent: nach „Neues Spiel"-Reload direkt ins frische Spiel (Auto-Slot geleert)
     let bootPlay = false;
-    try { const b = localStorage.getItem('rustlead_boot'); if (b) { const o = JSON.parse(b); localStorage.removeItem('rustlead_boot'); if (typeof o.slot === 'number' && o.slot >= 0 && o.slot < N_SLOTS) { state.slot = o.slot; bootPlay = true; } } } catch (e) { }
+    try { const b = localStorage.getItem('rustlead_boot'); if (b) { const o = JSON.parse(b); localStorage.removeItem('rustlead_boot'); if (o.fresh) { try { localStorage.removeItem(slotKey('auto')); } catch (e) { } } bootPlay = true; } } catch (e) { }
     const hadSave = load();
     applyUpgrades();
     if (state.isRevealed) applyRevealVisual();   // bereits erwachter Spielstand -> Optik sofort
@@ -1196,18 +1196,18 @@
     if (gearCells(g) > gridFree()) { toast('🎒 Inventar voll — kein Platz'); return; }
     state.equip[slot] = null; state.gearBag.push(g); applyUpgrades(); updateLife(); save();
   }
-  function save() {
-    try {
-      const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(slotKey(state.slot), JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, ts: Date.now(), discovered: [...state.discovered], explored: ex }));
-    } catch (e) { }
+  function serialize() {
+    const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
+    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, ts: Date.now(), discovered: [...state.discovered], explored: ex };
   }
-  function load() {
+  function save() { try { localStorage.setItem(slotKey('auto'), JSON.stringify(serialize())); } catch (e) { } }   // Autospeichern -> dedizierter Auto-Slot
+  function saveToManual(i) { try { localStorage.setItem(slotKey(i), JSON.stringify(serialize())); } catch (e) { } }   // manueller Snapshot
+  function load(key) {
     try {
-      // Migration: alten Einzel-Spielstand (v1) beim ersten Start nach Slot 0 übernehmen
+      // Migration: alten Einzel-Spielstand (v1) beim ersten Start in den Auto-Slot übernehmen
       const legacy = localStorage.getItem(SAVE_KEY);
-      if (legacy && !localStorage.getItem(slotKey(0))) { try { localStorage.setItem(slotKey(0), legacy); localStorage.removeItem(SAVE_KEY); } catch (e) { } }
-      const raw = localStorage.getItem(slotKey(state.slot)); if (!raw) return false;
+      if (legacy && !localStorage.getItem(slotKey('auto'))) { try { localStorage.setItem(slotKey('auto'), legacy); localStorage.removeItem(SAVE_KEY); } catch (e) { } }
+      const raw = localStorage.getItem(key || slotKey('auto')); if (!raw) return false;   // ohne Argument: Auto-Slot (laufendes Spiel)
       const s = JSON.parse(raw);
       state.gold = s.gold || 0; kills = s.kills || 0; state.inventory = s.inv || {}; state.isRevealed = !!s.revealed; state.currentChapter = s.chapter || 1; state.chosenGuild = s.guild || null;
       state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
@@ -1632,53 +1632,71 @@
   }
 
   // ---- Titelbildschirm (Front-Door) --------------------------
+  function slotLabel(info, name) {
+    if (!info) return null;
+    const g = info.guild ? GUILDS[info.guild].name : 'ungebunden';
+    return name + (info.gameWon ? '   ✓' : '') + '\nKap. ' + info.chapter + ' · ' + g + ' · Lv ' + info.level + (info.ngPlus ? ' · NG+' + info.ngPlus : '');
+  }
   function showTitle() {
-    state.titleOpen = true; state.titleDelConfirm = -1;
-    titleSub.setText('Wähle einen Slot — er speichert automatisch');
+    state.titleOpen = true; state.titleDelConfirm = -1; state.titleNewConfirm = false;
+    titleSub.setText('Autospeichern läuft im obersten Slot');
     titleStatus.setText('');
-    const size = sceneRef.scale.gameSize, w = size.width, cw = Math.min(330, w * 0.9);
-    const rowH = 52, gap = 8, top = size.height * 0.30 + 20;
+    const size = sceneRef.scale.gameSize, w = size.width, cw = Math.min(330, w * 0.9), rowH = 46, gap = 7;
     titleBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); titleBtns = [];
-    for (let i = 0; i < N_SLOTS; i++) {
-      const info = slotInfo(i), y = top + i * (rowH + gap) + rowH / 2;
-      const rect = sceneRef.add.rectangle(w / 2, y, cw, rowH, info ? 0x2a3a2c : 0x2a2622, 0.95).setStrokeStyle(2, info ? 0x6ab04c : 0xc9a24a, 0.6).setScrollFactor(0).setDepth(81).setOrigin(0.5, 0.5);
-      let label;
-      if (info) {
-        const g = info.guild ? GUILDS[info.guild].name : 'ungebunden';
-        label = '▶  Slot ' + (i + 1) + (info.gameWon ? '   ✓' : '') + '\nKap. ' + info.chapter + ' · ' + g + ' · Lv ' + info.level + (info.ngPlus ? ' · NG+' + info.ngPlus : '');
-      } else label = '＋  Slot ' + (i + 1) + '  ·  Neues Spiel';
-      const tx = sceneRef.add.text(w / 2 - cw / 2 + 16, y, label, { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2', fontStyle: 'bold', align: 'left', lineSpacing: 1 }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(82);
-      titleBtns.push({ rect, tx, action: info ? 'continue' : 'new', slot: i });
-      if (info) {   // Lösch-Knopf oben rechts im Slot (weg von der Statuszeile)
-        const dx = w / 2 + cw / 2 - 18, dy = y - rowH / 2 + 13;
+    titleExtra.forEach(o => o.destroy()); titleExtra = [];
+    let y = size.height * 0.22;
+    const addRow = (label, action, slot, col, stroke, del) => {
+      const cy = y + rowH / 2;
+      const rect = sceneRef.add.rectangle(w / 2, cy, cw, rowH, col, 0.95).setStrokeStyle(2, stroke, 0.6).setScrollFactor(0).setDepth(81).setOrigin(0.5, 0.5);
+      const tx = sceneRef.add.text(w / 2 - cw / 2 + 16, cy, label, { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2', fontStyle: 'bold', align: 'left', lineSpacing: 1 }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(82);
+      titleBtns.push({ rect, tx, action, slot });
+      if (del) {
+        const dx = w / 2 + cw / 2 - 18, dy = cy - rowH / 2 + 12;
         const dr = sceneRef.add.text(dx, dy, '🗑', { fontSize: '15px' }).setOrigin(0.5).setScrollFactor(0).setDepth(83);
-        titleBtns.push({ rect: dr, tx: sceneRef.add.text(0, 0, '', {}).setVisible(false), action: 'del', slot: i, delHit: { x: dx, y: dy, r: 18 } });
+        titleBtns.push({ rect: dr, tx: sceneRef.add.text(0, 0, '', {}).setVisible(false), action: 'del', slot, delHit: { x: dx, y: dy, r: 18 } });
       }
+      y += rowH + gap;
+    };
+    const auto = slotInfo('auto');
+    if (auto) addRow(slotLabel(auto, '🔄  Fortsetzen · Autospeichern'), 'continue', null, 0x264a38, 0x6ab04c);   // Auto-Slot: laufendes Spiel
+    addRow('＋  Neues Spiel', 'newgame', null, 0x4a2a2a, 0xc9a24a);
+    const hl = sceneRef.add.text(w / 2, y + 2, '— manuelle Speicherstände —', { fontFamily: 'system-ui', fontSize: '11px', color: '#9ca684' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(82); titleExtra.push(hl); y += 20;
+    for (let i = 0; i < N_SLOTS; i++) {
+      const info = slotInfo(i);
+      addRow(info ? slotLabel(info, '▶  Slot ' + (i + 1)) : '·   Slot ' + (i + 1) + '   —   leer', info ? 'loadslot' : 'noop', i, info ? 0x2a3a2c : 0x232019, info ? 0x6ab04c : 0x554a38, !!info);
     }
     layoutTitle(); [titleBg, titleName, titleSub, titleStatus].forEach(o => o.setVisible(true));
   }
   function layoutTitle() {
     const size = sceneRef.scale.gameSize, w = size.width, h = size.height;
     titleBg.setSize(w, h).setPosition(0, 0);
-    titleName.setPosition(w / 2, h * 0.22); titleSub.setPosition(w / 2, h * 0.22 + 38); titleStatus.setPosition(w / 2, h * 0.22 + 64);
+    titleName.setPosition(w / 2, h * 0.11); titleSub.setPosition(w / 2, h * 0.11 + 34); titleStatus.setPosition(w / 2, h * 0.11 + 56);
   }
   function hideTitle() {
     state.titleOpen = false;
     titleBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); titleBtns = [];
+    titleExtra.forEach(o => o.destroy()); titleExtra = [];
     [titleBg, titleName, titleSub, titleStatus].forEach(o => o.setVisible(false));
   }
+  function applyLoadedState() {
+    applyUpgrades(); if (state.isRevealed) applyRevealVisual();
+    state.hp = state.maxHp; updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateLevelUI(); updateAbilityUI(); updateWeaponUI(); updateInvBadge(); updateLogBadge();
+  }
   function titleClick(action, slot) {
-    if (action === 'continue') {   // gewählten Slot laden und ins Spiel
-      state.slot = slot; load(); applyUpgrades(); if (state.isRevealed) applyRevealVisual();
-      state.hp = state.maxHp; updateGold(); killText.setText('Besiegt: ' + kills); updateLife(); updateLevelUI(); updateAbilityUI(); updateWeaponUI(); updateInvBadge(); updateLogBadge();
-      hideTitle(); loadMap('overworld', { c: 40, r: 40 }); return;
+    if (action === 'noop') return;
+    if (action === 'continue') {   // Auto-Slot (laufendes Spiel) fortsetzen
+      load(); applyLoadedState(); hideTitle(); loadMap('overworld', { c: 40, r: 40 }); return;
     }
-    if (action === 'new') {   // frisch in leerem Slot: per Reload sauber initialisieren
-      try { localStorage.setItem('rustlead_boot', JSON.stringify({ slot })); } catch (e) { }
+    if (action === 'loadslot') {   // manuellen Snapshot laden -> wird zum laufenden Spiel (Auto-Slot)
+      load(slotKey(slot)); save(); applyLoadedState(); hideTitle(); loadMap('overworld', { c: 40, r: 40 }); return;
+    }
+    if (action === 'newgame') {   // frisches Spiel: Auto-Slot leeren; bei laufendem Spiel zweifach bestätigen
+      if (slotInfo('auto') && !state.titleNewConfirm) { state.titleNewConfirm = true; const b = titleBtns.find(x => x.action === 'newgame'); if (b) b.tx.setText('⚠  Neues Spiel überschreibt das Autospeichern\nNochmal tippen (manuelle Slots bleiben)'); return; }
+      try { localStorage.setItem('rustlead_boot', JSON.stringify({ fresh: true })); } catch (e) { }
       location.reload(); return;
     }
-    if (action === 'del') {   // Zwei-Tap-Bestätigung pro Slot
-      if (state.titleDelConfirm !== slot) { state.titleDelConfirm = slot; const b = titleBtns.find(x => x.action === 'continue' && x.slot === slot); if (b) b.tx.setText('⚠  Slot ' + (slot + 1) + ' löschen?\nNochmal 🗑 zum Bestätigen'); return; }
+    if (action === 'del') {   // manuellen Slot löschen (Zwei-Tap)
+      if (state.titleDelConfirm !== slot) { state.titleDelConfirm = slot; const b = titleBtns.find(x => x.action === 'loadslot' && x.slot === slot); if (b) b.tx.setText('⚠  Slot ' + (slot + 1) + ' löschen?\nNochmal 🗑 zum Bestätigen'); return; }
       try { localStorage.removeItem(slotKey(slot)); } catch (e) { }
       showTitle(); return;
     }
@@ -1705,8 +1723,8 @@
       { label: '📖  Codex', action: 'codex', color: 0x3a2f1a },
       { label: '📊  Statistik', action: 'stats', color: 0x2f3a50 },
       { label: '🏆  Erfolge (' + state.achievements.size + '/' + ACHIEVEMENTS.length + ')', action: 'achievements', color: 0x4a3a1a },
-      { label: '💾  Speichern (Slot ' + (state.slot + 1) + ')', action: 'save', color: 0x2f4a3a },
-      { label: '📋  Speichern unter…', action: 'saveas', color: 0x2f4a3a },
+      { label: '💾  Jetzt speichern', action: 'save', color: 0x2f4a3a },
+      { label: '📋  Speichern unter… (Slot)', action: 'saveas', color: 0x2f4a3a },
       { label: (state.muted ? '🔇' : '🔊') + '  Ton: ' + (state.muted ? 'aus' : 'an'), action: 'mute', color: 0x2a2622 },
       { label: '🏠  Zum Titel', action: 'title', color: 0x6b2f2f }
     ];
@@ -1772,12 +1790,12 @@
     pauseBg.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
     pausePanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
     pauseTitle.setText('📋  Speichern unter…').setPosition(px, py + 12).setVisible(true);
-    pauseStatus.setText('Kopiert den aktuellen Stand in einen Slot.\nGut vor Entscheidungen (z. B. Gildenwahl).').setPosition(px, py + 40).setVisible(true);
+    pauseStatus.setText('Kopiert den aktuellen Stand in einen manuellen Slot.\nGut vor Entscheidungen (z. B. Gildenwahl).').setPosition(px, py + 40).setVisible(true);
     for (let i = 0; i < N_SLOTS; i++) {
-      const info = slotInfo(i), y = py + 84 + i * 66, active = i === state.slot;
-      const rect = sceneRef.add.rectangle(px, y, pw - 32, 56, active ? 0x3a3a1a : 0x24303a, 0.95).setStrokeStyle(2, active ? 0xf3e9d2 : 0x88a, 0.6).setScrollFactor(0).setDepth(66).setOrigin(0.5, 0);
-      const label = 'Slot ' + (i + 1) + (active ? '  (aktiv)' : '') + '\n' + (info ? ('Kap. ' + info.chapter + ' · Lv ' + info.level + (info.ngPlus ? ' · NG+' + info.ngPlus : '') + '  → überschreiben') : '— leer —');
-      const tx = sceneRef.add.text(px - pw / 2 + 18, y + 28, label, { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2', fontStyle: 'bold', align: 'left', lineSpacing: 2 }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(67);
+      const info = slotInfo(i), y = py + 84 + i * 62;
+      const rect = sceneRef.add.rectangle(px, y, pw - 32, 54, 0x24303a, 0.95).setStrokeStyle(2, 0x88a, 0.6).setScrollFactor(0).setDepth(66).setOrigin(0.5, 0);
+      const label = 'Slot ' + (i + 1) + '\n' + (info ? ('Kap. ' + info.chapter + ' · Lv ' + info.level + (info.ngPlus ? ' · NG+' + info.ngPlus : '') + '  → überschreiben') : '— leer —');
+      const tx = sceneRef.add.text(px - pw / 2 + 18, y + 27, label, { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2', fontStyle: 'bold', align: 'left', lineSpacing: 2 }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(67);
       pauseBtns.push({ rect, tx, action: 'saveto', slot: i });
     }
     const by = py + ph - 42;
@@ -1792,9 +1810,9 @@
     if (action === 'stats') { state.pauseView = 'stats'; renderPause(); return; }
     if (action === 'achievements') { state.pauseView = 'achievements'; renderPause(); return; }
     if (action === 'back') { state.pauseView = 'menu'; renderPause(); return; }
-    if (action === 'save') { save(); toast('💾 In Slot ' + (state.slot + 1) + ' gesichert'); return; }
+    if (action === 'save') { save(); toast('💾 Autospeichern aktualisiert'); return; }
     if (action === 'saveas') { state.pauseView = 'saveas'; renderPause(); return; }
-    if (action === 'saveto') { state.slot = slotArg; save(); toast('💾 Kopiert in Slot ' + (slotArg + 1) + ' (jetzt aktiv)'); state.pauseView = 'menu'; renderPause(); return; }
+    if (action === 'saveto') { saveToManual(slotArg); toast('💾 Snapshot in Slot ' + (slotArg + 1) + ' gesichert'); state.pauseView = 'menu'; renderPause(); return; }
     if (action === 'mute') { state.muted = !state.muted; if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊'); if (!state.muted) sfx('coin'); save(); renderPause(); return; }
     if (action === 'title') { save(); closePause(); showTitle(); return; }
   }
@@ -2262,7 +2280,7 @@
     initAudio();   // Audio-Kontext bei erster Nutzer-Geste starten
     if (state.titleOpen) {
       for (const b of titleBtns) if (b.action === 'del' && b.delHit && Phaser.Math.Distance.Between(p.x, p.y, b.delHit.x, b.delHit.y) <= b.delHit.r) { titleClick('del', b.slot); return; }
-      for (const b of titleBtns) if ((b.action === 'continue' || b.action === 'new') && inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { titleClick(b.action, b.slot); return; }
+      for (const b of titleBtns) if (b.action && b.action !== 'del' && inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { titleClick(b.action, b.slot); return; }
       return;
     }
     if (state.endingPlaying) { advanceEnding(); return; }   // Finale-Cutscene: höchste Priorität

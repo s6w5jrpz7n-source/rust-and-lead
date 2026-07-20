@@ -780,14 +780,16 @@ Direkt nach dem Verlassen tauchen nur ~12 % auf, nach 3 Min Echtzeit wieder alle
 der Abstieg-Endlosmodus sind stets voll besiedelt. Verhindert das nervige Instant-Respawn beim
 kurzen Abstecher in die Stadt / zwischen Dungeon-Ebenen.
 **Speichern & Slots:** Autosave läuft jede Sekunde (`incomeTick`) plus bei Schlüsselereignissen.
-Es gibt **5 Speicherslots** (`slotKey(i)`, aktiver Slot `state.slot`) — **kein separater Autosave-
-Slot; der aktive Slot wird kontinuierlich autogespeichert** (Titel-Hinweis „er speichert
-automatisch"). Der Titelbildschirm zeigt
-pro Slot eine Reihe mit Kurz-Metadaten (`slotInfo`: Kapitel/Gilde/Stufe/NG+/✓) — Antippen lädt den
-Slot (Continue), leere Slots starten „Neues Spiel" (sauberer Reload via `rustlead_boot`-Marker),
-🗑 löscht (Zwei-Tap). Alt-Spielstände (`rustlead_save_v1`) werden einmalig nach Slot 0 migriert.
-Das Pause-Menü hat **💾 Speichern (Slot n)** und **📋 Speichern unter…** (kopiert den aktuellen
-Stand in einen wählbaren Slot und macht ihn aktiv — ideal vor Entscheidungen wie der Gildenwahl).
+Es gibt einen **dedizierten Autospeichern-Slot** (`slotKey('auto')`) plus **5 manuelle
+Snapshot-Slots** (`slotKey(0..4)`). `serialize()` baut den Blob; `save()` schreibt in den Auto-Slot
+(jede Sekunde + Ereignisse), `saveToManual(i)` in einen manuellen Slot; `load(key)` lädt den
+Auto-Slot (ohne Argument) oder einen manuellen. Der Titelbildschirm zeigt oben **🔄 Fortsetzen ·
+Autospeichern** (lädt den Auto-Slot), dann **＋ Neues Spiel** (leert den Auto-Slot, Reload via
+`rustlead_boot {fresh}`, zweifach bestätigt bei laufendem Spiel — manuelle Slots bleiben), dann die
+fünf manuellen Slots (Antippen lädt den Snapshot in den Auto-Slot und spielt weiter; 🗑 löscht,
+Zwei-Tap). Alt-Spielstände (`rustlead_save_v1`) werden einmalig in den Auto-Slot migriert.
+Das Pause-Menü hat **💾 Jetzt speichern** (Auto-Slot) und **📋 Speichern unter…** (`saveToManual`,
+kopiert den aktuellen Stand in einen manuellen Slot — ideal vor Entscheidungen wie der Gildenwahl).
 
 ## 7.3 Gegner-Roster
 | Typ | Klasse | Verhalten | Panzerung | Besonderheit |
