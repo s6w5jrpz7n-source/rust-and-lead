@@ -779,6 +779,7 @@ Feuern verbraucht Vorrat — **Dauerfeuer ist nicht möglich**. Zwei Munitions-P
 | Ölfresser-Ratte (`fauna`)| BIOLOGICAL | schneller Melee-Schwarm | 0 | umzingelt, keine Deckung |
 | Revolverheld (`revolver`)| BIOLOGICAL | Fernkämpfer, hält Abstand & kitet | 0 | feuert Projektile |
 | Konzern-Konstrukt (`konstrukt`) | MECHANICAL | Schützenlinie, feuert | 15 | galvanik-anfällig (Stun) |
+| Kessel-Kläffer (`klaeffer`) | MECHANICAL | sehr schneller Melee-Schwarm | 5 | rudelt (post-Reveal), galvanik-anfällig — belohnt Volt/Flächen |
 | Schwerer Ernter / Goliath (`goliath`) | MECHANICAL | langsamer Koloss (Boss/Elite) | 30 | **frontimmun** ggü. Kinetik bis Korrosion |
 | Minen-Titan (Superboss) | MECHANICAL | Dungeon-Wächter | 25 | **4× Boss-Leben**, frontimmun, riesige Beute |
 

@@ -232,6 +232,7 @@
     fauna:     { name: 'Ölfresser-Ratte',   cls: 'BIOLOGICAL', sub: 'fauna',     r: 12, hp: 32,  speed: 122, armor: 0,  contact: 9,  gold: [1, 2], swarm: true },
     revolver:  { name: 'Revolverheld',      cls: 'BIOLOGICAL', sub: 'outlaw',    r: 14, hp: 48,  speed: 72,  armor: 0,  contact: 10, gold: [2, 3], ranged: { min: 150, max: 360, dmg: 9, rate: 1500, color: 0xfca5a5 } },
     konstrukt: { name: 'Konzern-Konstrukt', cls: 'MECHANICAL', sub: 'konstrukt', r: 15, hp: 95,  speed: 54,  armor: 15, contact: 13, gold: [2, 4], ranged: { min: 130, max: 340, dmg: 8, rate: 1300, color: 0xfbbf24 } },
+    klaeffer:  { name: 'Kessel-Kläffer',    cls: 'MECHANICAL', sub: 'klaeffer',  r: 11, hp: 40,  speed: 138, armor: 5,  contact: 10, gold: [1, 3], swarm: true },
     goliath:   { name: 'Schwerer Ernter',   cls: 'MECHANICAL', sub: 'goliath',   r: 28, hp: 900, speed: 40,  armor: 30, contact: 28, gold: 24, frontImmune: true, isBoss: true }
   };
   const ENEMY_COLORS = {
@@ -239,6 +240,7 @@
     fauna:     { color: 0x65a30d, stroke: 0x365314 },
     revolver:  { color: 0xd97706, stroke: 0x78350f },
     konstrukt: { color: 0x64748b, stroke: 0x1e293b },
+    klaeffer:  { color: 0x0891b2, stroke: 0x155e75 },
     goliath:   { color: 0x475569, stroke: 0x0f172a }
   };
 
@@ -1377,7 +1379,7 @@
   // Gewichteter Gegner-Pool: nach dem Reveal treten mechanische Konzern-Konstrukte auf.
   function pickEnemyType() {
     const pool = state.isRevealed
-      ? [['outlaw', 3], ['fauna', 2], ['revolver', 2], ['konstrukt', 4]]
+      ? [['outlaw', 3], ['fauna', 2], ['revolver', 2], ['konstrukt', 4], ['klaeffer', 3]]
       : [['outlaw', 4], ['fauna', 3], ['revolver', 2], ['konstrukt', 1]];
     let total = 0; for (const p of pool) total += p[1];
     let x = Math.random() * total;
@@ -1387,7 +1389,7 @@
   function spawnTyped(typeKey, x, y, opts) {
     const t = ENEMY_TYPES[typeKey], col = ENEMY_COLORS[typeKey];
     const g = Array.isArray(t.gold) ? Phaser.Math.Between(t.gold[0], t.gold[1]) : t.gold;
-    return addEnemy(x, y, { r: t.r, barW: t.isBoss ? 56 : (t.sub === 'fauna' ? 26 : 32), hp: t.hp, color: col.color, stroke: col.stroke,
+    return addEnemy(x, y, { r: t.r, barW: t.isBoss ? 56 : (t.swarm ? 26 : 32), hp: t.hp, color: col.color, stroke: col.stroke,
       contact: t.contact, speed: t.speed, gold: g, cls: t.cls, sub: t.sub, armor: t.armor, frontImmune: t.frontImmune, ranged: t.ranged,
       isBoss: !!t.isBoss, name: (opts && opts.name) || t.name, aggro: !!(opts && opts.aggro) });
   }
