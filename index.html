@@ -262,6 +262,44 @@
     'Rauch quillt aus deinen Schulterventilen. Das eine Auge glüht ruhig und orange. Du erhebst dich.',
     '„Runter von meinem Zug."'
   ];
+  // Die drei Gilden-Enden (Story-Bibel Kap. 12.3). Ausgelöst beim Abschluss der jeweiligen Kapitel-12-Quest.
+  const ENDINGS = {
+    rebels: {
+      title: 'DER MORGEN GEHÖRT NIEMANDEM', color: '#fca5a5',
+      lines: [
+        'Das Eiserne Herz steht still. Zum ersten Mal seit fünfzig Jahren: STILLE über dem Territorium.',
+        'Die Arbeiter läuten die Schichtglocke — einfach, weil sie es können.',
+        'GIDEON verbrennt die Schuldbücher, Blatt für Blatt. „Kein neuer Direktor. Kein neuer Thron. Wir verteilen die Schienen an die, die auf ihnen bluten."',
+        '„Du hast einen Krieg gewonnen, Maschine. Was baust du jetzt?"',
+        'HELD: „Was ich nie hatte. Ein Zuhause, das mir keiner eingebaut hat."',
+        'EPILOG — Providence Cut: Du begräbst die drei Walzen unter freiem Himmel. Du bleibst, bis die Sonne aufgeht.',
+        '„Das Monopol fiel. Die Arbeiter sind frei. Und in Rustwater steht am Tresen eine Dose Öl — aufs Haus. Wie immer."'
+      ]
+    },
+    corp: {
+      title: 'DAS GEÖLTE GETRIEBE', color: '#93c5fd',
+      lines: [
+        'Das Direktorat liegt in Trümmern. QUENTIN richtet die Manschetten — und setzt sich NICHT auf Vanes Stuhl. Er lässt ihn hinaustragen.',
+        '„Der Fehler des Direktors war nicht die Ordnung. Es war der Anspruch, geliebt zu werden. Ich verlange nur Pünktlichkeit."',
+        '„Erste Amtshandlung: Das PSALM-Programm ist beendet. Das Archiv wird versiegelt. Niemand wird mehr gebaut."',
+        '„Sie waren der Letzte. Und der Beste."',
+        'HELD: „Dann sorgen Sie dafür, dass ‚der Letzte\' in den Büchern steht, Aufseher. In Tinte, die nicht verblasst."',
+        '„Die Ordnung siegte. Die Züge fahren pünktlich. Rustwater läuft wie ein geöltes Getriebe — und sein treuestes Chassis wacht darüber, dass Ordnung nie wieder Himmel spielen will."'
+      ]
+    },
+    smugglers: {
+      title: 'DER LETZTE DEAL', color: '#fde047',
+      lines: [
+        'SLICK sitzt auf Vanes Schreibtisch und wiegt den Direktoratsstempel in der Hand wie einen Goldklumpen.',
+        '„Rebellen wollen den Laden verbrennen, Konzernratten wollen ihn erben. Wir? Wir haben in der Stunde des Chaos das ganze Territorium aufgekauft."',
+        '„Der Krieg ist aus, Freund — wir haben uns rausgekauft. Und alle anderen gleich mit."',
+        'HELD: „Und was kostet mich mein Anteil?"',
+        'SLICK schiebt dir die Besitzurkunde von Providence Cut zu. Einmal keine Pointe: „Nichts. Der ging aufs Haus. — Sag\'s keinem."',
+        '„Weder Fahne noch Bilanz gewann. Ein Stück Land am Rand der Smog-Linie gehört für immer drei Namen und einem Wächter aus Stahl."'
+      ]
+    }
+  };
+  const ENDING_QUEST_GUILD = { q_rebels12: 'rebels', q_corp12: 'corp', q_smug12: 'smugglers' };
 
   // Werkstatt-Upgrades. Waffen-Tuning ist immer erlaubt; Körper-Mods (bodyMod) erst nach dem Reveal.
   // name: [vor Reveal, nach Reveal]
@@ -662,6 +700,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
+    endingPlaying: false, gameWon: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -1849,6 +1888,7 @@
   // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
     initAudio();   // Audio-Kontext bei erster Nutzer-Geste starten
+    if (state.endingPlaying) { advanceEnding(); return; }   // Finale-Cutscene: höchste Priorität
     if (state.revealPlaying) { advanceReveal(); return; }   // Cutscene: höchste Priorität
     if (state.dialogueOpen) {
       if (dlgBtn.visible && inRect(p, dlgBtn.x - dlgBtn.width / 2, dlgBtn.y - dlgBtn.height / 2, dlgBtn.width, dlgBtn.height)) { const a = dlgBtnAction; if (a) a(); return; }
@@ -2118,6 +2158,7 @@
     if (q.advanceTo && q.advanceTo > state.currentChapter) { state.currentChapter = q.advanceTo; toast('📖 Kapitel ' + q.advanceTo); }
     const xpGain = Math.max(25, Math.round(q.rewardGold * 0.5));
     toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold · +' + xpGain + ' XP'); gainXp(xpGain); save(); updateNpcIndicators(); updateLogBadge(); closeDialogue();
+    if (ENDING_QUEST_GUILD[q.id]) sceneRef.time.delayedCall(400, () => triggerEnding(ENDING_QUEST_GUILD[q.id]));   // Gilden-Finale
   }
   function updateNpcIndicators() {
     for (const n of npcSprites) {
@@ -2188,6 +2229,37 @@
     applyRevealVisual(); updateNpcIndicators(); updateAbilityUI(); updateWeaponUI(); save();
     toast('⚙ Das Interface mutiert. Du bist erwacht.');
     toast('🔧 Neue Armaturen: Volt-Karabiner, Säure-Sprüher, Dampf-Brenner');
+  }
+
+  // ---- Finale: die drei Gilden-Enden (Cutscene) --------------
+  function endingLines(guild) {
+    const e = ENDINGS[guild];
+    return e.lines.concat(['— ENDE: ' + e.title + ' —', '🎖 Danke, dass du „Rust & Lead" gespielt hast.\nTippe, um weiterzuspielen (Neues Spiel+).']);
+  }
+  function triggerEnding(guild) {
+    if (!ENDINGS[guild] || state.endingPlaying) return;
+    state.endingPlaying = true; hideContext();
+    sceneRef.cameras.main.flash(600, 20, 12, 6);
+    state.endingSeq = { guild, lines: endingLines(guild), i: 0 };
+    renderEnding();
+  }
+  function renderEnding() {
+    const s = state.endingSeq; if (!s) return;
+    revealText.setColor(ENDINGS[s.guild].color).setText(s.lines[s.i]);
+    revealHint.setText(s.i >= s.lines.length - 1 ? '▶ weiterspielen' : '▶ weiter');
+    [revealBg, revealText, revealHint].forEach(o => o.setVisible(true));
+    layoutUI(sceneRef.scale.gameSize);
+  }
+  function advanceEnding() {
+    const s = state.endingSeq; if (!s) { closeEnding(); return; }
+    if (s.i >= s.lines.length - 1) { closeEnding(); return; }
+    s.i++; renderEnding();
+  }
+  function closeEnding() {
+    state.endingPlaying = false; state.endingSeq = null;
+    revealText.setColor('#ffb37a');   // Reveal-Standardfarbe wiederherstellen
+    [revealBg, revealText, revealHint].forEach(o => o.setVisible(false));
+    if (!state.gameWon) { state.gameWon = true; save(); toast('🏆 Territorium-Kampagne abgeschlossen — freie Fahrt für Neues Spiel+'); }
   }
 
   // ---- Store: als Charakter-Panel im Shop-Modus (links Händler, rechts Inventar) ----
@@ -2851,7 +2923,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying;
+    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying || state.endingPlaying;
 
     // Bewegung
     let vx = 0, vy = 0;
