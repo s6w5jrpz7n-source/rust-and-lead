@@ -772,6 +772,17 @@ Feuern verbraucht Vorrat — **Dauerfeuer ist nicht möglich**. Zwei Munitions-P
 * **Elektrofeld-Granate** *(nach Reveal)*: Flächen-`SHORT_CIRCUIT_STUN` — legt ganze
   Konzern-Schützenlinien für 4 s lahm.
 
+### 7.2.1 Gestaffelte Wiederbesiedlung & Speichern
+**Respawn:** Gegner kommen nach dem Leeren einer Karte zurück — aber nicht sofort. `loadMap`
+stempelt die Verlasszeit jeder Karte (`state.mapVisit`); `scatterEnemies` skaliert Gegner- und
+Elite-Anzahl mit `repopFactor()` = `clamp((jetzt − Verlasszeit)/RESPAWN_FULL_MS, RESPAWN_MIN, 1)`.
+Direkt nach dem Verlassen tauchen nur ~12 % auf, nach 3 Min Echtzeit wieder alle. Erstbesuch und
+der Abstieg-Endlosmodus sind stets voll besiedelt. Verhindert das nervige Instant-Respawn beim
+kurzen Abstecher in die Stadt / zwischen Dungeon-Ebenen.
+**Speichern:** Autosave läuft jede Sekunde (`incomeTick`) plus bei Schlüsselereignissen; zusätzlich
+gibt es jetzt einen sichtbaren **💾 Speichern**-Knopf im Pause-Menü (mit Bestätigung) und Speichern
+beim „Zum Titel". `state.mapVisit` wird mitpersistiert.
+
 ## 7.3 Gegner-Roster
 | Typ | Klasse | Verhalten | Panzerung | Besonderheit |
 | :-- | :-- | :-- | --: | :-- |
