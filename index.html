@@ -2932,7 +2932,12 @@
     const hpBg = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, 0x000000, 0.6).setOrigin(0, 0.5);
     const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
     const statusIcon = sceneRef.add.text(0, -o.r - 20, '', { fontFamily: 'system-ui', fontSize: '13px' }).setOrigin(0.5);   // aktive Status-Effekte (Stun/Verbluten/Brennen)
-    const c = sceneRef.add.container(x, y, [body, hpBg, hpFill, statusIcon]).setDepth(o.isBoss ? 5 : 4);
+    // Klassen-Chip links an der Lebensleiste: eckig+stahlblau = Maschine (galvanisch), rund+fleischrot = organisch (kinetisch)
+    const mech = (o.cls || 'BIOLOGICAL') === 'MECHANICAL', chipX = -o.barW / 2 - 7, chipY = -o.r - 9;
+    const classChip = mech
+      ? sceneRef.add.rectangle(chipX, chipY, 7, 7, 0x7dd3fc).setStrokeStyle(1.5, 0x0c4a6e)
+      : sceneRef.add.circle(chipX, chipY, 4, 0xf87171).setStrokeStyle(1.5, 0x450a0a);
+    const c = sceneRef.add.container(x, y, [body, hpBg, hpFill, classChip, statusIcon]).setDepth(o.isBoss ? 5 : 4);
     const e = { c, body, statusIcon, statusStr: '', baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, elite: !!o.elite, isSuperBoss: !!o.isSuperBoss, isVane: !!o.isVane, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
       cls: o.cls || 'BIOLOGICAL', sub: o.sub || 'outlaw', armor: o.armor || 0, maxArmor: o.armor || 0, frontImmune: !!o.frontImmune, stunUntil: 0, dot: null,
       ranged: o.ranged || null, fireCd: Phaser.Math.Between(300, 1200) };
@@ -3637,7 +3642,7 @@
       if (e.body) e.body.setFillStyle(now < (e.flashUntil || 0) ? 0xffffff : (stunned ? 0x7dd3fc : e.baseColor));   // Treffer-Flash + Kurzschluss sichtbar machen
       updateStatusIcon(e, now, stunned);   // aktive Status-Effekte über dem Gegner anzeigen
       if (stunned) continue;                                               // bewegungsunfähig, kein Kontaktschaden
-      if (!e.aggro) { if (d < AGGRO_RANGE) { e.aggro = true; if (!e.isBoss && Math.random() < 0.2) sayBark(e.c.x, e.c.y - e.r - 22, pickBark(e.cls === 'MECHANICAL' ? BARKS.enemy_mech : BARKS.enemy_bio), e.cls === 'MECHANICAL' ? '#93c5fd' : '#fca5a5'); } else continue; }   // erst angreifen, wenn nah genug
+      if (!e.aggro) { if (d < AGGRO_RANGE) { e.aggro = true; if (!state.hintClassShown) { state.hintClassShown = true; toast('▫ eckig+blau = Maschine (galvanisch stark) · ● rund+rot = organisch (kinetisch stark)'); } if (!e.isBoss && Math.random() < 0.2) sayBark(e.c.x, e.c.y - e.r - 22, pickBark(e.cls === 'MECHANICAL' ? BARKS.enemy_mech : BARKS.enemy_bio), e.cls === 'MECHANICAL' ? '#93c5fd' : '#fca5a5'); } else continue; }   // erst angreifen, wenn nah genug
       else if (!e.isBoss && d > LEASH_RANGE) { e.aggro = false; continue; }   // zu weit -> beruhigt sich wieder
       if (e.ranged) {   // Fernkämpfer: Abstand halten (Deckung/Schützenlinie), kiten & feuern
         const R = e.ranged;
