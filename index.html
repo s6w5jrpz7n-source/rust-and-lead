@@ -658,6 +658,15 @@
           activeText: '„Sie kommen noch, das Kreischen der Planierraupe hören Sie doch? Bleiben Sie auf den Steinen, wo Sie können — und halten Sie sie von den Beeten fern."',
           completeText: '„Sehen Sie hoch, junger Mann. Die Senke blüht — klare Luft, bis hinüber zur Smog-Wand. Hier, das Dornen-Destillat: bringen Sie\'s dem Schmied und dem Doktor für ihre Atemdinger. Und der Samen ist für hinterher. Irgendwo liegt Erde, die auf Sie wartet."',
           doneText: '„Zweihundertsiebzehn Pflanzen jetzt. Der Neuzugang ist störrisch. Ich mag ihn. Kommen Sie wieder, wenn die Sterne ausreichen — hier zählt man sie noch."' } } ]
+    },
+    // Finale-Arena: Herzkammer des Eisernen Herzens — hier wartet Direktor Vane.
+    finale: {
+      name: 'Herzkammer — Das Eiserne Herz', cols: 20, rows: 20, enemies: false, walled: true, minimap: 'small',
+      floorA: 0x3a2c22, floorB: 0x2e221a, grid: 0x1d150f, mini: 0x5a4636, bg: 0x0c0805,
+      portals: [ { tx: 10, ty: 0, to: 'overworld', spawn: { c: 40, r: 40 }, short: 'Raus', label: '🚪  Rückzug', mini: 0x38bdf8 } ],
+      stations: [],
+      decor: [ { tx: 10, ty: 6, w: 70, h: 46, color: 0x241a12, label: 'DIREKTORAT' } ],
+      vane: { tx: 10, ty: 8 }
     }
   };
   const STATION_INDEX = {};
@@ -700,7 +709,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false,
+    endingPlaying: false, gameWon: false, pendingEnding: null,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -1201,6 +1210,7 @@
     if (m.enemies) scatterEnemies(m);
     scatterChests(m);
     if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth);
+    if (m.vane) spawnVane(m.vane.tx, m.vane.ty);   // Finale-Arena: Direktor Vane
     if (abyss && state.abyssDepth % 3 === 0) spawnSuperBoss(13, 13, state.abyssDepth);   // alle 3 Ebenen ein Titan
     if (abyss) sceneRef.time.delayedCall(700, abyssDepthBark);   // Tiefen-Meilenstein-Ausruf
     spawnBountyTarget();   // aktives Kopfgeld-Ziel in der Wüste aufstellen
@@ -2105,6 +2115,9 @@
     else if (st === 'active') {
       if (questComplete(q)) { dlgText.setText(q.completeText + '\n\nBelohnung: ' + rewardStr(q)); showDlgBtn('✅ Abgeben', () => turnInQuest(q)); dlgHint.setText(''); }
       else { dlgText.setText(q.activeText + '\n\nFortschritt: ' + questProgress(q)); dlgHint.setText('▶ Schließen'); }
+    } else if (ENDING_QUEST_GUILD[q.id] && !state.gameWon) {   // Finale abgegeben, aber Vane noch nicht bezwungen
+      dlgText.setText(q.doneText + '\n\n⚔ Direktor Vane wartet noch in der Herzkammer.');
+      showDlgBtn('⚔ Vane stellen', () => { state.pendingEnding = ENDING_QUEST_GUILD[q.id]; closeDialogue(); transitionTo('finale', { c: 10, r: 16 }); }); dlgHint.setText('▶ später');
     } else { dlgText.setText(q.doneText); dlgHint.setText('▶ Schließen'); }
   }
   function guildQuestUnlocked(def) { return state.isRevealed && state.chosenGuild === def.guild; }
@@ -2158,7 +2171,7 @@
     if (q.advanceTo && q.advanceTo > state.currentChapter) { state.currentChapter = q.advanceTo; toast('📖 Kapitel ' + q.advanceTo); }
     const xpGain = Math.max(25, Math.round(q.rewardGold * 0.5));
     toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold · +' + xpGain + ' XP'); gainXp(xpGain); save(); updateNpcIndicators(); updateLogBadge(); closeDialogue();
-    if (ENDING_QUEST_GUILD[q.id]) sceneRef.time.delayedCall(400, () => triggerEnding(ENDING_QUEST_GUILD[q.id]));   // Gilden-Finale
+    if (ENDING_QUEST_GUILD[q.id]) { state.pendingEnding = ENDING_QUEST_GUILD[q.id]; toast('⚔ Direktor Vane erwartet dich in der Herzkammer.'); sceneRef.time.delayedCall(600, () => transitionTo('finale', { c: 10, r: 16 })); }   // Gilden-Finale: erst der Showdown
   }
   function updateNpcIndicators() {
     for (const n of npcSprites) {
@@ -2315,7 +2328,7 @@
     const hpBg = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, 0x000000, 0.6).setOrigin(0, 0.5);
     const hpFill = sceneRef.add.rectangle(-o.barW / 2, -o.r - 9, o.barW, 5, COL_HP).setOrigin(0, 0.5);
     const c = sceneRef.add.container(x, y, [body, hpBg, hpFill]).setDepth(o.isBoss ? 5 : 4);
-    const e = { c, body, baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, elite: !!o.elite, isSuperBoss: !!o.isSuperBoss, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
+    const e = { c, body, baseColor: o.color, hp: o.hp, maxHp: o.hp, hpFill, barW: o.barW, r: o.r, contact: o.contact, speed: o.speed, isBoss: !!o.isBoss, elite: !!o.elite, isSuperBoss: !!o.isSuperBoss, isVane: !!o.isVane, name: o.name || '', gold: o.gold || 1, aggro: !!o.aggro,
       cls: o.cls || 'BIOLOGICAL', sub: o.sub || 'outlaw', armor: o.armor || 0, maxArmor: o.armor || 0, frontImmune: !!o.frontImmune, stunUntil: 0, dot: null,
       ranged: o.ranged || null, fireCd: Phaser.Math.Between(300, 1200) };
     enemies.push(e); return e;
@@ -2346,6 +2359,14 @@
     const w = tileToWorld(tx, ty), mult = SUPERBOSS_MULT + (Math.max(1, depth || 1) - 1);   // Ebene3: 4+2 = 6×
     const e = addEnemy(w.x, w.y, { r: BOSS_R + 12, barW: 74, hp: BOSS_HP * mult, color: 0x7f1d1d, stroke: 0x2a0505, contact: Math.round(BOSS_CONTACT * 1.6), speed: BOSS_SPEED - 6, isBoss: true, isSuperBoss: true, name: 'Minen-Titan', gold: BOSS_GOLD * mult, armor: 25, cls: 'MECHANICAL', sub: 'goliath', frontImmune: true });
     state.boss = e; setBossBar(e);
+  }
+  // Finale: Direktor Cornelius Vane — die erste geglückte Seelen-Übertragung, Gesicht aus Wachs.
+  function spawnVane(tx, ty) {
+    const w = tileToWorld(tx, ty);
+    const e = addEnemy(w.x, w.y, { r: BOSS_R + 14, barW: 84, hp: BOSS_HP * 8, color: 0xe7d9bf, stroke: 0x8a6d3b, contact: Math.round(BOSS_CONTACT * 1.5), speed: BOSS_SPEED - 4, isBoss: true, isSuperBoss: true, isVane: true, name: 'Direktor Cornelius Vane', gold: BOSS_GOLD * 20, armor: 30, cls: 'MECHANICAL', sub: 'konstrukt' });
+    state.boss = e; setBossBar(e);
+    toast('„Ich habe den Tod enteignet. Er war ein schlechter Verwalter."');
+    sayBark(player.x, player.y - 24, 'Ich bin deine Quittung, Vane.', '#bcd0e0');
   }
   // ---- Boss-Muster: telegrafierte Flächenschläge + Add-Spawns (Superboss) ----
   function clearTelegraph(e) { if (e.tel) { if (e.tel.ring) e.tel.ring.destroy(); if (e.tel.fill) e.tel.fill.destroy(); e.tel = null; } }
@@ -2551,7 +2572,12 @@
       dropGold(bx, by, Math.round(e.gold * lootMul())); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); sfx('kill'); gainXp(xpForKill(e));
       if (Math.random() < 0.14) sayBark(player.x, player.y - 24, pickBark(e.cls === 'MECHANICAL' ? BARKS.hero_kill_mech : BARKS.hero_kill_bio), '#bcd0e0');   // Held-Callout
       updateLogBadge();   // evtl. wurde eine Kill-Quest gerade abgabebereit
-      if (e.isSuperBoss) {
+      if (e.isVane) {
+        state.boss = null; hideBossBar(); toast('☠ Direktor Vane ist gefallen. Das Wachs schmilzt.');
+        spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'boss');
+        const guild = state.pendingEnding || state.chosenGuild || 'rebels';
+        sceneRef.time.delayedCall(700, () => triggerEnding(guild));
+      } else if (e.isSuperBoss) {
         state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
         spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'rare');
         if (!state.isRevealed) triggerReveal();

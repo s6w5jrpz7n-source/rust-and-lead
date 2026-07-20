@@ -954,9 +954,17 @@ die `advanceTo` der Kap.-8-Quests führt auf 10, die Kap.-10-Quest auf 12:
 - **Eiserne Gilde** `q_corp10` „Requirierung" (Quentin) — 20 Kills, „der Unterschied zwischen Raub und Requirierung ist ein Stempel".
 - **Schmuggler** `q_smug10` „Die große Umleitung" (Slick) — 8 Dampfkerne umleiten, „kein Anschlag, ein Missverständnis".
 
+### 7.5.9a Finale-Showdown: Direktor Vane
+Abgabe der Kapitel-12-Quest setzt `state.pendingEnding` und reist in die Arena `finale`
+(„Herzkammer — Das Eiserne Herz"). Dort spawnt `spawnVane` den Antagonisten **Direktor Cornelius
+Vane** (`isVane`, `isSuperBoss`-Muster: telegrafierte Flächenschläge + Add-Rufe, ~5600 HP,
+Wachs-Optik). Sein Fall (`damageEnemy` → `isVane`-Zweig) löst nach kurzer Verzögerung
+`triggerEnding(guild)` aus. Flieht der Spieler vorher über das Rückzugs-Portal, bietet der
+Gilden-NPC im `done`-Zweig einen „⚔ Vane stellen"-Knopf zum Wiedereintritt.
+
 ### 7.5.9b Finale: die drei Gilden-Enden (Cutscene)
-Abschluss der jeweiligen Kapitel-12-Quest (`q_rebels12` / `q_corp12` / `q_smug12`) löst über
-`ENDING_QUEST_GUILD` → `triggerEnding(guild)` eine End-Cutscene aus. Sie nutzt das Reveal-Overlay
+Vanes Tod (oder direkter Aufruf) löst über `ENDING_QUEST_GUILD` → `triggerEnding(guild)` eine
+End-Cutscene aus. Sie nutzt das Reveal-Overlay
 (`revealBg/Text/Hint`) mit gildenspezifischer Textfarbe und den Bibel-Enden (Kap. 12.3):
 **Rebellen** „Der Morgen gehört niemandem", **Eiserne Gilde** „Das geölte Getriebe", **Schmuggler**
 „Der letzte Deal" — je gefolgt vom Schlusstext und einer „Neues Spiel+"-Zeile. Nach dem letzten
