@@ -947,6 +947,21 @@ Dialoge tragen die Figuren-Voice und Signatur-Zeilen der Bibel (z. B. Pips „Ja
 Vespers „Nicht gegeneinander. Kleiner Unterschied. Großer.", Habakuks „nicht ertragen — tragen").
 B8 hat eine eigene Smog-Linien-Karte mit dem überwachsenen PSALM-Chassis „der Alte".
 
+### 7.5.9 Gilden-Kap.-10-Sabotage (drei Fraktionsvarianten)
+Zwischen Kap. 8 und 12 sitzt pro Gilde eine eigene Sabotage-Mission (Bibel Teil A, Kap. 10) —
+die `advanceTo` der Kap.-8-Quests führt auf 10, die Kap.-10-Quest auf 12:
+- **Rebellen** `q_rebels10` „Sprengt die Trasse" (Gideon) — 20 Kills, direkte Zerstörung.
+- **Eiserne Gilde** `q_corp10` „Requirierung" (Quentin) — 20 Kills, „der Unterschied zwischen Raub und Requirierung ist ein Stempel".
+- **Schmuggler** `q_smug10` „Die große Umleitung" (Slick) — 8 Dampfkerne umleiten, „kein Anschlag, ein Missverständnis".
+
+### 7.5.10 Auftragsbuch (Quest-Log)
+📜-Knopf (rechte Leiste) bzw. Taste **J** öffnet ein karten-übergreifendes Log (`allQuestEntries`
+scannt alle Karten). Zustands-sortiert: abgabebereit (❗) → aktiv (⏳, mit Fortschritt) →
+verfügbar (📜) → kapitel-gesperrt (🔒); Erledigte nur als Zähler. Jede Zeile nennt NPC + Ort und
+ist per **➤ Schnellreise** anklickbar (`transitionTo` zur Zielkarte am NPC-Tile). Gilden-Quests
+erscheinen erst nach der Gildenwahl. Rotes Badge am Knopf zählt abgabebereite Aufträge (live bei
+Kills/Quest-Ereignissen).
+
 ## 7.6 Werkstatt-Modifikationen
 Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. Namen als
 `[vor Reveal, nach Reveal]`:
