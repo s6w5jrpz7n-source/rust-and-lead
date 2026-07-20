@@ -321,7 +321,7 @@
   // Story-Codex: freigeschaltete Lore-Einträge (Nachlese erlebter Szenen). Reihenfolge = Anzeige.
   const CODEX = [
     { id: 'reveal', title: 'Das Erwachen', body: 'Kolben-Jacks Hydraulik-Ramme schleuderte dich durch die Waggonwand — in einen Spiegel. In den Scherben zerfiel die Illusion aus Fleisch: darunter ein rauchender, einäugiger Stahlschädel, Zahnräder, kochendes Öl. „Wer hat mir mein Gesicht geschuldet — und mit einer Lüge bezahlt?" Du bist keine Kreatur aus Fleisch. Du bist eine Maschine — Einheit 13 des PSALM-Programms.' },
-    { id: 'providence', title: 'Providence Cut', body: 'Die Wahrheit unter der Wahrheit: Du hast deine Familie nicht verloren. Du wurdest als Waffe auf dein eigenes Dorf abgefeuert. „Ich hab euch nicht verloren. Ich wurde auf euch abgefeuert." Am Rand der Smog-Linie liegt die Erde, die auf dich wartet.' },
+    { id: 'providence', title: 'Providence Cut', body: 'Die Wahrheit unter der Wahrheit: Du hast deine Familie nicht verloren. Du wurdest als Waffe auf dein eigenes Dorf abgefeuert. „Ich hab euch nicht verloren. Ich wurde auf euch abgefeuert." Nördlich in der Wüste liegt die verbrannte Ruine — jetzt betretbar. Geh hin, wenn du bereit bist, dich zu erinnern.' },
     { id: 'vane', title: 'Direktor Cornelius Vane', body: 'Die erste geglückte Seelen-Übertragung: ein Mann mit einem Gesicht aus Wachs, der von Menschen nur in Verwaltungsvokabular spricht. „Ich habe den Tod enteignet. Er war ein schlechter Verwalter." Unter dem Wachs — die erste Seele, die je in Stahl gegossen wurde.' },
     { id: 'q_garden', title: 'Der Garten aus Rost', body: 'Agata Dorn hält an der Smog-Linie einen Garten aus Kakteen, gepflanzt in geborstene Kessel. Ihr ältester Kaktus wächst durch das kniende Chassis von PSALM-Einheit 4 — einer Maschine, die sich weigerte, Waffe zu sein, und stattdessen Spalier wurde. „Er ist nicht tot. Er hat den Beruf gewechselt."' },
     { id: 'q_pip', title: 'Der Schutzengel', body: 'Pip, ein Waisenkind mit Zahnlücke, hat dich zu seinem Schutzengel erklärt — und weiß längst, was du bist. „Das ist nur der Kessel." — „Ja. Sag ich ja." Engel waren noch nie aus Fleisch.' },
@@ -338,7 +338,8 @@
     { id: 'steuerwalzen', title: 'Warum tragen sie meine Erinnerung?', body: 'Der Konzern hat dein Gedächtnis nicht gelöscht — er hat es zerstückelt und als verschlüsselte Ballast-Steuerwalzen über sein ganzes Maschinennetz verteilt. Jedes Konstrukt läuft auf einer solchen Messingwalze; in manchen steckt ein Splitter von DIR — ein Backup, das nur das Direktorat je hätte zusammensetzen sollen. Zerschlägst du ihre Maschinen, birgst du die Splitter. Du setzt dich aus der Hardware deines Feindes wieder zusammen.' },
     { id: 'familie', title: 'Die Familie Hale', body: 'Liv, seine Frau, die eine Terz zu hoch lachte. Tom, der Junge, der Züge an der Schiene hörte, bevor man sie sah. Sara, deren Größe er in den Türrahmen kerbte. Sie standen an Vanes Trasse, als der Konzern Providence Cut räumte — und Einheit 13 rollte hindurch. Jeremiah Hale hat sie nicht beschützt. Jeremiah Hale war die Waffe.' },
     { id: 'heimkehr', title: 'Heimkehr nach Providence Cut', body: 'Sechzehn Messingwalzen, jede ein Splitter seiner selbst — geborgen aus dem Blech des Konzerns, heimgebracht in die Ruine, die einmal ein Zuhause war. Unter drei Steinen liegt jetzt beieinander, was der Konzern zerstückelt hat. Kein Direktorat setzt Jeremiah Hale mehr zusammen. Er hat sich selbst begraben — und damit endlich Ruhe gefunden.' },
-    { id: 'q_roan', title: 'Elias Roan, der Streckenwärter', body: 'Der einzige Zeuge, der überlebte, weil er drei Meilen die Trasse hinunter war, als es geschah. Elias richtete die drei Gräber, deren Namen er kannte und deren Gesichter der Brand ihm nahm. Er ist es, der der Maschine sagt, wessen Steine das sind: Jeremiah Hale — Frau, Junge, Mädchen, alle drei darunter. „Wenn du wirklich was von ihm in dir trägst … bring ihn heim."' }
+    { id: 'q_roan', title: 'Elias Roan, der Streckenwärter', body: 'Der einzige Zeuge, der überlebte, weil er drei Meilen die Trasse hinunter war, als es geschah. Elias richtete die drei Gräber, deren Namen er kannte und deren Gesichter der Brand ihm nahm. Er ist es, der der Maschine sagt, wessen Steine das sind: Jeremiah Hale — Frau, Junge, Mädchen, alle drei darunter. „Wenn du wirklich was von ihm in dir trägst … bring ihn heim."' },
+    { id: 'kampffibel', title: 'Kampf-Fibel: Schadensarten', body: 'Jeder Gegner trägt links an der Lebensleiste einen Klassen-Chip. ▫ Eckig & stahlblau = MASCHINE: Galvanisch (⚡ Volt-Karabiner) trifft 2,5-fach und verursacht Kurzschluss; Blei (kinetisch) prallt an der Panzerung ab. ● Rund & fleischrot = ORGANISCH: Kinetisch (Blei-Karabiner) trifft 1,5-fach und lässt verbluten; Galvanisch dämpft die biologische Isolierung. Thermisch (🔥 Dampf-Brenner) verbrennt Fleisch und Leichtbau, prallt aber am schweren Goliath ab. Alchemistisch (🧪 Säure-Sprüher) zersetzt Rüstung. Über getroffenen Gegnern verrät „✷ STARK" oder „🛡 schwach", ob deine Waffe passt.' }
   ];
   const CODEX_BY_ID = {}; CODEX.forEach(c => CODEX_BY_ID[c.id] = c);
   // Erinnerungs-Walzen: Messingwalzen aus Konzern-Gegnern spielen Fragmente aus Jeremiahs Vergangenheit ab.
@@ -484,6 +485,7 @@
   // Aus dem Spielzustand ableitbare Codex-Einträge automatisch freischalten (ohne Toast-Spam bei Bestandsständen).
   function codexAutoScan(silent) {
     const add = id => { if (CODEX_BY_ID[id] && !state.codex.has(id)) { state.codex.add(id); if (!silent) toast('📖 Codex: ' + CODEX_BY_ID[id].title); } };
+    add('kampffibel');   // Kampf-Referenz von Anfang an nachschlagbar
     if (state.isRevealed) { add('reveal'); add('providence'); }
     if (state.gameWon) { add('vane'); add('ngplus'); }
     for (const id of ['q_garden', 'q_pip', 'q_vesper', 'q_habakuk', 'q_lomax', 'q_corah', 'q_dolores', 'q_uhrwerk']) if (state.quests[id] === 'done') add(id);
@@ -2833,6 +2835,8 @@
     codexUnlock('reveal'); codexUnlock('providence'); checkAchievements();
     toast('⚙ Das Interface mutiert. Du bist erwacht.');
     toast('🔧 Neue Armaturen: Volt-Karabiner, Säure-Sprüher, Dampf-Brenner');
+    toast('🎞 Zerschlägst du Konzern-Maschinen, birgst du Splitter deiner Erinnerung (📖 Codex).');
+    toast('🏚️ Nördlich in der Wüste liegt eine Ruine, die dir bekannt vorkommt: Providence Cut.');
   }
 
   // ---- Finale: die drei Gilden-Enden (Cutscene) --------------
