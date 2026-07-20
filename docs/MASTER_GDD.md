@@ -780,7 +780,9 @@ Direkt nach dem Verlassen tauchen nur ~12 % auf, nach 3 Min Echtzeit wieder alle
 der Abstieg-Endlosmodus sind stets voll besiedelt. Verhindert das nervige Instant-Respawn beim
 kurzen Abstecher in die Stadt / zwischen Dungeon-Ebenen.
 **Speichern & Slots:** Autosave läuft jede Sekunde (`incomeTick`) plus bei Schlüsselereignissen.
-Es gibt **3 Speicherslots** (`slotKey(i)`, aktiver Slot `state.slot`): Der Titelbildschirm zeigt
+Es gibt **5 Speicherslots** (`slotKey(i)`, aktiver Slot `state.slot`) — **kein separater Autosave-
+Slot; der aktive Slot wird kontinuierlich autogespeichert** (Titel-Hinweis „er speichert
+automatisch"). Der Titelbildschirm zeigt
 pro Slot eine Reihe mit Kurz-Metadaten (`slotInfo`: Kapitel/Gilde/Stufe/NG+/✓) — Antippen lädt den
 Slot (Continue), leere Slots starten „Neues Spiel" (sauberer Reload via `rustlead_boot`-Marker),
 🗑 löscht (Zwei-Tap). Alt-Spielstände (`rustlead_save_v1`) werden einmalig nach Slot 0 migriert.

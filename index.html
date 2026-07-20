@@ -44,7 +44,7 @@
   const REVEAL_R = 3, INTERACT_DIST = 46, DISCOVER_DIST = 90, GATE_ENTER_DIST = 30;
   const MAGNET_DIST = 130, PICKUP_DIST = 18, MAGNET_SPEED = 460;
   const INV_CAP = 40, CHEST_PER_TILES = 320, CHEST_INTERACT = 52;   // Inventar-Limit & Loot-Kisten
-  const SALOON_INCOME = 1, SAVE_KEY = 'rustlead_save_v1', N_SLOTS = 3;
+  const SALOON_INCOME = 1, SAVE_KEY = 'rustlead_save_v1', N_SLOTS = 5;
   const slotKey = i => SAVE_KEY + '_s' + i;
   // Kurz-Metadaten eines Slots ohne vollständiges Laden (für Titel-/Slot-Auswahl).
   function slotInfo(i) {
@@ -1634,24 +1634,25 @@
   // ---- Titelbildschirm (Front-Door) --------------------------
   function showTitle() {
     state.titleOpen = true; state.titleDelConfirm = -1;
-    titleSub.setText('Wähle einen Spielstand');
+    titleSub.setText('Wähle einen Slot — er speichert automatisch');
     titleStatus.setText('');
-    const size = sceneRef.scale.gameSize, w = size.width, cw = Math.min(320, w * 0.86);
+    const size = sceneRef.scale.gameSize, w = size.width, cw = Math.min(330, w * 0.9);
+    const rowH = 52, gap = 8, top = size.height * 0.30 + 20;
     titleBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); titleBtns = [];
     for (let i = 0; i < N_SLOTS; i++) {
-      const info = slotInfo(i), y = size.height * 0.42 + i * 74;
-      const rect = sceneRef.add.rectangle(w / 2, y, cw, 60, info ? 0x2a3a2c : 0x2a2622, 0.95).setStrokeStyle(2, info ? 0x6ab04c : 0xc9a24a, 0.6).setScrollFactor(0).setDepth(81).setOrigin(0.5, 0.5);
+      const info = slotInfo(i), y = top + i * (rowH + gap) + rowH / 2;
+      const rect = sceneRef.add.rectangle(w / 2, y, cw, rowH, info ? 0x2a3a2c : 0x2a2622, 0.95).setStrokeStyle(2, info ? 0x6ab04c : 0xc9a24a, 0.6).setScrollFactor(0).setDepth(81).setOrigin(0.5, 0.5);
       let label;
       if (info) {
         const g = info.guild ? GUILDS[info.guild].name : 'ungebunden';
         label = '▶  Slot ' + (i + 1) + (info.gameWon ? '   ✓' : '') + '\nKap. ' + info.chapter + ' · ' + g + ' · Lv ' + info.level + (info.ngPlus ? ' · NG+' + info.ngPlus : '');
-      } else label = '＋  Slot ' + (i + 1) + '\nNeues Spiel';
-      const tx = sceneRef.add.text(w / 2 - cw / 2 + 16, y, label, { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2', fontStyle: 'bold', align: 'left', lineSpacing: 2 }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(82);
+      } else label = '＋  Slot ' + (i + 1) + '  ·  Neues Spiel';
+      const tx = sceneRef.add.text(w / 2 - cw / 2 + 16, y, label, { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2', fontStyle: 'bold', align: 'left', lineSpacing: 1 }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(82);
       titleBtns.push({ rect, tx, action: info ? 'continue' : 'new', slot: i });
       if (info) {   // Lösch-Knopf oben rechts im Slot (weg von der Statuszeile)
-        const dx = w / 2 + cw / 2 - 20, dy = y - 16;
-        const dr = sceneRef.add.text(dx, dy, '🗑', { fontSize: '17px' }).setOrigin(0.5).setScrollFactor(0).setDepth(83);
-        titleBtns.push({ rect: dr, tx: sceneRef.add.text(0, 0, '', {}).setVisible(false), action: 'del', slot: i, delHit: { x: dx, y: dy, r: 20 } });
+        const dx = w / 2 + cw / 2 - 18, dy = y - rowH / 2 + 13;
+        const dr = sceneRef.add.text(dx, dy, '🗑', { fontSize: '15px' }).setOrigin(0.5).setScrollFactor(0).setDepth(83);
+        titleBtns.push({ rect: dr, tx: sceneRef.add.text(0, 0, '', {}).setVisible(false), action: 'del', slot: i, delHit: { x: dx, y: dy, r: 18 } });
       }
     }
     layoutTitle(); [titleBg, titleName, titleSub, titleStatus].forEach(o => o.setVisible(true));
