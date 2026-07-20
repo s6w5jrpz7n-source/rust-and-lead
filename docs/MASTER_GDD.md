@@ -992,6 +992,14 @@ Stufe, Perks, Gold und Stash bleiben**, die Story setzt zurück (`currentChapter
 steigt, `mapHpMul` skaliert alle Gegner um `+60 % pro NG+`. Der HUD-Kartenname zeigt „🔄 NG+n".
 Persistiert (`ngPlus`, `gameWon`).
 
+### 7.5.16 Boss-exklusive Legendaries & Statistik
+**Garantierte Boss-Drops:** Vane lässt den **Wachsherz-Kürass** fallen (Power `vaneward`: −15 %
+erlittener Schaden, in `dmgTakenMul`), der Schrott-Golem die **Golem-Faust** (Power `overcharge`:
++18 % Schaden, in `dmgPerBullet`). Beide sind mit `boss`-Tag aus dem Zufalls-Legendary-Pool
+ausgeschlossen und werden per `makeGear(slot, 'legendary', forcePower)` gezielt erzeugt.
+**Statistik-Panel** (Pause → 📊): Kills, Bosse bezwungen (`state.stats.bossKills`), legendäre
+Boss-Beute (`state.stats.legendaries`), Codex-%, Abstieg-Rekord, NG+, Stufe, Gold — persistiert.
+
 ### 7.5.15 Nebengebiet: Kessel-Friedhof
 Über ein ⚙️-Portal in der Ostwüste erreichbar (in Silas' Dialog erwähnter Schrottplatz): eine
 24×24-Karte voller ausgeschlachteter Chassis, Schrott-Caches und post-Reveal-Gegner (inkl.

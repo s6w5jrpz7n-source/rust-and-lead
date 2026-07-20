@@ -134,11 +134,13 @@
       { power: 'spread11', name: 'Dolores\' letzte Trommel',    desc: 'Spezialschuss feuert 11 statt 7 Projektile.' },
       { power: 'pierce',   name: 'Iron-Rail-Durchschlag',       desc: 'Kugeln durchschlagen einen zusätzlichen Gegner.' },
       { power: 'galvcrit', name: 'Galvanische Trommel',         desc: 'Kritische Treffer lösen einen Kurzschluss (Stun) aus.' },
-      { power: 'critchain', name: 'Ballistischer Rechenkern',   desc: 'Krits prallen zu einem zweiten Ziel ab.' }
+      { power: 'critchain', name: 'Ballistischer Rechenkern',   desc: 'Krits prallen zu einem zweiten Ziel ab.' },
+      { power: 'overcharge', name: 'Golem-Faust',               desc: '+18 % Schaden auf alle Treffer.', boss: 'golem' }
     ],
     armor: [
       { power: 'slamward', name: 'Titan-Kolben-Panzer',         desc: 'Boss-Flächenschläge treffen dich nur halb so hart.' },
-      { power: 'lifekill', name: 'Blutdampf-Kessel',            desc: 'Jeder Kill heilt dich um 3 % deines Lebens.' }
+      { power: 'lifekill', name: 'Blutdampf-Kessel',            desc: 'Jeder Kill heilt dich um 3 % deines Lebens.' },
+      { power: 'vaneward', name: 'Wachsherz-Kürass',            desc: 'Du erleidest 15 % weniger Schaden aus allen Quellen.', boss: 'vane' }
     ],
     gadget: [
       { power: 'ammothrift', name: 'Sparventil-Uhr',            desc: '25 % Chance, keine Munition zu verbrauchen.' }
@@ -760,7 +762,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false,
+    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 },
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -1022,7 +1024,7 @@
     toast('🔧 Neuverdrahtet — ' + refunded + ' Punkte zurück'); save(); if (state.inventoryOpen) renderInventory();
   }
   const energyWeapon = () => curWeapon().ammo === 'kristall';
-  function dmgPerBullet() { return curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5 + equipStat('damage') + perkVal('scharf') + (energyWeapon() ? perkVal('ueberlad') : 0); }
+  function dmgPerBullet() { const base = curWeapon().base + state.upgrades.damage * 6 + weaponLvl(state.weapon) * 5 + equipStat('damage') + perkVal('scharf') + (energyWeapon() ? perkVal('ueberlad') : 0); return base * (hasPower('overcharge') ? 1.18 : 1); }   // Golem-Faust: +18 % Schaden
   function weaponAcid() { return curWeapon().acid + weaponLvl('saeure') * 2; }
   const kesselRush = () => hasCap('tech') && state.hp < state.maxHp * 0.3;   // Überhitzter Kessel aktiv?
   function fireMs() { return Math.max(50, Math.round((curWeapon().fireMs - state.upgrades.firerate * 22 - equipStat('firerate')) * (1 - perkVal('schnell') / 100) * (kesselRush() ? 0.67 : 1))); }
@@ -1036,7 +1038,7 @@
   function playerArmor() { return equipStat('armor') + perkVal('panzer'); }
   // Legendäre Kraft aktiv? (irgendein angelegtes Teil trägt sie)
   function hasPower(id) { for (const sl in state.equip) { const g = state.equip[sl]; if (g && g.legendaryPower === id) return true; } return false; }
-  function dmgTakenMul() { return (100 / (100 + playerArmor() * 9)) * (hasCap('grit') ? 0.8 : 1); }   // Rüstung + Eisernes Chassis (−20%)
+  function dmgTakenMul() { return (100 / (100 + playerArmor() * 9)) * (hasCap('grit') ? 0.8 : 1) * (hasPower('vaneward') ? 0.85 : 1); }   // Rüstung + Eisernes Chassis (−20%) + Wachsherz-Kürass (−15%)
   function cycleWeapon() {
     const avail = WEAPON_ORDER.filter(weaponUnlocked);
     if (avail.length <= 1) { toast('🔒 Weitere Waffen nach dem Erwachen'); return; }
@@ -1066,7 +1068,7 @@
     const base = (SUB_BASE[key] || 5) * mult * (factor || 1), q = 0.7 + Math.random() * 0.6;   // q: 0.7..1.3
     return { key, val: Math.max(1, Math.round(base * q)), q: Math.min(1, (q - 0.7) / 0.6) };     // q normalisiert 0..1 (Roll-Qualität)
   }
-  function makeGear(slot, rarity) {
+  function makeGear(slot, rarity, forcePower) {
     const def = GEAR_SLOTS[slot], r = RARITY[rarity], adj = GEAR_ADJ[rarity];
     let big = false, baseName = adj[Phaser.Math.Between(0, adj.length - 1)] + ' ' + def.name, extraMul = 1;
     if (slot === 'weapon' && Math.random() < 0.3) { big = true; extraMul = 1.4; baseName = 'Schwere ' + baseName; }   // sehr große Waffe: 3 Slots, mehr Schaden
@@ -1079,9 +1081,11 @@
       const key = pool.splice(Phaser.Math.Between(0, pool.length - 1), 1)[0];
       g.affixes.push(rollAffix(key, r.mult, 0.4));
     }
-    // Legendär: benannte Kraft + Manufaktur-Name
+    // Legendär: benannte Kraft + Manufaktur-Name (boss-exklusive Stücke fallen nur bei ihren Bossen)
     if (rarity === 'legendary' && LEGENDARIES[slot]) {
-      const leg = LEGENDARIES[slot][Phaser.Math.Between(0, LEGENDARIES[slot].length - 1)];
+      const pool2 = forcePower ? LEGENDARIES[slot].filter(l => l.power === forcePower) : LEGENDARIES[slot].filter(l => !l.boss);
+      const src = pool2.length ? pool2 : LEGENDARIES[slot];
+      const leg = src[Phaser.Math.Between(0, src.length - 1)];
       g.legendaryPower = leg.power; g.name = leg.name; g.legDesc = leg.desc; g.desc = leg.desc;
     } else if (rarity !== 'common' && g.affixes[0]) {   // Manufaktur-Stempel-Name aus dem stärksten Affix
       const pre = AFFIX_PREFIX[g.affixes[0].key];
@@ -1154,7 +1158,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -1173,6 +1177,7 @@
       state.tutOpenedInv = !!s.tutOpenedInv; state.muted = !!s.muted;
       state.abyssBest = s.abyssBest || 0; state.abyssDepth = 0; state.abyssMod = null;
       state.gameWon = !!s.gameWon; state.ngPlus = s.ngPlus || 0; state.codex = new Set(Array.isArray(s.codex) ? s.codex : []);
+      state.stats = Object.assign({ bossKills: 0, legendaries: 0 }, (s.stats && typeof s.stats === 'object') ? s.stats : {});
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
@@ -1612,18 +1617,20 @@
   function openPause() {
     if (state.titleOpen || state.revealPlaying || state.endingPlaying || state.dialogueOpen) return;
     if (state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.travelOpen || state.fullMapOpen || state.questLogOpen || state.codexOpen) return;
-    state.pauseOpen = true; hideContext(); renderPause();
+    state.pauseOpen = true; state.pauseView = 'menu'; hideContext(); renderPause();
   }
-  function closePause() { state.pauseOpen = false; pauseBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); pauseBtns = [];[pauseBg, pausePanel, pauseTitle, pauseStatus].forEach(o => o.setVisible(false)); }
+  function closePause() { state.pauseOpen = false; state.pauseView = 'menu'; pauseBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); pauseBtns = [];[pauseBg, pausePanel, pauseTitle, pauseStatus].forEach(o => o.setVisible(false)); }
   function renderPause() {
     pauseBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); pauseBtns = [];
     const size = sceneRef.scale.gameSize, pw = Math.min(300, size.width * 0.86);
+    if (state.pauseView === 'stats') { renderStats(pw); return; }
     const guildName = state.chosenGuild ? GUILDS[state.chosenGuild].name : '—';
     const codexPct = Math.round(state.codex.size / CODEX.length * 100);
     const defs = [
       { label: '▶  Fortsetzen', action: 'resume', color: 0x2f6b3a },
       { label: '📜  Auftragsbuch', action: 'quests', color: 0x3a3550 },
       { label: '📖  Codex', action: 'codex', color: 0x3a2f1a },
+      { label: '📊  Statistik', action: 'stats', color: 0x2f3a50 },
       { label: (state.muted ? '🔇' : '🔊') + '  Ton: ' + (state.muted ? 'aus' : 'an'), action: 'mute', color: 0x2a2622 },
       { label: '🏠  Zum Titel', action: 'title', color: 0x6b2f2f }
     ];
@@ -1640,10 +1647,35 @@
       pauseBtns.push({ rect, tx, action: d.action });
     });
   }
+  function renderStats(pw) {
+    const size = sceneRef.scale.gameSize;
+    const codexPct = Math.round(state.codex.size / CODEX.length * 100);
+    const rows = [
+      ['⚔ Gegner besiegt', kills], ['☠ Bosse bezwungen', state.stats.bossKills],
+      ['✦ Legendäre Boss-Beute', state.stats.legendaries], ['📖 Codex entdeckt', state.codex.size + '/' + CODEX.length + ' (' + codexPct + '%)'],
+      ['🕳️ Abstieg-Rekord', 'Ebene ' + (state.abyssBest || 0)], ['🔄 New Game+', state.ngPlus || 0],
+      ['⭐ Stufe', state.level], ['💰 Gold', state.gold]
+    ];
+    const ph = 96 + rows.length * 30 + 56, px = size.width / 2, py = Math.max(20, (size.height - ph) / 2);
+    pauseBg.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
+    pausePanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
+    pauseTitle.setText('📊  Statistik').setPosition(px, py + 14).setVisible(true);
+    pauseStatus.setText('Chronik dieses Durchgangs').setPosition(px, py + 44).setVisible(true);
+    rows.forEach((r, i) => {
+      const y = py + 82 + i * 30;
+      pauseBtns.push({ rect: sceneRef.add.text(px - pw / 2 + 22, y, r[0], { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894' }).setOrigin(0, 0).setScrollFactor(0).setDepth(67), tx: sceneRef.add.text(px + pw / 2 - 22, y, '' + r[1], { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(1, 0).setScrollFactor(0).setDepth(67), action: null });
+    });
+    const by = py + ph - 46;
+    const brect = sceneRef.add.rectangle(px, by, pw - 32, 38, 0x2f6b3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(66).setOrigin(0.5, 0);
+    const btx = sceneRef.add.text(px, by + 19, '‹  zurück', { fontFamily: 'system-ui', fontSize: '16px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(67);
+    pauseBtns.push({ rect: brect, tx: btx, action: 'back' });
+  }
   function pauseClick(action) {
     if (action === 'resume') { closePause(); return; }
     if (action === 'quests') { closePause(); openQuestLog(); return; }
     if (action === 'codex') { closePause(); openCodex(); return; }
+    if (action === 'stats') { state.pauseView = 'stats'; renderPause(); return; }
+    if (action === 'back') { state.pauseView = 'menu'; renderPause(); return; }
     if (action === 'mute') { state.muted = !state.muted; if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊'); if (!state.muted) sfx('coin'); save(); renderPause(); return; }
     if (action === 'title') { closePause(); showTitle(true); return; }
   }
@@ -2820,13 +2852,17 @@
       if (Math.random() < 0.14) sayBark(player.x, player.y - 24, pickBark(e.cls === 'MECHANICAL' ? BARKS.hero_kill_mech : BARKS.hero_kill_bio), '#bcd0e0');   // Held-Callout
       updateLogBadge();   // evtl. wurde eine Kill-Quest gerade abgabebereit
       if (e.isVane) {
+        state.stats.bossKills++; state.stats.legendaries++;
         state.boss = null; hideBossBar(); toast('☠ Direktor Vane ist gefallen. Das Wachs schmilzt.');
         spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'boss');
+        dropGear(bx, by - 20, makeGear('armor', 'legendary', 'vaneward')); toast('✦ Legendär: Wachsherz-Kürass');   // garantierter Vane-Drop
         const guild = state.pendingEnding || state.chosenGuild || 'rebels';
         sceneRef.time.delayedCall(700, () => triggerEnding(guild));
       } else if (e.isSuperBoss) {
+        state.stats.bossKills++;
         state.boss = null; hideBossBar(); toast('☠ ' + e.name + ' bezwungen! +' + e.gold + ' Gold');
         spawnChest(bx + 46, by + 20, 'boss'); spawnChest(bx - 44, by + 24, 'boss'); spawnChest(bx, by + 48, 'rare');
+        if (e.name === 'Schrott-Golem') { state.stats.legendaries++; dropGear(bx, by - 20, makeGear('weapon', 'legendary', 'overcharge')); toast('✦ Legendär: Golem-Faust'); }   // garantierter Golem-Drop
         if (!state.isRevealed) triggerReveal();
       } else if (e.elite) {
         toast('☠ Elite besiegt! +' + e.gold + ' Gold');
