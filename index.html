@@ -717,6 +717,7 @@
   let ftBackdrop, ftPanel, ftTitle, ftClose; let ftButtons = [];
   let qlBackdrop, qlPanel, qlTitle, qlClose, logBtn, logBadge, logBadgeText; let qlRows = []; let qlRowHits = [];
   let clBackdrop, clPanel, clTitle, clClose, codexBtn; let clRows = []; let clRowHits = [];
+  let titleBg, titleName, titleSub, titleStatus; let titleBtns = [];
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
@@ -745,7 +746,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null,
+    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -893,6 +894,12 @@
     codexBtn = scene.add.circle(0, 0, 16, 0x1f2937, 0.9).setStrokeStyle(2, 0xc9a24a, 0.55).setScrollFactor(0).setDepth(25);
     codexBtn.icon = scene.add.text(0, 0, '📖', { fontSize: '14px' }).setOrigin(0.5).setScrollFactor(0).setDepth(26);
 
+    // Titelbildschirm (Front-Door)
+    titleBg = scene.add.rectangle(0, 0, 10, 10, 0x0c0805, 0.97).setScrollFactor(0).setDepth(80).setOrigin(0, 0).setVisible(false);
+    titleName = scene.add.text(0, 0, 'RUST & LEAD', { fontFamily: '"Courier New", monospace', fontSize: '40px', color: '#e7b878', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setScrollFactor(0).setDepth(81).setVisible(false);
+    titleSub = scene.add.text(0, 0, 'Ein Steampunk-Western im Staub des Territoriums', { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894', fontStyle: 'italic' }).setOrigin(0.5).setScrollFactor(0).setDepth(81).setVisible(false);
+    titleStatus = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '13px', color: '#9ca684', align: 'center' }).setOrigin(0.5).setScrollFactor(0).setDepth(81).setVisible(false);
+
     // Dialog-Box (unten), versteckt
     dlgBg = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.97).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(62).setOrigin(0.5, 1).setVisible(false);
     dlgName = scene.add.text(0, 0, '', { fontFamily: '"Courier New", monospace', fontSize: '15px', fontStyle: 'bold', color: '#fcd34d' }).setScrollFactor(0).setDepth(63).setOrigin(0, 0).setVisible(false);
@@ -947,6 +954,7 @@
     // Neue Runde startet in Rustwater (Story-Heimat, Mabel gibt den ersten Auftrag); Rückkehrer in der Wüste.
     if (hadSave) loadMap('overworld', { c: 40, r: 40 });
     else loadMap('rustwater', { c: 11, r: 12 });
+    showTitle(hadSave);   // Front-Door über der bereits geladenen Welt
   }
 
   // ---- Wirtschaft: Speichern / Laden / Einkommen -------------
@@ -1536,6 +1544,46 @@
     logBadge.setVisible(n > 0); logBadgeText.setVisible(n > 0); if (n > 0) logBadgeText.setText('' + n);
   }
 
+  // ---- Titelbildschirm (Front-Door) --------------------------
+  function showTitle(hadSave) {
+    state.titleOpen = true; state.titleConfirmNew = false;
+    const guildName = state.chosenGuild ? GUILDS[state.chosenGuild].name : '—';
+    const codexPct = Math.round(state.codex.size / CODEX.length * 100);
+    titleStatus.setText(hadSave
+      ? ('Kapitel ' + state.currentChapter + '  ·  Gilde: ' + guildName + ((state.ngPlus || 0) > 0 ? '  ·  🔄 NG+' + state.ngPlus : '') + '\nStufe ' + state.level + '  ·  Codex ' + codexPct + '%  ·  Abstieg-Rekord ' + (state.abyssBest || 0))
+      : 'Eine neue Legende beginnt in Rustwater.');
+    const size = sceneRef.scale.gameSize;
+    titleBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); titleBtns = [];
+    const defs = hadSave
+      ? [{ label: '▶  Fortsetzen', action: 'continue', color: 0x2f6b3a }, { label: '＋  Neues Spiel', action: 'new', color: 0x6b2f2f }]
+      : [{ label: '▶  Neues Spiel', action: 'start', color: 0x2f6b3a }];
+    defs.forEach((d, i) => {
+      const y = size.height * 0.62 + i * 62;
+      const rect = sceneRef.add.rectangle(size.width / 2, y, Math.min(280, size.width * 0.8), 50, d.color, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.6).setScrollFactor(0).setDepth(81);
+      const tx = sceneRef.add.text(size.width / 2, y, d.label, { fontFamily: 'system-ui', fontSize: '18px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(82);
+      titleBtns.push({ rect, tx, action: d.action });
+    });
+    layoutTitle(); [titleBg, titleName, titleSub, titleStatus].forEach(o => o.setVisible(true));
+  }
+  function layoutTitle() {
+    const size = sceneRef.scale.gameSize, w = size.width, h = size.height;
+    titleBg.setSize(w, h).setPosition(0, 0);
+    titleName.setPosition(w / 2, h * 0.3); titleSub.setPosition(w / 2, h * 0.3 + 40); titleStatus.setPosition(w / 2, h * 0.3 + 78);
+  }
+  function hideTitle() {
+    state.titleOpen = false;
+    titleBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); titleBtns = [];
+    [titleBg, titleName, titleSub, titleStatus].forEach(o => o.setVisible(false));
+  }
+  function titleClick(action) {
+    if (action === 'continue' || action === 'start') { hideTitle(); return; }
+    if (action === 'new') {   // Bestätigung: zweiter Tap löscht den Fortschritt
+      if (!state.titleConfirmNew) { state.titleConfirmNew = true; const b = titleBtns.find(x => x.action === 'new'); if (b) b.tx.setText('⚠ Wirklich? Fortschritt löschen'); return; }
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+      location.reload(); return;
+    }
+  }
+
   // ---- Story-Codex (Nachlese erlebter Szenen) ----------------
   function openCodex() {
     if (state.travelOpen || state.fullMapOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.questLogOpen) return;
@@ -1982,12 +2030,14 @@
       revealText.setPosition(w / 2, h / 2 - 20); revealText.setWordWrapWidth(Math.min(w - 48, 520));
       revealHint.setPosition(w / 2, h - 60);
     }
+    if (titleBg && titleBg.visible) { layoutTitle(); titleBtns.forEach((b, i) => { const y = h * 0.62 + i * 62; b.rect.setPosition(w / 2, y); b.tx.setPosition(w / 2, y); }); }
     if (state.fullMapOpen) refreshMaps();
   }
 
   // ---- Eingabe -----------------------------------------------
   function onPointerDown(p) {
     initAudio();   // Audio-Kontext bei erster Nutzer-Geste starten
+    if (state.titleOpen) { for (const b of titleBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { titleClick(b.action); return; } return; }
     if (state.endingPlaying) { advanceEnding(); return; }   // Finale-Cutscene: höchste Priorität
     if (state.revealPlaying) { advanceReveal(); return; }   // Cutscene: höchste Priorität
     if (state.dialogueOpen) {
@@ -3075,7 +3125,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.codexOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying || state.endingPlaying;
+    const uiBlocked = state.titleOpen || state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.codexOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying || state.endingPlaying;
 
     // Bewegung
     let vx = 0, vy = 0;

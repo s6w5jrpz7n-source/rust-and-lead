@@ -991,6 +991,13 @@ Stufe, Perks, Gold und Stash bleiben**, die Story setzt zurück (`currentChapter
 steigt, `mapHpMul` skaliert alle Gegner um `+60 % pro NG+`. Der HUD-Kartenname zeigt „🔄 NG+n".
 Persistiert (`ngPlus`, `gameWon`).
 
+### 7.5.13 Titelbildschirm (`showTitle`)
+Beim Start lädt die Welt im Hintergrund, darüber liegt der Front-Door: Titel „RUST & LEAD",
+Tagline und — bei vorhandenem Speicherstand — eine **Kampagnen-Statuszeile** (Kapitel, Gilde,
+NG+, Stufe, Codex-%, Abstieg-Rekord) plus **▶ Fortsetzen** / **＋ Neues Spiel** (Zwei-Tap-
+Bestätigung, löscht den Spielstand und lädt neu). Ohne Speicherstand nur **▶ Neues Spiel**.
+`state.titleOpen` blockt Eingabe (höchste Pointer-Priorität), bis eine Wahl getroffen ist.
+
 ### 7.5.12 Story-Codex (`CODEX` / Taste K / 📖)
 Nachlese erlebter Szenen. Einträge (`CODEX`) schalten sich frei: Reveal/Providence bei
 `isRevealed`, Vane/NG+ bei `gameWon`, jede Nebenstory bei erledigter Quest, jedes Ende bei
