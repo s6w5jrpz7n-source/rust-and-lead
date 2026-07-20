@@ -256,7 +256,11 @@
     'Du starrst in dein Spiegelbild —',
     'kein Mann aus Fleisch. Ein rauchender, einäugiger STAHL-SCHÄDEL. Zahnräder. Kochendes Öl.',
     'SYSTEM_REBOOT … SENSOR_ILLUSION_DESYNC … PROTOKOLL: WAHRHEIT',
-    'Du bist keine Kreatur aus Fleisch. Du bist eine Maschine.'
+    'Du bist keine Kreatur aus Fleisch. Du bist eine Maschine.',
+    '„Ich hab doch geblutet. Ich hab doch … geträumt." — Deine Stimme bricht mitten im Wort in ein zweites, metallisches Timbre.',
+    '„Wer hat mir mein Gesicht geschuldet — und mit einer Lüge bezahlt?"',
+    'Rauch quillt aus deinen Schulterventilen. Das eine Auge glüht ruhig und orange. Du erhebst dich.',
+    '„Runter von meinem Zug."'
   ];
 
   // Werkstatt-Upgrades. Waffen-Tuning ist immer erlaubt; Körper-Mods (bodyMod) erst nach dem Reveal.
@@ -326,7 +330,8 @@
         { tx: 60, ty: 58, to: 'dungeon1', spawn: { c: 12, r: 2 }, short: 'Mine', label: '🕳️  Mine', mini: 0x8b5cf6 },
         { tx: 14, ty: 30, to: 'fort_freedom', spawn: { c: 9, r: 3 }, short: 'Fort Freedom', label: '🏴  Fort Freedom', mini: 0x9a3b2f },
         { tx: 64, ty: 20, to: 'sektor01', spawn: { c: 9, r: 3 }, short: 'Sektor 01', label: '🏭  Sektor 01', mini: 0x60a5fa },
-        { tx: 40, ty: 66, to: 'rogues_landing', spawn: { c: 9, r: 3 }, short: "Rogue's Landing", label: "🎲  Rogue's Landing", mini: 0xeab308 }
+        { tx: 40, ty: 66, to: 'rogues_landing', spawn: { c: 9, r: 3 }, short: "Rogue's Landing", label: "🎲  Rogue's Landing", mini: 0xeab308 },
+        { tx: 8, ty: 72, to: 'garten', spawn: { c: 11, r: 20 }, short: 'Garten aus Rost', label: '🌵  Garten aus Rost', mini: 0x65a30d }
       ],
       stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: [],
       caches: [ { tx: 45, ty: 40, count: 4, tier: 'rare' } ]   // Kessel-Friedhof: gebündelte Beute
@@ -358,15 +363,15 @@
           linesPost: ['Mabel starrt dich an, flucht kurz — dann lacht sie rau.', '„Hätte mir gleich auffallen müssen, dass du keinen Kater kriegst, Kleiner!"', 'Sie schiebt dir statt Schnaps eine Dose Schmieröl rüber: „Trink aus. Geht aufs Haus."'],
           quests: [
             { id: 'q_bounty', title: 'Kopfgeld: Wegelagerer', kind: 'kill', count: 8, rewardGold: 120, rewardItem: 'zahnrad', chapter: 1, advanceTo: 2,
-              offerText: '„Willkommen in Rustwater, Fremder. Erste Regel: mach dich nützlich. Ein paar Wegelagerer draußen in der Wüste machen die Pfade unsicher — besieg 8 von dem Gesindel."',
-              activeText: '„Noch nicht fertig? Geh durchs Tor nach Norden in die Wüste. Da wimmelt\'s von dem Pack."',
-              completeText: '„Sauber gemacht! Hier, dein wohlverdientes Kopfgeld. Und geh mal zu Silas, dem Schmied — der sucht Hände."',
-              doneText: '„Silas steht drüben an der Esse. Sag ihm, Mabel schickt dich."' },
+              offerText: '„Willkommen in Rustwater, Kleiner. Erste Regel am Tresen: mach dich nützlich. Draußen machen ein paar Wegelagerer die Pfade unsicher — leg acht von dem Pack um, dann red ich weiter mit dir."',
+              activeText: '„Noch nicht fertig? Durchs Tor nach Norden, in die Wüste. Da wimmelt\'s. Und komm mit heiler Kehle zurück, ich hab nur ein sauberes Glas."',
+              completeText: '„Sauber gemacht, Kleiner! Hier, dein wohlverdientes Kopfgeld. Und jetzt zu Silas an der Esse — der Schmied sucht Hände, und deine sehen kräftig aus."',
+              doneText: '„Silas steht drüben an der Esse. Sag ihm, Mabel schickt dich — dann brummt er nur halb so lang."' },
             { id: 'q_delve', title: 'Hinab in die Schrott-Mine', kind: 'kill', count: 10, rewardGold: 240, rewardItem: 'dampfkern', chapter: 4, advanceTo: 5,
-              offerText: '„Doc hat recht — irgendwas in der alten Schrott-Mine im Osten stimmt nicht. Steig hinab und mach dem ein Ende. Besieg 10 von dem, was da unten haust."',
-              activeText: '„Die Mine liegt im Osten der Wüste (🕳️). Geh tiefer, wenn du dich traust."',
-              completeText: '„Du lebst noch? Und siehst … anders aus. Setz dich, das muss ich mir ansehen."',
-              doneText: '„Was auch immer da unten passiert ist — du bist jetzt jemand anderes. Die Gilden werden von dir hören."' }
+              offerText: '„Doc hat recht, Kleiner — in der alten Schrott-Mine im Osten stimmt was nicht. Steig hinab und mach dem ein Ende. Zehn von dem, was da unten haust — dann haben wir Ruhe."',
+              activeText: '„Die Mine liegt im Osten der Wüste (🕳️). Geh tiefer, wenn du dich traust. Ich lass ein Licht brennen."',
+              completeText: '„Du lebst noch? Und siehst … anders aus, Kleiner. Setz dich. Das muss ich mir aus der Nähe ansehen."',
+              doneText: '„Was da unten passiert ist — du bist jetzt jemand anderes. Die Gilden werden von dir hören. Und ich? Ich schenk dir trotzdem nach."' }
           ] },
         { id: 'silas', name: 'Silas „Kupferauge" Finch', short: 'Silas', tx: 8, ty: 16, color: 0x9ca3af,
           linesPre: ['Der einäugige Schmied mustert dich durch seine Kupferlinse.', '„Ich brauch seltene Erze aus den Minen, sonst wächst diese Stadt nie."', '„Bring mir was Brauchbares — dann schmied ich dir was Brauchbares."'],
@@ -511,6 +516,30 @@
             activeText: '„Der Deal steht noch aus. Bring die Kerne."',
             completeText: '„Reich, frei und keiner Fahne verpflichtet. So macht man das, Partner."',
             doneText: '„Rustwater gehört jetzt denen, die zahlen können. Uns."' } ] } ]
+    },
+    // Nebenstory B8 „Der Garten aus Rost" — die Kaktus-Wächterin Agata Dorn an der Smog-Linie.
+    garten: {
+      name: 'Garten aus Rost', cols: 22, rows: 22, enemies: true, minimap: 'small', depth: 2,
+      floorA: 0x556b4a, floorB: 0x47593f, grid: 0x33422d, mini: 0x6b8a4f, bg: 0x121a10,
+      portals: [ { tx: 11, ty: 0, to: 'overworld', spawn: { c: 8, r: 70 }, short: 'Raus', label: '🚪  Wüste', mini: 0x38bdf8 } ],
+      stations: [],
+      decor: [
+        { tx: 11, ty: 11, w: 40, h: 28, color: 0x3a4a2c, label: 'DER ALTE' },
+        { tx: 5, ty: 6, w: 34, h: 22, color: 0x445236, label: 'BEETE' },
+        { tx: 16, ty: 15, w: 34, h: 22, color: 0x445236, label: 'BEETE' }
+      ],
+      caches: [ { tx: 4, ty: 18, count: 3, tier: 'rare' } ], elites: 1,
+      npcs: [ { id: 'agata', name: 'Agata Dorn', short: 'Agata', tx: 11, ty: 18, color: 0x84cc16,
+        linesPre: ['Eine alte Frau gießt Kakteen aus einer halbierten Granate. Sie zählt halblaut mit.',
+          '„Dreiundzwanzig, vierundzwanzig … Sie stehen auf dem Beet, junger Mann. Ich rieche heißes Blech auf zehn Schritt."',
+          '„Der Smog weicht hier zurück, weil einer zählt, was wiederkommt. Der Konzern zählt nur, was er nimmt."'],
+        linesPost: ['„Vierzig Jahre gieße ich den Alten: Wasser links, Öl rechts. Er hat den Beruf gewechselt — von der Waffe zum Spalier."',
+          '„Sie sind aus demselben Stahl, junger Mann. Nur haben Sie noch nicht entschieden, was für ein Garten Sie werden."'],
+        quest: { id: 'q_garden', title: 'Der Garten aus Rost', kind: 'kill', count: 12, rewardGold: 400, rewardItem: 'dampfkern', chapter: 1,
+          offerText: '„Ein Vermessungstrupp steckt Pfähle: „Entlüftungskorridor Süd", planiert wird nächste Woche. Zweihundertsechzehn Pflanzen, vierzig Jahre — und ein Planier-Kommando. Helfen Sie mir, den Garten zu halten. Schlagen Sie zwölf von dem Konzernblech zurück, zwischen den Beeten."',
+          activeText: '„Sie kommen noch, das Kreischen der Planierraupe hören Sie doch? Bleiben Sie auf den Steinen, wo Sie können — und halten Sie sie von den Beeten fern."',
+          completeText: '„Sehen Sie hoch, junger Mann. Die Senke blüht — klare Luft, bis hinüber zur Smog-Wand. Hier, das Dornen-Destillat: bringen Sie\'s dem Schmied und dem Doktor für ihre Atemdinger. Und der Samen ist für hinterher. Irgendwo liegt Erde, die auf Sie wartet."',
+          doneText: '„Zweihundertsiebzehn Pflanzen jetzt. Der Neuzugang ist störrisch. Ich mag ihn. Kommen Sie wieder, wenn die Sterne ausreichen — hier zählt man sie noch."' } } ]
     }
   };
   const STATION_INDEX = {};
