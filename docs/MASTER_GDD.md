@@ -1088,10 +1088,19 @@ stille **Erinnerungspunkte** (`memorials`): **Türrahmen** (Saras Größenkerben
 (Kinetoskop-Streifen der Familie) und die **drei Gräber**. Nähe → Kontext-Aktion (`ctx.type
 'memorial'`) → `playMemorial(id)` spielt einen Flashback-Overlay (`playFlashback`/`renderFlashback`/
 `advanceFlashback`, wiederverwendet die Reveal-Overlay-Objekte, eigene Pointer-Priorität, Teil von
-`uiBlocked`). Türrahmen/Foto schalten Codex `familie` frei. Die Gräber sind gestuft: unvollständig →
-Flashback verweist zurück auf die Walzensuche; bei 16/16 Walzen → **Begräbnis** (`familyBuried`,
-Codex `heimkehr`, Erfolg **„Heimkehr"**), danach ein ruhiger Abschluss-Flashback. `memorialsSeen`
-(Set) und `familyBuried` persistieren.
+`uiBlocked`). Türrahmen/Foto schalten Codex `familie` frei. Die drei Gräber werden als benannte
+Grabsteine (**Liv · Tom · Sara**) gerendert; sie sind gestuft: unvollständig → Flashback verweist
+zurück auf die Walzensuche; bei 16/16 Walzen → **Begräbnis** (`familyBuried`, Codex `heimkehr`,
+Erfolg **„Heimkehr"**), danach ein ruhiger Abschluss-Flashback. Nach dem Begräbnis wird die Karte
+neu geladen, sodass auf jedem Stein eine heimgebrachte **Messingwalze** sichtbar liegt.
+`memorialsSeen` (Set) und `familyBuried` persistieren.
+
+**Zeuge Elias Roan (NPC):** Ein alter Streckenwärter kniet zwischen den Gräbern (`npcs`-Eintrag,
+volle Dialog-/Quest-Mechanik). Er ist der einzige Überlebende und liefert den Außenblick auf das
+Massaker; seine Quest **„Die Wächter am Grab"** (`q_roan`, Kill-10, Kapitel ≥ 5, Reward Gold +
+Dampfkern) treibt narrativ zum Grab: Der `completeText` nennt zum ersten Mal den Namen *Jeremiah
+Hale* und dass Frau/Junge/Mädchen unter den Steinen liegen — „bring ihn heim". Codex `q_roan` über
+`codexAutoScan`. Erst der Zeuge, dann die Walzen, dann das Begräbnis.
 
 ### 7.5.12 Story-Codex (`CODEX` / Taste K / 📖)
 Nachlese erlebter Szenen. Einträge (`CODEX`) schalten sich frei: Reveal/Providence bei

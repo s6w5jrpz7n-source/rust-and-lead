@@ -337,7 +337,8 @@
     { id: 'ngplus', title: 'Der ewige Kreislauf', body: 'Du hast das Territorium einmal befreit — und beginnst von Neuem, härter als zuvor. Deine Kraft bleibt, die Wüste wird zäher. Vielleicht wählst du diesmal eine andere Fahne. Vielleicht keine.' },
     { id: 'steuerwalzen', title: 'Warum tragen sie meine Erinnerung?', body: 'Der Konzern hat dein Gedächtnis nicht gelöscht — er hat es zerstückelt und als verschlüsselte Ballast-Steuerwalzen über sein ganzes Maschinennetz verteilt. Jedes Konstrukt läuft auf einer solchen Messingwalze; in manchen steckt ein Splitter von DIR — ein Backup, das nur das Direktorat je hätte zusammensetzen sollen. Zerschlägst du ihre Maschinen, birgst du die Splitter. Du setzt dich aus der Hardware deines Feindes wieder zusammen.' },
     { id: 'familie', title: 'Die Familie Hale', body: 'Liv, seine Frau, die eine Terz zu hoch lachte. Tom, der Junge, der Züge an der Schiene hörte, bevor man sie sah. Sara, deren Größe er in den Türrahmen kerbte. Sie standen an Vanes Trasse, als der Konzern Providence Cut räumte — und Einheit 13 rollte hindurch. Jeremiah Hale hat sie nicht beschützt. Jeremiah Hale war die Waffe.' },
-    { id: 'heimkehr', title: 'Heimkehr nach Providence Cut', body: 'Sechzehn Messingwalzen, jede ein Splitter seiner selbst — geborgen aus dem Blech des Konzerns, heimgebracht in die Ruine, die einmal ein Zuhause war. Unter drei Steinen liegt jetzt beieinander, was der Konzern zerstückelt hat. Kein Direktorat setzt Jeremiah Hale mehr zusammen. Er hat sich selbst begraben — und damit endlich Ruhe gefunden.' }
+    { id: 'heimkehr', title: 'Heimkehr nach Providence Cut', body: 'Sechzehn Messingwalzen, jede ein Splitter seiner selbst — geborgen aus dem Blech des Konzerns, heimgebracht in die Ruine, die einmal ein Zuhause war. Unter drei Steinen liegt jetzt beieinander, was der Konzern zerstückelt hat. Kein Direktorat setzt Jeremiah Hale mehr zusammen. Er hat sich selbst begraben — und damit endlich Ruhe gefunden.' },
+    { id: 'q_roan', title: 'Elias Roan, der Streckenwärter', body: 'Der einzige Zeuge, der überlebte, weil er drei Meilen die Trasse hinunter war, als es geschah. Elias richtete die drei Gräber, deren Namen er kannte und deren Gesichter der Brand ihm nahm. Er ist es, der der Maschine sagt, wessen Steine das sind: Jeremiah Hale — Frau, Junge, Mädchen, alle drei darunter. „Wenn du wirklich was von ihm in dir trägst … bring ihn heim."' }
   ];
   const CODEX_BY_ID = {}; CODEX.forEach(c => CODEX_BY_ID[c.id] = c);
   // Erinnerungs-Walzen: Messingwalzen aus Konzern-Gegnern spielen Fragmente aus Jeremiahs Vergangenheit ab.
@@ -418,6 +419,7 @@
         codexUnlock('familie'); codexUnlock('heimkehr');
         checkAchievements(); save();
         toast('🪦 Du hast dich selbst zur Ruhe gebettet. Providence Cut ist stumm geworden.');
+        if (state.map === 'providence_cut') sceneRef.time.delayedCall(400, () => loadMap('providence_cut', state.playerTile, player.facing));   // Walzen auf den Gräbern sichtbar machen
       };
     } else {
       lines = [
@@ -485,6 +487,7 @@
     if (state.isRevealed) { add('reveal'); add('providence'); }
     if (state.gameWon) { add('vane'); add('ngplus'); }
     for (const id of ['q_garden', 'q_pip', 'q_vesper', 'q_habakuk', 'q_lomax', 'q_corah', 'q_dolores', 'q_uhrwerk']) if (state.quests[id] === 'done') add(id);
+    if (state.quests.q_roan === 'done') add('q_roan');
     if (state.quests.q_rebels12 === 'done') add('end_rebels');
     if (state.quests.q_corp12 === 'done') add('end_corp');
     if (state.quests.q_smug12 === 'done') add('end_smugglers');
@@ -887,7 +890,17 @@
         { id: 'doorframe', tx: 8, ty: 11, label: '🕯  Am Türrahmen erinnern' },
         { id: 'photo', tx: 12, ty: 11, label: '🕯  Das Foto ansehen' },
         { id: 'graves', tx: 10, ty: 16, label: '🪦  Die drei Gräber' }
-      ]
+      ],
+      npcs: [ { id: 'elias', name: 'Elias Roan', short: 'Elias', tx: 5, ty: 15, color: 0x9a8c6d,
+        linesPre: ['Ein alter Mann kniet zwischen drei Grabsteinen und zupft Unkraut aus dem Sand. Er blickt kaum auf. „Geh weiter, Fremder. Hier gibt\'s nichts zu holen, nur Steine und alte Namen."'],
+        linesPost: ['Ein alter Mann kniet zwischen den drei Steinen und zupft Unkraut. Er blickt hoch — in ein Gesicht aus Messing und Wachs — und erschrickt nicht. „Noch so ein Konzern-Ding. Kommst du, die Steine auch noch umzupflügen?"',
+          '„Ich bin Elias. Streckenwärter, damals. War drei Meilen die Trasse runter, als es geschah — sonst läg ich mit drunter." Er deutet auf die Gräber. „Die hab ich gerichtet. Die Namen wusste ich. Die Gesichter hat mir der Brand genommen."',
+          '„Ein Streik war\'s. Sie kürzten den Lohn zum dritten Mal, die Männer legten die Werkzeuge nieder. Dann hielt ein Waggon, wo keiner halten sollte — und was da rauskam, war kein Mensch mehr. Es räumte die Strecke. So nannten die das. Räumen."'],
+        quest: { id: 'q_roan', title: 'Die Wächter am Grab', kind: 'kill', count: 10, rewardGold: 500, rewardItem: 'dampfkern', chapter: 5,
+          offerText: '„Der Konzern lässt noch immer Blech um Providence Cut streifen — damit keiner herkommt und sich erinnert. Ich bin zu alt, sie zu vertreiben. Schlag zehn von dem Laufwerk zurück, wo du sie triffst, dann kann ich die Steine in Ruhe pflegen."',
+          activeText: '„Sie kreisen da draußen, hör nur das Ticken. Zehn, hab ich gesagt. Dann ist Ruhe am Grab."',
+          completeText: 'Elias sieht dir zu, wie du am mittleren Stein stehst — bei „Liv". „Du stehst da wie einer, der sie gekannt hat. Komisch, bei einem Blechding." Er drückt dir einen alten Dampfkern in die Hand. „Hale hieß der Mann, dem das hier gehörte. Jeremiah Hale. Frau, Junge, Mädchen — alle drei unter diesen Steinen. Wenn du wirklich was von ihm in dir trägst … dann bring ihn heim."',
+          doneText: '„Die Strecke ist still. Geh zu den Steinen, wenn du bereit bist — wenn du ganz bist. Manche Wege geht man nur einmal, und nur allein."' } } ]
     }
   };
   const STATION_INDEX = {};
@@ -1427,6 +1440,10 @@
           mapObjects.push(sceneRef.add.rectangle(gx, w.y - 9, 20, 8, 0x6b625a, 0.95).setStrokeStyle(2, 0x413a34).setDepth(2));   // gerundete Krone
           mapObjects.push(sceneRef.add.text(gx, w.y - 3, '✝', { fontSize: '11px', color: '#d8cfc4' }).setOrigin(0.5).setDepth(3));
           mapObjects.push(sceneRef.add.text(gx, w.y + 22, nm, { fontFamily: 'system-ui', fontSize: '11px', color: '#e7d9bf', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(3));
+          if (state.familyBuried) {   // nach dem Begräbnis: eine heimgebrachte Messingwalze auf jedem Stein
+            mapObjects.push(sceneRef.add.rectangle(gx, w.y - 15, 12, 9, 0xb8863b, 1).setStrokeStyle(2, 0x6e4d1e).setDepth(3));
+            mapObjects.push(sceneRef.add.line(gx, w.y - 15, 0, -4, 0, 4, 0x6e4d1e).setLineWidth(1).setDepth(4));
+          }
         });
         return;
       }
