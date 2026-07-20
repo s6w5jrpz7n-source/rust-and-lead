@@ -398,7 +398,25 @@
             offerText: '„Am Waisenhaus lungert Gesindel rum, seit das Öl knapp wird. Die Großen tun so, als wär\'s nichts. Bist du wirklich ein Engel? Dann verjag sechs von denen. Engel waren noch nie aus Fleisch — also passt du perfekt."',
             activeText: '„Noch nicht alle weg? Ich hab den Kleinen versprochen, dass mein Engel das regelt. Blamier mich nicht, Blechmann."',
             completeText: '„Sechs! Ich hab mitgezählt, vom Dach aus. Hier — mein Glücks-Zahnrad. Nein, behalt\'s. Engel brauchen Ersatzteile, das weiß doch jedes Kind."',
-            doneText: '„Das ist nur der Kessel, der so zischt, hab ich den Kleinen erklärt. Ja. Sag ich ja. Ich weiß Bescheid, Blechmann. Ich sag\'s bloß nicht laut."' } }
+            doneText: '„Das ist nur der Kessel, der so zischt, hab ich den Kleinen erklärt. Ja. Sag ich ja. Ich weiß Bescheid, Blechmann. Ich sag\'s bloß nicht laut."' } },
+        { id: 'thorn', name: 'Thorn, der Uhrmacher', short: 'Thorn', tx: 2, ty: 3, color: 0xca8a04,
+          linesPre: ['Ein Uhrmacher justiert mit zittrigen Fingern ein Kinderherz aus Messing. Daneben tickt ein Junge namens Oliver.',
+            '„Zwölf Jahre hatte ich Angst vor der falschen Stille. Seit Sie durch die Stadt gehen, tickt Oliver ruhiger. Fragen Sie mich nicht, warum."'],
+          linesPost: ['Oliver sieht zu dir hoch: „Du klickst heute tiefer als letzte Woche. Herr Vater sagt, das heißt bei Werken wie uns: Es hat sich was gesetzt."'],
+          quest: { id: 'q_uhrwerk', title: 'Das Uhrwerk-Herz', kind: 'collect', item: 'zahnrad', count: 8, rewardGold: 200, rewardItem: 'potion', chapter: 1,
+            offerText: '„Olivers Uhrwerk-Herz verschleißt. Ich brauche acht saubere Zahnräder — nicht vom Konzern gestanzt, ehrlich gefallene. Bringen Sie sie, und der Junge tickt ein Jahr länger."',
+            activeText: '„Acht Zahnräder, kein Rost an den Zähnen. Oliver zählt die Tage. Wörtlich."',
+            completeText: '„Sehen Sie — er läuft rund. Ein Uhrmacher glaubt nicht an Wunder, nur an Wartung. Heute glaube ich an beides. Nehmen Sie das hier, für die Straße."',
+            doneText: '„Er hat heute bis vierzigtausend getickt, ohne sich zu verzählen. Ich hab\'s eingerahmt. Kommen Sie wieder — er fragt nach Ihnen."' } },
+        { id: 'lomax', name: 'Lomax, der Projektionist', short: 'Lomax', tx: 19, ty: 3, color: 0x94a3b8,
+          linesPre: ['Ein blinder Mann baut einen Projektor auf, das Gesicht zur unsichtbaren Leinwand. „Erste Reihe, Mitte, ist frei, Junge. Bleibt sie auch."',
+            '„Ich sehe nichts mehr. Aber am Lachen höre ich, wo alle sitzen. Und ich höre, dass du dich anders bewegst als Fleisch."'],
+          linesPost: ['„Manche Bilder gehören keinem Publikum mehr. Nur noch einem. Frag nicht, welches."'],
+          quest: { id: 'q_lomax', title: 'Der blinde Projektionist', kind: 'kill', count: 8, rewardGold: 150, rewardItem: 'zahnrad', chapter: 1,
+            offerText: '„Banditen haben meine Filmrollen — das Einzige, was ich noch ‚sehe\'. Acht von dem Pack lungern an der Wüstenstraße. Hol sie mir vom Hals, dann läuft die Vorstellung um acht."',
+            activeText: '„Noch keine Ruhe da draußen? Das Publikum wartet. Ich auch — ich brauch das Lachen, um zu wissen, wo alle sind."',
+            completeText: '„Ich höre die Straße wieder atmen. Danke, Junge. Heute zeig ich eine Komödie. Alle brauchen was zu lachen — ich am meisten."',
+            doneText: '„Vorstellung um acht. Erste Reihe Mitte gehört dir. Für immer heißt für immer — ich bin blind, nicht wortbrüchig."' } }
       ]
     },
     dungeon1: {
@@ -469,7 +487,25 @@
             offerText: '„Das Finale. Stürm die Zentrale der Iron Rail und leg 30 ihrer Elite-Chassis um. Für die Freiheit — ein für alle Mal."',
             activeText: '„Die Zentrale steht noch. Weiter!"',
             completeText: '„Das Monopol ist gefallen. Die Arbeiter sind frei — dank dir, Genosse."',
-            doneText: '„Ein neuer Anfang für Rustwater. Ohne Ketten."' } ] } ]
+            doneText: '„Ein neuer Anfang für Rustwater. Ohne Ketten."' } ] },
+        { id: 'corah', name: 'Corah, die Witwe', short: 'Corah', tx: 4, ty: 13, color: 0xcbd5e1,
+          linesPre: ['Eine Witwe hängt Wäsche vor dem Wall. „Ich wasche jetzt auch für Fort Freedom. Doppelte Arbeit, halbe Grübelei."',
+            '„Am Signalposten steht ein Automat. Er zieht keine Mütze. Ich hab extra hingesehen. Gut so — einmal Abschied reicht für ein Leben."'],
+          linesPost: ['„Sie waren sanft mit ihm, hat man mir erzählt. Merken Sie sich das von sich selbst, falls mal wer sagt, in Ihnen wär nur Blech."'],
+          quest: { id: 'q_corah', title: 'Die Witwe und der Automat', kind: 'collect', item: 'schrott', count: 10, rewardGold: 130, rewardItem: 'potion', chapter: 1,
+            offerText: '„Der Automat meines Mannes hält den Signalposten — aber er rostet. Zehn Hände Schrott, dann flick ich sein Gehäuse. Nicht sein Herz. Das Herz ist unter der Erde, wo\'s hingehört."',
+            activeText: '„Zehn Stück Schrott. Die Hände wissen am besten, wie Weiterleben geht. Bring, was du findest."',
+            completeText: '„Er steht wieder gerade. Danke. Man trägt so einen Verlust nicht — man wäscht ihn. Jeden Tag ein Stück heller."',
+            doneText: '„Der Posten ist besetzt, die Wäsche weiß. Zwei Sachen, auf die in diesem Fort Verlass ist. Drei, mit Ihnen."' } },
+        { id: 'sable', name: 'Sable, alter Bergmann', short: 'Sable', tx: 14, ty: 4, color: 0x78716c,
+          linesPre: ['Ein alter Bergmann hält ein Taschentuch mit einer Zündschnur als Schleife. „Du kanntest Dolores nicht. Schade. Sie ging mit Donner."',
+            '„Die Bande, die sie in die Enge trieb, feiert noch. Das gehört sich nicht."'],
+          linesPost: ['„Auf der Kiste mit den Wintersachen fürs Waisenhaus war \'ne Zündschnur als Schleife. Wir wissen schon, wer. Wir sagen\'s bloß nicht laut."'],
+          quest: { id: 'q_dolores', title: 'Dolores\' letzte Trommel', kind: 'kill', count: 18, rewardGold: 400, rewardItem: 'dampfkern', chapter: 1,
+            offerText: '„Dolores\' letzte Trommel hat achtzehn von denen mitgenommen. Achtzehn stehen noch. Gleich ihr die Rechnung aus. Manche Kopfgelder zahlt man nicht — man zahlt sie zurück."',
+            activeText: '„Noch nicht alle. Dolores hätte längst nachgeladen. Mach weiter."',
+            completeText: '„Achtzehn. Jetzt sind wir quitt, und Dolores lächelt irgendwo im Pulverdampf. Nimm ihren Ersatz-Dampfkern — sie hätt\'s so gewollt."',
+            doneText: '„Der Zettel bleibt am Brett. Nicht als Auftrag. Als Andenken. Drei Worte in der Zeitung: ‚Sie ging mit Donner.\' Mehr braucht Ehrlichkeit nicht."' } } ]
     },
     sektor01: {
       name: 'Sektor 01', cols: 18, rows: 18, enemies: false, walled: true, minimap: 'full',
@@ -535,7 +571,16 @@
             offerText: '„Ein Wettstreit, Blechmann. Der „Schakal" und seine Bande machen die Handelswege unsicher — fünfzehn Köpfe. Wer mehr räumt, hat den längeren Lauf. Ich geb dir Vorsprung. Ich brauch keinen."',
             activeText: '„Fünfzehn, hab ich gesagt. Ich zähl mit — und ich lieg vorn. Beweg dich, sonst nehm ich dir die letzten weg."',
             completeText: '„Fünfzehn. Sauber. Verdammt sauber sogar. Behalt das Zahnrad — von der ersten Flinte, die ich je hatte. Ich häng nicht an Dingen. Nur an Namen, die ich nicht vergesse."',
-            doneText: '„Der Schakal-Zettel hängt wieder — Nachahmer. Ich lass ihn dir übrig. Wir jagen jetzt nebeneinander, Blechmann. Nicht gegeneinander. Kleiner Unterschied. Großer."' } } ]
+            doneText: '„Der Schakal-Zettel hängt wieder — Nachahmer. Ich lass ihn dir übrig. Wir jagen jetzt nebeneinander, Blechmann. Nicht gegeneinander. Kleiner Unterschied. Großer."' } },
+        { id: 'habakuk', name: 'Prediger Habakuk', short: 'Habakuk', tx: 9, ty: 14, color: 0xa78bfa,
+          linesPre: ['Ein Prediger in blankem Stahl breitet die Arme. „Gesegnet sei, was rostet — denn es war draußen im Regen und ist geblieben."',
+            '„Bruder! Die Silbe hält: nicht ertragen — tragen. Ich hab\'s erst beim dritten Leben verstanden."'],
+          linesPost: ['„Du trägst deine Wahrheit aufrecht. Das ist die ganze Predigt. Der Rest ist nur Blech, das mitsingt."'],
+          quest: { id: 'q_habakuk', title: 'Die Kirche der Fleischwerdung', kind: 'kill', count: 12, rewardGold: 220, rewardItem: 'potion', chapter: 1,
+            offerText: '„Fanatiker zerschlagen meine Gemeinde — Blechbrüder, die niemandem was tun. Zwölf dieser ‚Reinen\' ziehen mordend durchs Ödland. Zerstreu sie, Bruder. Wer Fleisch über Stahl stellt, hat nie im Regen gestanden."',
+            activeText: '„Noch predigen die Fäuste lauter als ich. Zwölf, Bruder. Dann läuten wir wieder."',
+            completeText: '„Die Gemeinde atmet auf — die, die atmen, und die, die zischen. Gesegnet seist du, Wanderer aus Wahrheit. Nimm diesen Segen, er wirkt auch weltlich."',
+            doneText: '„Sonntags sitzen sie wieder auf der harten Bank, Mensch neben Blech. Die Bank ist hart für alle. Das verbindet."' } } ]
     },
     // Nebenstory B8 „Der Garten aus Rost" — die Kaktus-Wächterin Agata Dorn an der Smog-Linie.
     garten: {
