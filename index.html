@@ -388,7 +388,17 @@
             offerText: '„Ölfresser-Ratten in den Leitungen unter der Stadt. Sie saufen Lampenöl und nagen Balken an — dünnen Sie den Bestand aus, betrachten Sie es als Präventivmedizin. Fünf Stück."',
             activeText: '„Es quiekt noch, ich höre es bis hierher. Bildlich gesprochen. Bleiben Sie dran."',
             completeText: '„Still jetzt. Gut. Hören Sie zu: In der alten Mine im Osten geht etwas um — größer als ein paar Ratten. Sag Mabel Bescheid, sie soll dich hinschicken."',
-            doneText: '„Geh zu Mabel. Und lassen Sie sich bei Gelegenheit anschauen — Sie sind der gesündeste Patient meiner Laufbahn, und genau das beunruhigt mich."' } }
+            doneText: '„Geh zu Mabel. Und lassen Sie sich bei Gelegenheit anschauen — Sie sind der gesündeste Patient meiner Laufbahn, und genau das beunruhigt mich."' } },
+        { id: 'pip', name: 'Pip', short: 'Pip', tx: 16, ty: 18, color: 0xf472b6,
+          linesPre: ['Ein Waisenkind mit Zahnlücke baut dir den Weg ab. „Du bist der Blechmann, stimmt\'s?"',
+            '„Ich hab\'s den anderen gesagt: Meiner ist der einzige Engel im Territorium mit Wartungsvertrag. Ich spuck auf den Lappen, und dann wird\'s Auge geputzt — STILLHALTEN musst du dabei."'],
+          linesPost: ['„Das ist mein Engel. Der rostet nur, wenn er traurig ist. Also fütter ich ihn mit Witzen."',
+            '„Wenn ich groß bin, werd ich auch Schutzengel. Silas sagt, dafür gibt\'s keine Lehre. Ich sag: Doch. Ich bin ja grad in einer."'],
+          quest: { id: 'q_pip', title: 'Pips Schutzengel', kind: 'kill', count: 6, rewardGold: 110, rewardItem: 'potion', chapter: 1,
+            offerText: '„Am Waisenhaus lungert Gesindel rum, seit das Öl knapp wird. Die Großen tun so, als wär\'s nichts. Bist du wirklich ein Engel? Dann verjag sechs von denen. Engel waren noch nie aus Fleisch — also passt du perfekt."',
+            activeText: '„Noch nicht alle weg? Ich hab den Kleinen versprochen, dass mein Engel das regelt. Blamier mich nicht, Blechmann."',
+            completeText: '„Sechs! Ich hab mitgezählt, vom Dach aus. Hier — mein Glücks-Zahnrad. Nein, behalt\'s. Engel brauchen Ersatzteile, das weiß doch jedes Kind."',
+            doneText: '„Das ist nur der Kessel, der so zischt, hab ich den Kleinen erklärt. Ja. Sag ich ja. Ich weiß Bescheid, Blechmann. Ich sag\'s bloß nicht laut."' } }
       ]
     },
     dungeon1: {
@@ -515,7 +525,17 @@
             offerText: '„Das große Ding: 10 Dampfkerne, und wir kaufen uns aus diesem ganzen Krieg raus. Weder Rebellen noch Konzern — nur wir und der Profit."',
             activeText: '„Der Deal steht noch aus. Bring die Kerne."',
             completeText: '„Reich, frei und keiner Fahne verpflichtet. So macht man das, Partner."',
-            doneText: '„Rustwater gehört jetzt denen, die zahlen können. Uns."' } ] } ]
+            doneText: '„Rustwater gehört jetzt denen, die zahlen können. Uns."' } ] },
+        { id: 'vesper', name: 'Vesper Kane', short: 'Vesper', tx: 6, ty: 13, color: 0xf87171,
+          linesPre: ['Eine Kopfgeldjägerin lädt einen Doppellauf, ohne aufzusehen. „Blechmann. Munition kaufen?"',
+            '„Hinter dir wird\'s nie leise bleiben — dafür kenn ich die Welt zu gut. Meine Liste ist lang. Deine wird länger."'],
+          linesPost: ['„Meine Liste ist kürzer geworden, seit du hier bist. Schlecht fürs Geschäft. Gut für alles andere."',
+            '„Ich jag keine Kopien. Ich jag Originale. Du bist so eins — merk dir das."'],
+          quest: { id: 'q_vesper', title: 'Der zweite Lauf', kind: 'kill', count: 15, rewardGold: 320, rewardItem: 'zahnrad', chapter: 1,
+            offerText: '„Ein Wettstreit, Blechmann. Der „Schakal" und seine Bande machen die Handelswege unsicher — fünfzehn Köpfe. Wer mehr räumt, hat den längeren Lauf. Ich geb dir Vorsprung. Ich brauch keinen."',
+            activeText: '„Fünfzehn, hab ich gesagt. Ich zähl mit — und ich lieg vorn. Beweg dich, sonst nehm ich dir die letzten weg."',
+            completeText: '„Fünfzehn. Sauber. Verdammt sauber sogar. Behalt das Zahnrad — von der ersten Flinte, die ich je hatte. Ich häng nicht an Dingen. Nur an Namen, die ich nicht vergesse."',
+            doneText: '„Der Schakal-Zettel hängt wieder — Nachahmer. Ich lass ihn dir übrig. Wir jagen jetzt nebeneinander, Blechmann. Nicht gegeneinander. Kleiner Unterschied. Großer."' } } ]
     },
     // Nebenstory B8 „Der Garten aus Rost" — die Kaktus-Wächterin Agata Dorn an der Smog-Linie.
     garten: {
