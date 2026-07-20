@@ -928,6 +928,25 @@ zufälligen NPC), **hero_idle** (Held-Monolog in menschenleerer Wüste), **hero_
 Aggro, blau=mechanisch / rot=biologisch). Rein diegetisch, kein UI-Block; bei offenem Dialog/Reveal
 pausiert. Erweiterbar durch Anhängen an die Pools — Quelle bleibt die Bibel.
 
+### 7.5.8 Spielbare Nebenstories (Story-Bibel Teil B → NPCs & Quests)
+Alle acht Nebenstory-Bögen aus `docs/STORY_BIBLE.md` sind als NPCs mit vollem Quest-Zyklus
+(offer → active → complete → done, chapter 1 = jederzeit verfügbar) im Spiel:
+
+| Bibel | NPC | Ort | Quest (`id`) | Typ | Belohnung |
+|---|---|---|---|---|---|
+| B1 Uhrwerk-Herz | Thorn, der Uhrmacher | Rustwater | `q_uhrwerk` | sammle 8 Zahnrad | 200 💰 + 🍶 |
+| B2 Witwe & Automat | Corah, die Witwe | Fort Freedom | `q_corah` | sammle 10 Schrott | 130 💰 + 🍶 |
+| B3 Der zweite Lauf | Vesper Kane (Rivalin) | Rogue's Landing | `q_vesper` | 15 Kills | 320 💰 + ⚙️ |
+| B4 Kirche der Fleischwerdung | Prediger Habakuk | Rogue's Landing | `q_habakuk` | 12 Kills | 220 💰 + 🍶 |
+| B5 Blinder Projektionist | Lomax | Rustwater | `q_lomax` | 8 Kills | 150 💰 + ⚙️ |
+| B6 Schutzengel | Pip (Waisenkind) | Rustwater | `q_pip` | 6 Kills | 110 💰 + 🍶 |
+| B7 Dolores' letzte Trommel | Sable, alter Bergmann | Fort Freedom | `q_dolores` | 18 Kills | 400 💰 + ♨️ |
+| B8 Garten aus Rost | Agata Dorn | eigene Karte `garten` (🌵-Portal SW-Wüste) | `q_garden` | 12 Kills | 400 💰 + ♨️ |
+
+Dialoge tragen die Figuren-Voice und Signatur-Zeilen der Bibel (z. B. Pips „Ja. Sag ich ja.",
+Vespers „Nicht gegeneinander. Kleiner Unterschied. Großer.", Habakuks „nicht ertragen — tragen").
+B8 hat eine eigene Smog-Linien-Karte mit dem überwachsenen PSALM-Chassis „der Alte".
+
 ## 7.6 Werkstatt-Modifikationen
 Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. Namen als
 `[vor Reveal, nach Reveal]`:
