@@ -992,6 +992,12 @@ Stufe, Perks, Gold und Stash bleiben**, die Story setzt zurück (`currentChapter
 steigt, `mapHpMul` skaliert alle Gegner um `+60 % pro NG+`. Der HUD-Kartenname zeigt „🔄 NG+n".
 Persistiert (`ngPlus`, `gameWon`).
 
+### 7.5.15 Nebengebiet: Kessel-Friedhof
+Über ein ⚙️-Portal in der Ostwüste erreichbar (in Silas' Dialog erwähnter Schrottplatz): eine
+24×24-Karte voller ausgeschlachteter Chassis, Schrott-Caches und post-Reveal-Gegner (inkl.
+Kessel-Kläffer). Bewacht vom benannten Superboss **Schrott-Golem** (`spawnSuperBoss` mit
+optionalem `name`). Reine Farm-/Erkundungsdestination mit epischer Beute beim Golem-Sieg.
+
 ### 7.5.14 Pause-/Menü-Overlay (`openPause`, ⏸ / ESC / P)
 Menü-Rückgrat und Discovery-Hub: ⏸-Knopf (HUD) bzw. Taste ESC/P öffnet ein Overlay mit
 Kampagnen-Status und Knöpfen **Fortsetzen · 📜 Auftragsbuch · 📖 Codex · Ton an/aus · 🏠 Zum

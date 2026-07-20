@@ -406,7 +406,8 @@
         { tx: 14, ty: 30, to: 'fort_freedom', spawn: { c: 9, r: 3 }, short: 'Fort Freedom', label: '🏴  Fort Freedom', mini: 0x9a3b2f },
         { tx: 64, ty: 20, to: 'sektor01', spawn: { c: 9, r: 3 }, short: 'Sektor 01', label: '🏭  Sektor 01', mini: 0x60a5fa },
         { tx: 40, ty: 66, to: 'rogues_landing', spawn: { c: 9, r: 3 }, short: "Rogue's Landing", label: "🎲  Rogue's Landing", mini: 0xeab308 },
-        { tx: 8, ty: 72, to: 'garten', spawn: { c: 11, r: 20 }, short: 'Garten aus Rost', label: '🌵  Garten aus Rost', mini: 0x65a30d }
+        { tx: 8, ty: 72, to: 'garten', spawn: { c: 11, r: 20 }, short: 'Garten aus Rost', label: '🌵  Garten aus Rost', mini: 0x65a30d },
+        { tx: 52, ty: 28, to: 'kessel_friedhof', spawn: { c: 12, r: 2 }, short: 'Kessel-Friedhof', label: '⚙️  Kessel-Friedhof', mini: 0x8a6d3b }
       ],
       stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: [],
       caches: [ { tx: 45, ty: 40, count: 4, tier: 'rare' } ]   // Kessel-Friedhof: gebündelte Beute
@@ -704,6 +705,16 @@
       stations: [],
       decor: [ { tx: 10, ty: 6, w: 70, h: 46, color: 0x241a12, label: 'DIREKTORAT' } ],
       vane: { tx: 10, ty: 8 }
+    },
+    // Nebengebiet: der Kessel-Friedhof — Schrottplatz ausgeschlachteter Chassis, bewacht vom Schrott-Golem.
+    kessel_friedhof: {
+      name: 'Kessel-Friedhof', cols: 24, rows: 24, enemies: true, minimap: 'small', depth: 2,
+      floorA: 0x4a4038, floorB: 0x3d342c, grid: 0x2a231d, mini: 0x6b5a48, bg: 0x14100c,
+      portals: [ { tx: 12, ty: 0, to: 'overworld', spawn: { c: 52, r: 30 }, short: 'Raus', label: '🚪  Wüste', mini: 0x38bdf8 } ],
+      stations: [],
+      decor: [ { tx: 12, ty: 12, w: 60, h: 42, color: 0x2f271f, label: 'KESSELWRACK' }, { tx: 5, ty: 6, w: 40, h: 28, color: 0x38302a, label: 'SCHROTT' }, { tx: 18, ty: 17, w: 40, h: 28, color: 0x38302a, label: 'SCHROTT' } ],
+      caches: [ { tx: 4, ty: 20, count: 4, tier: 'rare' }, { tx: 20, ty: 4, count: 3, tier: 'rare' } ], elites: 2,
+      superboss: { tx: 12, ty: 12, name: 'Schrott-Golem' }
     }
   };
   const STATION_INDEX = {};
@@ -1277,7 +1288,7 @@
     if (m.streamed) streamChunks(9);   // sichtbaren Bereich (radius 1) sofort, Rest folgt vorausschauend
     if (m.enemies) scatterEnemies(m);
     scatterChests(m);
-    if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth);
+    if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth, m.superboss.name);
     if (m.vane) spawnVane(m.vane.tx, m.vane.ty);   // Finale-Arena: Direktor Vane
     if (abyss && state.abyssDepth % 3 === 0) spawnSuperBoss(13, 13, state.abyssDepth);   // alle 3 Ebenen ein Titan
     if (abyss) sceneRef.time.delayedCall(700, abyssDepthBark);   // Tiefen-Meilenstein-Ausruf
@@ -2580,9 +2591,9 @@
     return e;
   }
   // Dungeon-Superboss: wartet in der tiefsten Ebene; skaliert mit der Tiefe (Ebene 3 → 6×).
-  function spawnSuperBoss(tx, ty, depth) {
+  function spawnSuperBoss(tx, ty, depth, name) {
     const w = tileToWorld(tx, ty), mult = SUPERBOSS_MULT + (Math.max(1, depth || 1) - 1);   // Ebene3: 4+2 = 6×
-    const e = addEnemy(w.x, w.y, { r: BOSS_R + 12, barW: 74, hp: BOSS_HP * mult, color: 0x7f1d1d, stroke: 0x2a0505, contact: Math.round(BOSS_CONTACT * 1.6), speed: BOSS_SPEED - 6, isBoss: true, isSuperBoss: true, name: 'Minen-Titan', gold: BOSS_GOLD * mult, armor: 25, cls: 'MECHANICAL', sub: 'goliath', frontImmune: true });
+    const e = addEnemy(w.x, w.y, { r: BOSS_R + 12, barW: 74, hp: BOSS_HP * mult, color: 0x7f1d1d, stroke: 0x2a0505, contact: Math.round(BOSS_CONTACT * 1.6), speed: BOSS_SPEED - 6, isBoss: true, isSuperBoss: true, name: name || 'Minen-Titan', gold: BOSS_GOLD * mult, armor: 25, cls: 'MECHANICAL', sub: 'goliath', frontImmune: true });
     state.boss = e; setBossBar(e);
   }
   // Finale: Direktor Cornelius Vane — die erste geglückte Seelen-Übertragung, Gesicht aus Wachs.
