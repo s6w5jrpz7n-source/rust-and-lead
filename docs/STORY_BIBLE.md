@@ -985,3 +985,17 @@ Stimmalter: neun (Casting: junge erwachsene Sprecherin mit tragfähiger Kinderst
 Damit die Herkunft des Protagonisten über die *gesamte* (lange) Spielzeit als roter Faden trägt — nicht nur in den Kinoszenen —, lassen Konzern-/Mechanik-Gegner selten **Messing-Erinnerungswalzen** fallen (`MEMORIES` in `index.html`; ~3 % bei normalen mechanischen Gegnern, 50 % bei mechanischen Bossen). Jeder Fund enthüllt das nächste ungesehene Fragment einer geordneten 16-teiligen Kette und legt es im **Codex → Erinnerungen** ab. So zahlt jeder Kampf und jede Grind-Session aufs Story-Rückgrat ein und enthüllt Jeremiah Hales Vergangenheit Stück für Stück — vom Alltag mit Liv/Sara/Tom über den Stolleneinsturz und Vanes Angebot bis zur Aktivierung als Einheit 13 und Providence Cut. Erfolg **„Jeremiah Hale"** bei Vollsammlung.
 
 Zusätzlich zurück ins Spiel geholte **Backbone-Haken** in den Nebenquests: Vesper („Providence Cut. Hast du's gewusst?"), Thorn (sah den Helden am Grab von Providence Cut trauern), Lomax (erblindete beim Massaker; das Letzte, was er sah, war Einheit 13), Agata (der „Alte" im Garten ist PSALM-Einheit 4). Plus Faden-Auftaucher-Barks (`hero_memory`) und tiefen-nahe Abstieg-Zeilen.
+
+### Warum tragen die Gegner seine Erinnerung? (Drop-Logik)
+
+Es ist kein Zufall, dass ausgerechnet Konzernmaschinen Splitter seines Gedächtnisses tragen. Der Konzern hat Jeremiahs Erinnerung nie gelöscht — ein gelöschtes Backup ist ein verlorenes Werkzeug. Er hat sie **zerstückelt und als verschlüsselte Ballast-Steuerwalzen über sein ganzes Maschinennetz verteilt**: Jedes Konstrukt läuft auf einer Messingwalze, und in manchen steckt ein Fragment von *ihm* — ein Sicherungsband, das nur das Direktorat je hätte zusammensetzen sollen. Wer die Maschinen des Konzerns zerschlägt, birgt die Splitter. Jeremiah setzt sich buchstäblich aus der Hardware seines Feindes wieder zusammen. (Codex-Eintrag *„Warum tragen sie meine Erinnerung?"*, erster Fund.)
+
+### Die Familiensuche — Providence Cut (im Code umgesetzt)
+
+Zweite Stufe des roten Fadens, exakt in der vom Spieler gewünschten Reihenfolge: **erst die Suche nach sich selbst (die Walzen), dann die Suche nach der Familie.** Nach dem Erwachen öffnet sich in der Wüste ein bis dahin verschlossenes Portal (`🔒`, gesperrt bis `isRevealed`) zur **verbrannten Ruine seines alten Weilers Providence Cut**. Läuft man an dem, was einmal sein Haus war, vorbei, findet man drei stille Erinnerungspunkte:
+
+- **Der Türrahmen** — auf Hüfthöhe die Messerkerben, mit denen er Saras Größe maß. „Hier warst du ein Vater. Der Nagel in deiner Hand hat kein Werkzeug gebaut. Er hat ein Kind gemessen."
+- **Das Foto** — ein halb geschmolzener Kinetoskop-Streifen auf dem Sims: Liv, die eine Terz zu hoch lacht; Tom mit dem Ohr an einer Spielzeugschiene; Sara auf den Schultern eines Mannes aus Fleisch, dessen Haltung er kennt und dessen Gesicht er nicht mehr kennt.
+- **Die drei Gräber** — namenlos von den Nachbarn gerichtet. Gestuft: Ist er noch nicht *ganz* (Walzen unvollständig), kniet er mit leeren Händen und muss erst weitersuchen. Trägt er alle sechzehn Splitter bei sich, legt er sie in den Sand — „Eine für Liv. Eine für Tom. Eine für Sara. Und den Rest für den Mann, der es nicht verhindern konnte." — und begräbt damit sich selbst. „Ich bin vor den Lampen zurück. Vierzig Jahre zu spät. Aber du bist da."
+
+Das Begräbnis schaltet Codex *„Heimkehr nach Providence Cut"* und den Erfolg **„Heimkehr"** frei. So schließt sich der Bogen: von den ersten fremden Stimmen im Konzernblech bis zur stillen Ruhe an den drei Steinen.

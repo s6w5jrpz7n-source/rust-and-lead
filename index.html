@@ -334,7 +334,10 @@
     { id: 'end_rebels', title: 'Ende: Der Morgen gehört niemandem', body: 'Das Eiserne Herz steht still. Gideon verbrennt die Schuldbücher. „Kein neuer Direktor. Kein neuer Thron." Und in Rustwater steht am Tresen eine Dose Öl — aufs Haus, wie immer.' },
     { id: 'end_corp', title: 'Ende: Das geölte Getriebe', body: 'Quentin lässt Vanes Stuhl hinaustragen, beendet das PSALM-Programm, versiegelt das Archiv. „Sie waren der Letzte. Und der Beste." Die Züge fahren wieder pünktlich.' },
     { id: 'end_smugglers', title: 'Ende: Der letzte Deal', body: 'Slick hat in der Stunde des Chaos das ganze Territorium aufgekauft — und schenkt dir Providence Cut. „Nichts. Der ging aufs Haus. — Sag’s keinem."' },
-    { id: 'ngplus', title: 'Der ewige Kreislauf', body: 'Du hast das Territorium einmal befreit — und beginnst von Neuem, härter als zuvor. Deine Kraft bleibt, die Wüste wird zäher. Vielleicht wählst du diesmal eine andere Fahne. Vielleicht keine.' }
+    { id: 'ngplus', title: 'Der ewige Kreislauf', body: 'Du hast das Territorium einmal befreit — und beginnst von Neuem, härter als zuvor. Deine Kraft bleibt, die Wüste wird zäher. Vielleicht wählst du diesmal eine andere Fahne. Vielleicht keine.' },
+    { id: 'steuerwalzen', title: 'Warum tragen sie meine Erinnerung?', body: 'Der Konzern hat dein Gedächtnis nicht gelöscht — er hat es zerstückelt und als verschlüsselte Ballast-Steuerwalzen über sein ganzes Maschinennetz verteilt. Jedes Konstrukt läuft auf einer solchen Messingwalze; in manchen steckt ein Splitter von DIR — ein Backup, das nur das Direktorat je hätte zusammensetzen sollen. Zerschlägst du ihre Maschinen, birgst du die Splitter. Du setzt dich aus der Hardware deines Feindes wieder zusammen.' },
+    { id: 'familie', title: 'Die Familie Hale', body: 'Liv, seine Frau, die eine Terz zu hoch lachte. Tom, der Junge, der Züge an der Schiene hörte, bevor man sie sah. Sara, deren Größe er in den Türrahmen kerbte. Sie standen an Vanes Trasse, als der Konzern Providence Cut räumte — und Einheit 13 rollte hindurch. Jeremiah Hale hat sie nicht beschützt. Jeremiah Hale war die Waffe.' },
+    { id: 'heimkehr', title: 'Heimkehr nach Providence Cut', body: 'Sechzehn Messingwalzen, jede ein Splitter seiner selbst — geborgen aus dem Blech des Konzerns, heimgebracht in die Ruine, die einmal ein Zuhause war. Unter drei Steinen liegt jetzt beieinander, was der Konzern zerstückelt hat. Kein Direktorat setzt Jeremiah Hale mehr zusammen. Er hat sich selbst begraben — und damit endlich Ruhe gefunden.' }
   ];
   const CODEX_BY_ID = {}; CODEX.forEach(c => CODEX_BY_ID[c.id] = c);
   // Erinnerungs-Walzen: Messingwalzen aus Konzern-Gegnern spielen Fragmente aus Jeremiahs Vergangenheit ab.
@@ -361,11 +364,90 @@
   function recoverMemory() {
     if (state.memoriesFound >= MEMORIES.length) return;
     const m = MEMORIES[state.memoriesFound]; state.memoriesFound++;
+    if (state.memoriesFound === 1) { toast('🎞 In diesem Konzern-Blech steckte eine Ballast-Steuerwalze — und darauf ein Splitter von DIR.'); codexUnlock('steuerwalzen'); }
     save();
-    toast('📽 Erinnerungswalze geborgen: „' + m.title + '"');
+    toast('🎞 Steuerwalze geborgen: Erinnerung „' + m.title + '"');
     if (player) sayBark(player.x, player.y - 24, pickBark(MEMORY_BARKS), '#e7d9bf');
     if (typeof updateLogBadge === 'function') updateLogBadge();
     checkAchievements();
+  }
+  // Familiensuche (Providence Cut): stille Erinnerungspunkte in Hales Ruine. Erst sich selbst finden, dann die Familie heimbringen.
+  const FLASHBACKS = {
+    doorframe: { color: '#e7d9bf', lines: [
+      'Der Türrahmen steht noch — verkohlt, aber aufrecht. Auf Hüfthöhe: Kerben im Holz, mit dem Messer gezogen.',
+      '„SARA — 4" … „SARA — 5" … und darüber, frisch verkohlt, eine Kerbe, die du nie gemessen hast.',
+      'Deine Stahlfinger fahren die letzte Kerbe nach. Damals war das Holz warm von der Sonne. Jetzt ist es kalt — kalt wie du.',
+      'Hier warst du ein Vater. Der Nagel in deiner Hand hat kein Werkzeug gebaut. Er hat ein Kind gemessen.'
+    ] },
+    photo: { color: '#f0c078', lines: [
+      'Auf dem verrußten Sims liegt ein Kinetoskop-Streifen, halb geschmolzen. Du hältst ihn gegen das Wüstenlicht.',
+      'Vier Bilder, immer dieselben: eine Frau, die eine Terz zu hoch lacht. Ein Junge, das Ohr an einer Spielzeugschiene. Ein Mädchen auf Schultern.',
+      'Die Schultern gehören einem Mann aus Fleisch — breit, sonnenverbrannt, lebendig. Du kennst die Haltung. Du kennst das Gesicht nicht mehr.',
+      'Liv. Tom. Sara. Und Jeremiah Hale, der einmal du war. Du steckst den Streifen dorthin, wo dein Herz nicht mehr schlägt.'
+    ] }
+  };
+  function playMemorial(id) {
+    if (state.flashbackPlaying) return;
+    if (id === 'graves') { playGraves(); return; }
+    const fb = FLASHBACKS[id]; if (!fb) return;
+    const first = !state.memorialsSeen.has(id);
+    state.memorialsSeen.add(id);
+    state.flashbackPlaying = true; hideContext();
+    sceneRef.cameras.main.flash(500, 40, 30, 20);
+    state.flashbackSeq = { lines: fb.lines, color: fb.color, i: 0, onClose: () => { if (first) { codexUnlock('familie'); save(); } } };
+    renderFlashback();
+  }
+  function playGraves() {
+    const complete = state.memoriesFound >= MEMORIES.length;
+    let lines, onClose = null, color = '#cbd5e1';
+    if (state.familyBuried) {
+      lines = [
+        'Drei Steine, frisch gerichtet. Auf jedem eine Messingwalze, halb im Sand: für Liv, für Tom, für Sara.',
+        'Der Kessel in deiner Brust tickt ruhig. Zum ersten Mal, seit man dich aufgeweckt hat, ist nichts mehr zu bergen.',
+        'Du bleibst eine Weile. Dann drehst du dich zur Wüste. Irgendwo läuft noch ein Direktor frei herum.'
+      ];
+    } else if (complete) {
+      lines = [
+        'Drei Hügel, namenlos — die Nachbarn haben begraben, was der Konzern zurückließ. Du weißt jetzt, wer hier liegt.',
+        'Sechzehn Walzen tickst du in deiner Handfläche. Splitter eines Mannes, den sie eingeschmolzen und über die halbe Wüste verstreut haben.',
+        'Du legst sie in den Sand. Eine für Liv. Eine für Tom. Eine für Sara. Und den Rest für den Mann, der es nicht verhindern konnte.',
+        '„Ich bin vor den Lampen zurück", sagst du. Vierzig Jahre zu spät. Aber du bist da.'
+      ];
+      onClose = () => {
+        state.familyBuried = true;
+        codexUnlock('familie'); codexUnlock('heimkehr');
+        checkAchievements(); save();
+        toast('🪦 Du hast dich selbst zur Ruhe gebettet. Providence Cut ist stumm geworden.');
+      };
+    } else {
+      lines = [
+        'Drei Hügel, namenlos. Die Nachbarn haben begraben, was der Konzern zurückließ — sie wussten nicht, wen.',
+        'Du kniest dich hin, aber deine Hände sind leer. Was hier liegt, ist noch nicht ganz. Du bist es auch nicht.',
+        'Erst musst du dich finden — Splitter für Splitter, aus dem Blech deines Feindes. ' + state.memoriesFound + ' von ' + MEMORIES.length + ' Walzen trägst du bei dir.',
+        'Komm wieder, wenn du ganz bist. Dann kannst du sie heimbringen.'
+      ];
+    }
+    state.flashbackPlaying = true; hideContext();
+    sceneRef.cameras.main.flash(500, 30, 24, 18);
+    state.flashbackSeq = { lines, color, i: 0, onClose };
+    renderFlashback();
+  }
+  function renderFlashback() {
+    const s = state.flashbackSeq; if (!s) return;
+    revealText.setColor(s.color).setText(s.lines[s.i]);
+    revealHint.setText(s.i >= s.lines.length - 1 ? '▶ zurück' : '▶ weiter');
+    [revealBg, revealText, revealHint].forEach(o => o.setVisible(true));
+    layoutUI(sceneRef.scale.gameSize);
+  }
+  function advanceFlashback() {
+    const s = state.flashbackSeq; if (!s) { closeFlashback(); return; }
+    if (s.i >= s.lines.length - 1) { const cb = s.onClose; closeFlashback(); if (cb) cb(); return; }
+    s.i++; renderFlashback();
+  }
+  function closeFlashback() {
+    state.flashbackPlaying = false; state.flashbackSeq = null;
+    revealText.setColor('#ffb37a');   // Reveal-Standardfarbe wiederherstellen
+    [revealBg, revealText, revealHint].forEach(o => o.setVisible(false));
   }
   // Erfolge — Spielziele, abgeleitet aus Fortschritt & Statistik.
   const ACHIEVEMENTS = [
@@ -381,7 +463,8 @@
     { id: 'ngplus3', title: 'Der ewige Kreislauf', desc: 'Erreiche New Game+ 3.', check: () => (state.ngPlus || 0) >= 3 },
     { id: 'abyss10', title: 'Tiefgänger', desc: 'Erreiche Ebene 10 im Abstieg.', check: () => (state.abyssBest || 0) >= 10 },
     { id: 'lorekeeper', title: 'Chronist', desc: 'Vervollständige den Codex.', check: () => state.codex.size >= CODEX.length },
-    { id: 'rememberer', title: 'Jeremiah Hale', desc: 'Birg alle 16 Erinnerungswalzen — kenne dich ganz.', check: () => state.memoriesFound >= MEMORIES.length }
+    { id: 'rememberer', title: 'Jeremiah Hale', desc: 'Birg alle 16 Erinnerungswalzen — kenne dich ganz.', check: () => state.memoriesFound >= MEMORIES.length },
+    { id: 'homecoming', title: 'Heimkehr', desc: 'Bring die Walzen nach Providence Cut und bette deine Familie zur Ruhe.', check: () => state.familyBuried }
   ];
   function checkAchievements(silent) {
     for (const a of ACHIEVEMENTS) {
@@ -476,7 +559,8 @@
         { tx: 64, ty: 20, to: 'sektor01', spawn: { c: 9, r: 3 }, short: 'Sektor 01', label: '🏭  Sektor 01', mini: 0x60a5fa },
         { tx: 40, ty: 66, to: 'rogues_landing', spawn: { c: 9, r: 3 }, short: "Rogue's Landing", label: "🎲  Rogue's Landing", mini: 0xeab308 },
         { tx: 8, ty: 72, to: 'garten', spawn: { c: 11, r: 20 }, short: 'Garten aus Rost', label: '🌵  Garten aus Rost', mini: 0x65a30d },
-        { tx: 52, ty: 28, to: 'kessel_friedhof', spawn: { c: 12, r: 2 }, short: 'Kessel-Friedhof', label: '⚙️  Kessel-Friedhof', mini: 0x8a6d3b }
+        { tx: 52, ty: 28, to: 'kessel_friedhof', spawn: { c: 12, r: 2 }, short: 'Kessel-Friedhof', label: '⚙️  Kessel-Friedhof', mini: 0x8a6d3b },
+        { tx: 30, ty: 8, to: 'providence_cut', spawn: { c: 10, r: 2 }, short: 'Providence Cut', label: '🏚️  Providence Cut', mini: 0x7c6a5a, revealOnly: true }
       ],
       stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: [],
       caches: [ { tx: 45, ty: 40, count: 4, tier: 'rare' } ]   // Kessel-Friedhof: gebündelte Beute
@@ -786,6 +870,24 @@
       decor: [ { tx: 12, ty: 12, w: 60, h: 42, color: 0x2f271f, label: 'KESSELWRACK' }, { tx: 5, ty: 6, w: 40, h: 28, color: 0x38302a, label: 'SCHROTT' }, { tx: 18, ty: 17, w: 40, h: 28, color: 0x38302a, label: 'SCHROTT' } ],
       caches: [ { tx: 4, ty: 20, count: 4, tier: 'rare' }, { tx: 20, ty: 4, count: 3, tier: 'rare' } ], elites: 2,
       superboss: { tx: 12, ty: 12, name: 'Schrott-Golem' }
+    },
+    // Familiensuche: der verbrannte Weiler Providence Cut mit Hales Haus und den drei Gräbern (erst nach dem Erwachen).
+    providence_cut: {
+      name: 'Providence Cut — Ruine', cols: 20, rows: 20, enemies: false, walled: true, minimap: 'full',
+      floorA: 0x4a4340, floorB: 0x3e3835, grid: 0x2b2622, mini: 0x5a4f48, bg: 0x0f0c0a,
+      portals: [ { tx: 10, ty: 0, to: 'overworld', spawn: { c: 30, r: 11 }, short: 'Fort', label: '🚪  Wüste', mini: 0x38bdf8 } ],
+      stations: [],
+      decor: [
+        { tx: 10, ty: 8, w: 72, h: 50, color: 0x2a211a, label: 'HALE' },
+        { tx: 4, ty: 5, w: 44, h: 30, color: 0x241d17, label: 'RUINE' },
+        { tx: 16, ty: 6, w: 44, h: 30, color: 0x241d17, label: 'RUINE' },
+        { tx: 5, ty: 15, w: 40, h: 26, color: 0x241d17, label: 'RUINE' }
+      ],
+      memorials: [
+        { id: 'doorframe', tx: 8, ty: 11, label: '🕯  Am Türrahmen erinnern' },
+        { id: 'photo', tx: 12, ty: 11, label: '🕯  Das Foto ansehen' },
+        { id: 'graves', tx: 10, ty: 16, label: '🪦  Die drei Gräber' }
+      ]
     }
   };
   const STATION_INDEX = {};
@@ -831,7 +933,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0, memoriesFound: 0,
+    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0, memoriesFound: 0, flashbackPlaying: false, flashbackSeq: null, memorialsSeen: new Set(), familyBuried: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -1232,7 +1334,7 @@
   }
   function serialize() {
     const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, ts: Date.now(), discovered: [...state.discovered], explored: ex };
+    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, memorialsSeen: [...state.memorialsSeen], familyBuried: state.familyBuried, ts: Date.now(), discovered: [...state.discovered], explored: ex };
   }
   function save() { try { localStorage.setItem(slotKey('auto'), JSON.stringify(serialize())); } catch (e) { } }   // Autospeichern -> dedizierter Auto-Slot
   function saveToManual(i) { try { localStorage.setItem(slotKey(i), JSON.stringify(serialize())); } catch (e) { } }   // manueller Snapshot
@@ -1259,6 +1361,8 @@
       state.achievements = new Set(Array.isArray(s.achievements) ? s.achievements : []);
       state.mapVisit = (s.mapVisit && typeof s.mapVisit === 'object') ? s.mapVisit : {};
       state.memoriesFound = Math.min(MEMORIES.length, s.memoriesFound || 0);
+      state.memorialsSeen = new Set(Array.isArray(s.memorialsSeen) ? s.memorialsSeen : []);
+      state.familyBuried = !!s.familyBuried;
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
@@ -1307,8 +1411,16 @@
     });
     m.portals.forEach(p => {
       const w = tileToWorld(p.tx, p.ty);
-      mapObjects.push(sceneRef.add.circle(w.x, w.y, 18, p.mini, 0.28).setStrokeStyle(3, p.mini, 0.95).setDepth(2));
-      mapObjects.push(sceneRef.add.text(w.x, w.y - 28, p.short, { fontFamily: 'system-ui', fontSize: '12px', color: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
+      const locked = p.revealOnly && !state.isRevealed;
+      mapObjects.push(sceneRef.add.circle(w.x, w.y, 18, p.mini, locked ? 0.12 : 0.28).setStrokeStyle(3, p.mini, locked ? 0.4 : 0.95).setDepth(2));
+      mapObjects.push(sceneRef.add.text(w.x, w.y - 28, locked ? '🔒 ' + p.short : p.short, { fontFamily: 'system-ui', fontSize: '12px', color: locked ? '#9ca3af' : '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(2));
+    });
+    // Erinnerungspunkte (Providence Cut): Kerzen & Gräber als stille Marker
+    (m.memorials || []).forEach(mem => {
+      const w = tileToWorld(mem.tx, mem.ty);
+      const isGrave = mem.id === 'graves';
+      mapObjects.push(sceneRef.add.circle(w.x, w.y, isGrave ? 14 : 10, isGrave ? 0x8a7f72 : 0xf59e0b, 0.3).setStrokeStyle(2, isGrave ? 0x5a5147 : 0xf59e0b, 0.85).setDepth(2));
+      mapObjects.push(sceneRef.add.text(w.x, w.y - 22, isGrave ? '🪦' : '🕯', { fontSize: '15px' }).setOrigin(0.5).setDepth(2));
     });
     m.stations.forEach(s => {
       const w = tileToWorld(s.tx, s.ty);
@@ -2261,6 +2373,7 @@
   function transitionTo(mapId, spawn) {
     if (mapId === '__abyss') { enterAbyss(1); return; }                       // Eingang aus dungeon3
     if (mapId === '__deeper') { enterAbyss((state.abyssDepth || 0) + 1); return; }   // eine Ebene tiefer
+    if (mapId === 'providence_cut' && !state.isRevealed) { toast('🏚️ Etwas an dieser Ruine lässt dich zögern. Noch nicht.'); return; }   // Familiensuche erst nach dem Erwachen
     if (state.transitioning) return;
     state.transitioning = true; hideContext();
     const keepFacing = player.facing;                    // Laufrichtung übernehmen
@@ -2327,6 +2440,7 @@
       return;
     }
     if (state.endingPlaying) { advanceEnding(); return; }   // Finale-Cutscene: höchste Priorität
+    if (state.flashbackPlaying) { advanceFlashback(); return; }  // Erinnerungs-Flashback (Familiensuche)
     if (state.revealPlaying) { advanceReveal(); return; }   // Cutscene: höchste Priorität
     if (state.dialogueOpen) {
       if (dlgBtn.visible && inRect(p, dlgBtn.x - dlgBtn.width / 2, dlgBtn.y - dlgBtn.height / 2, dlgBtn.width, dlgBtn.height)) { const a = dlgBtnAction; if (a) a(); return; }
@@ -2442,6 +2556,7 @@
     if (state.ctx.type === 'portal') { const p = state.ctx.target; transitionTo(p.to, p.spawn); }
     else if (state.ctx.type === 'station') { const d = Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)); if (d.length >= 2) openTravel(); else toast('Bahnhof entdeckt – finde weitere für Zugreisen'); }
     else if (state.ctx.type === 'chest') { openChest(state.ctx.target); }
+    else if (state.ctx.type === 'memorial') { playMemorial(state.ctx.target.id); }
     else if (state.ctx.type === 'shop') {
       const id = state.ctx.target.id;
       if (id === 'store') openStore(); else if (id === 'werkstatt') openWorkshop(); else if (id === 'stash') openStash(); else if (BUILDINGS[id]) openTycoon();
@@ -3429,7 +3544,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.titleOpen || state.pauseOpen || state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.codexOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying || state.endingPlaying;
+    const uiBlocked = state.titleOpen || state.pauseOpen || state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.codexOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying || state.endingPlaying || state.flashbackPlaying;
 
     // Bewegung
     let vx = 0, vy = 0;
@@ -3568,6 +3683,7 @@
     const m = MAPS[state.map];
     // Tore: einfach reinlaufen -> automatischer Übergang
     for (const p of m.portals) {
+      if (p.revealOnly && !state.isRevealed) continue;   // Providence Cut bleibt vor dem Erwachen verschlossen
       const w = tileToWorld(p.tx, p.ty);
       if (Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y) < GATE_ENTER_DIST && sceneRef.time.now > state.portalGraceUntil) { transitionTo(p.to, p.spawn); return; }
     }
@@ -3579,10 +3695,12 @@
     }
     for (const sh of (m.shops || [])) { const w = tileToWorld(sh.tx, sh.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST + 40 && d < bestD) { best = sh; bestType = 'shop'; bestD = d; } }
     for (const ch of chests) { const d = Phaser.Math.Distance.Between(player.x, player.y, ch.c.x, ch.c.y); if (d < CHEST_INTERACT && d < bestD) { best = ch; bestType = 'chest'; bestD = d; } }
+    for (const mem of (m.memorials || [])) { const w = tileToWorld(mem.tx, mem.ty), d = Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y); if (d < INTERACT_DIST + 20 && d < bestD) { best = mem; bestType = 'memorial'; bestD = d; } }
     if (best) {
       state.ctx = { type: bestType, target: best };
       if (bestType === 'station') showContext(Object.keys(STATION_INDEX).filter(id => state.discovered.has(id)).length >= 2 ? '🚂  Zugreise' : '🚂  ' + best.name);
       else if (bestType === 'chest') showContext('📦  Kiste öffnen');
+      else if (bestType === 'memorial') showContext(best.id === 'graves' && state.memoriesFound >= MEMORIES.length && !state.familyBuried ? '🪦  Die Walzen begraben' : best.label);
       else if (best.id === 'store') showContext('🛒  Store — kaufen & verkaufen');
       else if (best.id === 'stash') showContext('📦  Truhe — Loot einlagern (' + gridUsedCells() + '/' + invLayout().cap + ' Plätze)');
       else if (best.id === 'werkstatt') showContext(state.isRevealed ? '🔧  Werkstatt — Modifikationen' : '🔧  Werkstatt — Waffen-Tuning');

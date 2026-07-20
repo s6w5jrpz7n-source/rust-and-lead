@@ -1073,6 +1073,26 @@ Bosse); jeder Fund enthüllt das nächste ungesehene Fragment und legt es im Cod
 verzahnt Grind mit dem Story-Rückgrat. Ergänzt durch Backbone-Haken in den Nebenquests (Vesper/
 Thorn/Lomax/Agata mit Providence-Cut/PSALM-Bezug) und `hero_memory`-Barks.
 
+**Drop-Logik (In-World-Begründung):** Der Konzern hat Jeremiahs Gedächtnis nicht gelöscht, sondern
+als verschlüsselte **Ballast-Steuerwalzen** über sein ganzes Maschinennetz verteilt — jedes
+Konstrukt läuft auf einer solchen Messingwalze, manche tragen einen Splitter von IHM (ein Backup,
+das nur das Direktorat je zusammensetzen sollte). Zerschlägst du ihre Maschinen, birgst du die
+Splitter — du setzt dich aus der Hardware deines Feindes zusammen. Codex-Eintrag `steuerwalzen`
+schaltet beim ersten Fund frei.
+
+### 7.5.12b Familiensuche — Providence Cut (`MAPS.providence_cut`)
+Zweite Stufe des roten Fadens: **erst sich selbst finden (Walzen), dann die Familie heimbringen.**
+Nach dem Reveal öffnet sich in der Wüste ein Portal (`revealOnly: true`, vorher als `🔒` markiert
+und in `transitionTo` gesperrt) zur verbrannten Ruine von Hales Weiler. Die Karte enthält drei
+stille **Erinnerungspunkte** (`memorials`): **Türrahmen** (Saras Größenkerben), **Foto**
+(Kinetoskop-Streifen der Familie) und die **drei Gräber**. Nähe → Kontext-Aktion (`ctx.type
+'memorial'`) → `playMemorial(id)` spielt einen Flashback-Overlay (`playFlashback`/`renderFlashback`/
+`advanceFlashback`, wiederverwendet die Reveal-Overlay-Objekte, eigene Pointer-Priorität, Teil von
+`uiBlocked`). Türrahmen/Foto schalten Codex `familie` frei. Die Gräber sind gestuft: unvollständig →
+Flashback verweist zurück auf die Walzensuche; bei 16/16 Walzen → **Begräbnis** (`familyBuried`,
+Codex `heimkehr`, Erfolg **„Heimkehr"**), danach ein ruhiger Abschluss-Flashback. `memorialsSeen`
+(Set) und `familyBuried` persistieren.
+
 ### 7.5.12 Story-Codex (`CODEX` / Taste K / 📖)
 Nachlese erlebter Szenen. Einträge (`CODEX`) schalten sich frei: Reveal/Providence bei
 `isRevealed`, Vane/NG+ bei `gameWon`, jede Nebenstory bei erledigter Quest, jedes Ende bei
