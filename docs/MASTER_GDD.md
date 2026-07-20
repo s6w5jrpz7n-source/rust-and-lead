@@ -992,6 +992,12 @@ Stufe, Perks, Gold und Stash bleiben**, die Story setzt zurück (`currentChapter
 steigt, `mapHpMul` skaliert alle Gegner um `+60 % pro NG+`. Der HUD-Kartenname zeigt „🔄 NG+n".
 Persistiert (`ngPlus`, `gameWon`).
 
+### 7.5.14 Pause-/Menü-Overlay (`openPause`, ⏸ / ESC / P)
+Menü-Rückgrat und Discovery-Hub: ⏸-Knopf (HUD) bzw. Taste ESC/P öffnet ein Overlay mit
+Kampagnen-Status und Knöpfen **Fortsetzen · 📜 Auftragsbuch · 📖 Codex · Ton an/aus · 🏠 Zum
+Titel**. `state.pauseOpen` blockt das Spiel; Codex/Auftragsbuch werden dadurch auch für neue
+Spieler auffindbar. „Zum Titel" ruft `showTitle(true)` (zurück zur Front-Door ohne Reload).
+
 ### 7.5.13 Titelbildschirm (`showTitle`)
 Beim Start lädt die Welt im Hintergrund, darüber liegt der Front-Door: Titel „RUST & LEAD",
 Tagline und — bei vorhandenem Speicherstand — eine **Kampagnen-Statuszeile** (Kapitel, Gilde,

@@ -720,6 +720,7 @@
   let qlBackdrop, qlPanel, qlTitle, qlClose, logBtn, logBadge, logBadgeText; let qlRows = []; let qlRowHits = [];
   let clBackdrop, clPanel, clTitle, clClose, codexBtn; let clRows = []; let clRowHits = [];
   let titleBg, titleName, titleSub, titleStatus; let titleBtns = [];
+  let pauseBg, pausePanel, pauseTitle, pauseStatus, pauseBtn; let pauseBtns = [];
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
@@ -748,7 +749,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false,
+    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -902,6 +903,14 @@
     titleSub = scene.add.text(0, 0, 'Ein Steampunk-Western im Staub des Territoriums', { fontFamily: 'system-ui', fontSize: '14px', color: '#cbb894', fontStyle: 'italic' }).setOrigin(0.5).setScrollFactor(0).setDepth(81).setVisible(false);
     titleStatus = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '13px', color: '#9ca684', align: 'center' }).setOrigin(0.5).setScrollFactor(0).setDepth(81).setVisible(false);
 
+    // Pause-/Menü-Overlay
+    pauseBg = scene.add.rectangle(0, 0, 10, 10, 0x000000, 0.74).setScrollFactor(0).setDepth(64).setOrigin(0, 0).setVisible(false);
+    pausePanel = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.97).setStrokeStyle(2, 0xc9a24a, 0.6).setScrollFactor(0).setDepth(65).setOrigin(0.5, 0).setVisible(false);
+    pauseTitle = scene.add.text(0, 0, '⏸  Pause', { fontFamily: 'system-ui', fontSize: '20px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(66).setVisible(false);
+    pauseStatus = scene.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '12px', color: '#9ca684', align: 'center' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(66).setVisible(false);
+    pauseBtn = scene.add.circle(0, 0, 16, 0x1f2937, 0.9).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(25);
+    pauseBtn.icon = scene.add.text(0, 0, '⏸', { fontSize: '14px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(26);
+
     // Dialog-Box (unten), versteckt
     dlgBg = scene.add.rectangle(0, 0, 10, 10, 0x11100e, 0.97).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(62).setOrigin(0.5, 1).setVisible(false);
     dlgName = scene.add.text(0, 0, '', { fontFamily: '"Courier New", monospace', fontSize: '15px', fontStyle: 'bold', color: '#fcd34d' }).setScrollFactor(0).setDepth(63).setOrigin(0, 0).setVisible(false);
@@ -938,6 +947,8 @@
     scene.input.keyboard.on('keydown-M', () => state.fullMapOpen ? closeFullMap() : openFullMap());
     scene.input.keyboard.on('keydown-J', () => state.questLogOpen ? closeQuestLog() : openQuestLog());
     scene.input.keyboard.on('keydown-K', () => state.codexOpen ? closeCodex() : openCodex());
+    scene.input.keyboard.on('keydown-ESC', () => state.pauseOpen ? closePause() : openPause());
+    scene.input.keyboard.on('keydown-P', () => state.pauseOpen ? closePause() : openPause());
     scene.input.keyboard.on('keydown-ONE', () => useAbility('spread'));
     scene.input.keyboard.on('keydown-TWO', () => useAbility('dash'));
     scene.input.keyboard.on('keydown-THREE', () => useAbility('potion'));
@@ -1498,7 +1509,7 @@
     return { ready: e.filter(x => x.ready).length, active: e.filter(x => x.st === 'active').length };
   }
   function openQuestLog() {
-    if (state.travelOpen || state.fullMapOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.codexOpen) return;
+    if (state.travelOpen || state.fullMapOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.codexOpen || state.pauseOpen) return;
     state.questLogOpen = true; hideContext();
     renderQuestLog();
   }
@@ -1586,9 +1597,49 @@
     }
   }
 
+  // ---- Pause-/Menü-Overlay -----------------------------------
+  function openPause() {
+    if (state.titleOpen || state.revealPlaying || state.endingPlaying || state.dialogueOpen) return;
+    if (state.inventoryOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.travelOpen || state.fullMapOpen || state.questLogOpen || state.codexOpen) return;
+    state.pauseOpen = true; hideContext(); renderPause();
+  }
+  function closePause() { state.pauseOpen = false; pauseBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); pauseBtns = [];[pauseBg, pausePanel, pauseTitle, pauseStatus].forEach(o => o.setVisible(false)); }
+  function renderPause() {
+    pauseBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); pauseBtns = [];
+    const size = sceneRef.scale.gameSize, pw = Math.min(300, size.width * 0.86);
+    const guildName = state.chosenGuild ? GUILDS[state.chosenGuild].name : '—';
+    const codexPct = Math.round(state.codex.size / CODEX.length * 100);
+    const defs = [
+      { label: '▶  Fortsetzen', action: 'resume', color: 0x2f6b3a },
+      { label: '📜  Auftragsbuch', action: 'quests', color: 0x3a3550 },
+      { label: '📖  Codex', action: 'codex', color: 0x3a2f1a },
+      { label: (state.muted ? '🔇' : '🔊') + '  Ton: ' + (state.muted ? 'aus' : 'an'), action: 'mute', color: 0x2a2622 },
+      { label: '🏠  Zum Titel', action: 'title', color: 0x6b2f2f }
+    ];
+    const rowH = 46, ph = 96 + defs.length * (rowH + 8);
+    const px = size.width / 2, py = Math.max(20, (size.height - ph) / 2);
+    pauseBg.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
+    pausePanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
+    pauseTitle.setPosition(px, py + 14).setVisible(true);
+    pauseStatus.setText('Kapitel ' + state.currentChapter + '  ·  ' + guildName + ((state.ngPlus || 0) > 0 ? '  ·  🔄 NG+' + state.ngPlus : '') + '\nStufe ' + state.level + '  ·  Codex ' + codexPct + '%').setPosition(px, py + 44).setVisible(true);
+    defs.forEach((d, i) => {
+      const y = py + 84 + i * (rowH + 8);
+      const rect = sceneRef.add.rectangle(px, y, pw - 32, rowH, d.color, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(66).setOrigin(0.5, 0);
+      const tx = sceneRef.add.text(px, y + rowH / 2, d.label, { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(67);
+      pauseBtns.push({ rect, tx, action: d.action });
+    });
+  }
+  function pauseClick(action) {
+    if (action === 'resume') { closePause(); return; }
+    if (action === 'quests') { closePause(); openQuestLog(); return; }
+    if (action === 'codex') { closePause(); openCodex(); return; }
+    if (action === 'mute') { state.muted = !state.muted; if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊'); if (!state.muted) sfx('coin'); save(); renderPause(); return; }
+    if (action === 'title') { closePause(); showTitle(true); return; }
+  }
+
   // ---- Story-Codex (Nachlese erlebter Szenen) ----------------
   function openCodex() {
-    if (state.travelOpen || state.fullMapOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.questLogOpen) return;
+    if (state.travelOpen || state.fullMapOpen || state.inventoryOpen || state.storeOpen || state.workshopOpen || state.questLogOpen || state.pauseOpen) return;
     codexAutoScan(true); state.codexOpen = true; state.codexView = 'list'; hideContext(); renderCodex();
   }
   function closeCodex() { state.codexOpen = false; state.codexView = null; clRows.forEach(o => o.destroy()); clRows = []; clRowHits = [];[clBackdrop, clPanel, clTitle, clClose].forEach(o => o.setVisible(false)); }
@@ -1630,7 +1681,7 @@
   }
 
   // ---- Inventar & Charakter-Ausrüstung (Paper-Doll + Drag) ---
-  function openInventory() { if (state.travelOpen || state.fullMapOpen || state.questLogOpen || state.codexOpen) return; state.inventoryOpen = true; state.shopMode = false; state.storeOpen = false; state.tutOpenedInv = true; invScroll = 0; renderInventory(); }
+  function openInventory() { if (state.travelOpen || state.fullMapOpen || state.questLogOpen || state.codexOpen || state.pauseOpen) return; state.inventoryOpen = true; state.shopMode = false; state.storeOpen = false; state.tutOpenedInv = true; invScroll = 0; renderInventory(); }
   function refreshInventory() { if (state.inventoryOpen) renderInventory(); }
   // Zentriertes Charakter-Panel: Ausrüstung + Werte links, Grid-Inventar rechts
   function invLayout() {
@@ -2015,7 +2066,8 @@
     miniTitle.setPosition(x + 6, y + 4); miniGfx.setPosition(x + 6, y + 18);
     miniCollapse.setPosition(x + P - 12, y + 9); miniExpand.setPosition(w - 24, y + 16);
 
-    if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); if (invBadge) { invBadge.setPosition(w - 16, iy - 14); invBadgeText.setPosition(w - 16, iy - 14); } if (logBtn) { logBtn.setPosition(w - 30, iy + 42); logBtn.icon.setPosition(w - 30, iy + 42); logBadge.setPosition(w - 18, iy + 42 - 12); logBadgeText.setPosition(w - 18, iy + 42 - 12); } if (codexBtn) { codexBtn.setPosition(w - 30, iy + 84); codexBtn.icon.setPosition(w - 30, iy + 84); } if (muteBtn) { muteBtn.setPosition(w - 30, iy + 126); muteBtn.icon.setPosition(w - 30, iy + 126); } }
+    if (invBtn) { const iy = 12 + P + 18 + 24; invBtn.setPosition(w - 30, iy); invBtn.icon.setPosition(w - 30, iy); if (invBadge) { invBadge.setPosition(w - 16, iy - 14); invBadgeText.setPosition(w - 16, iy - 14); } if (logBtn) { logBtn.setPosition(w - 30, iy + 42); logBtn.icon.setPosition(w - 30, iy + 42); logBadge.setPosition(w - 18, iy + 42 - 12); logBadgeText.setPosition(w - 18, iy + 42 - 12); } if (codexBtn) { codexBtn.setPosition(w - 30, iy + 84); codexBtn.icon.setPosition(w - 30, iy + 84); } if (pauseBtn) { pauseBtn.setPosition(w - 30, iy + 126); pauseBtn.icon.setPosition(w - 30, iy + 126); } if (muteBtn) { muteBtn.setPosition(w - 30, iy + 168); muteBtn.icon.setPosition(w - 30, iy + 168); } }
+    if (pauseBg && pauseBg.visible) renderPause();
     if (tutBg) { const ty = 12 + P + 66; tutBg.setPosition(w / 2, ty); tutText.setPosition(w / 2, ty); }
 
     // Dialog-Box (unten)
@@ -2116,10 +2168,16 @@
       if (clPanel && !inRect(p, clPanel.x - clPanel.width / 2, clPanel.y, clPanel.width, clPanel.height)) closeCodex();
       return;
     }
+    if (state.pauseOpen) {
+      for (const b of pauseBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y, b.rect.width, b.rect.height)) { pauseClick(b.action); return; }
+      if (pausePanel && !inRect(p, pausePanel.x - pausePanel.width / 2, pausePanel.y, pausePanel.width, pausePanel.height)) closePause();
+      return;
+    }
     if (ctxBg.visible && inRect(p, ctxBg.x - ctxBg.width / 2, ctxBg.y - ctxBg.height / 2, ctxBg.width, ctxBg.height)) { doContext(); return; }
     if (hit(invBtn, p, 24)) { openInventory(); return; }
     if (logBtn && Phaser.Math.Distance.Between(p.x, p.y, logBtn.x, logBtn.y) <= 20) { openQuestLog(); return; }
     if (codexBtn && Phaser.Math.Distance.Between(p.x, p.y, codexBtn.x, codexBtn.y) <= 20) { openCodex(); return; }
+    if (pauseBtn && Phaser.Math.Distance.Between(p.x, p.y, pauseBtn.x, pauseBtn.y) <= 20) { openPause(); return; }
     if (muteBtn && Phaser.Math.Distance.Between(p.x, p.y, muteBtn.x, muteBtn.y) <= 20) { state.muted = !state.muted; muteBtn.icon.setText(state.muted ? '🔇' : '🔊'); if (!state.muted) sfx('coin'); return; }
     if (state.miniCollapsed) { if (hit(miniExpand, p, 22)) { state.miniCollapsed = false; setMiniVisible(true); miniDirty = true; return; } }
     else {
@@ -3127,7 +3185,7 @@
   function update(time, delta) {
     if (!player) return;
     const dt = delta / 1000, now = sceneRef.time.now;
-    const uiBlocked = state.titleOpen || state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.codexOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying || state.endingPlaying;
+    const uiBlocked = state.titleOpen || state.pauseOpen || state.fullMapOpen || state.travelOpen || state.inventoryOpen || state.questLogOpen || state.codexOpen || state.storeOpen || state.workshopOpen || state.tycoonOpen || state.stashOpen || state.chestOpen || state.dialogueOpen || state.revealPlaying || state.endingPlaying;
 
     // Bewegung
     let vx = 0, vy = 0;
