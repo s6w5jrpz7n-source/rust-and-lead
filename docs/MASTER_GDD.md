@@ -779,9 +779,13 @@ Elite-Anzahl mit `repopFactor()` = `clamp((jetzt − Verlasszeit)/RESPAWN_FULL_M
 Direkt nach dem Verlassen tauchen nur ~12 % auf, nach 3 Min Echtzeit wieder alle. Erstbesuch und
 der Abstieg-Endlosmodus sind stets voll besiedelt. Verhindert das nervige Instant-Respawn beim
 kurzen Abstecher in die Stadt / zwischen Dungeon-Ebenen.
-**Speichern:** Autosave läuft jede Sekunde (`incomeTick`) plus bei Schlüsselereignissen; zusätzlich
-gibt es jetzt einen sichtbaren **💾 Speichern**-Knopf im Pause-Menü (mit Bestätigung) und Speichern
-beim „Zum Titel". `state.mapVisit` wird mitpersistiert.
+**Speichern & Slots:** Autosave läuft jede Sekunde (`incomeTick`) plus bei Schlüsselereignissen.
+Es gibt **3 Speicherslots** (`slotKey(i)`, aktiver Slot `state.slot`): Der Titelbildschirm zeigt
+pro Slot eine Reihe mit Kurz-Metadaten (`slotInfo`: Kapitel/Gilde/Stufe/NG+/✓) — Antippen lädt den
+Slot (Continue), leere Slots starten „Neues Spiel" (sauberer Reload via `rustlead_boot`-Marker),
+🗑 löscht (Zwei-Tap). Alt-Spielstände (`rustlead_save_v1`) werden einmalig nach Slot 0 migriert.
+Das Pause-Menü hat **💾 Speichern (Slot n)** und **📋 Speichern unter…** (kopiert den aktuellen
+Stand in einen wählbaren Slot und macht ihn aktiv — ideal vor Entscheidungen wie der Gildenwahl).
 
 ## 7.3 Gegner-Roster
 | Typ | Klasse | Verhalten | Panzerung | Besonderheit |
