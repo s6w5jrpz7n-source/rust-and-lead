@@ -323,6 +323,28 @@
     { id: 'ngplus', title: 'Der ewige Kreislauf', body: 'Du hast das Territorium einmal befreit — und beginnst von Neuem, härter als zuvor. Deine Kraft bleibt, die Wüste wird zäher. Vielleicht wählst du diesmal eine andere Fahne. Vielleicht keine.' }
   ];
   const CODEX_BY_ID = {}; CODEX.forEach(c => CODEX_BY_ID[c.id] = c);
+  // Erfolge — Spielziele, abgeleitet aus Fortschritt & Statistik.
+  const ACHIEVEMENTS = [
+    { id: 'first_blood', title: 'Erster Staub', desc: 'Besiege deinen ersten Gegner.', check: () => kills >= 1 },
+    { id: 'hunter', title: 'Kopfgeldjäger', desc: 'Besiege 100 Gegner.', check: () => kills >= 100 },
+    { id: 'slayer', title: 'Schlächter der Wüste', desc: 'Besiege 500 Gegner.', check: () => kills >= 500 },
+    { id: 'awakened', title: 'Erwacht', desc: 'Erlebe die Wahrheit hinter dem Fleisch.', check: () => state.isRevealed },
+    { id: 'boss1', title: 'Titanentöter', desc: 'Bezwinge deinen ersten Boss.', check: () => state.stats.bossKills >= 1 },
+    { id: 'boss10', title: 'Legendenbrecher', desc: 'Bezwinge 10 Bosse.', check: () => state.stats.bossKills >= 10 },
+    { id: 'collector', title: 'Reliktsammler', desc: 'Erbeute beide legendären Boss-Stücke.', check: () => state.stats.legendaries >= 2 },
+    { id: 'friend', title: 'Freund der Leute', desc: 'Schließe alle acht Nebenstories ab.', check: () => ['q_garden', 'q_pip', 'q_vesper', 'q_habakuk', 'q_lomax', 'q_corah', 'q_dolores', 'q_uhrwerk'].every(id => state.quests[id] === 'done') },
+    { id: 'campaign', title: 'Befreier des Territoriums', desc: 'Beende die Kampagne (drei Enden möglich).', check: () => state.gameWon },
+    { id: 'ngplus3', title: 'Der ewige Kreislauf', desc: 'Erreiche New Game+ 3.', check: () => (state.ngPlus || 0) >= 3 },
+    { id: 'abyss10', title: 'Tiefgänger', desc: 'Erreiche Ebene 10 im Abstieg.', check: () => (state.abyssBest || 0) >= 10 },
+    { id: 'lorekeeper', title: 'Chronist', desc: 'Vervollständige den Codex.', check: () => state.codex.size >= CODEX.length }
+  ];
+  function checkAchievements(silent) {
+    for (const a of ACHIEVEMENTS) {
+      if (state.achievements.has(a.id)) continue;
+      let ok = false; try { ok = a.check(); } catch (e) { ok = false; }
+      if (ok) { state.achievements.add(a.id); if (!silent) toast('🏆 Erfolg: ' + a.title); }
+    }
+  }
   function codexUnlock(id) {
     if (!CODEX_BY_ID[id] || state.codex.has(id)) return;
     state.codex.add(id); save();
@@ -762,7 +784,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 },
+    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(),
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -1158,7 +1180,7 @@
   function save() {
     try {
       const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, discovered: [...state.discovered], explored: ex }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], discovered: [...state.discovered], explored: ex }));
     } catch (e) { }
   }
   function load() {
@@ -1178,6 +1200,7 @@
       state.abyssBest = s.abyssBest || 0; state.abyssDepth = 0; state.abyssMod = null;
       state.gameWon = !!s.gameWon; state.ngPlus = s.ngPlus || 0; state.codex = new Set(Array.isArray(s.codex) ? s.codex : []);
       state.stats = Object.assign({ bossKills: 0, legendaries: 0 }, (s.stats && typeof s.stats === 'object') ? s.stats : {});
+      state.achievements = new Set(Array.isArray(s.achievements) ? s.achievements : []);
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
@@ -1192,7 +1215,7 @@
       else if (s.saloon) state.economy.saloon.level = 1;   // Migration alter Spielstände
       // Kein Offline-Ertrag: Beim Laden wird KEINE verstrichene Realzeit geprüft und kein
       // rückwirkendes Gold vergeben. Die Wirtschaft läuft nur während aktiver Spielzeit.
-      codexAutoScan(true);   // aus dem geladenen Zustand ableitbare Einträge still ergänzen
+      codexAutoScan(true); checkAchievements(true);   // aus dem geladenen Zustand ableitbare Einträge/Erfolge still ergänzen
       return true;
     } catch (e) { return false; }
   }
@@ -1624,6 +1647,7 @@
     pauseBtns.forEach(b => { b.rect.destroy(); b.tx.destroy(); }); pauseBtns = [];
     const size = sceneRef.scale.gameSize, pw = Math.min(300, size.width * 0.86);
     if (state.pauseView === 'stats') { renderStats(pw); return; }
+    if (state.pauseView === 'achievements') { renderAchievements(pw); return; }
     const guildName = state.chosenGuild ? GUILDS[state.chosenGuild].name : '—';
     const codexPct = Math.round(state.codex.size / CODEX.length * 100);
     const defs = [
@@ -1631,6 +1655,7 @@
       { label: '📜  Auftragsbuch', action: 'quests', color: 0x3a3550 },
       { label: '📖  Codex', action: 'codex', color: 0x3a2f1a },
       { label: '📊  Statistik', action: 'stats', color: 0x2f3a50 },
+      { label: '🏆  Erfolge (' + state.achievements.size + '/' + ACHIEVEMENTS.length + ')', action: 'achievements', color: 0x4a3a1a },
       { label: (state.muted ? '🔇' : '🔊') + '  Ton: ' + (state.muted ? 'aus' : 'an'), action: 'mute', color: 0x2a2622 },
       { label: '🏠  Zum Titel', action: 'title', color: 0x6b2f2f }
     ];
@@ -1670,11 +1695,32 @@
     const btx = sceneRef.add.text(px, by + 19, '‹  zurück', { fontFamily: 'system-ui', fontSize: '16px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(67);
     pauseBtns.push({ rect: brect, tx: btx, action: 'back' });
   }
+  function renderAchievements(pw) {
+    const size = sceneRef.scale.gameSize;
+    const ph = Math.min(size.height * 0.82, 120 + ACHIEVEMENTS.length * 42 + 52);
+    const px = size.width / 2, py = Math.max(16, (size.height - ph) / 2);
+    pauseBg.setSize(size.width, size.height).setPosition(0, 0).setVisible(true);
+    pausePanel.setPosition(px, py).setSize(pw, ph).setVisible(true);
+    pauseTitle.setText('🏆  Erfolge').setPosition(px, py + 12).setVisible(true);
+    pauseStatus.setText(state.achievements.size + ' / ' + ACHIEVEMENTS.length + ' errungen').setPosition(px, py + 40).setVisible(true);
+    ACHIEVEMENTS.forEach((a, i) => {
+      const y = py + 70 + i * 42, got = state.achievements.has(a.id);
+      const bg = sceneRef.add.rectangle(px, y, pw - 28, 38, got ? 0x3a2f14 : 0x1a1712, 0.95).setStrokeStyle(2, got ? 0xc9a24a : 0x555, got ? 0.7 : 0.3).setScrollFactor(0).setDepth(66).setOrigin(0.5, 0);
+      const t = sceneRef.add.text(px - pw / 2 + 18, y + 6, (got ? '🏆 ' : '🔒 ') + a.title, { fontFamily: 'system-ui', fontSize: '14px', color: got ? '#f3e9d2' : '#8a8172', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(67);
+      const d = sceneRef.add.text(px - pw / 2 + 18, y + 23, a.desc, { fontFamily: 'system-ui', fontSize: '11px', color: got ? '#cbb894' : '#6b6459' }).setOrigin(0, 0).setScrollFactor(0).setDepth(67);
+      pauseBtns.push({ rect: bg, tx: t, action: null }); pauseBtns.push({ rect: d, tx: sceneRef.add.text(0, 0, '', {}).setVisible(false), action: null });
+    });
+    const by = py + ph - 44;
+    const brect = sceneRef.add.rectangle(px, by, pw - 32, 36, 0x2f6b3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.5).setScrollFactor(0).setDepth(66).setOrigin(0.5, 0);
+    const btx = sceneRef.add.text(px, by + 18, '‹  zurück', { fontFamily: 'system-ui', fontSize: '15px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(67);
+    pauseBtns.push({ rect: brect, tx: btx, action: 'back' });
+  }
   function pauseClick(action) {
     if (action === 'resume') { closePause(); return; }
     if (action === 'quests') { closePause(); openQuestLog(); return; }
     if (action === 'codex') { closePause(); openCodex(); return; }
     if (action === 'stats') { state.pauseView = 'stats'; renderPause(); return; }
+    if (action === 'achievements') { state.pauseView = 'achievements'; renderPause(); return; }
     if (action === 'back') { state.pauseView = 'menu'; renderPause(); return; }
     if (action === 'mute') { state.muted = !state.muted; if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊'); if (!state.muted) sfx('coin'); save(); renderPause(); return; }
     if (action === 'title') { closePause(); showTitle(true); return; }
@@ -2424,7 +2470,7 @@
     state.quests[q.id] = 'done';
     if (q.advanceTo && q.advanceTo > state.currentChapter) { state.currentChapter = q.advanceTo; toast('📖 Kapitel ' + q.advanceTo); }
     const xpGain = Math.max(25, Math.round(q.rewardGold * 0.5));
-    toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold · +' + xpGain + ' XP'); gainXp(xpGain); save(); updateNpcIndicators(); updateLogBadge(); codexAutoScan(false); closeDialogue();
+    toast('✅ ' + q.title + ' erledigt! +' + q.rewardGold + ' Gold · +' + xpGain + ' XP'); gainXp(xpGain); save(); updateNpcIndicators(); updateLogBadge(); codexAutoScan(false); checkAchievements(); closeDialogue();
     if (ENDING_QUEST_GUILD[q.id]) { state.pendingEnding = ENDING_QUEST_GUILD[q.id]; toast('⚔ Direktor Vane erwartet dich in der Herzkammer.'); sceneRef.time.delayedCall(600, () => transitionTo('finale', { c: 10, r: 16 })); }   // Gilden-Finale: erst der Showdown
   }
   function updateNpcIndicators() {
@@ -2494,7 +2540,7 @@
   function applyReveal() {
     state.isRevealed = true; state.currentChapter = 5;
     applyRevealVisual(); updateNpcIndicators(); updateAbilityUI(); updateWeaponUI(); save();
-    codexUnlock('reveal'); codexUnlock('providence');
+    codexUnlock('reveal'); codexUnlock('providence'); checkAchievements();
     toast('⚙ Das Interface mutiert. Du bist erwacht.');
     toast('🔧 Neue Armaturen: Volt-Karabiner, Säure-Sprüher, Dampf-Brenner');
   }
@@ -2536,7 +2582,7 @@
     state.ngPlus = (state.ngPlus || 0) + 1;
     state.chosenGuild = null; state.currentChapter = 5;   // erwacht, aber Gildenbogen erneut offen
     state.quests = {}; state.questBase = {}; state.bounty = null; state.pendingEnding = null;
-    codexUnlock('ngplus');
+    codexUnlock('ngplus'); checkAchievements();
     save();
     toast('🔄 Neues Spiel+ ' + state.ngPlus + ' — Gegner +' + Math.round(state.ngPlus * 60) + '% Zähigkeit');
     toast('⚙ Ausrüstung, Stufe und Perks bleiben. Wähle diesmal eine andere Gilde.');
@@ -2850,7 +2896,7 @@
       if (hasPower('lifekill') && state.hp < state.maxHp) { state.hp = Math.min(state.maxHp, state.hp + state.maxHp * 0.03); updateLife(); }   // Blutdampf-Kessel
       dropGold(bx, by, Math.round(e.gold * lootMul())); dropLootFor(e); e.c.destroy(); kills++; killText.setText('Besiegt: ' + kills); sfx('kill'); gainXp(xpForKill(e));
       if (Math.random() < 0.14) sayBark(player.x, player.y - 24, pickBark(e.cls === 'MECHANICAL' ? BARKS.hero_kill_mech : BARKS.hero_kill_bio), '#bcd0e0');   // Held-Callout
-      updateLogBadge();   // evtl. wurde eine Kill-Quest gerade abgabebereit
+      updateLogBadge(); checkAchievements();   // evtl. Kill-Quest abgabebereit / Erfolg erreicht
       if (e.isVane) {
         state.stats.bossKills++; state.stats.legendaries++;
         state.boss = null; hideBossBar(); toast('☠ Direktor Vane ist gefallen. Das Wachs schmilzt.');

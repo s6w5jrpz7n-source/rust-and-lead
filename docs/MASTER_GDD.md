@@ -992,6 +992,12 @@ Stufe, Perks, Gold und Stash bleiben**, die Story setzt zurück (`currentChapter
 steigt, `mapHpMul` skaliert alle Gegner um `+60 % pro NG+`. Der HUD-Kartenname zeigt „🔄 NG+n".
 Persistiert (`ngPlus`, `gameWon`).
 
+### 7.5.17 Erfolge (`ACHIEVEMENTS`)
+12 aus dem Fortschritt abgeleitete Spielziele (`check`-Funktionen über kills/bossKills/isRevealed/
+gameWon/ngPlus/abyssBest/codex/Nebenstories). `checkAchievements` läuft bei Kill, Quest-Abgabe,
+Reveal, NG+ und (still) beim Laden; neue Erfolge kommen als Toast. Anzeige im Pause-Menü
+(🏆 Erfolge-Sub-View) mit errungen/gesperrt-Zustand und Zähler. Persistiert als `achievements`-Set.
+
 ### 7.5.16 Boss-exklusive Legendaries & Statistik
 **Garantierte Boss-Drops:** Vane lässt den **Wachsherz-Kürass** fallen (Power `vaneward`: −15 %
 erlittener Schaden, in `dmgTakenMul`), der Schrott-Golem die **Golem-Faust** (Power `overcharge`:
