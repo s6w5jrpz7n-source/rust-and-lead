@@ -3136,20 +3136,20 @@
   // ---- Schaden / Loot ----------------------------------------
   // Schadens-Kalkulator: Schadensart × Gegner-Klassifizierung (GDD Kap. 11).
   function calcDamage(type, e, base, pen) {
-    let dmg = base, effect = null, immune = false;
+    let dmg = base, effect = null, immune = false, eff = null;   // eff: 'strong' | 'weak' | 'resist' — für Kampf-Lesbarkeit
     const cls = e.cls, armor = Math.max(0, (e.armor || 0) - (pen || 0));   // Panzerbrecher-Perk ignoriert Rüstung
     if (cls === 'MECHANICAL') {
-      if (type === 'GALVANIC') { dmg *= 2.5; if (Math.random() < 0.40) effect = 'STUN'; }              // Automaten: massiver Bonus + Kurzschluss
-      else if (type === 'KINETIC') { dmg = e.frontImmune ? (armor > 0 ? 0 : dmg) : Math.max(1, dmg - armor); }  // Panzerung schluckt Blei
-      else if (type === 'THERMAL') { dmg *= (e.sub === 'goliath') ? 0.6 : 1.2; }                       // Leichtbau brennt, Goliath widersteht
+      if (type === 'GALVANIC') { dmg *= 2.5; eff = 'strong'; if (Math.random() < 0.40) effect = 'STUN'; }   // Automaten: massiver Bonus + Kurzschluss
+      else if (type === 'KINETIC') { dmg = e.frontImmune ? (armor > 0 ? 0 : dmg) : Math.max(1, dmg - armor); if (dmg < base * 0.5) eff = 'resist'; }  // Panzerung schluckt Blei
+      else if (type === 'THERMAL') { const g = e.sub === 'goliath'; dmg *= g ? 0.6 : 1.2; if (g) eff = 'resist'; }   // Leichtbau brennt, Goliath widersteht
     } else if (cls === 'BIOLOGICAL') {
-      if (type === 'KINETIC') { dmg *= 1.5; if (Math.random() < 0.33) effect = 'BLEED'; }              // Fleisch: Bonus + Verbluten
-      else if (type === 'GALVANIC') { dmg *= 0.4; }                                                     // biologische Isolierung dämpft
-      else if (type === 'THERMAL') { dmg *= 1.3; if (Math.random() < 0.5) effect = 'BURN'; }           // brennt + Überhitzung
+      if (type === 'KINETIC') { dmg *= 1.5; eff = 'strong'; if (Math.random() < 0.33) effect = 'BLEED'; }   // Fleisch: Bonus + Verbluten
+      else if (type === 'GALVANIC') { dmg *= 0.4; eff = 'weak'; }                                           // biologische Isolierung dämpft
+      else if (type === 'THERMAL') { dmg *= 1.3; eff = 'strong'; if (Math.random() < 0.5) effect = 'BURN'; }   // brennt + Überhitzung
     }
     if (type === 'ALCHEMICAL' && armor > 0) { effect = 'CORRODE'; }   // zersetzt Rüstung (in applyStatus)
     if (dmg <= 0) immune = true;
-    return { dmg: Math.max(0, Math.round(dmg)), effect, immune };
+    return { dmg: Math.max(0, Math.round(dmg)), effect, immune, eff };
   }
   const css = (hex) => '#' + hex.toString(16).padStart(6, '0');
   function applyStatus(e, effect, acid) {
@@ -3368,6 +3368,13 @@
   }
   function popLoot(x, y, icon) { const t = sceneRef.add.text(x, y - 8, icon, { fontSize: '15px' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 550, onComplete: () => t.destroy() }); }
   function popDamage(x, y, dmg, color) { const t = sceneRef.add.text(x, y, '' + dmg, { fontFamily: 'system-ui', fontSize: '20px', color: color ? css(color) : '#fde68a', stroke: '#000', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 650, ease: 'Cubic.out', onComplete: () => t.destroy() }); }
+  // Stark/Schwach-Hinweis: lehrt die Schadensart-Matrix direkt im Kampf (gedrosselt pro Gegner).
+  function popEff(x, y, eff) {
+    const strong = eff === 'strong';
+    const txt = strong ? '✷ STARK' : '🛡 schwach', col = strong ? '#fde047' : '#9fb2c6';
+    const t = sceneRef.add.text(x, y, txt, { fontFamily: 'system-ui', fontSize: '13px', color: col, stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(41).setScale(0.6);
+    sceneRef.tweens.add({ targets: t, y: y - 24, scale: 1, alpha: 0, duration: 800, ease: 'Cubic.out', onComplete: () => t.destroy() });
+  }
   function popGold(x, y) { const t = sceneRef.add.text(x, y - 8, '+1', { fontFamily: 'system-ui', fontSize: '15px', color: '#fde047', stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5).setDepth(40); sceneRef.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 500, onComplete: () => t.destroy() }); }
   // Schwebender Atmosphäre-Spruch (Story-Bark). Wortumbruch, langsames Aufsteigen + Fade.
   function sayBark(x, y, text, color) {
@@ -3655,6 +3662,10 @@
         let dmg = res.dmg, crit = false;
         if (dmg > 0 && Math.random() < critChance()) { dmg = Math.round(dmg * critMult()); crit = true; }   // Krit-Perk (+ Panzerbrecher-Synergie)
         if (res.effect) applyStatus(e, res.effect, b.acid);
+        if (res.eff && sceneRef.time.now > (e.effTagAt || 0)) {   // Kampf-Lesbarkeit: gedrosselte Stark/Schwach-Anzeige je Gegner
+          e.effTagAt = sceneRef.time.now + 1400; popEff(e.c.x, e.c.y - e.r - 18, res.eff);
+          if ((res.eff === 'resist' || res.eff === 'weak') && !state.hintResistShown) { state.hintResistShown = true; toast('🛡 Diese Schadensart ist hier schwach — wechsle die Waffe (' + DMG_TYPES[b.type].name + ' wirkt kaum).'); }
+        }
         if (crit && b.type === 'KINETIC' && hasPower('galvcrit')) applyStatus(e, 'STUN');   // Galvanische Trommel
         damageEnemy(e, dmg, { color: crit ? 0xfde047 : DMG_TYPES[b.type].color, immune: res.immune });
         if (crit && (hasPower('critchain') || hasCap('gun'))) {                              // Rechenkern (Legendär/Kapstein): Krit prallt ab

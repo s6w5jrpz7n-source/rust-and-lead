@@ -664,6 +664,16 @@ const result = DamageEngine.calculate(voltKarabiner.damageType, corporateAutomat
 // -> { damage: 100, effect: 'SHORT_CIRCUIT_STUN' (40% Chance), immune: false }
 ```
 
+**Kampf-Lesbarkeit (Politur):** `calcDamage` liefert zusätzlich ein `eff`-Flag
+(`'strong'` / `'weak'` / `'resist'`), das die getroffene Matrix-Regel klassifiziert:
+starke Paarung (×1.5/×2.5/×1.3), gedämpfte (biolog. Isolierung ×0.4) bzw. von Panzerung
+verschluckter Treffer (Kinetik < 50 % Grundschaden, Front-Immunität). Der Treffer-Handler
+zeigt daraus einen gedrosselten Schwebe-Hinweis (`popEff`: „✷ STARK" / „🛡 schwach", max. 1×
+pro Gegner alle 1,4 s) und beim allerersten schwachen Treffer einen einmaligen Toast
+(„Diese Schadensart ist hier schwach — wechsle die Waffe"). Das macht die zentrale
+Schadensart-Klassifizierungs-Mechanik unmittelbar lesbar — besonders der Fall Startwaffe
+(KINETIC) gegen ein gepanzertes Konzern-Konstrukt (20−15 = 5 Schaden).
+
 ## 6.4 Code-Template — World Map Encounter System
 ```javascript
 // Encounter-System der offenen Welt: verteilt Gegner, Elite-Bosse, Loot-Kisten
