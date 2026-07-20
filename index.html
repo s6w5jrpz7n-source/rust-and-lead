@@ -2956,7 +2956,8 @@
   // Gegner lassen Munition/Kristalle fallen — meist für die getragene Waffe, Elite beides.
   // Aasgeier-Perk erhöht die Menge.
   function dropAmmoFor(e, elite) {
-    const kind = curWeapon().ammo || 'muni', a = AMMO[kind], m = 1 + perkVal('aasgeier') / 100;
+    const df = 1 + (state.ngPlus || 0) * 0.4 + (curDepth(MAPS[state.map] || {}) - 1) * 0.12;   // zähere Gegner -> mehr Nachschub
+    const kind = curWeapon().ammo || 'muni', a = AMMO[kind], m = (1 + perkVal('aasgeier') / 100) * df;
     if (elite) {
       dropAmmo(e.c.x, e.c.y, 'muni', Math.round(Phaser.Math.Between(6, 10) * m));
       dropAmmo(e.c.x, e.c.y, 'kristall', Math.round(Phaser.Math.Between(4, 7) * m));
