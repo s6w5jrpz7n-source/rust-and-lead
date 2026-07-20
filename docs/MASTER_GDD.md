@@ -962,6 +962,12 @@ Wachs-Optik). Sein Fall (`damageEnemy` → `isVane`-Zweig) löst nach kurzer Ver
 `triggerEnding(guild)` aus. Flieht der Spieler vorher über das Rückzugs-Portal, bietet der
 Gilden-NPC im `done`-Zweig einen „⚔ Vane stellen"-Knopf zum Wiedereintritt.
 
+### 7.5.9a-2 Vane, zweite Phase
+Vanes erster HP-Nulldurchgang tötet ihn nicht: `damageEnemy` fängt `isVane && !phase2` ab, heilt
+ihn auf 60 %, färbt ihn von Wachs auf Stahl (`cls` → MECHANICAL, also ab jetzt anfällig für
+Galvanik), erhöht Tempo/Kontakt und feuert ein Bildschirm-Beben. „Das Wachs schmilzt. Darunter:
+die erste Seele im Stahl." Erst der zweite Nulldurchgang löst Tod → Ende aus.
+
 ### 7.5.9b Finale: die drei Gilden-Enden (Cutscene)
 Vanes Tod (oder direkter Aufruf) löst über `ENDING_QUEST_GUILD` → `triggerEnding(guild)` eine
 End-Cutscene aus. Sie nutzt das Reveal-Overlay
@@ -977,6 +983,20 @@ verfügbar (📜) → kapitel-gesperrt (🔒); Erledigte nur als Zähler. Jede Z
 ist per **➤ Schnellreise** anklickbar (`transitionTo` zur Zielkarte am NPC-Tile). Gilden-Quests
 erscheinen erst nach der Gildenwahl. Rotes Badge am Knopf zählt abgabebereite Aufträge (live bei
 Kills/Quest-Ereignissen).
+
+### 7.5.11 New Game+ (`startNgPlus`)
+Nach dem Ende (letztes Cutscene-Bild → `closeEnding`) startet der nächste Zyklus: **Ausrüstung,
+Stufe, Perks, Gold und Stash bleiben**, die Story setzt zurück (`currentChapter = 5`,
+`chosenGuild = null`, Quests geleert) — man darf diesmal eine andere Gilde wählen. `state.ngPlus`
+steigt, `mapHpMul` skaliert alle Gegner um `+60 % pro NG+`. Der HUD-Kartenname zeigt „🔄 NG+n".
+Persistiert (`ngPlus`, `gameWon`).
+
+### 7.5.12 Story-Codex (`CODEX` / Taste K / 📖)
+Nachlese erlebter Szenen. Einträge (`CODEX`) schalten sich frei: Reveal/Providence bei
+`isRevealed`, Vane/NG+ bei `gameWon`, jede Nebenstory bei erledigter Quest, jedes Ende bei
+erledigter Kapitel-12-Quest. `codexAutoScan` leitet sie aus dem Zustand ab (still beim Laden),
+`codexUnlock` meldet Live-Freischaltungen per Toast. Panel mit Listen- und Detail-Ansicht
+(`renderCodex`), Fortschritt „n/Gesamt entdeckt". Persistiert als `codex`-Set.
 
 ## 7.6 Werkstatt-Modifikationen
 Waffen-Tuning immer erlaubt; **Körper-Mods (`bodyMod`) erst nach dem Reveal**. Namen als

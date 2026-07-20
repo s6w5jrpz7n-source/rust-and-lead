@@ -1249,7 +1249,7 @@
     state.miniSize = m.minimap === 'small' ? 100 : 140;
     const abyss = id === 'abyss';
     const mod = abyss ? ABYSS_MODS.find(x => x.id === state.abyssMod) : null;
-    mapNameText.setText(abyss ? ('🕳️ Abstieg — Ebene ' + state.abyssDepth) : m.name);
+    mapNameText.setText((abyss ? ('🕳️ Abstieg — Ebene ' + state.abyssDepth) : m.name) + ((state.ngPlus || 0) > 0 ? '   ·   🔄 NG+' + state.ngPlus : ''));
     layoutUI(sceneRef.scale.gameSize);
     miniDirty = true;
     toast(abyss ? ('🕳️ Ebene ' + state.abyssDepth + (mod ? ' · ' + mod.icon + ' ' + mod.name : '') + '  ·  Rekord: ' + (state.abyssBest || 0)) : m.name);
