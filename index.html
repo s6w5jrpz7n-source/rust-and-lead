@@ -1497,9 +1497,10 @@
   function toggleDogStay() {
     if (!compExists() || state.companion.down) return;
     state.companion.stay = !state.companion.stay;
-    if (state.companion.stay) toast('🦴 Bolzen bleibt in der Stadt zurück.');
+    if (state.companion.stay) toast('🦴 Bolzen bleibt an der Truhe in der Stadt zurück.');
     else { companionDog.x = player.x - 34; companionDog.y = player.y + 6; toast('🐕 Bolzen kommt wieder mit.'); }
-    save(); closeWorkshop(); openWorkshop();
+    save();
+    if (state.stashOpen) renderStash(); else if (state.workshopOpen) { closeWorkshop(); openWorkshop(); }
   }
   function dogGiveWeapon() {
     if (!compHasSlot()) { toast('🔒 Erst ab Bolzen-Stufe ' + DOG_WEAPON_LEVEL); return; }
@@ -2888,7 +2889,7 @@
       if (stashCloseRef && Phaser.Math.Distance.Between(p.x, p.y, stashCloseRef.x, stashCloseRef.y) <= 24) { closeStash(); return; }
       for (const f of stashFilterRects) if (inRect(p, f.rect.x, f.rect.y, f.rect.width, f.rect.height)) { state.stashFilter = f.id; stashScroll = 0; renderStash(); return; }
       for (const b of stashButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) {
-        if (b.action === 'deposit') stashDeposit(); else if (b.action === 'withdraw') stashWithdraw(); else if (b.action === 'scrollUp') { stashScroll--; renderStash(); } else if (b.action === 'scrollDown') { stashScroll++; renderStash(); }
+        if (b.action === 'deposit') stashDeposit(); else if (b.action === 'withdraw') stashWithdraw(); else if (b.action === 'scrollUp') { stashScroll--; renderStash(); } else if (b.action === 'scrollDown') { stashScroll++; renderStash(); } else if (b.action === 'tether') toggleDogStay();
         return;
       }
       for (const s of stashSlotRects) if (inRect(p, s.x - s.w / 2, s.y - s.h / 2, s.w, s.h)) { stashTake(s.payload); return; }
@@ -3011,7 +3012,7 @@
       else {
         Object.keys(COMPANION_UP).forEach(id => rows.push({ kind: 'comp', id }));
         if (compHasSlot()) { rows.push({ kind: 'compweapon' }); if (state.companion.weapon) rows.push({ kind: 'compammo' }); }
-        rows.push({ kind: 'comptether' });
+        // Anbinden passiert an der persönlichen Truhe (jede Stadt mit Kiste), nicht hier.
       }
     }
     const rowH = 46, headH = 66, footH = 38, subH = 26;
@@ -3042,15 +3043,10 @@
         } else add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, '🔧', { fontFamily: 'system-ui', fontSize: '15px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
         y += rowH + 6; return;
       }
-      // Bolzen-Aktionszeilen (Anbinden / Waffe / Munition): Titel + Unterzeile + Aktions-Button
-      if (row.kind === 'comptether' || row.kind === 'compweapon' || row.kind === 'compammo') {
+      // Bolzen-Aktionszeilen (Waffe / Munition): Titel + Unterzeile + Aktions-Button
+      if (row.kind === 'compweapon' || row.kind === 'compammo') {
         let title, subl, blabel, bid, hot = true;
-        if (row.kind === 'comptether') {
-          const st = state.companion.stay;
-          title = '🦴  ' + (st ? 'Wartet in der Stadt' : 'Reist mit dir');
-          subl = st ? 'ohne Bolzen unterwegs — tippen zum Mitnehmen' : 'in der Stadt anbinden & ohne ihn los';
-          blabel = st ? 'Mitnehmen' : 'Anbinden'; bid = 'c_tether';
-        } else if (row.kind === 'compweapon') {
+        if (row.kind === 'compweapon') {
           const w = state.companion.weapon;
           title = '🔫  Waffe: ' + (w ? w.name : '— frei —');
           subl = w ? ('+' + w.stat.val + ' Schaden · schießt mit eigener Munition') : 'beste Waffe aus dem Beutel geben';
@@ -3108,7 +3104,6 @@
       closeWorkshop(); openWorkshop(); updateWeaponUI(); return;
     }
     if (id === 'c_repair') { repairDog(); return; }
-    if (id === 'c_tether') { toggleDogStay(); return; }
     if (id === 'c_weapon') { state.companion.weapon ? dogTakeWeapon() : dogGiveWeapon(); return; }
     if (id === 'c_feed') { dogFeedAmmo(); return; }
     if (id.startsWith('c_')) {   // Begleiter-Aufrüstung
@@ -3938,7 +3933,8 @@
     stashUI.forEach(o => o.destroy()); stashUI = []; stashButtons = []; stashFilterRects = []; stashSlotRects = [];
     const size = sceneRef.scale.gameSize, add = o => { stashUI.push(o); return o; };
     const pw = Math.min(400, Math.round(size.width * 0.94));
-    const cols = 5, gap = 5, headH = 86, footH = 58;
+    const showTether = compExists() && !state.companion.down;   // Bolzen an der Truhe anbinden/mitnehmen
+    const cols = 5, gap = 5, headH = 86, footH = 58 + (showTether ? 44 : 0);
     const cell = Math.floor((pw - 28 - (cols - 1) * gap) / cols);
     const maxPh = Math.min(size.height - 16, Math.round(size.height * 0.9));
     const rows = Math.max(3, Math.floor((maxPh - headH - footH + gap) / (cell + gap)));
@@ -3991,6 +3987,13 @@
     const wdr = add(sceneRef.add.rectangle(px + pw / 2 - 14 - bw / 2, by + 18, bw, 38, 0x7c4a12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
     add(sceneRef.add.text(wdr.x, wdr.y, '⬆  Alles entnehmen', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
     stashButtons.push({ rect: dep, action: 'deposit' }, { rect: wdr, action: 'withdraw' });
+    // ---- Bolzen an der Truhe anbinden / mitnehmen (nur wenn er im Team & intakt ist) ----
+    if (showTether) {
+      const st = state.companion.stay;
+      const tb = add(sceneRef.add.rectangle(px, by + 62, pw - 28, 36, st ? 0x14612a : 0x6b4a12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
+      add(sceneRef.add.text(tb.x, tb.y, st ? '🐕  Bolzen mitnehmen' : '🦴  Bolzen hier anbinden (bleibt in der Stadt)', { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      stashButtons.push({ rect: tb, action: 'tether' });
+    }
   }
   function drawStashItem(p, L, add) {
     const ix = L.gx0 + p.gx * (L.cell + L.gap), iy = L.gy0 + p.gy * (L.cell + L.gap);
