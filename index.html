@@ -91,14 +91,57 @@
   // Jedes Biom hat eine eigene Bodenpalette; dazwischen bleibt die Standard-Wüste.
   const DESERT_BIOME = { id: 'desert', name: 'Wüste', icon: '🏜', floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f };
   const OVERWORLD_BIOMES = [
-    { id: 'oasis',    name: 'Grüne Senke',       icon: '🌿', cx: 15, cy: 64, rad: 13, floorA: 0x6f9e54, floorB: 0x5f8c48, grid: 0x3f6630 },
-    { id: 'forest',   name: 'Rostwald',          icon: '🌲', cx: 66, cy: 64, rad: 15, floorA: 0x4f7a45, floorB: 0x436b3b, grid: 0x2c4a27 },
-    { id: 'highland', name: 'Kupfer-Hochland',   icon: '⛰',  cx: 65, cy: 13, rad: 15, floorA: 0x9a8468, floorB: 0x87735a, grid: 0x5a4a38 },
-    { id: 'salt',     name: 'Salzpfanne',        icon: '🧂', cx: 16, cy: 17, rad: 12, floorA: 0xd7d2bf, floorB: 0xc8c2ac, grid: 0xa8a28c }
+    { id: 'oasis',    name: 'Grüne Senke',       icon: '🌿', cx: 15, cy: 64, rad: 13, floorA: 0x6f9e54, floorB: 0x5f8c48, grid: 0x3f6630, flora: ['tree', 'water', 'tree'], floraColor: 0x4f9440, floraCount: 12 },
+    { id: 'forest',   name: 'Rostwald',          icon: '🌲', cx: 66, cy: 64, rad: 15, floorA: 0x4f7a45, floorB: 0x436b3b, grid: 0x2c4a27, flora: ['tree'], floraColor: 0x356b2c, floraCount: 22 },
+    { id: 'highland', name: 'Kupfer-Hochland',   icon: '⛰',  cx: 65, cy: 13, rad: 15, floorA: 0x9a8468, floorB: 0x87735a, grid: 0x5a4a38, flora: ['rock'], floraColor: 0x8f8472, floraCount: 16 },
+    { id: 'salt',     name: 'Salzpfanne',        icon: '🧂', cx: 16, cy: 17, rad: 12, floorA: 0xd7d2bf, floorB: 0xc8c2ac, grid: 0xa8a28c, flora: ['salt'], floraColor: 0xece7d8, floraCount: 14 }
   ];
   function biomeAtTile(c, r) {
     for (const b of OVERWORLD_BIOMES) { const dc = c - b.cx, dr = r - b.cy; if (dc * dc + dr * dr <= b.rad * b.rad) return b; }
     return DESERT_BIOME;
+  }
+  // Natur-Deko: nicht-solide Sprites, die ein Biom greifbar machen (Boden-Palette allein reicht nicht).
+  function drawFlora(kind, x, y, b) {
+    const add = o => { o.setDepth(1); mapObjects.push(o); return o; };
+    add(sceneRef.add.ellipse(x, y + 5, 16, 7, 0x000000, 0.14));   // weicher Bodenschatten
+    if (kind === 'water') {
+      add(sceneRef.add.ellipse(x, y, 40, 21, 0x2f7fb0, 0.85).setStrokeStyle(2, 0x1c5a80));
+      add(sceneRef.add.ellipse(x - 6, y - 3, 14, 6, 0x6fc0e0, 0.55));
+    } else if (kind === 'tree') {
+      add(sceneRef.add.rectangle(x, y - 6, 4, 14, 0x5a4128));
+      add(sceneRef.add.ellipse(x, y - 18, 22, 20, b.floraColor).setStrokeStyle(2, 0x1f3d16));
+      add(sceneRef.add.ellipse(x - 6, y - 22, 9, 8, 0xffffff, 0.10));
+    } else if (kind === 'rock') {
+      add(sceneRef.add.polygon(x, y - 2, [-13, 7, -7, -9, 5, -11, 14, 5, 7, 9], b.floraColor).setStrokeStyle(2, 0x3a3226));
+      add(sceneRef.add.polygon(x - 2, y - 4, [-6, 2, -2, -5, 4, -4], 0xffffff, 0.10));
+    } else if (kind === 'salt') {
+      add(sceneRef.add.polygon(x, y - 2, [0, -12, 7, 0, 0, 8, -7, 0], 0xece7d8, 0.92).setStrokeStyle(1, 0xbdb69f));
+      add(sceneRef.add.polygon(x + 8, y + 1, [0, -7, 4, 0, 0, 5, -4, 0], 0xdcd6c4, 0.85).setStrokeStyle(1, 0xbdb69f));
+    } else if (kind === 'cactus') {
+      add(sceneRef.add.rectangle(x, y - 8, 6, 20, 0x5c7a3a).setStrokeStyle(1, 0x38491f));
+      add(sceneRef.add.rectangle(x + 6, y - 10, 8, 5, 0x5c7a3a).setStrokeStyle(1, 0x38491f));
+      add(sceneRef.add.rectangle(x - 6, y - 6, 8, 5, 0x5c7a3a).setStrokeStyle(1, 0x38491f));
+    }
+  }
+  function scatterBiomeDecor(m) {
+    if (!m.biomed) return;
+    const avoid = m.portals.map(p => tileToWorld(p.tx, p.ty));
+    const free = (x, y) => !avoid.some(a => Phaser.Math.Distance.Between(a.x, a.y, x, y) < 100);
+    for (const b of OVERWORLD_BIOMES) {                       // Biom-Deko
+      for (let i = 0; i < (b.floraCount || 14); i++) {
+        const ang = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * (b.rad - 1);
+        const c = Math.round(b.cx + Math.cos(ang) * rr), r = Math.round(b.cy + Math.sin(ang) * rr);
+        if (c < 1 || r < 1 || c >= m.cols - 1 || r >= m.rows - 1) continue;
+        const w = tileToWorld(c, r); if (!free(w.x, w.y)) continue;
+        drawFlora(b.flora[Phaser.Math.Between(0, b.flora.length - 1)], w.x, w.y, b);
+      }
+    }
+    for (let i = 0; i < 22; i++) {                            // spärliche Wüsten-Kakteen dazwischen
+      const c = Phaser.Math.Between(2, m.cols - 3), r = Phaser.Math.Between(2, m.rows - 3);
+      if (biomeAtTile(c, r).id !== 'desert') continue;
+      const w = tileToWorld(c, r); if (!free(w.x, w.y)) continue;
+      drawFlora('cactus', w.x, w.y, DESERT_BIOME);
+    }
   }
   // Kritter-Hallen (Mini-Dungeons): pro Betreten zufälliges Thema (Schwarm-Art + Palette) für Wiederspielwert.
   const CRITTER_THEMES = [
@@ -1594,6 +1637,7 @@
     scatterChests(m);
     if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth, m.superboss.name);
     if (m.critters) spawnCritterPack();   // Mini-Dungeon: versteckter Schwarm + Anführer
+    scatterBiomeDecor(m);                 // Overworld: Natur-Deko (Bäume/Wasser/Felsen/Salz/Kakteen)
     if (m.vane) spawnVane(m.vane.tx, m.vane.ty);   // Finale-Arena: Direktor Vane
     if (abyss && state.abyssDepth % 3 === 0) spawnSuperBoss(13, 13, state.abyssDepth);   // alle 3 Ebenen ein Titan
     if (abyss) sceneRef.time.delayedCall(700, abyssDepthBark);   // Tiefen-Meilenstein-Ausruf

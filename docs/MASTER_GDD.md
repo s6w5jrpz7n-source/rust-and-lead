@@ -953,7 +953,10 @@ Erkunden entdeckt — **🌿 Grüne Senke**, **🌲 Rostwald**, **⛰ Kupfer-Hoc
 dazwischen bleibt die Standard-Wüste. `biomeAtTile(c,r)` liefert das Biom pro Kachel; der Boden-Bake
 (`bakeTileRange`) färbt jede Kachel entsprechend, sodass die Übergänge organisch auslaufen. Beim
 Betreten meldet ein Toast „Neu entdeckt: …", der Kartenname wechselt, und alle vier gefunden schaltet
-den Erfolg **„Kartograf"** frei (`biomesSeen` persistiert).
+den Erfolg **„Kartograf"** frei (`biomesSeen` persistiert). Jedes Biom trägt zudem **nicht-solide
+Natur-Deko** (`scatterBiomeDecor`/`drawFlora`): Bäume & Wassertümpel (Grüne Senke/Rostwald), Felsblöcke
+(Kupfer-Hochland), Salzkristalle (Salzpfanne), dazu spärliche Kakteen in der Wüste — als abstrakte
+Platzhalter-Geometrie mit weichem Bodenschatten, passend zur Prototyp-Ästhetik.
 
 **Mini-Dungeons (`critter_hall`).** Über die Wüste verstreut liegen **drei 🕳️-Eingänge** (Verlassene
 Halle, Alter Stollen, Vergessene Grube). Jeder führt in eine **einstöckige Kritter-Halle**: ein

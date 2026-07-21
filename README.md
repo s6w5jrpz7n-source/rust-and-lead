@@ -60,8 +60,9 @@ Die vollständige Story-Bibel (alle Dialoge, Kinoszenen, Casting-Notizen) liegt 
 - **Endlosmodus „Der Abstieg":** skalierende Tiefe mit Modifikatoren und **rotierenden Biomen**
   (Stollen → Frostkavernen → Magma-Schlund → Sporentiefe → Fleisch-Maschinen-Tiefe, alle 5 Ebenen),
   Tiefen-Ausrufer.
-- **Overworld-Biome:** Die Wüste trägt entdeckbare Regionen mit eigener Palette — 🌿 Grüne Senke,
-  🌲 Rostwald, ⛰ Kupfer-Hochland, 🧂 Salzpfanne (Erfolg *Kartograf*).
+- **Overworld-Biome:** Die Wüste trägt entdeckbare Regionen mit eigener Palette **und Natur-Deko**
+  (Bäume, Wassertümpel, Felsblöcke, Salzkristalle, Kakteen) — 🌿 Grüne Senke, 🌲 Rostwald,
+  ⛰ Kupfer-Hochland, 🧂 Salzpfanne (Erfolg *Kartograf*).
 - **Mini-Dungeons:** Über die Karte verstreute 🕳️ Kritter-Hallen (Verlassene Halle / Alter Stollen /
   Vergessene Grube) — einstöckig, versteckter Schwarm + Anführer + garantierte Beute, Thema pro
   Betreten neu gewürfelt.
