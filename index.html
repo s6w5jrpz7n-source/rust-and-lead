@@ -1061,7 +1061,7 @@
   let invBtn, invBadge, invBadgeText, muteBtn, tutBg, tutText, invBackdrop, invPanel, invTitle, invClose, invText; let invSlots = [];
   let equipSlotRects = [], bagSlotRects = [], invDrag = null, invScroll = 0, invScrollBtns = [];
   let invScrapRect = null, shopSellRect = null, shopBuyBtns = [];
-  let perkBtns = [], charTabRects = [], itemDetailBtns = [];
+  let perkBtns = [], charTabRects = [], itemDetailBtns = [], invFilterRects = [];
   let abilities = [];
   let cursors, wasd;
 
@@ -1080,7 +1080,7 @@
     endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0, memoriesFound: 0, flashbackPlaying: false, flashbackSeq: null, memorialsSeen: new Set(), familyBuried: false, curBiome: null, biomesSeen: new Set(), hallReturn: null, hallTheme: null,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
-    level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
+    level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', invFilter: 'all', itemDetail: null, muted: false,
     tutorial: 0, tutOpenedInv: false, abyssDepth: 0, abyssMod: null, abyssBest: 0, abyssBiome: null, abyssBiomeNew: false,
     isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
@@ -2205,25 +2205,41 @@
     const leftW = Math.round(pw * 0.42), rightX = px + leftW + 10, rightW = pw - leftW - 14;
     const gap = 5, cols = 5;
     const cell = Math.floor((rightW - (cols - 1) * gap - 4) / cols);
-    const gy0 = colTop + 22;
+    const filterH = 24;                    // Höhe der Filter-Reiter über dem Grid
+    const gy0 = colTop + 22 + filterH;     // Grid beginnt unter Titel + Reitern
     const rows = Math.max(6, Math.floor((colBottom - gy0 + gap) / (cell + gap)));   // sichtbare Zeilen
     const rowsTotal = rows * 3;                                                       // dreifache Kapazität (scrollbar)
     const cap = cols * rowsTotal;
     const gridW = cols * cell + (cols - 1) * gap, gx0 = rightX + Math.round((rightW - gridW) / 2);
-    return { size, px, py, pw, ph, headH, colTop, colBottom, leftW, rightX, rightW, gap, cols, rows, rowsTotal, cap, cell, gx0, gy0, bx: px + leftW / 2, dollTop: colTop + 4, statsTop: colTop + 246 };
+    return { size, px, py, pw, ph, headH, colTop, colBottom, leftW, rightX, rightW, gap, cols, rows, rowsTotal, cap, cell, gx0, gy0, filterH, bx: px + leftW / 2, dollTop: colTop + 4, statsTop: colTop + 246 };
   }
-  function gridItems() {   // alles, was im Grid liegt: Gear (Fußabdruck) + Material-/Trank-Stapel (1 Slot)
+  // Filter-Reiter des Inventars (Tetris-Grid): schränken die Anzeige auf eine Kategorie ein.
+  const INV_FILTERS = [['all', '▦', 'Alle'], ['weapon', '🔫', 'Waffen'], ['armor', '🛡️', 'Rüstung'], ['tech', '🔳', 'Tech'], ['misc', '🧪', 'Beutel']];
+  function itemCat(it) {   // Kategorie eines Grid-Items für die Filter-Reiter
+    if (it.kind !== 'gear') return 'misc';               // Material + Tränke = Beutel
+    const s = it.gear.slot;
+    if (s === 'weapon') return 'weapon';
+    if (s === 'plate' || s === 'tech') return 'tech';    // Platten & Tech-Module
+    return 'armor';                                       // Helm/Rüstung/Gadget/Stiefel
+  }
+  function gridItems(filter) {   // alles, was im Grid liegt: Gear (Fußabdruck) + Material-/Trank-Stapel (1 Slot)
     const items = [];
     for (const g of state.gearBag) items.push({ kind: 'gear', gear: g, foot: gearFoot(g) });
     for (const id of ['schrott', 'zahnrad', 'dampfkern']) if ((state.inventory[id] || 0) > 0) items.push({ kind: 'mat', id, foot: [1, 1] });
     if (state.potions > 0) items.push({ kind: 'potion', foot: [1, 1] });
-    items.sort((a, b) => (b.foot[0] * b.foot[1]) - (a.foot[0] * a.foot[1]));   // Große zuerst packen
-    return items;
+    const out = (filter && filter !== 'all') ? items.filter(it => itemCat(it) === filter) : items;   // Reiter-Filter (Kapazität zählt weiter alles: ohne Arg)
+    out.sort((a, b) => (b.foot[0] * b.foot[1]) - (a.foot[0] * a.foot[1]));   // Große zuerst packen
+    return out;
   }
-  function packGrid(cols, rows) {
+  function filterCounts() {   // Anzahl Items je Kategorie (für die Reiter-Zähler)
+    const c = { all: 0, weapon: 0, armor: 0, tech: 0, misc: 0 };
+    for (const it of gridItems()) { c.all++; c[itemCat(it)]++; }
+    return c;
+  }
+  function packGrid(cols, rows, filter) {
     const occ = Array.from({ length: rows }, () => new Array(cols).fill(false)), placed = [];
     const fits = (x, y, w, h) => { if (x + w > cols || y + h > rows) return false; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (occ[y + j][x + i]) return false; return true; };
-    for (const it of gridItems()) {
+    for (const it of gridItems(filter)) {
       const w = it.foot[0], h = it.foot[1]; let done = false;
       for (let y = 0; y < rows && !done; y++) for (let x = 0; x < cols && !done; x++) if (fits(x, y, w, h)) {
         for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) occ[y + j][x + i] = true;
@@ -2248,7 +2264,7 @@
     // Munitionszeile (rechts, gleiche Zeile): beide Vorräte mit Kapazität, farbig bei Knappheit (rot=leer, gelb=knapp)
     const ammoCol = (ammoOf('muni') <= 0 || ammoOf('kristall') <= 0) ? '#f87171' : (ammoOf('muni') <= 10 || ammoOf('kristall') <= 10) ? '#fbbf24' : '#a8c0a0';
     add(sceneRef.add.text(L.px + L.pw - 12, L.py + 38, '🧨 ' + ammoOf('muni') + '/' + ammoCap('muni') + '   🔷 ' + ammoOf('kristall') + '/' + ammoCap('kristall'), { fontFamily: 'system-ui', fontSize: '12px', color: ammoCol, fontStyle: 'bold' }).setOrigin(1, 0).setScrollFactor(0).setDepth(53));
-    invScrapRect = null; shopSellRect = null; shopBuyBtns = []; perkBtns = []; charTabRects = [];
+    invScrapRect = null; shopSellRect = null; shopBuyBtns = []; perkBtns = []; charTabRects = []; invFilterRects = [];
     // ---- Reiter: Ausrüstung / Fähigkeiten (nur außerhalb des Shops) ----
     if (!state.shopMode) {
       const tabs = [['gear', 'Ausrüstung'], ['perks', '✦ Fähigkeiten' + (state.perkPoints > 0 ? ' (' + state.perkPoints + ')' : '')]];
@@ -2279,18 +2295,40 @@
       drawStatsSheet(L, add);   // Werte-Blatt inkl. Ablage-Zone
     }
     // ---- Rechts: Grid-Inventar (scrollbar) ----
-    const maxScroll = Math.max(0, L.rowsTotal - L.rows);
+    // Packung des aktiven Filters vorab -> Scroll-Grenze richtet sich nach den belegten Zeilen.
+    const packed = packGrid(L.cols, L.rowsTotal, state.invFilter);
+    const usedRows = packed.reduce((m, p) => Math.max(m, p.gy + p.h), 0);
+    const maxScroll = Math.max(0, usedRows - L.rows);
     invScroll = Math.max(0, Math.min(invScroll, maxScroll));
     add(sceneRef.add.text(L.rightX, L.colTop, (state.shopMode ? '🎒 Mein Inventar  (' : '🎒  Inventar  (') + gridUsedCells() + '/' + L.cap + ')', { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0).setScrollFactor(0).setDepth(52));
+    // ---- Filter-Reiter (Kategorien): Alle / Waffen / Rüstung / Tech / Beutel ----
+    invFilterRects = [];
+    const counts = filterCounts();
+    const fN = INV_FILTERS.length, fGap = 4, fH = 20, fW = Math.floor((L.rightW - (fN - 1) * fGap) / fN), fY = L.colTop + 20;
+    INV_FILTERS.forEach(([id, icon, label], i) => {
+      const active = state.invFilter === id, fx = L.rightX + i * (fW + fGap), n = counts[id] || 0;
+      const r = add(sceneRef.add.rectangle(fx, fY, fW, fH, active ? 0x7c4a12 : 0x2a2f3a, 0.95).setStrokeStyle(1.5, active ? 0xf3e9d2 : 0x556677, 0.6).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+      const dim = (id !== 'all' && n === 0);   // leere Kategorie ausgrauen
+      add(sceneRef.add.text(fx + fW / 2, fY + fH / 2, icon + (n > 0 && id !== 'all' ? ' ' + n : ''), { fontFamily: 'system-ui', fontSize: '10px', color: dim ? '#5a6270' : (active ? '#f3e9d2' : '#c7d0da'), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      invFilterRects.push({ rect: r, id, label });
+    });
+    // aktiver Filter als Klartext (der Reiter zeigt nur Icons)
+    if (state.invFilter !== 'all') {
+      const cur = INV_FILTERS.find(f => f[0] === state.invFilter);
+      add(sceneRef.add.text(L.rightX + L.rightW, L.colTop, '▸ ' + cur[2], { fontFamily: 'system-ui', fontSize: '10px', color: '#c9a24a' }).setOrigin(1, 0).setScrollFactor(0).setDepth(52));
+    }
     // sichtbare Zellen
     for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
       const cx = L.gx0 + c * (L.cell + L.gap), cy = L.gy0 + r * (L.cell + L.gap);
       add(sceneRef.add.rectangle(cx, cy, L.cell, L.cell, 0x1b2431, 0.85).setStrokeStyle(1, 0xf3e9d2, 0.18).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
     }
-    // nur vollständig sichtbare Items im Fenster [invScroll, invScroll+rows) zeichnen
-    for (const p of packGrid(L.cols, L.rowsTotal)) {
+    // nur vollständig sichtbare Items im Fenster [invScroll, invScroll+rows) zeichnen (nach aktivem Filter)
+    for (const p of packed) {
       if (p.gy < invScroll || p.gy + p.h > invScroll + L.rows) continue;
       drawGridItem({ it: p.it, gx: p.gx, gy: p.gy - invScroll, w: p.w, h: p.h }, L, add);
+    }
+    if (packed.length === 0) {   // Filter aktiv, aber Kategorie leer
+      add(sceneRef.add.text(L.gx0 + (L.cols * (L.cell + L.gap)) / 2 - L.gap / 2, L.gy0 + L.cell, '— nichts in dieser Kategorie —', { fontFamily: 'system-ui', fontSize: '11px', color: '#7a8494', fontStyle: 'italic' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(53));
     }
     // Scroll-Pfeile (rechts vom Grid), wenn mehr Zeilen als sichtbar
     invScrollBtns = [];
@@ -2660,6 +2698,7 @@
       }
       if (hit(invClose, p, 26)) { state.shopMode ? closeStore() : closeInventory(); return; }
       for (const t of charTabRects) if (inRect(p, t.rect.x, t.rect.y - t.rect.height / 2, t.rect.width, t.rect.height)) { state.charTab = t.tab; renderInventory(); return; }
+      for (const f of invFilterRects) if (inRect(p, f.rect.x, f.rect.y, f.rect.width, f.rect.height)) { state.invFilter = f.id; invScroll = 0; renderInventory(); return; }
       if (state.charTab === 'perks' && !state.shopMode) {
         for (const b of perkBtns) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { b.id === '__respec' ? doRespec() : buyPerk(b.id); return; }
         if (invPanel && !inRect(p, invPanel.x - invPanel.width / 2, invPanel.y, invPanel.width, invPanel.height)) closeInventory();
