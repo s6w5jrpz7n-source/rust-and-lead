@@ -1052,7 +1052,7 @@
   let wsUI = [], wsButtons = [], wsCloseRef = null, wsPanelRef = null;
   let dlgBg, dlgName, dlgText, dlgHint, dlgBtn, dlgBtnText, dlgBtnAction = null, questText, npcSprites = [];
   let tyUI = [], tyButtons = [], tyCloseRef = null, tyPanelRef = null;
-  let stashUI = [], stashButtons = [], stashCloseRef = null, stashPanelRef = null;
+  let stashUI = [], stashButtons = [], stashCloseRef = null, stashPanelRef = null, stashFilterRects = [], stashSlotRects = [], stashScroll = 0;
   let chestUI = [], chestButtons = [], chestCloseRef = null, chestPanelRef = null;
   let revealBg, revealText, revealHint;
   let portraitBg, portraitIcon, lifeBarBg, lifeBarFill, lifeText;         // Spieler-Leben
@@ -1078,7 +1078,7 @@
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
     endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0, memoriesFound: 0, flashbackPlaying: false, flashbackSeq: null, memorialsSeen: new Set(), familyBuried: false, curBiome: null, biomesSeen: new Set(), hallReturn: null, hallTheme: null,
-    gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
+    gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, stashGear: [], stashFilter: 'all', invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', invFilter: 'all', itemDetail: null, muted: false,
     tutorial: 0, tutOpenedInv: false, abyssDepth: 0, abyssMod: null, abyssBest: 0, abyssBiome: null, abyssBiomeNew: false,
@@ -1478,7 +1478,7 @@
   }
   function serialize() {
     const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, memorialsSeen: [...state.memorialsSeen], familyBuried: state.familyBuried, biomesSeen: [...state.biomesSeen], ts: Date.now(), discovered: [...state.discovered], explored: ex };
+    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, stashGear: state.stashGear, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, memorialsSeen: [...state.memorialsSeen], familyBuried: state.familyBuried, biomesSeen: [...state.biomesSeen], ts: Date.now(), discovered: [...state.discovered], explored: ex };
   }
   function save() { try { localStorage.setItem(slotKey('auto'), JSON.stringify(serialize())); } catch (e) { } }   // Autospeichern -> dedizierter Auto-Slot
   function saveToManual(i) { try { localStorage.setItem(slotKey(i), JSON.stringify(serialize())); } catch (e) { } }   // manueller Snapshot
@@ -1493,6 +1493,7 @@
       state.weapon = (s.weapon && WEAPONS[s.weapon]) ? s.weapon : 'karabiner';
       if (s.weaponLvl) for (const k in state.weaponLvl) if (typeof s.weaponLvl[k] === 'number') state.weaponLvl[k] = s.weaponLvl[k];
       if (s.stash) for (const k in state.stash) if (typeof s.stash[k] === 'number') state.stash[k] = s.stash[k];
+      state.stashGear = Array.isArray(s.stashGear) ? s.stashGear.filter(g => g && (GEAR_SLOTS[g.slot] || g.slot === 'tech')) : [];
       if (s.equip) for (const k in state.equip) if (s.equip[k] && GEAR_SLOTS[slotType(k)]) state.equip[k] = s.equip[k];
       if (Array.isArray(s.gearBag)) state.gearBag = s.gearBag.filter(g => g && (GEAR_SLOTS[g.slot] || g.slot === 'tech'));
       state.level = Math.max(1, s.level || 1); state.xp = s.xp || 0;
@@ -2236,10 +2237,10 @@
     for (const it of gridItems()) { c.all++; c[itemCat(it)]++; }
     return c;
   }
-  function packGrid(cols, rows, filter) {
+  function packItems(items, cols, rows) {   // Tetris-Packung einer beliebigen Item-Liste (Beutel wie Truhe)
     const occ = Array.from({ length: rows }, () => new Array(cols).fill(false)), placed = [];
     const fits = (x, y, w, h) => { if (x + w > cols || y + h > rows) return false; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (occ[y + j][x + i]) return false; return true; };
-    for (const it of gridItems(filter)) {
+    for (const it of items) {
       const w = it.foot[0], h = it.foot[1]; let done = false;
       for (let y = 0; y < rows && !done; y++) for (let x = 0; x < cols && !done; x++) if (fits(x, y, w, h)) {
         for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) occ[y + j][x + i] = true;
@@ -2248,6 +2249,7 @@
     }
     return placed;
   }
+  function packGrid(cols, rows, filter) { return packItems(gridItems(filter), cols, rows); }
   function gridUsedCells() { let n = 0; for (const it of gridItems()) n += it.foot[0] * it.foot[1]; return n; }
   function gridFree() { return invLayout().cap - gridUsedCells(); }
   // Material stapelt in EINEN Grid-Slot: ein bestehender Stapel nimmt beliebig viel auf,
@@ -2681,7 +2683,12 @@
     }
     if (state.stashOpen) {
       if (stashCloseRef && Phaser.Math.Distance.Between(p.x, p.y, stashCloseRef.x, stashCloseRef.y) <= 24) { closeStash(); return; }
-      for (const b of stashButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) { if (b.action === 'deposit') stashDeposit(); else stashWithdraw(); return; }
+      for (const f of stashFilterRects) if (inRect(p, f.rect.x, f.rect.y, f.rect.width, f.rect.height)) { state.stashFilter = f.id; stashScroll = 0; renderStash(); return; }
+      for (const b of stashButtons) if (inRect(p, b.rect.x - b.rect.width / 2, b.rect.y - b.rect.height / 2, b.rect.width, b.rect.height)) {
+        if (b.action === 'deposit') stashDeposit(); else if (b.action === 'withdraw') stashWithdraw(); else if (b.action === 'scrollUp') { stashScroll--; renderStash(); } else if (b.action === 'scrollDown') { stashScroll++; renderStash(); }
+        return;
+      }
+      for (const s of stashSlotRects) if (inRect(p, s.x - s.w / 2, s.y - s.h / 2, s.w, s.h)) { stashTake(s.payload); return; }
       if (stashPanelRef && !inRect(p, stashPanelRef.x - stashPanelRef.width / 2, stashPanelRef.y, stashPanelRef.width, stashPanelRef.height)) closeStash();
       return;
     }
@@ -3617,44 +3624,128 @@
   }
 
   // ---- Persönliche Truhe (Stash) -----------------------------
+  // Die Truhe lagert Ausrüstung UND Material (unbegrenzt). Gleiche Filter-Reiter wie der Beutel.
+  function stashItems(filter) {
+    const items = [];
+    for (const g of (state.stashGear || [])) items.push({ kind: 'gear', gear: g, foot: gearFoot(g) });
+    for (const id of ['schrott', 'zahnrad', 'dampfkern']) if ((state.stash[id] || 0) > 0) items.push({ kind: 'mat', id, foot: [1, 1] });
+    const out = (filter && filter !== 'all') ? items.filter(it => itemCat(it) === filter) : items;
+    out.sort((a, b) => (b.foot[0] * b.foot[1]) - (a.foot[0] * a.foot[1]));
+    return out;
+  }
+  function stashCounts() { const c = { all: 0, weapon: 0, armor: 0, tech: 0, misc: 0 }; for (const it of stashItems()) { c.all++; c[itemCat(it)]++; } return c; }
+  function stashUsedCells() { let n = 0; for (const it of stashItems()) n += it.foot[0] * it.foot[1]; return n; }
   function openStash() {
     if (state.storeOpen || state.workshopOpen || state.travelOpen || state.inventoryOpen || state.fullMapOpen || state.tycoonOpen || state.questLogOpen || state.codexOpen) return;
-    state.stashOpen = true; hideContext();
-    const size = sceneRef.scale.gameSize, ids = ['schrott', 'zahnrad', 'dampfkern'];
-    const pw = Math.min(360, size.width * 0.94), rowH = 44, headH = 64, footH = 92;
-    const ph = headH + ids.length * (rowH + 6) + footH;
-    const px = size.width / 2, py = (size.height - ph) / 2;
-    const add = o => { stashUI.push(o); return o; };
+    state.stashOpen = true; stashScroll = 0; hideContext();
+    renderStash();
+  }
+  function renderStash() {
+    stashUI.forEach(o => o.destroy()); stashUI = []; stashButtons = []; stashFilterRects = []; stashSlotRects = [];
+    const size = sceneRef.scale.gameSize, add = o => { stashUI.push(o); return o; };
+    const pw = Math.min(400, Math.round(size.width * 0.94));
+    const cols = 5, gap = 5, headH = 86, footH = 58;
+    const cell = Math.floor((pw - 28 - (cols - 1) * gap) / cols);
+    const maxPh = Math.min(size.height - 16, Math.round(size.height * 0.9));
+    const rows = Math.max(3, Math.floor((maxPh - headH - footH + gap) / (cell + gap)));
+    const ph = headH + rows * (cell + gap) - gap + footH;
+    const px = size.width / 2, py = Math.round((size.height - ph) / 2), lx = px - pw / 2;
     add(sceneRef.add.rectangle(0, 0, size.width, size.height, 0x000000, 0.72).setOrigin(0, 0).setScrollFactor(0).setDepth(50));
     stashPanelRef = add(sceneRef.add.rectangle(px, py, pw, ph, 0x11100e, 0.97).setOrigin(0.5, 0).setStrokeStyle(2, 0xc9a24a, 0.7).setScrollFactor(0).setDepth(51));
     add(sceneRef.add.text(px, py + 10, '📦  Persönliche Truhe', { fontFamily: 'system-ui', fontSize: '17px', color: '#f3e9d2' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
-    add(sceneRef.add.text(px, py + 34, 'Beutel-Plätze ' + gridUsedCells() + '/' + invLayout().cap + ' · Truhe unbegrenzt', { fontFamily: 'system-ui', fontSize: '12px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
+    add(sceneRef.add.text(px, py + 33, 'Beutel ' + gridUsedCells() + '/' + invLayout().cap + '  ·  Truhe ' + stashUsedCells() + ' · unbegrenzt  ·  antippen = entnehmen', { fontFamily: 'system-ui', fontSize: '11px', color: '#cbb894' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(52));
     stashCloseRef = add(sceneRef.add.text(px + pw / 2 - 20, py + 12, '✕', { fontFamily: 'system-ui', fontSize: '22px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
-    let y = py + headH;
-    ids.forEach(id => {
-      const it = ITEMS[id];
-      add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2, it.icon + '  ' + it.name, { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
-      add(sceneRef.add.text(px + pw / 2 - 14, y + rowH / 2, 'Beutel ×' + (state.inventory[id] || 0) + '   Truhe ×' + (state.stash[id] || 0), { fontFamily: 'system-ui', fontSize: '12px', color: '#a8a090' }).setOrigin(1, 0.5).setScrollFactor(0).setDepth(52));
-      y += rowH + 6;
+    // ---- Filter-Reiter (gleiche Kategorien wie der Beutel) ----
+    const counts = stashCounts();
+    const fN = INV_FILTERS.length, fGap = 4, fH = 20, fW = Math.floor((pw - 28 - (fN - 1) * fGap) / fN), fY = py + 54;
+    INV_FILTERS.forEach(([id, icon], i) => {
+      const active = state.stashFilter === id, fx = lx + 14 + i * (fW + fGap), nn = counts[id] || 0;
+      const r = add(sceneRef.add.rectangle(fx, fY, fW, fH, active ? 0x7c4a12 : 0x2a2f3a, 0.95).setStrokeStyle(1.5, active ? 0xf3e9d2 : 0x556677, 0.6).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+      const dim = (id !== 'all' && nn === 0);
+      add(sceneRef.add.text(fx + fW / 2, fY + fH / 2, icon + (nn > 0 && id !== 'all' ? ' ' + nn : ''), { fontFamily: 'system-ui', fontSize: '10px', color: dim ? '#5a6270' : (active ? '#f3e9d2' : '#c7d0da'), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+      stashFilterRects.push({ rect: r, id });
     });
-    const bw = (pw - 44) / 2;
-    const dep = add(sceneRef.add.rectangle(px - pw / 2 + 14 + bw / 2, y + 18, bw, 38, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
-    add(sceneRef.add.text(dep.x, dep.y, '⬇  Alles einlagern', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-    const wdr = add(sceneRef.add.rectangle(px + pw / 2 - 14 - bw / 2, y + 18, bw, 38, 0x7c4a12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
+    // ---- Grid (scrollbar; Truhe unbegrenzt -> virtuelles Raster) ----
+    const gx0 = lx + 14, gy0 = py + headH;
+    const rowsTotal = Math.max(rows, Math.ceil(stashUsedCells() / cols) + rows);
+    const packed = packItems(stashItems(state.stashFilter), cols, rowsTotal);
+    const usedRows = packed.reduce((m, p) => Math.max(m, p.gy + p.h), 0);
+    const maxScroll = Math.max(0, usedRows - rows);
+    stashScroll = Math.max(0, Math.min(stashScroll, maxScroll));
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const cx = gx0 + c * (cell + gap), cy = gy0 + r * (cell + gap);
+      add(sceneRef.add.rectangle(cx, cy, cell, cell, 0x1b2431, 0.85).setStrokeStyle(1, 0xf3e9d2, 0.18).setScrollFactor(0).setDepth(52).setOrigin(0, 0));
+    }
+    const L = { gx0, gy0, cell, gap, cols };
+    for (const p of packed) {
+      if (p.gy < stashScroll || p.gy + p.h > stashScroll + rows) continue;
+      drawStashItem({ it: p.it, gx: p.gx, gy: p.gy - stashScroll, w: p.w, h: p.h }, L, add);
+    }
+    if (packed.length === 0) add(sceneRef.add.text(px, gy0 + cell, state.stashFilter === 'all' ? '— Truhe ist leer —' : '— nichts in dieser Kategorie —', { fontFamily: 'system-ui', fontSize: '12px', color: '#7a8494', fontStyle: 'italic' }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(53));
+    if (maxScroll > 0) {   // Scroll-Pfeile
+      const ax = gx0 + cols * (cell + gap) - 2;
+      const up = add(sceneRef.add.rectangle(ax, gy0 + 12, 26, 26, 0x2a2f3a, 0.9).setStrokeStyle(1.5, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(54).setOrigin(0.5));
+      add(sceneRef.add.text(up.x, up.y, stashScroll > 0 ? '▲' : '△', { fontFamily: 'system-ui', fontSize: '15px', color: stashScroll > 0 ? '#f3e9d2' : '#5a5348' }).setOrigin(0.5).setScrollFactor(0).setDepth(55));
+      const dn = add(sceneRef.add.rectangle(ax, gy0 + rows * (cell + gap) - 14, 26, 26, 0x2a2f3a, 0.9).setStrokeStyle(1.5, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(54).setOrigin(0.5));
+      add(sceneRef.add.text(dn.x, dn.y, stashScroll < maxScroll ? '▼' : '▽', { fontFamily: 'system-ui', fontSize: '15px', color: stashScroll < maxScroll ? '#f3e9d2' : '#5a5348' }).setOrigin(0.5).setScrollFactor(0).setDepth(55));
+      stashButtons.push({ rect: up, action: 'scrollUp' }, { rect: dn, action: 'scrollDown' });
+    }
+    // ---- Fußzeile: Sammel-Aktionen ----
+    const by = gy0 + rows * (cell + gap) - gap + 12, bw = (pw - 44) / 2;
+    const dep = add(sceneRef.add.rectangle(lx + 14 + bw / 2, by + 18, bw, 38, 0x3f6212, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
+    add(sceneRef.add.text(dep.x, dep.y, '⬇  Beutel einlagern', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+    const wdr = add(sceneRef.add.rectangle(px + pw / 2 - 14 - bw / 2, by + 18, bw, 38, 0x7c4a12, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52).setOrigin(0.5));
     add(sceneRef.add.text(wdr.x, wdr.y, '⬆  Alles entnehmen', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-    stashButtons = [{ rect: dep, action: 'deposit' }, { rect: wdr, action: 'withdraw' }];
+    stashButtons.push({ rect: dep, action: 'deposit' }, { rect: wdr, action: 'withdraw' });
   }
-  function closeStash() { state.stashOpen = false; stashUI.forEach(o => o.destroy()); stashUI = []; stashButtons = []; stashCloseRef = null; stashPanelRef = null; }
-  function refreshStash() { closeStash(); openStash(); }
-  function stashDeposit() {
+  function drawStashItem(p, L, add) {
+    const ix = L.gx0 + p.gx * (L.cell + L.gap), iy = L.gy0 + p.gy * (L.cell + L.gap);
+    const iw = p.w * L.cell + (p.w - 1) * L.gap, ih = p.h * L.cell + (p.h - 1) * L.gap;
+    const cx = ix + iw / 2, cy = iy + ih / 2, big = Math.min(iw, ih);
+    if (p.it.kind === 'gear') {
+      const g = p.it.gear, col = RARITY[g.rarity].color;
+      add(sceneRef.add.rectangle(cx, cy, iw - 2, ih - 2, col, 0.28).setStrokeStyle(2, col, 0.95).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(cx, cy - big * 0.14, g.icon, { fontSize: Math.round(big * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      add(sceneRef.add.text(cx, cy + ih / 2 - 10, '+' + g.stat.val, { fontFamily: 'system-ui', fontSize: '10px', color: css(col), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      stashSlotRects.push({ x: cx, y: cy, w: iw, h: ih, payload: { kind: 'gear', gear: g } });
+    } else {
+      const icon = ITEMS[p.it.id].icon, cnt = state.stash[p.it.id] || 0;
+      add(sceneRef.add.text(cx, cy - 5, icon, { fontSize: Math.round(L.cell * 0.42) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      add(sceneRef.add.text(cx, cy + L.cell / 2 - 9, '×' + cnt, { fontFamily: 'system-ui', fontSize: '10px', color: '#f3e9d2', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      stashSlotRects.push({ x: cx, y: cy, w: iw, h: ih, payload: { kind: 'mat', id: p.it.id } });
+    }
+  }
+  function closeStash() { state.stashOpen = false; stashUI.forEach(o => o.destroy()); stashUI = []; stashButtons = []; stashFilterRects = []; stashSlotRects = []; stashCloseRef = null; stashPanelRef = null; }
+  function refreshStash() { if (state.stashOpen) renderStash(); }
+  // Einzelnes Truhen-Teil in den Beutel entnehmen (Antippen)
+  function stashTake(payload) {
+    if (payload.kind === 'gear') {
+      const g = payload.gear, i = state.stashGear.indexOf(g); if (i === -1) return;
+      if (gearCells(g) > gridFree()) { toast('🎒 Beutel voll — kein Platz'); return; }
+      state.stashGear.splice(i, 1); state.gearBag.push(g);
+      toast('⬆ ' + g.name + ' entnommen'); save(); renderStash();
+    } else {
+      const id = payload.id, n = state.stash[id] || 0; if (n <= 0) return;
+      if (!canTakeMat(id)) { toast('Kein freier Slot im Beutel'); return; }
+      state.inventory[id] = (state.inventory[id] || 0) + n; state.stash[id] = 0;
+      toast('⬆ ' + n + '× ' + ITEMS[id].name + ' entnommen'); save(); renderStash();
+    }
+  }
+  function stashDeposit() {   // gesamten Beutel (Ausrüstung + Material) einlagern
     let moved = 0;
+    for (const g of state.gearBag.slice()) { state.stashGear.push(g); moved++; }
+    state.gearBag = [];
     for (const k in state.inventory) { const n = state.inventory[k] || 0; if (n > 0 && state.stash[k] !== undefined) { state.stash[k] += n; state.inventory[k] = 0; moved += n; } }
-    if (moved > 0) { toast('⬇ ' + moved + ' Teile eingelagert'); save(); refreshStash(); } else toast('Beutel ist leer');
+    if (moved > 0) { toast('⬇ ' + moved + ' Teile eingelagert'); save(); renderStash(); } else toast('Beutel ist leer');
   }
-  function stashWithdraw() {
+  function stashWithdraw() {   // alles entnehmen, soweit im Beutel Platz ist
     let moved = 0, blocked = false;
-    for (const k in state.stash) { const n = state.stash[k] || 0; if (n <= 0) continue; if (canTakeMat(k)) { state.inventory[k] = (state.inventory[k] || 0) + n; state.stash[k] = 0; moved += n; } else blocked = true; }   // Material stapelt in einen Slot
-    if (moved > 0) { toast('⬆ ' + moved + ' Teile entnommen' + (blocked ? ' (kein Slot frei)' : '')); save(); refreshStash(); } else toast(blocked ? 'Kein freier Slot im Beutel' : 'Truhe ist leer');
+    for (const g of state.stashGear.slice()) {
+      if (gearCells(g) <= gridFree()) { state.stashGear.splice(state.stashGear.indexOf(g), 1); state.gearBag.push(g); moved++; }
+      else blocked = true;
+    }
+    for (const k in state.stash) { const n = state.stash[k] || 0; if (n <= 0) continue; if (canTakeMat(k)) { state.inventory[k] = (state.inventory[k] || 0) + n; state.stash[k] = 0; moved += n; } else blocked = true; }
+    if (moved > 0) { toast('⬆ ' + moved + ' Teile entnommen' + (blocked ? ' (Beutel voll)' : '')); save(); renderStash(); } else toast(blocked ? 'Beutel voll — kein Platz' : 'Truhe ist leer');
   }
 
   // ---- Tycoon (Rustwater-Wirtschaft) -------------------------
