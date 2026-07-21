@@ -22,6 +22,7 @@ func _ready() -> void:
 	_test_grid_inventory()
 	_test_world_manager()
 	_test_memory_manager()
+	_test_encounter_manager()
 	print("──────────────────────────────────────────────")
 	print("  Ergebnis: %d bestanden, %d fehlgeschlagen" % [_passed, _failed])
 	print("──────────────────────────────────────────────")
@@ -374,3 +375,51 @@ func _test_memory_manager() -> void:
 	_check("Erfolg 'Heimkehr' (homecoming)", MemoryManager.is_homecoming())
 	_check("Gräber danach 'buried'", MemoryManager.graves_state() == "buried")
 	_check("bury_family zweimal = false", MemoryManager.bury_family() == false)
+
+
+# ── EncounterManager: Mini-Dungeons & Unique-Champions (§8.2) ─────────────────
+func _test_encounter_manager() -> void:
+	print("· EncounterManager (Mini-Dungeons & Champions §8.2)")
+	_reset_state()
+
+	# Roster-Parität: Kläffer ist im Backend vorhanden (Hallen-Thema nutzt ihn).
+	_check("Kläffer im Roster (Parität)", CombatData.ENEMY_TYPES.has("klaeffer"))
+	_check("Kläffer ist mechanischer Schwarm", String(CombatData.ENEMY_TYPES["klaeffer"]["class"]) == "MECHANICAL" and bool(CombatData.ENEMY_TYPES["klaeffer"].get("swarm", false)))
+
+	# Hallen-Themen: 3, deterministisch via roll (0.0 -> erstes).
+	_check("3 Hallen-Themen", EncounterManager.HALL_THEMES.size() == 3)
+	_check("roll 0.0 -> Rattennest", EncounterManager.roll_hall_theme(0.0)["id"] == "rats")
+	_check("roll 0.99 -> Banditenloch", EncounterManager.roll_hall_theme(0.99)["id"] == "outlaws")
+	var theme_types_ok: bool = true
+	for th in EncounterManager.HALL_THEMES:
+		if not CombatData.ENEMY_TYPES.has(String(th["type"])):
+			theme_types_ok = false
+	_check("alle Themen-Typen im Roster", theme_types_ok)
+
+	# Champion-Wurf: ~30 % (WorldManager.UNIQUE_CHAMPION_CHANCE); deterministisch via roll.
+	_check("roll 0.10 < 0.30 -> Champion", EncounterManager.is_unique_pack(0.10) == true)
+	_check("roll 0.50 >= 0.30 -> kein Champion", EncounterManager.is_unique_pack(0.50) == false)
+	var rats: Dictionary = EncounterManager.roll_hall_theme(0.0)
+	_check("Rudel normal = Themen-Anzahl", EncounterManager.pack_size(rats, false) == 11)
+	_check("Rudel mit Champion = +3", EncounterManager.pack_size(rats, true) == 14)
+
+	# Champion-Namen: aus der Liste, deterministisch.
+	_check("champion_name(0.0) = erster", EncounterManager.champion_name(0.0) == EncounterManager.UNIQUE_NAMES[0])
+	_check("champion_name in Liste", EncounterManager.UNIQUE_NAMES.has(EncounterManager.champion_name(0.99)))
+
+	# Champion-Aufbau: ×6 Leben (× Faktor), +Panzerung, benannt, als Boss & Unique.
+	var champ: CombatTarget = EncounterManager.make_champion("klaeffer", 0.0, 1.0)
+	var base_hp: int = int(CombatData.ENEMY_TYPES["klaeffer"]["hp"])   # 40
+	_check("Champion HP = 6x Basis", champ.max_health == base_hp * 6 and champ.health == champ.max_health)
+	_check("Champion +Panzerung", champ.armor == int(CombatData.ENEMY_TYPES["klaeffer"]["armor"]) + 6)
+	_check("Champion ist Unique+Boss", champ.is_unique and champ.is_boss)
+	_check("Champion benannt", champ.display_name == EncounterManager.UNIQUE_NAMES[0])
+	var champ2: CombatTarget = EncounterManager.make_champion("outlaw", 0.0, 1.5)
+	_check("hp_mul skaliert Leben", champ2.max_health == roundi(int(CombatData.ENEMY_TYPES["outlaw"]["hp"]) * 6.0 * 1.5))
+
+	# Beute-Kontrakt: garantiertes Legendary aus benennbaren Slots, zählt als Boss-Kill.
+	var loot: Dictionary = EncounterManager.champion_loot()
+	_check("Champion-Beute garantiert Legendary", loot["legendary_guaranteed"] == true)
+	_check("Legendary-Slots benennbar", loot["legendary_slots"] == ["weapon", "armor", "gadget", "boots", "helmet"])
+	_check("Champion-Beute: 2 Boss-Kisten, x2 Gold", int(loot["boss_chests"]) == 2 and int(loot["gold_mult"]) == 2)
+	_check("Champion zählt als Boss-Kill", loot["counts_as_boss"] == true)

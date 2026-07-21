@@ -20,6 +20,8 @@ var ranged: Dictionary = {}                           # {} = Nahkämpfer
 var is_boss: bool = false
 var is_elite: bool = false
 var is_superboss: bool = false
+var is_unique: bool = false                           # benannter Champion (Kritter-Hallen, §8.2)
+var display_name: String = ""                         # Anzeigename für Boss-/Champion-Leiste
 
 # ── Status ────────────────────────────────────────────────────────────────────
 var stun_until: int = 0                               # ms (Time.get_ticks_msec()); 0 = kein Stun

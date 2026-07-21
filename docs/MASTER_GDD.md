@@ -1312,7 +1312,7 @@ Biom-Zonierung (§1.6.3) bereits nach `WorldManager` portiert ist.
 | Grid-Inventar (Footprints, Auto-Platz) | `invLayout` u. a. | `GridInventoryBackend` | ✅ portiert |
 | Weltgeografie, 3 Tore, POIs | `MAPS`/Gating | `WorldManager` | ✅ portiert |
 | **Biom-Zonierung + Gegner-Pools** | `OVERWORLD_BIOMES`/`BIOME_ENEMY_POOLS` | `WorldManager` (§1.6.3) | ✅ portiert |
-| **Mini-Dungeons & Unique-Champions** | `critter_hall`/`spawnUniqueLeader` | `WorldManager`/`EncounterManager` | ⬜ offen (§8.2) |
+| **Mini-Dungeons & Unique-Champions** | `critter_hall`/`spawnUniqueLeader` | `EncounterManager` | ✅ Kernlogik portiert (§8.2); Champion-Beute = Kontrakt, Item-Gen wartet auf `ProgressionManager` |
 | **Erinnerungs-Walzen & Familien-Bogen** | `MEMORIES`/`playMemorial` | `MemoryManager` | ✅ portiert (§8.3) |
 | **Kampf-Lesbarkeit** (Effekt/Status/Klasse) | `eff`/`popEff`/Chip | Präsentations-Layer (View) | ⬜ offen (§8.4) |
 | Abstieg-Biome (Rift) | `ABYSS_BIOMES` | `RiftManager` (neu) | ⬜ offen |
