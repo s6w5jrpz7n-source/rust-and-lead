@@ -581,3 +581,17 @@ Die Story-Bibel enthält sieben Nebenbögen, die sich als Einzel-Folgen des Hör
 3. **Das Herz-Motiv ist eine Falle.** Von Szene 1.1 an präsent, entpuppt es sich im Finale als Vanes Puls. Nicht zu früh auflösen.
 4. **Nicht zeigen = am lautesten.** Das Massaker von Providence Cut ist ein Kolbenschlag und dann Sekunden Stille. Die Stille ist der Ton.
 5. **Das Familien-Motiv verrottet mit.** Anfangs schön, dann leiernd, dann zerschnitten — und am Schluss (Beisetzung unter freiem Himmel) zum ersten Mal wieder rein. Der Klang der Trauerarbeit.
+
+---
+
+## TTS-Export (maschinenlesbare Zeilenliste)
+
+Für die Vertonung per Sprachsynthese liegt dieses Skript zusätzlich als **strukturierte Zeilenliste** vor — generiert direkt aus diesem Dokument:
+
+- **`docs/hoerspiel_tts.json`** — die Voice-Map (Rolle → Stimm-Hinweis) plus alle Ereignisse in Reihenfolge.
+- **`docs/hoerspiel_tts.csv`** — dieselben Ereignisse flach (Tabelle/Import).
+- **`docs/build_hoerspiel_tts.py`** — der Generator (`python3 docs/build_hoerspiel_tts.py`); nach jeder Skript-Änderung neu laufen lassen, dann bleiben JSON/CSV synchron.
+
+**Schema je Event:** `seq` (Reihenfolge) · `folge` · `szene` · `typ` (`line` = gesprochen; `atmo`/`music`/`sfx`/`transition` = nicht gesprochene Mix-Cues) · `rolle` · `voice_id` (Platzhalter, auf eine konkrete TTS-Stimme mappen) · `regie` (Tonfall/Anweisung — als Voice-Directing bzw. für SSML `rate`/`pitch`) · `text` (reiner Sprechtext, ohne Regie-Klammern) · `fx` (z. B. Doppel-Timbre des Helden ab Folge 2).
+
+**Pipeline in Kürze:** `spoken == true` filtern → je Zeile `voice_id` auf eine Stimme abbilden, `text` synthetisieren, `regie`/`fx` als Prosodie/Effekt anwenden → in `seq`-Reihenfolge mit den `atmo`/`music`/`sfx`-Cues zu Folgen mischen.
