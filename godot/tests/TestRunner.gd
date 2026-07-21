@@ -26,6 +26,7 @@ func _ready() -> void:
 	_test_progression_manager()
 	_test_rift_manager()
 	_test_save_manager()
+	_test_equip_manager()
 	print("──────────────────────────────────────────────")
 	print("  Ergebnis: %d bestanden, %d fehlgeschlagen" % [_passed, _failed])
 	print("──────────────────────────────────────────────")
@@ -53,6 +54,7 @@ func _reset_state() -> void:
 	GameState.potions = 3
 	GameState.kills = 0
 	GameState.inventory = { "schrott": 0, "zahnrad": 0, "dampfkern": 0 }
+	GameState.equip = {}
 	GameState.economy = { "saloon": 0, "forge": 0, "distillery": 0, "laboratory": 0 }
 	GameState.quests = {}
 	GameState.quest_base = {}
@@ -591,6 +593,8 @@ func _test_save_manager() -> void:
 	GameState.memorials_seen = ["doorframe", "photo"]
 	GameState.family_buried = false
 	GameState.codex = ["reveal", "steuerwalzen", "familie"]
+	var srng := RandomNumberGenerator.new(); srng.seed = 1
+	GameState.equip = { "weapon": ProgressionManager.make_gear("weapon", "legendary", "overcharge", srng) }
 
 	# Dictionary-Roundtrip: serialisieren, Zustand zurücksetzen, wiederherstellen.
 	var snap: Dictionary = SaveManager.serialize()
@@ -604,6 +608,7 @@ func _test_save_manager() -> void:
 	_check("Roundtrip: Quests", String(GameState.quests["q_rebels5"]) == "done" and int(GameState.quest_base["q_rebels8"]) == 120)
 	_check("Roundtrip: roter Faden", GameState.memories_found == 9 and GameState.memorials_seen == ["doorframe", "photo"] and GameState.codex.has("familie"))
 	_check("Roundtrip: Gebäude", GameState.building_level("saloon") == 3)
+	_check("Roundtrip: Loadout", EquipManager.is_equipped("weapon") and String(EquipManager.equipped("weapon")["legendary_power"]) == "overcharge")
 
 	# JSON-Roundtrip (Zahlen kommen als Float zurück -> defensiver Cast).
 	var json: String = SaveManager.to_json()
@@ -628,3 +633,63 @@ func _test_save_manager() -> void:
 	_check("load_from_slot", SaveManager.load_from_slot(3) == true and GameState.level == 20 and GameState.gold == 999 and GameState.chosen_guild == "smugglers")
 	_check("load leerer Slot = false", SaveManager.load_from_slot(9) == false)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveManager.slot_path(3)))
+
+
+# ── EquipManager: Loadout, Stat-Aggregation & legendäre Sets §7.4/§7.4.4 ──────
+func _test_equip_manager() -> void:
+	print("· EquipManager (Loadout & Sets §7.4.4)")
+	_reset_state()
+	GameState.equip = {}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+
+	# Slot-Akzeptanz.
+	var wpn: Dictionary = ProgressionManager.make_gear("weapon", "rare", "", rng)
+	var arm: Dictionary = ProgressionManager.make_gear("armor", "rare", "", rng)
+	var tech: Dictionary = ProgressionManager.make_tech("schaden", "epic")
+	_check("Waffe passt in weapon-Slot", EquipManager.slot_accepts("weapon", wpn))
+	_check("Waffe passt NICHT in helmet-Slot", EquipManager.slot_accepts("helmet", wpn) == false)
+	_check("Tech-Modul passt in plate-Slot", EquipManager.slot_accepts("plate1", tech))
+	_check("Rüstung passt NICHT in plate-Slot", EquipManager.slot_accepts("plate1", arm) == false)
+
+	# Anlegen/Ablegen.
+	_check("equip Waffe", EquipManager.equip_item(wpn, "weapon") and EquipManager.is_equipped("weapon"))
+	_check("equip in falschen Slot scheitert", EquipManager.equip_item(wpn, "helmet") == false)
+	EquipManager.equip_item(arm, "armor")
+	EquipManager.equip_item(tech, "plate1")
+	_check("3 Teile getragen", EquipManager.worn().size() == 3)
+	var removed: Dictionary = EquipManager.unequip("plate1")
+	_check("unequip gibt Teil zurück & leert Slot", not removed.is_empty() and not EquipManager.is_equipped("plate1"))
+
+	# Stat-Aggregation über angelegte Teile.
+	_reset_state(); GameState.equip = {}
+	var a1: Dictionary = ProgressionManager.make_gear("armor", "epic", "", rng)
+	var h1: Dictionary = ProgressionManager.make_gear("helmet", "epic", "", rng)
+	EquipManager.equip_item(a1, "armor")
+	EquipManager.equip_item(h1, "helmet")
+	var expected_armor: int = ProgressionManager.gear_stat_of(a1, "armor") + ProgressionManager.gear_stat_of(h1, "armor")
+	_check("stat_total armor summiert Loadout", EquipManager.stat_total("armor") == expected_armor)
+
+	# ── Legendäre Sets ──
+	_reset_state(); GameState.equip = {}
+	# Direktorat (2-teilig): Wachsherz-Kürass (vaneward) + Golem-Faust (overcharge).
+	var vane: Dictionary = ProgressionManager.make_gear("armor", "legendary", "vaneward", rng)
+	var golem: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "overcharge", rng)
+	EquipManager.equip_item(vane, "armor")
+	_check("Set 1/2: noch kein Bonus", EquipManager.set_piece_count("direktorat") == 1 and EquipManager.granted_powers().is_empty())
+	_check("nur getragene Kraft vaneward aktiv", EquipManager.has_power("vaneward") and not EquipManager.has_power("cap_grit"))
+	EquipManager.equip_item(golem, "weapon")
+	_check("Set 2/2 vollständig", EquipManager.set_piece_count("direktorat") == 2)
+	_check("Set verleiht Perk cap_grit", EquipManager.has_power("cap_grit") and EquipManager.granted_powers().has("cap_grit"))
+
+	# Grenzland (3-teilig): gestufte Boni (2 -> Krit-Stat, 3 -> critchain).
+	_reset_state(); GameState.equip = {}
+	var trommel: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "spread11", rng)
+	var sohlen: Dictionary = ProgressionManager.make_gear("boots", "legendary", "plunder", rng)
+	var visier: Dictionary = ProgressionManager.make_gear("helmet", "legendary", "critbase", rng)
+	EquipManager.equip_item(trommel, "weapon")
+	EquipManager.equip_item(sohlen, "boots")
+	_check("Grenzland 2/3: +8 Krit-Bonus", EquipManager.set_piece_count("grenzland") == 2 and EquipManager.set_stat_bonus("crit") == 8)
+	_check("Grenzland 2/3: noch kein critchain", EquipManager.has_power("critchain") == false)
+	EquipManager.equip_item(visier, "helmet")
+	_check("Grenzland 3/3: verleiht critchain", EquipManager.set_piece_count("grenzland") == 3 and EquipManager.has_power("critchain"))

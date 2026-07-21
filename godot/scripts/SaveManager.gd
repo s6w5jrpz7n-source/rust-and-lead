@@ -24,6 +24,7 @@ static func serialize() -> Dictionary:
 		"gold": GameState.gold,
 		"potions": GameState.potions,
 		"inventory": GameState.inventory.duplicate(true),
+		"equip": GameState.equip.duplicate(true),
 		"economy": GameState.economy.duplicate(true),
 		"kills": GameState.kills,
 		"quests": GameState.quests.duplicate(true),
@@ -48,6 +49,7 @@ static func deserialize(data: Dictionary) -> void:
 	GameState.gold = maxi(0, int(data.get("gold", 0)))
 	GameState.potions = maxi(0, int(data.get("potions", 3)))
 	GameState.inventory = _int_dict_with_defaults(data.get("inventory", {}), { "schrott": 0, "zahnrad": 0, "dampfkern": 0 })
+	GameState.equip = (data.get("equip", {}) as Dictionary).duplicate(true)
 	GameState.economy = _int_dict_with_defaults(data.get("economy", {}), { "saloon": 0, "forge": 0, "distillery": 0, "laboratory": 0 })
 	GameState.kills = maxi(0, int(data.get("kills", 0)))
 	GameState.quests = (data.get("quests", {}) as Dictionary).duplicate(true)

@@ -43,6 +43,9 @@ var perks: Dictionary = {}   ## perk_id (String) -> Rang (int)
 var gold: int = 0
 var potions: int = 3
 var inventory: Dictionary = { "schrott": 0, "zahnrad": 0, "dampfkern": 0 }
+## Angelegte Ausrüstung: equip_slot (String) -> Gear-Dictionary (leer/fehlend = nichts).
+## Slots: helmet/armor/weapon/gadget/boots + plate1..plate8 (Platten/Tech). Siehe EquipManager.
+var equip: Dictionary = {}
 
 ## Township-Gebäude: id -> Ausbaustufe (int). Flache Form (im GDD-Schema §2.3 verschachtelt
 ## als {level:int} beschrieben; hier vereinfacht, `building_level()` kapselt den Zugriff).

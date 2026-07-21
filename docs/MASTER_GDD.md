@@ -986,6 +986,26 @@ Der Loot-Kern: Items rollen **gestaffelte Affixe mit Wertespannen** statt fester
   (Kills heilen), *Titan-Kolben-Panzer* (halbe Boss-Schläge), *Plünderer-Sohlen* (+Gold/Magnet),
   *Kupferlinsen-Visier* (+Grund-Krit).
 
+### 7.4.4 Legendäre Sets (Sammel-Boni) — Endgame-Jagd
+Zusätzlich zu einzelnen legendären Kräften bilden bestimmte Legendaries **Sets**: Trägt man mehrere
+Teile *gleichzeitig angelegt*, schalten sich **Set-Boni** frei — Diablo-Endgame-Motor, der lange nach
+der Story zum Weitersammeln motiviert (zahlt aufs „lange Spielzeit"-Ziel ein). **Voraussetzung** ist
+die Ausrüstungs-/Loadout-Schicht (`EquipManager`): Set-Boni werten aus, *was gerade getragen wird*.
+
+* **„Set schaltet Perk frei":** Ein Set-Bonus kann Stats geben **und/oder eine benannte Kraft
+  *verleihen*, solange das Set getragen wird** — sie wirkt dann wie ein regulär getragenes Legendary
+  (`has_power()` meldet sie), ohne einen Perk-Punkt zu kosten. So verändern Sets **Regeln**, nicht nur
+  Zahlen.
+* **Gestufte Schwellen:** 2-/3-teilige Sets mit eskalierenden Boni (2 Teile → Bonus A, 3 Teile → Bonus B).
+* **Beispiel-Sets (aus vorhandenen Legendaries):**
+  * **Direktorat der Iron Rail** (2-teilig, Boss-Relikte): Wachsherz-Kürass + Golem-Faust → **2 Teile:**
+    „Eisernes Chassis" dauerhaft (−20 % Schaden, Stun-immun).
+  * **Grenzland-Legende** (3-teilig): Dolores' Trommel + Plünderer-Sohlen + Kupferlinsen-Visier →
+    **2 Teile:** +8 % Krit · **3 Teile:** Krits prallen zu einem 2. Ziel ab (*critchain*).
+
+> **Backend:** `EquipManager` (Slots, Anlegen/Ablegen, Stat-Aggregation, getragene Legendaries) plus
+> `SETS`/`set_piece_count`/`active_bonuses`/`granted_powers`/`has_power`. Headless verifiziert.
+
 ## 7.5 Progression (Level & Erfahrung)
 * XP aus **Kills** (Standard `max(3, maxHp/11)`, Elite 50, Superboss 300) und
   **Quest-Abgaben** (`max(25, rewardGold·0.5)`).
@@ -1319,9 +1339,10 @@ Biom-Zonierung (§1.6.3) bereits nach `WorldManager` portiert ist.
 | Itemization (Seltenheiten, Affixe, Legendaries), Tech-Module | `RARITY`/`makeGear`/`LEGENDARIES`/`makeTech` | `ProgressionManager` | ✅ portiert |
 | Perks (Fallout-Baum: Zweige/Tiers/Capstones/Respec) | `PERKS` | `ProgressionManager` | ✅ portiert |
 | Persistenz (Speichern/Laden, Save-Slots) | `serialize`/`save`/`load` | `SaveManager` | ✅ portiert |
+| Ausrüstung/Loadout + **legendäre Sets** | `equip`/`equipGear` + §7.4.4 | `EquipManager` | ✅ portiert |
 
 > **Stand:** Die **gesamte Spiel-Logik** ist ins Godot-Backend portiert und **headless verifiziert**
-> (Godot 4.3.stable, `godot --headless --path godot` → **224/224 Checks, Exit 0**), zusätzlich in
+> (Godot 4.3.stable, `godot --headless --path godot` → **241/241 Checks, Exit 0**), zusätzlich in
 > **CI** abgesichert (`.github/workflows/godot-backend.yml`). Offen bleibt allein die
 > **Präsentations-/Render-Schicht** (Kampf-Lesbarkeit §8.4, 3D-Szenen/Assets, Audio, UI) — kein
 > Logik-Port mehr, sondern View-Arbeit auf dem fertigen, getesteten Fundament.
