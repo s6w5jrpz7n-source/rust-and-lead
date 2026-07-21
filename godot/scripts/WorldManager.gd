@@ -45,6 +45,35 @@ const POIS: Dictionary = {
 }
 
 
+# ── Biom-Zonierung: Daten (Master-GDD §1.6.3) ─────────────────────────────────
+## Portiert aus dem validierten Web-Prototyp: geografische Zonen mit eigener Palette,
+## Deko-Flora und Gegner-Leitmix; an die Sektor-Tore (§1.7) gebunden. `cx/cy/radius` in
+## Weltkoordinaten (m) — Vector2 bewusst nicht im const (Konstant-Ausdrucks-Sicherheit).
+const UNIQUE_CHAMPION_CHANCE: float = 0.30   # Kritter-Hallen: Chance auf benannten Unique
+
+const BIOMES: Dictionary = {
+	"desert":          { "name": "Wüste", "sector": 1, "flora": ["cactus"], "hazard": "" },
+	"salt":            { "name": "Salzpfanne", "sector": 1, "cx": 250, "cy": 680, "radius": 220, "flora": ["salt"], "hazard": "" },
+	"oasis":           { "name": "Grüne Senke", "sector": 1, "cx": 550, "cy": 250, "radius": 200, "flora": ["tree", "water"], "hazard": "" },
+	"rostwald":        { "name": "Rostwald", "sector": 2, "cx": 1120, "cy": 1080, "radius": 320, "flora": ["tree"], "hazard": "" },
+	"kupfer_hochland": { "name": "Kupfer-Hochland", "sector": 2, "cx": 1750, "cy": 1350, "radius": 280, "flora": ["rock"], "hazard": "" },
+	"smog_oedland":    { "name": "Smog-Ödland", "sector": 3, "flora": ["deadtree"], "hazard": "smog" },
+}
+
+## Gegner-Leitmix je Biom [Typ, Gewicht], pre-/post-Reveal (verschiebt sich mechanisch).
+const ENEMY_POOLS: Dictionary = {
+	"desert":          { "pre": [["outlaw", 4], ["fauna", 3], ["revolver", 2], ["konstrukt", 1]], "post": [["outlaw", 3], ["fauna", 2], ["revolver", 2], ["konstrukt", 4], ["klaeffer", 3]] },
+	"oasis":           { "pre": [["fauna", 4], ["outlaw", 3], ["revolver", 1], ["konstrukt", 1]], "post": [["fauna", 4], ["klaeffer", 3], ["outlaw", 2], ["konstrukt", 2], ["revolver", 1]] },
+	"salt":            { "pre": [["revolver", 4], ["outlaw", 4], ["fauna", 1]], "post": [["revolver", 3], ["outlaw", 3], ["konstrukt", 3], ["klaeffer", 1]] },
+	"rostwald":        { "pre": [["fauna", 5], ["outlaw", 2], ["revolver", 1], ["konstrukt", 1]], "post": [["fauna", 4], ["klaeffer", 4], ["konstrukt", 2], ["outlaw", 1]] },
+	"kupfer_hochland": { "pre": [["revolver", 3], ["outlaw", 3], ["konstrukt", 2], ["fauna", 1]], "post": [["konstrukt", 5], ["klaeffer", 3], ["revolver", 2], ["outlaw", 1]] },
+	"smog_oedland":    { "pre": [["konstrukt", 5], ["klaeffer", 4], ["goliath", 1]], "post": [["konstrukt", 5], ["klaeffer", 4], ["goliath", 2]] },
+}
+
+## Reihenfolge der benannten Kreiszonen (erste Übereinstimmung gewinnt). Smog-Ödland = ganzer Sektor 3.
+const BIOME_ZONE_ORDER: Array = ["oasis", "salt", "rostwald", "kupfer_hochland"]
+
+
 # ── POI-Abfragen ──────────────────────────────────────────────────────────────
 
 static func has_poi(poi_id: String) -> bool:
@@ -156,33 +185,7 @@ static func is_base_friendly(base_id: String) -> bool:
 	return not is_base_hostile(base_id)
 
 
-# ── Biom-Zonierung der Welt (Master-GDD §1.6.3) ───────────────────────────────
-## Portiert aus dem validierten Web-Prototyp: geografische Zonen mit eigener Palette,
-## Deko-Flora und Gegner-Leitmix; an die Sektor-Tore (§1.7) gebunden. `cx/cy/radius` in
-## Weltkoordinaten (m) — Vector2 bewusst nicht im const (Konstant-Ausdrucks-Sicherheit).
-const UNIQUE_CHAMPION_CHANCE: float = 0.30   # Kritter-Hallen: Chance auf benannten Unique (garantiertes Legendary)
-
-const BIOMES: Dictionary = {
-	"desert":          { "name": "Wüste", "sector": 1, "flora": ["cactus"], "hazard": "" },
-	"salt":            { "name": "Salzpfanne", "sector": 1, "cx": 250, "cy": 680, "radius": 220, "flora": ["salt"], "hazard": "" },
-	"oasis":           { "name": "Grüne Senke", "sector": 1, "cx": 550, "cy": 250, "radius": 200, "flora": ["tree", "water"], "hazard": "" },
-	"rostwald":        { "name": "Rostwald", "sector": 2, "cx": 1120, "cy": 1080, "radius": 320, "flora": ["tree"], "hazard": "" },
-	"kupfer_hochland": { "name": "Kupfer-Hochland", "sector": 2, "cx": 1750, "cy": 1350, "radius": 280, "flora": ["rock"], "hazard": "" },
-	"smog_oedland":    { "name": "Smog-Ödland", "sector": 3, "flora": ["deadtree"], "hazard": "smog" },
-}
-
-## Gegner-Leitmix je Biom [Typ, Gewicht], pre-/post-Reveal (verschiebt sich mechanisch).
-const ENEMY_POOLS: Dictionary = {
-	"desert":          { "pre": [["outlaw", 4], ["fauna", 3], ["revolver", 2], ["konstrukt", 1]], "post": [["outlaw", 3], ["fauna", 2], ["revolver", 2], ["konstrukt", 4], ["klaeffer", 3]] },
-	"oasis":           { "pre": [["fauna", 4], ["outlaw", 3], ["revolver", 1], ["konstrukt", 1]], "post": [["fauna", 4], ["klaeffer", 3], ["outlaw", 2], ["konstrukt", 2], ["revolver", 1]] },
-	"salt":            { "pre": [["revolver", 4], ["outlaw", 4], ["fauna", 1]], "post": [["revolver", 3], ["outlaw", 3], ["konstrukt", 3], ["klaeffer", 1]] },
-	"rostwald":        { "pre": [["fauna", 5], ["outlaw", 2], ["revolver", 1], ["konstrukt", 1]], "post": [["fauna", 4], ["klaeffer", 4], ["konstrukt", 2], ["outlaw", 1]] },
-	"kupfer_hochland": { "pre": [["revolver", 3], ["outlaw", 3], ["konstrukt", 2], ["fauna", 1]], "post": [["konstrukt", 5], ["klaeffer", 3], ["revolver", 2], ["outlaw", 1]] },
-	"smog_oedland":    { "pre": [["konstrukt", 5], ["klaeffer", 4], ["goliath", 1]], "post": [["konstrukt", 5], ["klaeffer", 4], ["goliath", 2]] },
-}
-
-## Reihenfolge der benannten Kreiszonen (erste Übereinstimmung gewinnt). Smog-Ödland = ganzer Sektor 3.
-const BIOME_ZONE_ORDER: Array = ["oasis", "salt", "rostwald", "kupfer_hochland"]
+# ── Biom-Zonierung: Logik (Daten: BIOMES/ENEMY_POOLS/BIOME_ZONE_ORDER oben, §1.6.3) ──
 
 ## Welches Biom liegt an dieser Weltposition? Geografisch, deterministisch.
 static func biome_at(pos: Vector2) -> String:

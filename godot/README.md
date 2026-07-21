@@ -122,8 +122,20 @@ godot --headless --path godot          # führt tests/TestRunner.tscn aus, Exit 
 ```
 `tests/TestRunner.gd` prüft alle Module deterministisch gegen die GDD-Werte
 (Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
-Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates) und beendet mit Exit-Code
-0 (alles grün) bzw. 1 (Fehler).
+Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**) und
+beendet mit Exit-Code 0 (alles grün) bzw. 1 (Fehler).
+
+**Statische Prüfung ohne Godot-Runtime** (`gdtoolkit` von PyPI — nützlich, wenn kein
+Godot-Binary verfügbar ist, z. B. in CI/Sandbox):
+
+```sh
+pip install gdtoolkit
+gdparse scripts/*.gd tests/*.gd     # Syntax/Parse-Check (Exit 0 = ok)
+gdlint  scripts/*.gd tests/*.gd     # Stil/Struktur (die breiten Daten-Tabellen
+                                    # lösen bewusst `max-line-length` aus)
+```
+`gdparse` fängt Syntaxfehler vor dem Editor ab; die Laufzeit-Verifikation bleibt der
+Headless-Test oben.
 
 ## Quest-Zustandsmaschine
 ```
