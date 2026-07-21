@@ -12,6 +12,16 @@ Kombination der GDD-Vorgabe (*Die Familie ist tot; die Kinetoskop-Botschaften wa
 
 ---
 
+# WELTRAHMEN — DER KRATER
+
+Die ganze Welt von „Rust & Lead" liegt am Boden eines **kolossalen Explosionskraters**. Als der Konzern vor Generationen das **Eiserne Herz** zum ersten Mal zündete — den Kessel-Kern, der seither die Iron Rail antreibt —, riss die Detonation ein Becken in die Erde, meilenweit, mit einer zerklüfteten Wand ringsum, die bis in den grünen Bronzehimmel ragt. In diesem Becken liegt alles: Rustwater, die Wüste, die Gilden-Forts, die Minen, Providence Cut. Und im Zentrum, am tiefsten Punkt, schlägt bis heute das Herz, umhüllt von der giftgrünen **Smog-Senke**, die aus seinen Ventilen quillt.
+
+Der **Kraterrand ist die Grenze der Welt** — nicht durch eine unsichtbare Wand, sondern durch tausend Meter unbezwingbaren Fels. Am ganzen Horizont steht die Wand; man sieht sie von überall, so wie man das ferne Ticken des Herzens von überall hört. Es gibt nur **einen Ausgang**: einen alten Bergbau-Tunnel durch den Rand, den der Konzern verriegelt und schwer bewacht. Niemand verlässt den Krater. Der Konzern nennt das Ordnung. Die Leute nennen es, wenn sie sich trauen, das Gefängnis.
+
+Darin liegt das Herz der Sache: **Der Krater ist das Gefängnis, der Tunnel die Befreiung.** Jeremiah Hale — Einheit 13 — bricht im Kleinen aus seiner Programmierung aus (die Erinnerungs-Walzen, der Familien-Bogen), die Rebellen im Großen aus der Knechtschaft der Iron Rail. Erst mit dem Sturz von Direktor Vane fällt die Tunnel-Wache; wer dann das Tor aufreißt, öffnet zum ersten Mal seit Menschengedenken den Krater — und befreit nicht nur sich, sondern die ganze eingesperrte Welt. (Mechanik & Gating: GDD §1.4, §1.7.4.)
+
+---
+
 # TEIL A — DIE HAUPTSTORY (12 KAPITEL)
 
 ## AKT I — DIE FLEISCH-ILLUSION (`is_revealed = false`)

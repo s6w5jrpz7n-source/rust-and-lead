@@ -67,15 +67,44 @@ dürfen das Gameplay niemals verdecken.
   für den Helden, **galvanisches Blau** für mechanische Gegner, **blutrot** für
   biologische Gegner.
 
-## 1.4 Welt-Maßstab & Exploration
-* **Dimensionen:** zusammenhängende, nahtlose **3D-Open-World, 2000 × 2000 Meter**
-  (Godot Spatial Units), mit Streaming/LOD statt harter Kartenwechsel.
-* **Reise-Metrik:** Laufgeschwindigkeit **4,7 m/s**; ein durchgehender diagonaler Sprint
-  über die vollständig erkundete Welt dauert rund **5 Minuten** Echtzeit-Fußweg.
-* **Fog of War:** volumetrisches Nebelsystem; Bewegung schneidet in Echtzeit Pfade in den
-  Nebel — basierend auf der **3D-Sichtlinie (Line-of-Sight)** des Spielers.
+## 1.4 Welt-Rahmen, Maßstab & Exploration
+
+**Der Krater (Welt-Rahmen).** Die gesamte Spielwelt liegt am Boden eines **kolossalen
+Explosionskraters** — geschlagen von der ersten Zündung des **Eisernen Herzens**, dem Kessel-Kern
+des Konzerns, der bis heute im Zentrum des Beckens schlägt. Der **aufragende Kraterrand ist die
+diegetische Außengrenze** der Karte (keine unsichtbaren Wände, §1.7): am ganzen Horizont steht die
+zerklüftete Wand, unpassierbar außer durch das eine, konzern-bewachte **Rand-Tunnel-Tor** (§1.7.4).
+Der tiefste Punkt des Beckens ist die giftige **Smog-Senke** (§1.7.2). So erklärt der Krater in
+einem Bild die Kartengrenze, die zentrale Landmarke *und* die Smog-Geografie — und trägt das
+Kernthema: **die Welt ist ein Gefängnis, der Tunnel die Befreiung.**
+
+**Dimensionen (Produktionsziel).** Der Kraterboden spannt rund **5000 × 5000 m** (Godot Spatial
+Units) — bewusst weiträumig, damit Reisen sich nach *Reise* anfühlt (die frühere 2000-m-Zahl war
+Prototyp-Enge). Laufgeschwindigkeit **4,7 m/s**; eine volle Querung ist ein mehrminütiger Fußmarsch,
+den man selten am Stück geht — dafür gibt es Schnellreise-Bahnhöfe. Streaming/LOD statt harter
+Kartenwechsel; **Kraterrand und zentrales Herz sind jederzeit am Horizont sichtbar** und dienen als
+Orientierungs-Landmarken über das ganze Becken (Landmark-Navigation statt Mini-Map-Starren).
+
+**Pacing & POI-Dichte (Diablo-Prinzip: lange Leere, die nie tot ist).** Absichtlich revidiert —
+die alte Dichte (Nachbar-POIs ~200–350 m ≈ 1 Min. auseinander) machte Schnellreise wertlos und die
+Welt eng:
+* **Große Orte weit auseinander:** Zwischen zwei *Hubs/Dungeons* liegen **≥ ~1000 m** offenes Land —
+  rund **3–4 Minuten zu Fuß**. Erst dadurch **lohnt Schnellreise überhaupt**; ein Bahnhof eine Minute
+  vom nächsten ist wertlos.
+* **Wenige, echte Bahnhöfe:** Schnellreise nur an *großen* Knoten (Rustwater, die drei Gildenbasen,
+  1–2 weitere) — nicht an jedem Nebenpunkt. Ein Waypoint muss ein *spürbarer* Zeitgewinn sein.
+* **Leere ≠ Leerlauf:** Die Strecken dazwischen sind nie tot, aber nie überfüllt. Faustregel —
+  **etwas zu bekämpfen/bemerken etwa alle 30–60 s** (streunende Rudel, Champion-Packs,
+  Kritter-Hallen-Eingänge, Biom-Übergänge, Wüsten-Vistas), aber ein **benannter Ort nur alle paar
+  Minuten**. Das erzeugt das Diablo-Gefühl: langes Ziehen durchs Nichts, getragen von Kampf und
+  Atmosphäre — nicht alle 10 Sekunden ein neues Schild.
+* **Biome als Reise-Takt:** Der Wechsel Wüste → Rostwald → Kupfer-Hochland → Salzpfanne (§1.6.3)
+  gliedert die langen Wege optisch und mechanisch, ganz ohne „Orte".
+
+* **Fog of War:** volumetrisches Nebelsystem; Bewegung schneidet in Echtzeit Pfade in den Nebel —
+  basierend auf der **3D-Sichtlinie (Line-of-Sight)** des Spielers.
 * **Eingebettete Bereiche:** Rustwater (Township), Fraktionsbasen (Fort Freedom, Sektor 01,
-  Rogue's Landing) und Dungeons (z. B. die Schrott-Minen) sind Bereiche derselben Welt.
+  Rogue's Landing) und Dungeons (z. B. die Schrott-Minen) sind Bereiche desselben Kraterbeckens.
   Konkrete Weltkoordinaten & Sektoren: §1.6; Progressions-Tore: §1.7.
 
 ## 1.5 Steuerung (Mobile-First, auch Desktop)
@@ -91,8 +120,13 @@ dürfen das Gameplay niemals verdecken.
 
 ## 1.6 Weltkoordinaten-System & POI-Layout
 
-Die zusammenhängende 3D-Welt spannt eine Ebene von **2000 × 2000 Metern** (Godot Spatial
-Units). Striktes Koordinatensystem, **Ursprung (0,0) in der Südwest-Ecke**:
+Die zusammenhängende 3D-Welt liegt im Kraterbecken (§1.4), Produktionsziel **~5000 × 5000 m**
+(Godot Spatial Units). Striktes Koordinatensystem, **Ursprung (0,0) in der Südwest-Ecke**.
+> **Hinweis:** Die Koordinaten der POI-Master-Tabelle (§1.6.1) beschreiben das **relative Layout**
+> (in der ursprünglichen 2000er-Skala) und werden für die Produktion **auf das größere Becken
+> skaliert und gemäß den Pacing-Regeln in §1.4 auseinandergezogen** (Nachbar-Hubs ≥ ~1000 m). Der
+> **Kraterrand ist die Außengrenze**; das Godot-Backend (`WorldManager`) kodiert die Gating-*Regeln*
+> und die *relative* Geografie, nicht den finalen Metermaßstab.
 * **X = West → Ost** (0 … 2000),
 * **Y = Süd → Nord** (0 … 2000).
 
@@ -209,6 +243,19 @@ umweltbasierte und fraktionsbasierte Tore.
   schwere mechanische Verstärkungs-Aggro aus. Umgekehrt wird bei Wahl der **Eisernen Gilde**
   **Fort Freedom** zur aktiven Feind-Kampfzone — friedliche Interaktionen sind dann nur noch
   auf dem gewählten Pfad möglich.
+
+### 1.7.4 Der Rand-Tunnel — das Befreiungs-Tor (ganz am Kraterrand)
+* **Barriere:** Der **Kraterrand** (§1.4) umschließt die ganze Welt; er ist unpassierbar. Der
+  **einzige Ausgang** ist ein alter Bergbau-Tunnel durch die Wand — vom Konzern **schwer bewacht
+  und verriegelt**, damit niemand den Krater je verlässt. Er ist das sichtbare Symbol der
+  Gefangenschaft: „Raus aus dem Krater" = „raus aus der Kontrolle des Konzerns".
+* **Logik-Gate:** Der Tunnel bleibt die **gesamte Kampagne über verschlossen** und wird **erst nach
+  dem Sturz von Direktor Vane** (Finale) zugänglich — die Konzern-Wache fällt mit dem Direktorat.
+* **Auszahlung (Befreiungs-Ende):** Den Tunnel aufzureißen ist ein **eigenständiges, gilden­
+  unabhängiges Ende** — „der Krater ist offen, zum ersten Mal seit Menschengedenken" — mit der
+  Andeutung, dass **dahinter mehr liegt** (Post-Vane-Horizont / NG+-Rahmung). Optional als kleine
+  Endgame-Zone jenseits des Rands ausbaubar. Damit schließt das Kraterbild den thematischen Bogen:
+  Einheit 13 befreit nicht nur sich (roter Faden, §7.5.12), sondern **die ganze eingesperrte Welt**.
 
 ---
 
