@@ -20,6 +20,7 @@
 5. Modulares Mini-Quest-System (Grind & Boosts)
 6. Kampf-Design & Code-Templates
 7. Anhang: Ausrüstung, Progression, Wirtschaft, Gegner-Roster, Terminologie
+8. Phase-2-Portierung: Prototyp-Systeme → Godot-Backend
 
 ---
 
@@ -1241,3 +1242,69 @@ Impulse, alchemistische Synthese, Kinetoskop-Projektion, Chassis, Automat, Reche
 **Verboten (Cyberpunk/Modern):** Chips, Cyberware, Neural Network, Hack, Neon-Data,
 Firewall, Download — sowie jegliche Retro-/Pixel-/16-Bit-/2D-Kachel-Referenz.
 ```
+
+---
+
+# 8. PHASE-2-PORTIERUNG: Prototyp-Systeme → Godot-Backend
+
+Der Web-Prototyp ist die **ausführbare Spezifikation**. Phase 2 portiert die dort validierten
+Systeme als **reines GDScript-Logik-Backend** (`godot/scripts/*`, `class_name` + `static`, kein
+dupliziter Zustand — alles aus `GameState` abgeleitet) mit **abhängigkeitsfreien Headless-Tests**
+(`godot/tests/TestRunner.gd`, deterministisch gegen GDD-Werte; `godot --headless --path godot`).
+Rendering/Assets folgen getrennt (§1.1). **Muster:** eine Prototyp-Funktion → eine testbare
+Backend-Funktion mit deterministischem Einstieg (z. B. `roll`-Param statt `randf()`), so wie die
+Biom-Zonierung (§1.6.3) bereits nach `WorldManager` portiert ist.
+
+## 8.1 Portierungs-Status (Systeme → Zielmodul)
+
+| System | Prototyp | Godot-Zielmodul | Status |
+| :-- | :-- | :-- | :-- |
+| Schadensmatrix, Status, Mitigation, XP | `calcDamage` u. a. | `CombatEngine`/`CombatData`/`CombatTarget` | ✅ portiert |
+| Quests, Reveal, Gildenwahl, Ketten | `QuestManager`-Logik | `QuestManager` | ✅ portiert |
+| Aktive Wirtschaft, Ripple, Booster | `TycoonManager`-Logik | `TycoonManager` | ✅ portiert |
+| Grid-Inventar (Footprints, Auto-Platz) | `invLayout` u. a. | `GridInventoryBackend` | ✅ portiert |
+| Weltgeografie, 3 Tore, POIs | `MAPS`/Gating | `WorldManager` | ✅ portiert |
+| **Biom-Zonierung + Gegner-Pools** | `OVERWORLD_BIOMES`/`BIOME_ENEMY_POOLS` | `WorldManager` (§1.6.3) | ✅ portiert |
+| **Mini-Dungeons & Unique-Champions** | `critter_hall`/`spawnUniqueLeader` | `WorldManager`/`EncounterManager` | ⬜ offen (§8.2) |
+| **Erinnerungs-Walzen & Familien-Bogen** | `MEMORIES`/`playMemorial` | `MemoryManager` (neu) | ⬜ offen (§8.3) |
+| **Kampf-Lesbarkeit** (Effekt/Status/Klasse) | `eff`/`popEff`/Chip | Präsentations-Layer (View) | ⬜ offen (§8.4) |
+| Abstieg-Biome (Rift) | `ABYSS_BIOMES` | `RiftManager` (neu) | ⬜ offen |
+| Perks, Tech-Module, Legendaries | `UPGRADES`/`LEGENDARIES` | `ProgressionManager` (neu) | ⬜ offen |
+
+## 8.2 Mini-Dungeons & Unique-Champions (Backend-Spec)
+* **Instanz-Modell:** Jeder verstreute 🕳️-Eingang (`POIS`-Einträge `typ:"critter_hall"` mit
+  `return_anchor`) instanziiert eine **einstöckige Halle**. Beim Betreten würfelt
+  `roll_hall_theme(rng)` ein Thema (Rattennest / Kläffer-Wurf / Banditenloch) → Palette + Schwarm-Art
+  + Rudelgröße. Rückkehr setzt den Spieler an den `return_anchor` des benutzten Eingangs.
+* **Champion-Roll:** `is_unique_pack(rng) -> rng.randf() < UNIQUE_CHAMPION_CHANCE` (0.30, bereits in
+  `WorldManager`). Ein Unique ist ein benannter Anführer (`UNIQUE_NAMES`): ×6 HP, +Panzerung,
+  größeres Rudel, eigene Namens-Lebensleiste.
+* **Beute-Garantie:** `champion_loot()` liefert **genau ein benanntes Legendary**
+  (`make_gear(slot, LEGENDARY)` aus den Slots mit Legendaries) + 2 Boss-Kisten + doppeltes Gold;
+  zählt als Boss-Kill. **Test:** deterministischer `rng`-Seed → Legendary garantiert, Champion-Rate
+  über N Ziehungen ≈ 30 %.
+
+## 8.3 Erinnerungs-Walzen & Familien-Bogen (Backend-Spec)
+* **Zustand (`GameState`):** `memories_found:int` (0…16, geordnete Kette), `memorials_seen:Set`,
+  `family_buried:bool`, `biomes_seen:Set` — alle persistiert im Save-Schema (§2.3).
+* **Walzen-Drop:** Beim Kill mechanischer Ziele `try_recover_memory(is_boss, rng)` — ~3 % normal,
+  50 % mechanische Bosse; jeder Fund enthüllt das nächste ungesehene Fragment und schaltet beim ersten
+  Fund den Codex-Eintrag „Warum tragen sie meine Erinnerung?" frei (Drop-Logik: verteilte
+  Ballast-Steuerwalzen).
+* **Providence Cut:** Reveal-gegateter POI (`gate:"reveal"`). Drei Memorial-Interaktionen
+  (Türrahmen/Foto/Gräber) → `play_memorial(id)` liefert die Flashback-Zeilen (View spielt sie ab).
+  Gräber sind gestuft: bei 16/16 → `bury_family()` setzt `family_buried`, Codex „Heimkehr", Erfolg
+  „Heimkehr"; Walzen werden auf den drei benannten Gräbern (Liv/Tom/Sara) sichtbar. Zeuge **Elias
+  Roan** als NPC mit Quest `q_roan`, dessen `completeText` den Namen Jeremiah Hale enthüllt und zum
+  Grab führt. **Test:** Kette ordnet korrekt, Persistenz, Begräbnis-Gate an 16/16.
+
+## 8.4 Kampf-Lesbarkeit (Präsentations-Layer)
+Reine **View-Aufgabe** über dem Backend — die `CombatEngine` liefert bereits die Daten:
+* **Effektivität:** `calculate()` gibt `eff ∈ {strong, weak, resist}` zurück → gedrosselter
+  Schwebe-Hinweis „✷ STARK" / „🛡 schwach" (max. 1×/Ziel/1,4 s) + einmaliger Erst-Hinweis.
+* **Status-Icons:** ⚡/🩸/🔥 über dem Ziel, aus dem aktiven Status-/DOT-Zustand des `CombatTarget`.
+* **Klassen-Marker:** eckig+stahlblau = `MECHANICAL`, rund+fleischrot = `BIOLOGICAL` (Form **und**
+  Farbe), an der Lebensleiste — Waffenwahl vor dem ersten Schuss lesbar.
+* **Kampf-Fibel:** statischer Codex-Eintrag als Nachschlagewerk der Matrix.
+In Godot: `Sprite3D`/`Label3D`-Billboards am Gegner-Node + ein Toast-/Codex-System der UI; kein
+neuer Spielzustand nötig.
