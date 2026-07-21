@@ -72,7 +72,7 @@ static func make_champion(base_type: String, name_roll: float = -1.0, hp_mul: fl
 
 # ── Beute-Kontrakt (Item-Erzeugung: ProgressionManager, §8.1) ─────────────────
 
-## Was ein erlegter Champion garantiert abwirft. Der Loot-Layer setzt das um.
+## Was ein erlegter Champion garantiert abwirft (Kontrakt). Der Loot-Layer setzt das um.
 static func champion_loot() -> Dictionary:
 	return {
 		"legendary_guaranteed": true,
@@ -81,3 +81,13 @@ static func champion_loot() -> Dictionary:
 		"gold_mult": 2,
 		"counts_as_boss": true,
 	}
+
+## Konkrete Champion-Beute: erzeugt das garantierte benannte Legendary via ProgressionManager
+## (zufälliger Slot aus CHAMPION_LEGENDARY_SLOTS, kein Boss-exklusives Stück). `rng` = seedbar.
+static func champion_reward(rng: RandomNumberGenerator = null) -> Dictionary:
+	if rng == null:
+		rng = RandomNumberGenerator.new()
+		rng.randomize()
+	var slot: String = CHAMPION_LEGENDARY_SLOTS[rng.randi_range(0, CHAMPION_LEGENDARY_SLOTS.size() - 1)]
+	var gear: Dictionary = ProgressionManager.make_gear(slot, "legendary", "", rng)
+	return { "gear": gear, "boss_chests": 2, "gold_mult": 2, "counts_as_boss": true }

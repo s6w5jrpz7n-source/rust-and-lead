@@ -23,6 +23,7 @@ func _ready() -> void:
 	_test_world_manager()
 	_test_memory_manager()
 	_test_encounter_manager()
+	_test_progression_manager()
 	print("──────────────────────────────────────────────")
 	print("  Ergebnis: %d bestanden, %d fehlgeschlagen" % [_passed, _failed])
 	print("──────────────────────────────────────────────")
@@ -423,3 +424,58 @@ func _test_encounter_manager() -> void:
 	_check("Legendary-Slots benennbar", loot["legendary_slots"] == ["weapon", "armor", "gadget", "boots", "helmet"])
 	_check("Champion-Beute: 2 Boss-Kisten, x2 Gold", int(loot["boss_chests"]) == 2 and int(loot["gold_mult"]) == 2)
 	_check("Champion zählt als Boss-Kill", loot["counts_as_boss"] == true)
+
+	# Konkrete Champion-Beute via ProgressionManager: garantiertes benanntes Legendary.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
+	var reward: Dictionary = EncounterManager.champion_reward(rng)
+	_check("Champion-Reward: Legendary", String(reward["gear"]["rarity"]) == "legendary" and reward["gear"].has("legendary_power"))
+	_check("Champion-Reward: Slot benennbar", EncounterManager.CHAMPION_LEGENDARY_SLOTS.has(String(reward["gear"]["slot"])))
+	_check("Champion-Reward: zählt als Boss", reward["counts_as_boss"] == true)
+
+
+# ── ProgressionManager: Itemization (Seltenheiten, Affixe, Legendaries, Tech) §8.1 ──
+func _test_progression_manager() -> void:
+	print("· ProgressionManager (Itemization §8.1)")
+	_reset_state()
+
+	# Seltenheiten.
+	_check("4 Seltenheiten", ProgressionManager.RARITY_ORDER.size() == 4)
+	_check("Legendär mult 4.2", is_equal_approx(float(ProgressionManager.RARITY["legendary"]["mult"]), 4.2))
+
+	# Affix-Roll: deterministisch via quality_roll. q=0.5 -> Faktor 1.0, val = round(base*mult*factor).
+	var aff: Dictionary = ProgressionManager.roll_affix("hp", 1.0, 14.0 / 12.0, 0.5)
+	_check("roll_affix hp @q0.5 = 14", int(aff["val"]) == 14 and is_equal_approx(float(aff["q"]), 0.5))
+	_check("roll_affix Wert >= 1", int(ProgressionManager.roll_affix("armor", 1.0, 0.1, 0.0)["val"]) >= 1)
+
+	# Seltenheits-Wurf deterministisch.
+	_check("roll_rarity 0.0 = common", ProgressionManager.roll_rarity(0.0, 0.0) == "common")
+	_check("roll_rarity 0.999 = legendary", ProgressionManager.roll_rarity(0.0, 0.999) == "legendary")
+
+	# make_gear (seedbar): Struktur, Affix-Anzahl je Seltenheit, Legendär-Kraft.
+	var grng := RandomNumberGenerator.new()
+	grng.seed = 7
+	var epic: Dictionary = ProgressionManager.make_gear("armor", "epic", "", grng)
+	_check("make_gear Slot/Seltenheit", String(epic["slot"]) == "armor" and String(epic["rarity"]) == "epic")
+	_check("make_gear Haupt-Stat (armor)", String(epic["stat"]["key"]) == "armor" and int(epic["stat"]["val"]) >= 1)
+	_check("make_gear epic = 2 Affixe", (epic["affixes"] as Array).size() == 2)
+	var common: Dictionary = ProgressionManager.make_gear("boots", "common", "", grng)
+	_check("make_gear common = 0 Affixe", (common["affixes"] as Array).size() == 0)
+
+	# Legendär: benannte Kraft; erzwungene Boss-Kraft.
+	var leg: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "", grng)
+	_check("Legendär hat benannte Kraft", leg.has("legendary_power") and String(leg["name"]) != "")
+	var forced: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "overcharge", grng)
+	_check("force_power -> Golem-Faust", String(forced["legendary_power"]) == "overcharge" and String(forced["name"]) == "Golem-Faust")
+	var vane: Dictionary = ProgressionManager.make_gear("armor", "legendary", "vaneward", grng)
+	_check("force_power -> Wachsherz-Kürass", String(vane["name"]) == "Wachsherz-Kürass")
+
+	# Ableitungen: Wert, Stat-Summe, Fußabdruck.
+	_check("gear_value legendär > common", ProgressionManager.gear_value(leg) > ProgressionManager.gear_value(common))
+	_check("gear_stat_of armor summiert", ProgressionManager.gear_stat_of(epic, "armor") >= int(epic["stat"]["val"]))
+	_check("gear_foot Rüstung 2x2", ProgressionManager.gear_foot(epic) == Vector2i(2, 2))
+	_check("gear_cells Rüstung = 4", ProgressionManager.gear_cells(epic) == 4)
+
+	# Tech-Modul: Haupt-Stat skaliert mit Seltenheit.
+	var tech: Dictionary = ProgressionManager.make_tech("schaden", "rare")
+	_check("make_tech Stat = round(base*mult)", int(tech["stat"]["val"]) == roundi(5.0 * 1.8) and String(tech["slot"]) == "tech")
