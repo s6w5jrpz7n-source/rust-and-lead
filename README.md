@@ -57,7 +57,9 @@ Die vollständige Story-Bibel (alle Dialoge, Kinoszenen, Casting-Notizen) liegt 
 - **Perk-Baum (Fallout-Achse):** Zweige, Tiers, Capstones mit Exklusivität, Respec.
 - **Tech-Module** in acht Platten-Slots (Diablo-Immortal-Panel-Layout).
 - **Bosse:** telegrafierte Flächenschläge, Add-Rufe, Zwei-Phasen-Finale.
-- **Endlosmodus „Der Abstieg":** skalierende Tiefe mit Modifikatoren, Tiefen-Ausrufer.
+- **Endlosmodus „Der Abstieg":** skalierende Tiefe mit Modifikatoren und **rotierenden Biomen**
+  (Stollen → Frostkavernen → Magma-Schlund → Sporentiefe → Fleisch-Maschinen-Tiefe, alle 5 Ebenen),
+  Tiefen-Ausrufer.
 - **Zwei Nebengebiete:** Garten aus Rost (Smog-Linie) und Kessel-Friedhof (Schrott-Golem).
 - **Wirtschaft:** Rustwater-Gebäude generieren Einkommen; Händler mit Drag-Handel.
 - **Atmosphäre-Barks:** schwebende Story-Sprüche aus der Bibel (Stadt/Held/Gegner/Tiefe).

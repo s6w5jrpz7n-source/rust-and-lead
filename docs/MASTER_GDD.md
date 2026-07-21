@@ -946,6 +946,15 @@ zieht einen **zufälligen Modifikator** (👥 Andrang / 💪 Überdruck / 💨 R
 (Ebene 6 ≈ 6300 HP). Ein **Tiefenrekord** wird geführt und im Saloon (Tycoon-Panel)
 ausgehängt. „Wie tief kommst du?" ist der wiederholbare Post-Kampagnen-Loop.
 
+**Rotierende Biome (`ABYSS_BIOMES`, Band = 5 Ebenen).** Damit der Endlosmodus optisch nie
+stehenbleibt, wechselt der Abstieg alle fünf Ebenen das Biom — jedes mit eigener Bodenpalette,
+Hintergrund, Stollen-Beschriftung und Ankunfts-Ausruf: **Verlassene Stollen** (1–5, grau) →
+**Frostkavernen** (6–10, eisblau) → **Magma-Schlund** (11–15, glutrot) → **Sporentiefe**
+(16–20, giftgrün) → **Fleisch-Maschinen-Tiefe** (21–25, violett), dann rotiert es zurück.
+`abyssBiomeFor(depth)` bestimmt das Band; `applyAbyssBiome` schreibt die Farben in `MAPS.abyss`
+vor dem Zeichnen; der Biomname erscheint in Kartennamen und Ankunfts-Toast. So liefert der Modus,
+der ewig laufen soll, über 25 Ebenen durchgehend frische Kulissen (× zufälliger Modifikator).
+
 ### 7.5.2 Tech-Module (die 8 Slots)
 Die 8 Platten-/Tech-Slots nehmen neben **Panzerplatten** (Rüstung) jetzt auch **Tech-Module**
 auf — offensive/Utility-Boni, die den Build formen: **Schaden-Chip** (+Schaden),

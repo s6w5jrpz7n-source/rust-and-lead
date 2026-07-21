@@ -76,6 +76,23 @@
     { id: 'swift',   name: 'Rasende Meute', icon: '💨', desc: 'schnellere Gegner' },
     { id: 'elite',   name: 'Elite-Nest',   icon: '☠', desc: 'mehr Elite-Bosse' }
   ];
+  // Abstieg-Biome: rotieren alle 5 Ebenen, damit der Endlosmodus optisch nie stehenbleibt.
+  // Jedes Biom setzt Bodenfarben, Hintergrund, Stollen-Label und einen Ankunfts-Ausruf.
+  const ABYSS_BAND = 5;
+  const ABYSS_BIOMES = [
+    { id: 'stollen', name: 'Verlassene Stollen', decor: 'STOLLEN', floorA: 0x4b5563, floorB: 0x3f4652, grid: 0x2b3038, mini: 0x6b7686, bg: 0x15171b, callout: 'Verlassene Stollen. Hier endete die Minengesellschaft — hier beginnst du.' },
+    { id: 'frost',   name: 'Frostkavernen',      decor: 'EISHÖHLE', floorA: 0x3b5a6b, floorB: 0x32505f, grid: 0x244049, mini: 0x7cc0d8, bg: 0x0a1418, callout: 'Frostkavernen. Der Atem gefröre — hättest du noch einen.' },
+    { id: 'magma',   name: 'Magma-Schlund',      decor: 'MAGMA',   floorA: 0x5a2f22, floorB: 0x49261b, grid: 0x3a1c12, mini: 0xd2803a, bg: 0x1a0c06, callout: 'Magma-Schlund. Der Fels glüht, das Öl in deinen Adern kocht.' },
+    { id: 'sporen',  name: 'Sporentiefe',        decor: 'SPOREN',  floorA: 0x3a4a2f, floorB: 0x2f3d26, grid: 0x22301c, mini: 0x7ba053, bg: 0x0e160a, callout: 'Sporentiefe. Etwas Lebendiges wächst durch den Stahl.' },
+    { id: 'herz',    name: 'Fleisch-Maschinen-Tiefe', decor: 'HERZ', floorA: 0x3a2740, floorB: 0x2f2035, grid: 0x211628, mini: 0x9a5aad, bg: 0x0c0610, callout: 'Fleisch und Getriebe verschmelzen. Du bist dem Herzen nah.' }
+  ];
+  function abyssBiomeFor(depth) { return ABYSS_BIOMES[Math.floor((Math.max(1, depth) - 1) / ABYSS_BAND) % ABYSS_BIOMES.length]; }
+  function applyAbyssBiome(depth) {
+    const b = abyssBiomeFor(depth), m = MAPS.abyss;
+    m.floorA = b.floorA; m.floorB = b.floorB; m.grid = b.grid; m.mini = b.mini; m.bg = b.bg;
+    if (m.decor && m.decor[0]) m.decor[0].label = b.decor;
+    state.abyssBiome = b.id; return b;
+  }
   const TUT_STEPS = [
     '👣 Bewege dich mit dem Stick · sprich mit Mabel (⚙️) für deinen Auftrag',
     '🚪 Verlasse die Stadt durchs Tor (Norden) & besiege Gegner in der Wüste',
@@ -952,7 +969,7 @@
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
-    tutorial: 0, tutOpenedInv: false, abyssDepth: 0, abyssMod: null, abyssBest: 0,
+    tutorial: 0, tutOpenedInv: false, abyssDepth: 0, abyssMod: null, abyssBest: 0, abyssBiome: null, abyssBiomeNew: false,
     isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
@@ -1511,10 +1528,11 @@
     state.miniSize = m.minimap === 'small' ? 100 : 140;
     const abyss = id === 'abyss';
     const mod = abyss ? ABYSS_MODS.find(x => x.id === state.abyssMod) : null;
-    mapNameText.setText((abyss ? ('🕳️ Abstieg — Ebene ' + state.abyssDepth) : m.name) + ((state.ngPlus || 0) > 0 ? '   ·   🔄 NG+' + state.ngPlus : ''));
+    const biome = abyss ? abyssBiomeFor(state.abyssDepth) : null;
+    mapNameText.setText((abyss ? ('🕳️ ' + biome.name + ' — Ebene ' + state.abyssDepth) : m.name) + ((state.ngPlus || 0) > 0 ? '   ·   🔄 NG+' + state.ngPlus : ''));
     layoutUI(sceneRef.scale.gameSize);
     miniDirty = true;
-    toast(abyss ? ('🕳️ Ebene ' + state.abyssDepth + (mod ? ' · ' + mod.icon + ' ' + mod.name : '') + '  ·  Rekord: ' + (state.abyssBest || 0)) : m.name);
+    toast(abyss ? ('🕳️ Ebene ' + state.abyssDepth + ' · ' + biome.name + (mod ? ' · ' + mod.icon + ' ' + mod.name : '') + '  ·  Rekord: ' + (state.abyssBest || 0)) : m.name);
     if (m.streamed) streamChunks(9);   // sichtbaren Bereich (radius 1) sofort, Rest folgt vorausschauend
     if (m.enemies) scatterEnemies(m);
     scatterChests(m);
@@ -2388,6 +2406,9 @@
   function enterAbyss(depth) {
     state.abyssDepth = depth;
     state.abyssMod = ABYSS_MODS[Phaser.Math.Between(0, ABYSS_MODS.length - 1)].id;
+    const prevBiome = state.abyssBiome;
+    const biome = applyAbyssBiome(depth);            // Boden/Hintergrund je Tiefenband setzen
+    state.abyssBiomeNew = biome.id !== prevBiome;    // Biom-Wechsel für den Ankunfts-Ausruf merken
     state.abyssNewRecord = depth > (state.abyssBest || 0);   // Rekord-Bark vor dem Überschreiben merken
     if (state.abyssNewRecord) state.abyssBest = depth;
     save(); transitionTo('abyss', { c: 13, r: 3 });
@@ -2397,6 +2418,7 @@
     if (state.map !== 'abyss' || !player) return;
     const d = state.abyssDepth, x = player.x, y = player.y - 26;
     if (state.abyssNewRecord && d >= 5) { sayBark(x, y, BARKS.depthRecord, '#fca5a5'); state.abyssNewRecord = false; return; }
+    if (state.abyssBiomeNew) { sayBark(x, y, abyssBiomeFor(d).callout, '#c4b5fd'); state.abyssBiomeNew = false; return; }   // neues Biom betreten
     const milestone = BARKS['depth' + d];
     if (milestone) sayBark(x, y, milestone, '#c4b5fd');
     else if (Math.random() < 0.4) sayBark(x, y, pickBark(BARKS.hero_depth), '#bcd0e0');
