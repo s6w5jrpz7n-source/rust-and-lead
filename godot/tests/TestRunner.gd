@@ -25,6 +25,7 @@ func _ready() -> void:
 	_test_encounter_manager()
 	_test_progression_manager()
 	_test_rift_manager()
+	_test_save_manager()
 	print("──────────────────────────────────────────────")
 	print("  Ergebnis: %d bestanden, %d fehlgeschlagen" % [_passed, _failed])
 	print("──────────────────────────────────────────────")
@@ -565,3 +566,65 @@ func _test_rift_manager() -> void:
 	_check("Superboss auf Ebene 3", RiftManager.has_superboss(3))
 	_check("Superboss auf Ebene 6", RiftManager.has_superboss(6))
 	_check("kein Superboss auf Ebene 4", not RiftManager.has_superboss(4))
+
+
+# ── SaveManager: Persistenz (serialize/deserialize, JSON, Datei-Slots) §2.3 ───
+func _test_save_manager() -> void:
+	print("· SaveManager (Persistenz §2.3)")
+	_reset_state()
+
+	# Einen bunten Zustand aufbauen.
+	GameState.current_chapter = 8
+	GameState.is_revealed = true
+	GameState.chosen_guild = "rebels"
+	GameState.level = 12
+	GameState.xp = 55
+	GameState.perk_points = 2
+	GameState.perks = { "scharf": 3, "krit": 1 }
+	GameState.gold = 777
+	GameState.inventory = { "schrott": 4, "zahnrad": 1, "dampfkern": 2 }
+	GameState.set_building_level("saloon", 3)
+	GameState.kills = 140
+	GameState.quests = { "q_rebels5": "done", "q_rebels8": "active" }
+	GameState.quest_base = { "q_rebels8": 120 }
+	GameState.memories_found = 9
+	GameState.memorials_seen = ["doorframe", "photo"]
+	GameState.family_buried = false
+	GameState.codex = ["reveal", "steuerwalzen", "familie"]
+
+	# Dictionary-Roundtrip: serialisieren, Zustand zurücksetzen, wiederherstellen.
+	var snap: Dictionary = SaveManager.serialize()
+	_check("Save trägt Version", int(snap["version"]) == SaveManager.SAVE_VERSION)
+	_reset_state()
+	_check("Reset leert Zustand", GameState.level == 1 and GameState.gold == 0)
+	SaveManager.deserialize(snap)
+	_check("Roundtrip: Kapitel/Gilde", GameState.current_chapter == 8 and GameState.chosen_guild == "rebels")
+	_check("Roundtrip: Level/Gold", GameState.level == 12 and GameState.gold == 777)
+	_check("Roundtrip: Perks", ProgressionManager.perk_rank("scharf") == 3 and GameState.perk_points == 2)
+	_check("Roundtrip: Quests", String(GameState.quests["q_rebels5"]) == "done" and int(GameState.quest_base["q_rebels8"]) == 120)
+	_check("Roundtrip: roter Faden", GameState.memories_found == 9 and GameState.memorials_seen == ["doorframe", "photo"] and GameState.codex.has("familie"))
+	_check("Roundtrip: Gebäude", GameState.building_level("saloon") == 3)
+
+	# JSON-Roundtrip (Zahlen kommen als Float zurück -> defensiver Cast).
+	var json: String = SaveManager.to_json()
+	_reset_state()
+	_check("from_json ok", SaveManager.from_json(json) == true)
+	_check("JSON-Roundtrip: Level/Kills als int", GameState.level == 12 and GameState.kills == 140 and typeof(GameState.level) == TYPE_INT)
+	_check("JSON-Roundtrip: Inventar", GameState.item_count("dampfkern") == 2)
+	_check("from_json Müll = false", SaveManager.from_json("nicht json {{{") == false)
+
+	# Defensiv: leere Daten -> sichere Defaults, kein Crash.
+	_reset_state()
+	SaveManager.deserialize({})
+	_check("Defaults aus leerer Save", GameState.level == 1 and GameState.current_chapter == 1 and GameState.chosen_guild == null and GameState.item_count("schrott") == 0)
+
+	# Datei-Slot-Roundtrip (user://, headless verfügbar).
+	_reset_state()
+	GameState.level = 20
+	GameState.gold = 999
+	GameState.chosen_guild = "smugglers"
+	_check("save_to_slot", SaveManager.save_to_slot(3) == true and SaveManager.has_slot(3))
+	_reset_state()
+	_check("load_from_slot", SaveManager.load_from_slot(3) == true and GameState.level == 20 and GameState.gold == 999 and GameState.chosen_guild == "smugglers")
+	_check("load leerer Slot = false", SaveManager.load_from_slot(9) == false)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveManager.slot_path(3)))

@@ -1318,10 +1318,12 @@ Biom-Zonierung (§1.6.3) bereits nach `WorldManager` portiert ist.
 | Abstieg-Biome (Rift) | `ABYSS_BIOMES`/`ABYSS_MODS` | `RiftManager` | ✅ portiert |
 | Itemization (Seltenheiten, Affixe, Legendaries), Tech-Module | `RARITY`/`makeGear`/`LEGENDARIES`/`makeTech` | `ProgressionManager` | ✅ portiert |
 | Perks (Fallout-Baum: Zweige/Tiers/Capstones/Respec) | `PERKS` | `ProgressionManager` | ✅ portiert |
+| Persistenz (Speichern/Laden, Save-Slots) | `serialize`/`save`/`load` | `SaveManager` | ✅ portiert |
 
 > **Stand:** Die **gesamte Spiel-Logik** ist ins Godot-Backend portiert und **headless verifiziert**
-> (Godot 4.3.stable, `godot --headless --path godot` → **208/208 Checks, Exit 0**). Offen bleibt allein
-> die **Präsentations-/Render-Schicht** (Kampf-Lesbarkeit §8.4, 3D-Szenen/Assets, Audio, UI) — kein
+> (Godot 4.3.stable, `godot --headless --path godot` → **224/224 Checks, Exit 0**), zusätzlich in
+> **CI** abgesichert (`.github/workflows/godot-backend.yml`). Offen bleibt allein die
+> **Präsentations-/Render-Schicht** (Kampf-Lesbarkeit §8.4, 3D-Szenen/Assets, Audio, UI) — kein
 > Logik-Port mehr, sondern View-Arbeit auf dem fertigen, getesteten Fundament.
 
 ## 8.2 Mini-Dungeons & Unique-Champions (Backend-Spec)

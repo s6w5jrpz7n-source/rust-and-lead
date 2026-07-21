@@ -25,6 +25,8 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
   (Zweige/Tiers/Kapsteine mit xor, Kauf, Respec) über `GameState`. Alles seedbar/testbar.
 - `scripts/RiftManager.gd` — **Abstieg-Endlosmodus** (GDD §7.5.6/§8.1): rotierende Biome (alle 5
   Ebenen), Zufalls-Modifikatoren, Tiefen-Skalierung (Leben/Dichte/Elite-Zahl), Superboss-Kadenz.
+- `scripts/SaveManager.gd` — **Persistenz** (GDD §2.3): serialisiert/lädt den `GameState`
+  (Dictionary/JSON, defensiv gegen JSON-Floats & fehlende Felder) inkl. Datei-Slots (`user://`).
 - `scripts/EncounterManager.gd` — **Mini-Dungeons & Unique-Champions** (GDD §7.5.6a/§8.2):
   Kritter-Hallen-Themen (Roll), Champion-Wurf (~30 %), Champion-Aufbau (×6 HP, benannt, Boss) und
   der Champion-Beute-Kontrakt (garantiertes Legendary; Item-Gen via `ProgressionManager` offen).
@@ -140,9 +142,13 @@ godot --headless --path godot                    # Pass 2: führt TestRunner aus
 (Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
 Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**,
 **Erinnerungs-Walzen & Familien-Bogen**, **Mini-Dungeons & Champions**, **Itemization & Perks**,
-**Abstieg-Endlosmodus**) und beendet mit Exit-Code 0 (alles grün) bzw. 1.
+**Abstieg-Endlosmodus**, **Persistenz**) und beendet mit Exit-Code 0 (alles grün) bzw. 1.
 
-> **Verifiziert:** Godot **4.3.stable**, headless — **208/208 Checks grün, Exit 0**.
+Bei jedem Push/PR fährt der **CI-Workflow** (`.github/workflows/godot-backend.yml`) genau diese
+Prüfung automatisch: `gdparse` + Godot-4.3-Headless (Import-Pass + TestRunner) gegen eine
+asset-freie Projektkopie.
+
+> **Verifiziert:** Godot **4.3.stable**, headless — **224/224 Checks grün, Exit 0**.
 > Die **gesamte Spiel-Logik** ist portiert; offen bleibt nur die Präsentations-/Render-Schicht.
 > Der schwere 3D-Asset-Import unter `assets/models`
 > verlangsamt Pass 1; für reine Logik-Tests kann man Scripts/Tests/`project.godot` in ein

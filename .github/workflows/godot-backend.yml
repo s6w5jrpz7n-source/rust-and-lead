@@ -1,0 +1,57 @@
+name: Godot Backend — Static Check & Headless Tests
+
+# Prüft das Godot-Logik-Backend bei jedem Push/PR, der es berührt:
+#  1. gdparse (Syntax aller Skripte) — schnelle Sofort-Prüfung ohne Godot.
+#  2. Godot 4.3 headless: baut den class_name-Cache (Pass 1) und führt die
+#     abhängigkeitsfreie TestRunner-Suite aus (Pass 2, Exit 0 = alles grün).
+# Getestet wird gegen eine asset-freie Projektkopie, damit der schwere
+# 3D-Asset-Import den reinen Logik-Test nicht verlangsamt/flaky macht.
+
+on:
+  push:
+    paths:
+      - 'godot/**'
+      - '.github/workflows/godot-backend.yml'
+  pull_request:
+    paths:
+      - 'godot/**'
+      - '.github/workflows/godot-backend.yml'
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: '4.3-stable'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: gdparse (Syntax-Check)
+        run: |
+          pip install gdtoolkit
+          gdparse godot/scripts/*.gd godot/tests/*.gd
+
+      - name: Download Godot ${{ env.GODOT_VERSION }} (headless)
+        run: |
+          set -e
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          curl -fL -o godot.zip "$url"
+          unzip -q godot.zip
+          chmod +x "Godot_v${GODOT_VERSION}_linux.x86_64"
+          echo "GODOT=$PWD/Godot_v${GODOT_VERSION}_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Prepare logic-only project (ohne 3D-Assets)
+        run: |
+          mkdir -p /tmp/gdproj
+          cp -r godot/scripts godot/tests godot/project.godot /tmp/gdproj/
+
+      - name: Import (Pass 1 — class_name-Cache)
+        run: "$GODOT --headless --path /tmp/gdproj --editor --quit"
+
+      - name: Backend-Tests (Pass 2 — Exit 0 = grün)
+        run: "$GODOT --headless --path /tmp/gdproj"
