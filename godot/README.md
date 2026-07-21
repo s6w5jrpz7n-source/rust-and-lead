@@ -115,15 +115,24 @@ Autoloads sind dort bereits registriert (Reihenfolge zählt); die `class_name`-K
 | 2 | `QuestManager` | `res://scripts/QuestManager.gd` |
 | 3 | `TycoonManager` | `res://scripts/TycoonManager.gd` |
 
-**Headless-Tests** (abhängigkeitsfrei, kein GUT-Addon):
+**Headless-Tests** (abhängigkeitsfrei, kein GUT-Addon) — **zwei Pässe** bei einem kalten
+Checkout ohne `.godot/`-Cache: erst importieren (baut den `class_name`-Global-Cache), dann
+ausführen. Ohne den ersten Pass melden die `class_name`-Klassen (`CombatEngine`, `WorldManager`
+…) beim allerersten Lauf „Identifier … not declared".
 
 ```sh
-godot --headless --path godot          # führt tests/TestRunner.tscn aus, Exit 0/1
+godot --headless --path godot --editor --quit   # Pass 1: Import + Klassen-Cache
+godot --headless --path godot                    # Pass 2: führt TestRunner aus, Exit 0/1
 ```
 `tests/TestRunner.gd` prüft alle Module deterministisch gegen die GDD-Werte
 (Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
 Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**) und
 beendet mit Exit-Code 0 (alles grün) bzw. 1 (Fehler).
+
+> **Verifiziert:** Godot **4.3.stable**, headless — **104/104 Checks grün, Exit 0**
+> (inkl. der 22 Biom-Zonierungs-Tests). Der schwere 3D-Asset-Import unter `assets/models`
+> verlangsamt Pass 1; für reine Logik-Tests kann man Scripts/Tests/`project.godot` in ein
+> asset-freies Verzeichnis kopieren und dort testen.
 
 **Statische Prüfung ohne Godot-Runtime** (`gdtoolkit` von PyPI — nützlich, wenn kein
 Godot-Binary verfügbar ist, z. B. in CI/Sandbox):
