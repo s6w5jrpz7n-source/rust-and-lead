@@ -628,6 +628,13 @@
   const carryLvl = () => Math.min(CARRY_MAX, state.upgrades.tragesystem || 0);
   const carrySlotsPerLevel = () => INV_ROWS_PER_PACK * 5;   // 5 = Grid-Spalten (invLayout.cols)
   const WEAPON_UP = { base: 55, max: 5, per: 5 };   // pro Waffe: +5 Basisschaden/Stufe (Säure zusätzlich +2 Potenz)
+  // Begleiter „Bolzen": ein Blechhund, der Gegner beißt & Loot heranholt. Aufrüstbar in der Werkstatt.
+  const COMPANION_UP = {
+    dmg:       { name: 'Beißwerk',        icon: '🦷', desc: 'Bissschaden',   base: 60, max: 6 },
+    tempo:     { name: 'Servo-Sehnen',    icon: '🦿', desc: 'Angriffstempo', base: 60, max: 5 },
+    spuersinn: { name: 'Spürsinn-Sensor', icon: '📡', desc: 'Apport-Radius', base: 50, max: 5 }
+  };
+  const COMP_ENGAGE = 280, COMP_BITE_DIST = 40, COMP_SPEED = 300;
 
   // ---- Fähigkeitenbaum (Fallout-inspiriert): 3 Zweige, je 4 Perks in Rängen ----
   // Fallout-Prinzip: pro Stufe 1 Fähigkeitspunkt; Perks in Rängen; höhere Tiers durch
@@ -1044,7 +1051,7 @@
   for (const id in MAPS) MAPS[id].stations.forEach(s => STATION_INDEX[s.id] = { mapId: id, tx: s.tx, ty: s.ty, name: s.name });
 
   // ---- Laufzeit-Zustand --------------------------------------
-  let sceneRef, player, shadow;
+  let sceneRef, player, shadow, companionDog, companionShadow;
   let stickBase, stickThumb, hint, shootBtn, killText, goldText, mapNameText;
   let weaponBtn, weaponIcon, weaponName, ammoText, ammoBg;
   let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;
@@ -1092,6 +1099,7 @@
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, tragesystem: 0 },
+    companion: { active: true, dmg: 0, tempo: 0, spuersinn: 0 },   // Blechhund „Bolzen" (Begleiter)
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
@@ -1117,6 +1125,16 @@
     player = scene.add.container(0, 0, [body, nose]).setDepth(5);
     player.facing = 0; player.body = body; player.nose = nose;
     scene.cameras.main.startFollow(player, true, 0.12, 0.12);
+
+    // Begleiter: Blechhund „Bolzen" — Brass-Körper, Kopf vorn, Schlappohr & Antennen-Schwanz
+    companionShadow = scene.add.ellipse(0, 0, 22, 9, 0x000000, 0.22).setDepth(3);
+    const dTail = scene.add.rectangle(-13, -5, 8, 3, 0x5c4326).setOrigin(0.5).setAngle(-30);
+    const dBody = scene.add.ellipse(0, 0, 24, 15, 0xb08d57).setStrokeStyle(2, 0x5c4326);
+    const dHead = scene.add.circle(12, -3, 7, 0xc9a24a).setStrokeStyle(2, 0x5c4326);
+    const dEar = scene.add.triangle(14, -9, 0, 0, 7, -8, 9, 1, 0x5c4326);
+    const dEye = scene.add.circle(15, -3, 1.7, 0x38bdf8);
+    companionDog = scene.add.container(0, 0, [dTail, dBody, dHead, dEar, dEye]).setDepth(5);
+    companionDog.facing = 0; companionDog.biteAt = 0; companionDog.setVisible(compActive());
 
     // Joystick
     stickBase = scene.add.circle(0, 0, STICK_RADIUS, 0xffffff, 0.10).setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(20).setVisible(false);
@@ -1376,7 +1394,37 @@
   }
   function moveSpeed() { return (PLAYER_SPEED + state.upgrades.speed * 30 + equipStat('speed')) * (hasPower('quicksole') ? 1.12 : 1); }   // Quecksilber-Sohlen
   function regenRate() { return REGEN_RATE + state.upgrades.regen * 4 + perkVal('heilung') + (hasPower('autovent') ? 6 : 0); }   // Selbstschmier-Ventil
-  function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0) + (hasPower('plunder') ? 60 : 0); }
+  function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0) + (hasPower('plunder') ? 60 : 0) + (compActive() ? (state.companion.spuersinn || 0) * 45 : 0); }   // Begleiter-Apport
+  // ---- Begleiter: Blechhund „Bolzen" -------------------------
+  function compActive() { return !!(state.companion && state.companion.active); }
+  function compBite() { return 9 + (state.companion.dmg || 0) * 5; }                       // Bissschaden je Stufe
+  function compCd() { return Math.max(450, 1350 - (state.companion.tempo || 0) * 170); }   // ms zwischen Bissen
+  // Bolzen folgt an der Ferse, stürzt sich auf den nächsten Gegner in Reichweite und beißt zu.
+  function updateCompanion(now, dt, uiBlocked) {
+    const dog = companionDog; if (!dog) return;
+    if (!compActive()) { dog.setVisible(false); companionShadow.setVisible(false); return; }
+    dog.setVisible(true); companionShadow.setVisible(true);
+    let target = null;
+    if (!uiBlocked && !state.transitioning) {
+      let bd = COMP_ENGAGE;
+      for (const e of enemies) { const d = Phaser.Math.Distance.Between(dog.x, dog.y, e.c.x, e.c.y); if (d < bd) { bd = d; target = e; } }
+    }
+    let tx, ty, sp;
+    if (target) { tx = target.c.x; ty = target.c.y; sp = COMP_SPEED; }
+    else { tx = player.x - Math.cos(player.facing) * 34; ty = player.y - Math.sin(player.facing) * 34 + 6; sp = moveSpeed() * 1.2; }   // Ferse: schräg hinter dem Spieler
+    const dx = tx - dog.x, dy = ty - dog.y, dd = Math.hypot(dx, dy) || 1;
+    const stop = target ? COMP_BITE_DIST * 0.75 : 10;
+    if (dd > stop) { const step = Math.min(dd - stop, sp * dt); dog.x += (dx / dd) * step; dog.y += (dy / dd) * step; }
+    if (dx < -3) dog.scaleX = -1; else if (dx > 3) dog.scaleX = 1;   // horizontal spiegeln statt drehen (bleibt aufrecht)
+    companionShadow.setPosition(dog.x, dog.y + 9);
+    dog.setDepth(dog.y >= player.y ? 6 : 4);
+    if (target && !uiBlocked && now >= dog.biteAt && Phaser.Math.Distance.Between(dog.x, dog.y, target.c.x, target.c.y) <= COMP_BITE_DIST) {
+      dog.biteAt = now + compCd();
+      sceneRef.tweens.add({ targets: dog, scaleY: 0.7, duration: 70, yoyo: true });   // kurzer Schnapp
+      popLoot(dog.x, dog.y - 8, '🦷'); sfx('bite');
+      damageEnemy(target, compBite(), { color: 0xc9a24a });
+    }
+  }
   function applyUpgrades() { state.maxHp = Math.round((PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS + perkVal('zaeh')) * (hasCap('grit') ? 1.2 : 1) * (hasPower('toughplate') ? 1.15 : 1)); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }   // Kesselschädel-Haube: +15 % Leben
   // ---- Erfahrung & Level -------------------------------------
   function xpToNext(lv) { return 40 + lv * 30; }   // Level 1->2: 70 XP, danach +30/Stufe
@@ -1484,7 +1532,7 @@
   }
   function serialize() {
     const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, stashGear: state.stashGear, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, memorialsSeen: [...state.memorialsSeen], familyBuried: state.familyBuried, biomesSeen: [...state.biomesSeen], ts: Date.now(), discovered: [...state.discovered], explored: ex };
+    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, stashGear: state.stashGear, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, companion: state.companion, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, memorialsSeen: [...state.memorialsSeen], familyBuried: state.familyBuried, biomesSeen: [...state.biomesSeen], ts: Date.now(), discovered: [...state.discovered], explored: ex };
   }
   function save() { try { localStorage.setItem(slotKey('auto'), JSON.stringify(serialize())); } catch (e) { } }   // Autospeichern -> dedizierter Auto-Slot
   function saveToManual(i) { try { localStorage.setItem(slotKey(i), JSON.stringify(serialize())); } catch (e) { } }   // manueller Snapshot
@@ -1518,6 +1566,7 @@
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, tragesystem: 0 }, s.upgrades || {});
       if (s.upgrades && s.upgrades.rucksack && !state.upgrades.tragesystem) state.upgrades.tragesystem = s.upgrades.rucksack;   // Migration: früherer Rucksack-Rang
+      state.companion = Object.assign({ active: true, dmg: 0, tempo: 0, spuersinn: 0 }, (s.companion && typeof s.companion === 'object') ? s.companion : {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
       state.bounty = (s.bounty && typeof s.bounty === 'object' && s.bounty.id) ? s.bounty : null;   // altes Kill-Zähler-Format verwerfen
@@ -2817,6 +2866,7 @@
     const wlist = WEAPON_ORDER.filter(weaponUnlocked);
     rows.push({ kind: 'head', label: '🔫  Waffen-Armaturen' });
     wlist.forEach(id => rows.push({ kind: 'weapon', id }));
+    if (compActive()) { rows.push({ kind: 'head', label: '🐕  Blechhund „Bolzen"' }); Object.keys(COMPANION_UP).forEach(id => rows.push({ kind: 'comp', id })); }
     const rowH = 46, headH = 66, footH = 38, subH = 26;
     const bodyH = rows.reduce((s, r) => s + (r.kind === 'head' ? subH : rowH + 6), 0);
     const pw = Math.min(360, size.width * 0.94), ph = Math.min(size.height * 0.96, headH + bodyH + footH);
@@ -2838,6 +2888,10 @@
         const up = UPGRADES[id]; lvl = state.upgrades[id]; max = up.max; locked = up.bodyMod && !state.isRevealed; maxed = lvl >= max;
         icon = up.icon; nm = locked ? up.desc : up.name[state.isRevealed ? 1 : 0]; cost = up.base * (lvl + 1);
         sub = locked ? '🔒 nach dem Erwachen' : ('Stufe ' + lvl + '/' + max);
+      } else if (row.kind === 'comp') {   // Begleiter-Aufrüstung
+        const c = COMPANION_UP[id]; lvl = state.companion[id] || 0; max = c.max; locked = false; maxed = lvl >= max;
+        icon = c.icon; nm = c.name; cost = c.base * (lvl + 1);
+        sub = c.desc + '  ·  ' + lvl + '/' + max;
       } else {   // weapon
         const w = WEAPONS[id], dt = DMG_TYPES[w.type]; lvl = weaponLvl(id); max = WEAPON_UP.max; locked = false; maxed = lvl >= max;
         icon = dt.icon; nm = w.name; cost = WEAPON_UP.base * (lvl + 1);
@@ -2849,7 +2903,7 @@
         const can = state.gold >= cost;
         const btn = add(sceneRef.add.rectangle(px + pw / 2 - 58, y + rowH / 2, 96, 34, can ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
         add(sceneRef.add.text(btn.x, btn.y, cost + ' 💰', { fontFamily: 'system-ui', fontSize: '13px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
-        storeButtonsPush(btn, row.kind === 'weapon' ? 'w_' + id : id);
+        storeButtonsPush(btn, row.kind === 'weapon' ? 'w_' + id : row.kind === 'comp' ? 'c_' + id : id);
       } else {
         add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, maxed ? 'MAX' : '🔒', { fontFamily: 'system-ui', fontSize: '13px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
       }
@@ -2868,6 +2922,15 @@
       state.gold -= cost; state.weaponLvl[wid]++; updateGold();
       toast(WEAPONS[wid].name + ' → Stufe ' + state.weaponLvl[wid]); save();
       closeWorkshop(); openWorkshop(); updateWeaponUI(); return;
+    }
+    if (id.startsWith('c_')) {   // Begleiter-Aufrüstung
+      const cid = id.slice(2), c = COMPANION_UP[cid], lvl = state.companion[cid] || 0;
+      if (lvl >= c.max) { toast('Bereits max'); return; }
+      const cost = c.base * (lvl + 1);
+      if (state.gold < cost) { toast('Nicht genug Gold (' + state.gold + '/' + cost + ')'); return; }
+      state.gold -= cost; state.companion[cid] = lvl + 1; updateGold();
+      toast('🐕 Bolzen: ' + c.name + ' → Stufe ' + state.companion[cid]); save();
+      closeWorkshop(); openWorkshop(); return;
     }
     const up = UPGRADES[id], lvl = state.upgrades[id];
     if (up.bodyMod && !state.isRevealed) { toast('🔒 Erst nach dem Erwachen'); return; }
@@ -3894,7 +3957,8 @@
     level: { seq: [523, 659, 784, 1047], d: 0.11, type: 'sine', v: 0.09 },
     perk:  { f: 680, f2: 1040, d: 0.12, type: 'triangle', v: 0.08 },
     slam:  { f: 95, f2: 38, d: 0.28, type: 'sawtooth', v: 0.12 },
-    hurt:  { f: 170, f2: 70, d: 0.13, type: 'square', v: 0.09, gap: 180 }
+    hurt:  { f: 170, f2: 70, d: 0.13, type: 'square', v: 0.09, gap: 180 },
+    bite:  { f: 260, f2: 90, d: 0.06, type: 'square', v: 0.05, gap: 70 }
   };
   function sfx(name) {
     if (state.muted) return; const s = SFX[name]; if (!s) return; initAudio(); if (!audioCtx) return;
@@ -3960,6 +4024,7 @@
     state.cd.acid = Math.max(0, state.cd.acid - delta);
     state.cd.shock = Math.max(0, state.cd.shock - delta);
     updateAbilityUI();
+    updateCompanion(now, dt, uiBlocked);   // Begleiter „Bolzen"
 
     // Gegner: idle bis nah -> dann verfolgen + Kontaktschaden
     let touched = false;
