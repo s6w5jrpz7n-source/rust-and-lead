@@ -595,3 +595,20 @@ Für die Vertonung per Sprachsynthese liegt dieses Skript zusätzlich als **stru
 **Schema je Event:** `seq` (Reihenfolge) · `folge` · `szene` · `typ` (`line` = gesprochen; `atmo`/`music`/`sfx`/`transition` = nicht gesprochene Mix-Cues) · `rolle` · `voice_id` (Platzhalter, auf eine konkrete TTS-Stimme mappen) · `regie` (Tonfall/Anweisung — als Voice-Directing bzw. für SSML `rate`/`pitch`) · `text` (reiner Sprechtext, ohne Regie-Klammern) · `fx` (z. B. Doppel-Timbre des Helden ab Folge 2).
 
 **Pipeline in Kürze:** `spoken == true` filtern → je Zeile `voice_id` auf eine Stimme abbilden, `text` synthetisieren, `regie`/`fx` als Prosodie/Effekt anwenden → in `seq`-Reihenfolge mit den `atmo`/`music`/`sfx`-Cues zu Folgen mischen.
+
+### Fertige Azure-Vertonung
+
+- **`docs/azure_tts.py`** — lauffähiges Skript für **Azure AI Speech**. Liest die JSON, mappt jede Rolle auf eine konkrete de-DE-Neural-Stimme, gießt die `regie` in Prosodie (Tempo/Tonhöhe/Lautstärke) und rendert **pro Zeile eine WAV** nach `docs/hoerspiel_audio/`. Nur Azure-Key eintragen (oder `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION` als Umgebungsvariablen), `pip install azure-cognitiveservices-speech`, starten. `--dry-run` erzeugt nur die SSML-Dateien (ohne Azure/SDK), z. B. für den Speech-Studio-Import.
+
+**Stimm-Zuordnung** (in `hoerspiel_tts.json` unter `voices` hinterlegt):
+
+| Rolle | Azure-Stimme | Rolle | Azure-Stimme |
+| :-- | :-- | :-- | :-- |
+| ERZÄHLER | `de-DE-ConradNeural` | GIDEON | `de-DE-KillianNeural` |
+| HELD | `de-DE-FlorianMultilingualNeural` | VANE | `de-DE-RalfNeural` |
+| MABEL | `de-DE-KatjaNeural` | PATROUILLENFÜHRER | `de-DE-KasperNeural` |
+| SILAS | `de-DE-BerndNeural` | TESS | `de-DE-SeraphinaMultilingualNeural` |
+| DOC ARIS | `de-DE-ChristophNeural` | PIP (Nebenstory) | `de-DE-GiselaNeural` |
+| KOLBEN-JACK | `de-DE-KlausNeural` | SIEDLER | `de-DE-BerndNeural` |
+
+Der Free-Tier (F0, ~500.000 Zeichen/Monat) trägt das ganze Hörspiel (~15.400 Zeichen) locker. Der metallische **Doppel-Timbre des Helden** ab Folge 2 (`fx`-Feld) ist ein Post-Effekt (Ringmodulator/Pitch-Layer in Audacity/ffmpeg) — das Skript listet die betroffenen HELD-Dateien am Ende auf.

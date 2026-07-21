@@ -7,20 +7,20 @@ SRC = pathlib.Path("/workspace/rust-and-lead/docs/HOERSPIEL.md")
 OUT_JSON = pathlib.Path("/workspace/rust-and-lead/docs/hoerspiel_tts.json")
 OUT_CSV = pathlib.Path("/workspace/rust-and-lead/docs/hoerspiel_tts.csv")
 
-# Rolle -> Voice-Hinweis (Platzhalter-IDs auf konkrete TTS-Stimmen mappen).
+# Rolle -> Voice-Hinweis + konkrete Azure-de-DE-Neural-Stimme.
 VOICES = {
-    "ERZÄHLER":          {"voice_id": "V_ERZAEHLER", "hint": "de-DE, ruhig, trocken, lakonisch (Leone-Erzähler)"},
-    "HELD":              {"voice_id": "V_HELD",      "hint": "de-DE, Bariton; Folge 1 menschlich/heiser, ab Folge 2 zusätzlich metallischer Ring-Mod-Unterton (Doppel-Timbre)"},
-    "MABEL":             {"voice_id": "V_MABEL",     "hint": "de-DE, Frau ~50, rau, warm, Whiskey-tief"},
-    "SILAS":             {"voice_id": "V_SILAS",     "hint": "de-DE, alter Mann, bedächtig, leises mechanisches Surren (Kupferlinse)"},
-    "DOC ARIS":          {"voice_id": "V_DOC",       "hint": "de-DE, hager, präzise, nervös wenn er lügt"},
-    "KOLBEN-JACK":       {"voice_id": "V_JACK",      "hint": "de-DE, Riese, laut, Galgenhumor, gegen Sturm"},
-    "GIDEON":            {"voice_id": "V_GIDEON",    "hint": "de-DE, hart, direkt, keine Höflichkeit"},
-    "VANE":              {"voice_id": "V_VANE",      "hint": "de-DE, warm wie Maschinenöl, Predigergeduld, NIE laut, leichter Messing-Hall"},
-    "PATROUILLENFÜHRER": {"voice_id": "V_PATROUILLE","hint": "de-DE, beamtenkalt, liest von Lochkarten ab"},
-    "TESS":              {"voice_id": "V_TESS",      "hint": "de-DE, Frau, schnell, aufgeweckt — wird nur einmal langsam"},
-    "PIP":               {"voice_id": "V_PIP",       "hint": "de-DE, Kind ~9, hell, furchtlos, Zahnlücke"},
-    "SIEDLER":           {"voice_id": "V_SIEDLER",   "hint": "de-DE, alter Siedler, müde, spuckt in den Sand"},
+    "ERZÄHLER":          {"voice_id": "V_ERZAEHLER", "azure": "de-DE-ConradNeural",              "hint": "ruhig, trocken, lakonisch (Leone-Erzähler)"},
+    "HELD":              {"voice_id": "V_HELD",      "azure": "de-DE-FlorianMultilingualNeural", "hint": "Bariton, ausdrucksstark; ab Folge 2 zusätzlich metallischer Ring-Mod-Unterton als POST-Effekt (siehe fx)"},
+    "MABEL":             {"voice_id": "V_MABEL",     "azure": "de-DE-KatjaNeural",               "hint": "Frau ~50, rau, warm, Whiskey-tief (Tonhöhe leicht runter)"},
+    "SILAS":             {"voice_id": "V_SILAS",     "azure": "de-DE-BerndNeural",               "hint": "alter Mann, bedächtig"},
+    "DOC ARIS":          {"voice_id": "V_DOC",       "azure": "de-DE-ChristophNeural",           "hint": "hager, präzise, nervös wenn er lügt"},
+    "KOLBEN-JACK":       {"voice_id": "V_JACK",      "azure": "de-DE-KlausNeural",               "hint": "Riese, laut, Galgenhumor, gegen Sturm"},
+    "GIDEON":            {"voice_id": "V_GIDEON",    "azure": "de-DE-KillianNeural",             "hint": "hart, direkt, keine Höflichkeit"},
+    "VANE":              {"voice_id": "V_VANE",      "azure": "de-DE-RalfNeural",                "hint": "warm wie Maschinenöl, Predigergeduld, NIE laut (langsam & leise)"},
+    "PATROUILLENFÜHRER": {"voice_id": "V_PATROUILLE","azure": "de-DE-KasperNeural",              "hint": "beamtenkalt, liest von Lochkarten ab"},
+    "TESS":              {"voice_id": "V_TESS",      "azure": "de-DE-SeraphinaMultilingualNeural","hint": "Frau, schnell, aufgeweckt — wird nur einmal langsam"},
+    "PIP":               {"voice_id": "V_PIP",       "azure": "de-DE-GiselaNeural",              "hint": "jüngste de-DE-Stimme (Kind-Ersatz); kommt nur in den Nebenstory-Folgen vor"},
+    "SIEDLER":           {"voice_id": "V_SIEDLER",   "azure": "de-DE-BerndNeural",               "hint": "alter Siedler, müde (1 Zeile)"},
 }
 
 CUE_PAT = re.compile(r"^\[(ATMO|MUSIK|GERÄUSCH|BLENDE|HARTER SCHNITT)(?::\s*(.*?))?\]\s*$")
