@@ -38,6 +38,10 @@ var xp: int = 0
 ## Perk-Baum (Fallout-Achse, Master-GDD §7.5.1): Punkte + Ränge je Perk-id.
 var perk_points: int = 0
 var perks: Dictionary = {}   ## perk_id (String) -> Rang (int)
+## Werkstatt-Upgrades (Stufen) — fließen in die effektiven Werte (PlayerStats).
+var upgrades: Dictionary = { "damage": 0, "firerate": 0, "hp": 0, "speed": 0, "regen": 0, "magnet": 0 }
+## New Game+-Zyklus (Beute-/Skalierungs-Ertrag).
+var ng_plus: int = 0
 
 # ── Wirtschaft & Beutel ───────────────────────────────────────────────────────
 var gold: int = 0

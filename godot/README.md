@@ -28,6 +28,10 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
 - `scripts/EquipManager.gd` — **Loadout & legendäre Sets** (GDD §7.4/§7.4.4): Equip-Slots
   (Anlegen/Ablegen, Slot-Akzeptanz), Stat-Aggregation, getragene Legendaries — und **Set-Boni**,
   die Stats geben oder eine Kraft *verleihen* (`has_power` meldet sie wie ein getragenes Legendary).
+- `scripts/PlayerStats.gd` — **effektive Kampfwerte** (Kapstein, GDD §6/§7.5): aggregiert **alle**
+  Systeme zu den finalen Zahlen — Basis-Waffe + Werkstatt-Upgrades + Loadout + Perks +
+  getragene/Set-verliehene legendäre Kräfte (Schaden, Feuerrate, Krit, Rüstung/Mitigation,
+  max. Leben, Tempo, Regen, Magnet, Spread/Pierce, Loot). Formeln 1:1 aus dem Prototyp, deterministisch.
 - `scripts/SaveManager.gd` — **Persistenz** (GDD §2.3): serialisiert/lädt den `GameState`
   (inkl. Loadout; Dictionary/JSON, defensiv gegen JSON-Floats & fehlende Felder) inkl. Datei-Slots (`user://`).
 - `scripts/EncounterManager.gd` — **Mini-Dungeons & Unique-Champions** (GDD §7.5.6a/§8.2):
@@ -145,14 +149,15 @@ godot --headless --path godot                    # Pass 2: führt TestRunner aus
 (Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
 Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**,
 **Erinnerungs-Walzen & Familien-Bogen**, **Mini-Dungeons & Champions**, **Itemization & Perks**,
-**Abstieg-Endlosmodus**, **Persistenz**, **Loadout & legendäre Sets**) und beendet mit
+**Abstieg-Endlosmodus**, **Persistenz**, **Loadout & legendäre Sets**, **effektive Kampfwerte
+(Kapstein)**) und beendet mit
 Exit-Code 0 (alles grün) bzw. 1.
 
 Bei jedem Push/PR fährt der **CI-Workflow** (`.github/workflows/godot-backend.yml`) genau diese
 Prüfung automatisch: `gdparse` + Godot-4.3-Headless (Import-Pass + TestRunner) gegen eine
 asset-freie Projektkopie.
 
-> **Verifiziert:** Godot **4.3.stable**, headless — **241/241 Checks grün, Exit 0**.
+> **Verifiziert:** Godot **4.3.stable**, headless — **256/256 Checks grün, Exit 0**.
 > Die **gesamte Spiel-Logik** ist portiert; offen bleibt nur die Präsentations-/Render-Schicht.
 > Der schwere 3D-Asset-Import unter `assets/models`
 > verlangsamt Pass 1; für reine Logik-Tests kann man Scripts/Tests/`project.godot` in ein

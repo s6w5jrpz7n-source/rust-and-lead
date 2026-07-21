@@ -1340,9 +1340,10 @@ Biom-Zonierung (§1.6.3) bereits nach `WorldManager` portiert ist.
 | Perks (Fallout-Baum: Zweige/Tiers/Capstones/Respec) | `PERKS` | `ProgressionManager` | ✅ portiert |
 | Persistenz (Speichern/Laden, Save-Slots) | `serialize`/`save`/`load` | `SaveManager` | ✅ portiert |
 | Ausrüstung/Loadout + **legendäre Sets** | `equip`/`equipGear` + §7.4.4 | `EquipManager` | ✅ portiert |
+| **Effektive Kampfwerte** (Aggregat aller Systeme, „Kapstein") | `playerDamage`/`playerMaxHp` u. a. | `PlayerStats` | ✅ portiert |
 
 > **Stand:** Die **gesamte Spiel-Logik** ist ins Godot-Backend portiert und **headless verifiziert**
-> (Godot 4.3.stable, `godot --headless --path godot` → **241/241 Checks, Exit 0**), zusätzlich in
+> (Godot 4.3.stable, `godot --headless --path godot` → **256/256 Checks, Exit 0**), zusätzlich in
 > **CI** abgesichert (`.github/workflows/godot-backend.yml`). Offen bleibt allein die
 > **Präsentations-/Render-Schicht** (Kampf-Lesbarkeit §8.4, 3D-Szenen/Assets, Audio, UI) — kein
 > Logik-Port mehr, sondern View-Arbeit auf dem fertigen, getesteten Fundament.
@@ -1384,3 +1385,17 @@ Reine **View-Aufgabe** über dem Backend — die `CombatEngine` liefert bereits 
 * **Kampf-Fibel:** statischer Codex-Eintrag als Nachschlagewerk der Matrix.
 In Godot: `Sprite3D`/`Label3D`-Billboards am Gegner-Node + ein Toast-/Codex-System der UI; kein
 neuer Spielzustand nötig.
+
+## 8.5 Effektive Kampfwerte — `PlayerStats` (Kapstein-Spec)
+Der **Aggregat-Layer**, der die getrennt portierten Systeme zu den Zahlen zusammenführt, mit denen
+das Kampfsystem und die UI arbeiten. Rein statisch/deterministisch, **kein** eigener Zustand — jede
+Funktion leitet live aus `GameState.upgrades`, `EquipManager` (Stats + Set-Boni + `has_power`) und
+`ProgressionManager` (Perks + Kapsteine) ab. Formeln 1:1 aus dem Prototyp:
+* **Offense:** `damage_per_bullet(weapon, lvl)` (Basis + Upgrade·6 + Waffen-Level·5 + Ausrüstung +
+  Scharfschütze [+ Überladung bei Energiewaffen], × Golem-Faust 1,18), `fire_ms(weapon, overheated)`,
+  `crit_chance` / `crit_mult` / `armor_pen`, `spread_count`, `pierce`.
+* **Defense/Utility:** `player_armor`, `damage_taken_mul` (Mitigation × Eisernes Chassis ×
+  Wachsherz-Kürass), `max_hp` (Basis + Upgrade·25 + Ausrüstung + Level-Bonus + Zähigkeit, × Chassis
+  × Kesselschädel), `move_speed`, `regen_rate`, `magnet_dist`, `loot_mul` (Plünderer + Sohlen + NG+).
+* **Kapstein-Auflösung:** `_cap(zweig)` gilt, wenn der Perk-Kapstein **gewählt** *oder* von einem Set
+  **verliehen** ist (`EquipManager.has_power("cap_"+zweig)`) — Sets und Perks greifen identisch.

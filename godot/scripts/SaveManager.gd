@@ -21,6 +21,8 @@ static func serialize() -> Dictionary:
 		"xp": GameState.xp,
 		"perk_points": GameState.perk_points,
 		"perks": GameState.perks.duplicate(true),
+		"upgrades": GameState.upgrades.duplicate(true),
+		"ng_plus": GameState.ng_plus,
 		"gold": GameState.gold,
 		"potions": GameState.potions,
 		"inventory": GameState.inventory.duplicate(true),
@@ -46,6 +48,8 @@ static func deserialize(data: Dictionary) -> void:
 	GameState.xp = maxi(0, int(data.get("xp", 0)))
 	GameState.perk_points = maxi(0, int(data.get("perk_points", 0)))
 	GameState.perks = _int_dict(data.get("perks", {}))
+	GameState.upgrades = _int_dict_with_defaults(data.get("upgrades", {}), { "damage": 0, "firerate": 0, "hp": 0, "speed": 0, "regen": 0, "magnet": 0 })
+	GameState.ng_plus = maxi(0, int(data.get("ng_plus", 0)))
 	GameState.gold = maxi(0, int(data.get("gold", 0)))
 	GameState.potions = maxi(0, int(data.get("potions", 3)))
 	GameState.inventory = _int_dict_with_defaults(data.get("inventory", {}), { "schrott": 0, "zahnrad": 0, "dampfkern": 0 })

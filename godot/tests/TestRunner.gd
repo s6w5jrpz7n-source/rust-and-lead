@@ -27,6 +27,7 @@ func _ready() -> void:
 	_test_rift_manager()
 	_test_save_manager()
 	_test_equip_manager()
+	_test_player_stats()
 	print("──────────────────────────────────────────────")
 	print("  Ergebnis: %d bestanden, %d fehlgeschlagen" % [_passed, _failed])
 	print("──────────────────────────────────────────────")
@@ -50,6 +51,8 @@ func _reset_state() -> void:
 	GameState.xp = 0
 	GameState.perk_points = 0
 	GameState.perks = {}
+	GameState.upgrades = { "damage": 0, "firerate": 0, "hp": 0, "speed": 0, "regen": 0, "magnet": 0 }
+	GameState.ng_plus = 0
 	GameState.gold = 0
 	GameState.potions = 3
 	GameState.kills = 0
@@ -693,3 +696,61 @@ func _test_equip_manager() -> void:
 	_check("Grenzland 2/3: noch kein critchain", EquipManager.has_power("critchain") == false)
 	EquipManager.equip_item(visier, "helmet")
 	_check("Grenzland 3/3: verleiht critchain", EquipManager.set_piece_count("grenzland") == 3 and EquipManager.has_power("critchain"))
+
+
+# ── PlayerStats: effektive Kampfwerte (Kapstein: alle Systeme zusammen) §6/§7.5 ──
+func _test_player_stats() -> void:
+	print("· PlayerStats (effektive Werte — Kapstein)")
+	_reset_state()
+	GameState.equip = {}
+
+	# Basiswerte ohne Boni.
+	_check("Basis-Schaden Karabiner = 20", PlayerStats.damage_per_bullet("karabiner") == 20)
+	_check("Basis-Feuerrate Karabiner = 200", PlayerStats.fire_ms("karabiner") == 200)
+	_check("Basis max_hp (L1) = 100", PlayerStats.max_hp() == 100)
+	_check("Basis Krit = 0", is_equal_approx(PlayerStats.crit_chance(), 0.0))
+	_check("Krit-Mult = 2.0", is_equal_approx(PlayerStats.crit_mult(), 2.0))
+	_check("Schaden-genommen-Faktor (0 Rüstung) = 1.0", is_equal_approx(PlayerStats.damage_taken_mul(), 1.0))
+	_check("Basis Tempo/Regen/Magnet/Loot", PlayerStats.move_speed() == 240.0 and PlayerStats.regen_rate() == 8 and PlayerStats.magnet_dist() == 130 and is_equal_approx(PlayerStats.loot_mul(), 1.0))
+	_check("Basis Spread=7, Pierce=0", PlayerStats.spread_count() == 7 and PlayerStats.pierce() == 0)
+
+	# Perk-Beitrag: Scharfschütze Rang 3 (+4/Rang) -> +12 Schaden.
+	GameState.level = 1
+	GameState.perk_points = 3
+	ProgressionManager.buy_perk("scharf"); ProgressionManager.buy_perk("scharf"); ProgressionManager.buy_perk("scharf")
+	_check("Perk Scharfschütze: Schaden 20+12 = 32", PlayerStats.damage_per_bullet("karabiner") == 32)
+
+	# Werkstatt-Upgrade + Ausrüstung + Legendär-Kraft (overcharge x1.18).
+	_reset_state(); GameState.equip = {}
+	GameState.upgrades["damage"] = 2   # +12
+	var rng := RandomNumberGenerator.new(); rng.seed = 3
+	var wpn: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "overcharge", rng)
+	var dmg_stat: int = ProgressionManager.gear_stat_of(wpn, "damage")
+	EquipManager.equip_item(wpn, "weapon")
+	var expected: int = roundi((20 + 12 + dmg_stat) * 1.18)
+	_check("Upgrade+Ausrüstung+Golem-Faust (x1.18)", PlayerStats.damage_per_bullet("karabiner") == expected)
+
+	# Set-Integration: Direktorat verleiht cap_grit -> max_hp x1.2 & Schaden-genommen x0.8.
+	_reset_state(); GameState.equip = {}
+	var hp_base: int = PlayerStats.max_hp()   # 100
+	var vane: Dictionary = ProgressionManager.make_gear("armor", "legendary", "vaneward", rng)
+	var golem: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "overcharge", rng)
+	EquipManager.equip_item(vane, "armor")
+	EquipManager.equip_item(golem, "weapon")
+	var hp_stat: int = ProgressionManager.gear_stat_of(vane, "hp")   # Rüstung hat i. d. R. keinen hp-Stat -> 0
+	_check("Set cap_grit hebt max_hp um x1.2", PlayerStats.max_hp() == roundi((hp_base + hp_stat) * 1.2))
+	# Schaden genommen: (100/(100+armor*9)) * 0.8 (Wachsherz-Kürass zusätzlich x0.85).
+	var armor: int = PlayerStats.player_armor()
+	var expected_dtm: float = (100.0 / (100.0 + armor * 9.0)) * 0.8 * 0.85
+	_check("Set+Kürass senken Schaden-genommen", is_equal_approx(PlayerStats.damage_taken_mul(), expected_dtm))
+
+	# Beute & Spread über Legendaries + NG+.
+	_reset_state(); GameState.equip = {}
+	GameState.ng_plus = 2   # +0.70
+	var sohlen: Dictionary = ProgressionManager.make_gear("boots", "legendary", "plunder", rng)
+	var trommel: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "spread11", rng)
+	EquipManager.equip_item(sohlen, "boots")
+	EquipManager.equip_item(trommel, "weapon")
+	_check("Loot-Faktor: Plünderer(+0.25)+NG+2(+0.70) = 1.95", is_equal_approx(PlayerStats.loot_mul(), 1.95))
+	_check("Spread mit Dolores' Trommel = 11", PlayerStats.spread_count() == 11)
+	_check("Magnet +Plünderer-Sohlen (+60)", PlayerStats.magnet_dist() == 130 + 60)
