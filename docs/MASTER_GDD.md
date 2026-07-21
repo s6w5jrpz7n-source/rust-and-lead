@@ -965,6 +965,14 @@ versteckter Schwarm plus Anführer-Elite (Boss-Kiste) und garantierte Loot-Cache
 — Wiederspielwert für den typischen Diablo-„was-ist-da-drin?"-Loop. Rückkehr per Ausgang landet am
 Eingang (`hallReturn`/`ret`). Kurz zu finden, klein, lohnend.
 
+**Unique-Champions (`spawnUniqueLeader`).** Mit **~30 % Chance** ist der Hallen-Anführer kein normaler
+Elite, sondern ein benannter **Champion** (Diablo-Unique): violett getönt, größer, ~6× HP, +Panzerung,
+größeres Rudel und eine **benannte Boss-Lebensleiste** (`setBossBar`, Namen aus `UNIQUE_NAMES` —
+„Rostzahn, der Grubenkönig", „Kessel-Baronin Vex" …). Beim Erlegen fällt ein **garantiertes benanntes
+Legendary** (`makeGear(slot,'legendary')` aus `UNIQUE_SLOTS`) plus zwei Boss-Kisten und doppeltes Gold;
+zählt als Boss-Kill. Ein Spawn-Toast kündigt den Champion an. Das gibt dem Hallen-Entdecken einen
+echten Loot-Anreiz statt bloßer Trash-Räume.
+
 **Rotierende Biome (`ABYSS_BIOMES`, Band = 5 Ebenen).** Damit der Endlosmodus optisch nie
 stehenbleibt, wechselt der Abstieg alle fünf Ebenen das Biom — jedes mit eigener Bodenpalette,
 Hintergrund, Stollen-Beschriftung und Ankunfts-Ausruf: **Verlassene Stollen** (1–5, grau) →

@@ -65,7 +65,8 @@ Die vollständige Story-Bibel (alle Dialoge, Kinoszenen, Casting-Notizen) liegt 
   ⛰ Kupfer-Hochland, 🧂 Salzpfanne (Erfolg *Kartograf*).
 - **Mini-Dungeons:** Über die Karte verstreute 🕳️ Kritter-Hallen (Verlassene Halle / Alter Stollen /
   Vergessene Grube) — einstöckig, versteckter Schwarm + Anführer + garantierte Beute, Thema pro
-  Betreten neu gewürfelt.
+  Betreten neu gewürfelt. **~30 %** ein benannter **Unique-Champion** (Diablo-Pack) mit eigener
+  Lebensleiste und **garantiertem Legendary**.
 - **Zwei Nebengebiete:** Garten aus Rost (Smog-Linie) und Kessel-Friedhof (Schrott-Golem).
 - **Wirtschaft:** Rustwater-Gebäude generieren Einkommen; Händler mit Drag-Handel.
 - **Atmosphäre-Barks:** schwebende Story-Sprüche aus der Bibel (Stadt/Held/Gegner/Tiefe).
