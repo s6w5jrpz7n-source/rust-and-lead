@@ -19,9 +19,10 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
   Sekunden-Tick nur bei aktiver Spielzeit, Kostenkurve, Ripple-Booster.
 - `scripts/GridInventoryBackend.gd` — **Modul 3:** reines Grid-Inventar (`class_name`,
   instanziierbar): Footprint-Prüfung, Insert/Remove, Auto-Platzierung.
-- `scripts/WorldManager.gd` — Weltgeografie & Gating (GDD §1.6/§1.7): POI-Registry mit
-  Koordinaten, Sektor-Logik und die drei Tore (Sprengtore, Smog-Linie, Fraktions-
-  Feindseligkeit) als aus `GameState` abgeleitete Abfragen (`class_name`, `static`).
+- `scripts/WorldManager.gd` — Weltgeografie, Gating & **Biom-Zonierung** (GDD §1.6/§1.7/§1.6.3):
+  POI-Registry mit Koordinaten, Sektor-Logik, die drei Tore (Sprengtore, Smog-Linie, Fraktions-
+  Feindseligkeit) und die aus dem Prototyp portierten **Biom-Zonen** (Palette/Flora/Gegner-Leitmix,
+  ans Sektor-Gating gebunden) — alles als aus `GameState` abgeleitete Abfragen (`class_name`, `static`).
 
 ## Weltgeografie & Gating (WorldManager)
 Koordinaten: Ursprung SW-Ecke, X = W→O, Y = S→N (0…2000). Alle Gate-Zustände sind aus
@@ -45,6 +46,12 @@ var dmg := WorldManager.smog_dot_damage(player.global_position_2d, delta)  # 0 m
 QuestManager.choose_guild("rebels")
 WorldManager.is_base_hostile("sektor01")          # true  (fremdes HQ -> Geschützturm-Aggro)
 WorldManager.is_base_friendly("fort_freedom")     # true  (eigene Gilde)
+
+# Biom-Zonierung (§1.6.3) — geografische Zonen mit eigenem Gegner-Mix, ans Gating gebunden:
+WorldManager.biome_at(Vector2(1120, 1080))        # "rostwald" (Sektor 2, Wildnis)
+WorldManager.biome_at(Vector2(0, 1600))           # "smog_oedland" (Sektor 3)
+WorldManager.pick_enemy_type("kupfer_hochland", true)   # bevorzugt Konstrukte (industriell)
+WorldManager.is_biome_unlocked("smog_oedland")    # false ohne Alchemie-Filter (erbt Sektor-3-Gate)
 ```
 
 ## Modul 1 — Kampf-Backend (CombatEngine)

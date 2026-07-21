@@ -260,3 +260,45 @@ func _test_world_manager() -> void:
 	GameState.chosen_guild = "rebels"
 	_check("Rebellen -> Sektor 01 feindlich", WorldManager.is_base_hostile("sektor01") == true)
 	_check("eigenes HQ freundlich", WorldManager.is_base_friendly("fort_freedom") == true)
+
+	# ── Biom-Zonierung (§1.6.3) ──
+	_check("Biom Hub-Umland = Wüste", WorldManager.biome_at(Vector2(300, 300)) == "desert")
+	_check("Biom Salzpfanne", WorldManager.biome_at(Vector2(250, 680)) == "salt")
+	_check("Biom Grüne Senke", WorldManager.biome_at(Vector2(550, 250)) == "oasis")
+	_check("Biom Rostwald", WorldManager.biome_at(Vector2(1120, 1080)) == "rostwald")
+	_check("Biom Kupfer-Hochland", WorldManager.biome_at(Vector2(1750, 1350)) == "kupfer_hochland")
+	_check("Biom Smog-Ödland (Sektor 3)", WorldManager.biome_at(Vector2(0, 1600)) == "smog_oedland")
+	# Zonen überlappen nicht (jedes Zentrum liefert sein eigenes Biom)
+	var centers_ok: bool = true
+	for id in ["salt", "oasis", "rostwald", "kupfer_hochland"]:
+		var b: Dictionary = WorldManager.BIOMES[id]
+		if WorldManager.biome_at(Vector2(float(b["cx"]), float(b["cy"]))) != id:
+			centers_ok = false
+	_check("Zonen-Zentren eindeutig (kein Overlap)", centers_ok)
+
+	# Gegner-Leitmix je Biom (deterministisch via roll = 0.0 -> erster Pool-Eintrag)
+	_check("Rostwald pre = Wildnis (fauna zuerst)", WorldManager.pick_enemy_type("rostwald", false, 0.0) == "fauna")
+	_check("Hochland post = mechanisch (konstrukt zuerst)", WorldManager.pick_enemy_type("kupfer_hochland", true, 0.0) == "konstrukt")
+	_check("Salzpfanne pre = menschlich (revolver zuerst)", WorldManager.pick_enemy_type("salt", false, 0.0) == "revolver")
+	_check("Salzpfanne pre-Reveal ohne Maschinen", not _pool_has(WorldManager.enemy_pool("salt", false), "konstrukt"))
+	_check("Desert post enthält Kläffer (nach Reveal)", _pool_has(WorldManager.enemy_pool("desert", true), "klaeffer"))
+	_check("Unbekanntes Biom fällt auf Wüste zurück", WorldManager.enemy_pool("nonexistent", false) == WorldManager.enemy_pool("desert", false))
+
+	# Zonen erben Sektor-Gating (§1.7)
+	GameState.current_chapter = 1
+	GameState.set_building_level("laboratory", 0)
+	_check("Rostwald vor Kap.4 gesperrt (Sektor 2)", WorldManager.is_biome_unlocked("rostwald") == false)
+	_check("Wüste immer offen (Sektor 1)", WorldManager.is_biome_unlocked("desert") == true)
+	GameState.current_chapter = 5
+	_check("Rostwald nach Reveal offen", WorldManager.is_biome_unlocked("rostwald") == true)
+	_check("Smog-Ödland ohne Filter gesperrt (Sektor 3)", WorldManager.is_biome_unlocked("smog_oedland") == false)
+	GameState.set_building_level("laboratory", 3)
+	_check("Smog-Ödland mit Filter offen", WorldManager.is_biome_unlocked("smog_oedland") == true)
+	_check("Unique-Champion-Chance = 30%", is_equal_approx(WorldManager.UNIQUE_CHAMPION_CHANCE, 0.30))
+
+
+func _pool_has(pool: Array, type_id: String) -> bool:
+	for p in pool:
+		if String(p[0]) == type_id:
+			return true
+	return false

@@ -154,3 +154,70 @@ static func is_base_friendly(base_id: String) -> bool:
 	if not BASE_GUILD.has(base_id):
 		return true
 	return not is_base_hostile(base_id)
+
+
+# ── Biom-Zonierung der Welt (Master-GDD §1.6.3) ───────────────────────────────
+## Portiert aus dem validierten Web-Prototyp: geografische Zonen mit eigener Palette,
+## Deko-Flora und Gegner-Leitmix; an die Sektor-Tore (§1.7) gebunden. `cx/cy/radius` in
+## Weltkoordinaten (m) — Vector2 bewusst nicht im const (Konstant-Ausdrucks-Sicherheit).
+const UNIQUE_CHAMPION_CHANCE: float = 0.30   # Kritter-Hallen: Chance auf benannten Unique (garantiertes Legendary)
+
+const BIOMES: Dictionary = {
+	"desert":          { "name": "Wüste", "sector": 1, "flora": ["cactus"], "hazard": "" },
+	"salt":            { "name": "Salzpfanne", "sector": 1, "cx": 250, "cy": 680, "radius": 220, "flora": ["salt"], "hazard": "" },
+	"oasis":           { "name": "Grüne Senke", "sector": 1, "cx": 550, "cy": 250, "radius": 200, "flora": ["tree", "water"], "hazard": "" },
+	"rostwald":        { "name": "Rostwald", "sector": 2, "cx": 1120, "cy": 1080, "radius": 320, "flora": ["tree"], "hazard": "" },
+	"kupfer_hochland": { "name": "Kupfer-Hochland", "sector": 2, "cx": 1750, "cy": 1350, "radius": 280, "flora": ["rock"], "hazard": "" },
+	"smog_oedland":    { "name": "Smog-Ödland", "sector": 3, "flora": ["deadtree"], "hazard": "smog" },
+}
+
+## Gegner-Leitmix je Biom [Typ, Gewicht], pre-/post-Reveal (verschiebt sich mechanisch).
+const ENEMY_POOLS: Dictionary = {
+	"desert":          { "pre": [["outlaw", 4], ["fauna", 3], ["revolver", 2], ["konstrukt", 1]], "post": [["outlaw", 3], ["fauna", 2], ["revolver", 2], ["konstrukt", 4], ["klaeffer", 3]] },
+	"oasis":           { "pre": [["fauna", 4], ["outlaw", 3], ["revolver", 1], ["konstrukt", 1]], "post": [["fauna", 4], ["klaeffer", 3], ["outlaw", 2], ["konstrukt", 2], ["revolver", 1]] },
+	"salt":            { "pre": [["revolver", 4], ["outlaw", 4], ["fauna", 1]], "post": [["revolver", 3], ["outlaw", 3], ["konstrukt", 3], ["klaeffer", 1]] },
+	"rostwald":        { "pre": [["fauna", 5], ["outlaw", 2], ["revolver", 1], ["konstrukt", 1]], "post": [["fauna", 4], ["klaeffer", 4], ["konstrukt", 2], ["outlaw", 1]] },
+	"kupfer_hochland": { "pre": [["revolver", 3], ["outlaw", 3], ["konstrukt", 2], ["fauna", 1]], "post": [["konstrukt", 5], ["klaeffer", 3], ["revolver", 2], ["outlaw", 1]] },
+	"smog_oedland":    { "pre": [["konstrukt", 5], ["klaeffer", 4], ["goliath", 1]], "post": [["konstrukt", 5], ["klaeffer", 4], ["goliath", 2]] },
+}
+
+## Reihenfolge der benannten Kreiszonen (erste Übereinstimmung gewinnt). Smog-Ödland = ganzer Sektor 3.
+const BIOME_ZONE_ORDER: Array = ["oasis", "salt", "rostwald", "kupfer_hochland"]
+
+## Welches Biom liegt an dieser Weltposition? Geografisch, deterministisch.
+static func biome_at(pos: Vector2) -> String:
+	if pos.y >= SMOG_LINE_Y:
+		return "smog_oedland"
+	for id in BIOME_ZONE_ORDER:
+		var b: Dictionary = BIOMES[id]
+		var c: Vector2 = Vector2(float(b["cx"]), float(b["cy"]))
+		var rad: float = float(b["radius"])
+		if pos.distance_squared_to(c) <= rad * rad:
+			return id
+	return "desert"
+
+static func biome(biome_id: String) -> Dictionary:
+	assert(BIOMES.has(biome_id), "WorldManager: unbekanntes Biom '%s'" % biome_id)
+	return BIOMES[biome_id]
+
+## Ist die Zone sicher betretbar? Erbt das Gating ihres Sektors (§1.7).
+static func is_biome_unlocked(biome_id: String) -> bool:
+	return can_enter_sector(int(biome(biome_id).get("sector", 1)))
+
+## Gegner-Pool eines Bioms (post nach dem Reveal). Fällt auf Wüste zurück.
+static func enemy_pool(biome_id: String, revealed: bool) -> Array:
+	var pools: Dictionary = ENEMY_POOLS.get(biome_id, ENEMY_POOLS["desert"])
+	return pools["post"] if revealed else pools["pre"]
+
+## Gewichtete Gegner-Auswahl. `roll` (0..1) macht Tests deterministisch; sonst randf().
+static func pick_enemy_type(biome_id: String, revealed: bool, roll: float = -1.0) -> String:
+	var pool: Array = enemy_pool(biome_id, revealed)
+	var total: int = 0
+	for p in pool:
+		total += int(p[1])
+	var x: float = (roll if roll >= 0.0 else randf()) * float(total)
+	for p in pool:
+		x -= float(p[1])
+		if x <= 0.0:
+			return String(p[0])
+	return "outlaw"

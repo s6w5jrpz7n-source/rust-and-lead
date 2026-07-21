@@ -141,6 +141,37 @@ Ebene tiefer; ein Aufzug/Ausgang führt zurück an die Oberfläche.
 > tiefsten Ebene und skaliert mit der Tiefe (`SUPERBOSS_MULT + (Tiefe−1)` → Ebene 3 = 6×
 > Boss-HP, 4200 HP) plus reichem Beute-Cache.
 
+### 1.6.3 Biom-Zonierung der Welt (Prototyp → Godot-Vorlage)
+Der Web-Prototyp hat das **Biom-System** validiert (regionale Bodenpalette + Natur-Deko +
+biom-eigener Gegner-Mix + Entdecker-Toast/Erfolg *Kartograf*, dazu verstreute Mini-Dungeons mit
+Unique-Champions). In Godot werden diese **konzeptionellen Regionen zu geografischen Zonen** der
+2000×2000-Welt. Jede Zone erbt Palette-Absicht, Flora und Gegner-Pool aus dem Prototyp und bindet an
+die bestehenden Sektor-Tore (§1.7) an. **Verbindliche Zuordnung:**
+
+| Zone / Biom | Sektor · Y-Band | Umwelt (Godot: Terrain, Deko, Licht) | Gegner-Leitmix | Rolle |
+| :-- | :-- | :-- | :-- | :-- |
+| **Wüste** (Basis) | S1 · Y 0–800 | Kies-/Sandterrain, Kakteen, Wracks; harte Sonne | Grenzgänger/Ratten/Revolver, wenig Konstrukt | Tutorial-/Hub-Umland (Rustwater) |
+| **Salzpfanne** | S1 · NW | rissige Salzkruste, Kristall-Props, grelles Reflexlicht | menschliche Räuber (Revolver/Outlaw), **pre-Reveal keine Maschinen** | frühes Räuber-Revier |
+| **Grüne Senke (Oase)** | S1/S2-Grenze · SW | Gras/Wasser-Terrain, Palmen, Tümpel (Light2D/Spiegelung) | fauna-lastig + Outlaws | Atempause, `q_garden`-Anbindung (Agata) |
+| **Rostwald** | S2 · Y 800–1500, O | dichte Vegetation über Rostboden, Bäume, Unterholz-Occlusion | **Wildnis:** fauna + Kläffer-Schwärme | Sektor-2-Jagdrevier, Schmuggler-Nähe |
+| **Kupfer-Hochland** | S2 · Y 800–1500, NO | Fels/Klippen (namaqualand-Assets), Geröll, Kupferadern | **industriell:** Konstrukte + Revolverhelden in den Felsen | Anmarsch auf Sektor 01 (Eiserne Gilde) |
+| **Smog-Ödland** | S3 · Y 1500–2000 | giftgrüner volumetrischer Nebel, tote Erde, Glut-Lichter | Elite/Goliath-dicht, voll mechanisch | Endgame-Zone hinter der Smog-Linie (§1.7.2) |
+| **Abstieg-Biome** | Rift (instanziiert) | rotierende Tiefenbänder (Stollen→Frost→Magma→Sporen→Fleisch, §7.5.6a) | tiefen-skaliert | endloser Post-Kampagnen-Loop |
+
+**Regeln für die Godot-Umsetzung:**
+* **Biom = Umwelt + Bedrohung, nicht nur Farbe.** Jede Zone kombiniert eigenes Terrain-Material
+  (PBR), Deko-Streuung (Bäume/Wasser/Fels/Salz/Kakteen aus `assets/models`), Ambient-/Fog-Tönung
+  **und** ihren `BIOME_ENEMY_POOLS`-Mix; nach dem Reveal verschiebt sich jeder Pool mechanisch.
+* **Post-Reveal-Expansion = der eigentliche „zweite Region"-Sprung.** Sektor 2/3 (Rostwald,
+  Kupfer-Hochland, Smog-Ödland) öffnen erst mit `current_chapter >= 5` bzw. dem Smog-Filter (§1.7.1/2).
+  Damit ist die „zweite Overworld-Region" bereits im Gating- und Story-Gerüst verankert — sie ist die
+  post-Reveal-Nordwelt, nicht eine losgelöste Extra-Karte.
+* **Mini-Dungeons & Champions pro Zone.** Die verstreuten Kritter-Hallen (§7.5.6a) werden je Zone
+  thematisiert (Wald-Nest, Fels-Stollen, Salz-Grube) und tragen dieselbe ~30 %-Unique-Champion-Chance
+  mit garantiertem Legendary. Dichte steigt Richtung Norden.
+* **Entdeckung bleibt belohnt.** Zonen-Erstbetreten meldet sich (Toast/Codex), *Kartograf* erweitert
+  sich auf die volle Zonenliste; POIs werden erst bei Sichtung auf der Minimap markiert.
+
 ## 1.7 Progressions-Gating & Umwelt-Barrieren
 Narrativer Sog ohne immersionsbrechende unsichtbare Wände — stattdessen mechanische,
 umweltbasierte und fraktionsbasierte Tore.
