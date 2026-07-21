@@ -21,6 +21,7 @@ func _ready() -> void:
 	_test_tycoon_manager()
 	_test_grid_inventory()
 	_test_world_manager()
+	_test_memory_manager()
 	print("──────────────────────────────────────────────")
 	print("  Ergebnis: %d bestanden, %d fehlgeschlagen" % [_passed, _failed])
 	print("──────────────────────────────────────────────")
@@ -50,6 +51,10 @@ func _reset_state() -> void:
 	GameState.quests = {}
 	GameState.quest_base = {}
 	GameState.flags_ui = { "reveal_playing": false }
+	GameState.memories_found = 0
+	GameState.memorials_seen = []
+	GameState.family_buried = false
+	GameState.codex = []
 
 
 # ── Modul 1: CombatEngine ─────────────────────────────────────────────────────
@@ -302,3 +307,70 @@ func _pool_has(pool: Array, type_id: String) -> bool:
 		if String(p[0]) == type_id:
 			return true
 	return false
+
+
+# ── MemoryManager: Erinnerungs-Walzen & Familien-Bogen (§8.3) ─────────────────
+func _test_memory_manager() -> void:
+	print("· MemoryManager (roter Faden §8.3)")
+	_reset_state()
+
+	# Kette: 16 geordnete Fragmente, jedes mit Titel+Text.
+	_check("Erinnerungskette = 16", MemoryManager.chain_length() == 16)
+	var all_data: bool = true
+	for m in MemoryManager.MEMORIES:
+		if String(m.get("title", "")) == "" or String(m.get("text", "")) == "":
+			all_data = false
+	_check("jedes Fragment hat Titel+Text", all_data)
+	_check("next_memory = erstes Fragment", MemoryManager.next_memory()["title"] == "Der Nagel")
+
+	# Bergen rückt die Kette vor und schaltet beim ersten Fund den Drop-Logik-Codex frei.
+	var m0: Dictionary = MemoryManager.recover_memory()
+	_check("recover gibt Fragment 1", m0["title"] == "Der Nagel" and GameState.memories_found == 1)
+	_check("erster Fund schaltet 'steuerwalzen' frei", GameState.codex_has("steuerwalzen"))
+	_check("next_memory rückt vor", MemoryManager.next_memory()["title"] == "Kaffee, zu früh")
+
+	# Drop-Wahrscheinlichkeit: deterministisch via roll (3 % normal, 50 % Boss).
+	_check("recovery_chance normal = 0.03", is_equal_approx(MemoryManager.recovery_chance(false), 0.03))
+	_check("recovery_chance Boss = 0.50", is_equal_approx(MemoryManager.recovery_chance(true), 0.50))
+	var before: int = GameState.memories_found
+	_check("roll 0.02 < 0.03 -> Fund", not MemoryManager.try_recover_memory(false, 0.02).is_empty() and GameState.memories_found == before + 1)
+	_check("roll 0.04 >= 0.03 -> kein Fund", MemoryManager.try_recover_memory(false, 0.04).is_empty())
+	_check("Boss roll 0.40 < 0.50 -> Fund", not MemoryManager.try_recover_memory(true, 0.40).is_empty())
+
+	# Vollsammlung: Kette füllen, dann sperrt weiteres Bergen.
+	while not MemoryManager.is_complete():
+		MemoryManager.recover_memory()
+	_check("Kette voll bei 16", GameState.memories_found == 16 and MemoryManager.is_complete())
+	_check("recover bei voller Kette = {}", MemoryManager.recover_memory().is_empty())
+	_check("Erfolg 'Jeremiah Hale' (rememberer)", MemoryManager.is_rememberer())
+
+	# Erinnerungspunkte: Türrahmen/Foto schalten 'familie' frei, liefern Flashback-Zeilen.
+	_reset_state()
+	var door: Dictionary = MemoryManager.play_memorial("doorframe")
+	_check("doorframe erstmalig gesehen", door["first_seen"] == true and GameState.memorials_seen.has("doorframe"))
+	_check("doorframe schaltet 'familie' frei", GameState.codex_has("familie"))
+	_check("doorframe liefert Flashback-Zeilen", door["lines"].size() >= 3 and door["graves_state"] == "")
+	_check("doorframe zweiter Besuch nicht mehr 'first'", MemoryManager.play_memorial("doorframe")["first_seen"] == false)
+	_check("photo schaltet ebenfalls 'familie'", not MemoryManager.play_memorial("photo").is_empty())
+
+	# Providence-Gating: erst nach dem Erwachen offen.
+	GameState.is_revealed = false
+	_check("Providence vor Reveal verschlossen", MemoryManager.is_providence_open() == false)
+	GameState.is_revealed = true
+	_check("Providence nach Reveal offen", MemoryManager.is_providence_open() == true)
+
+	# Gräber gestuft: unvollständig -> kein Begräbnis.
+	_reset_state()
+	GameState.memories_found = 5
+	var g_inc: Dictionary = MemoryManager.play_memorial("graves")
+	_check("Gräber unvollständig", g_inc["graves_state"] == "incomplete")
+	_check("bury_family scheitert unvollständig", MemoryManager.bury_family() == false and GameState.family_buried == false)
+
+	# Gräber vollständig: Begräbnis setzt Zustand, Codex, Erfolg — und ist einmalig.
+	GameState.memories_found = 16
+	_check("Gräber bereit bei 16/16", MemoryManager.play_memorial("graves")["graves_state"] == "ready")
+	_check("bury_family erfolgreich", MemoryManager.bury_family() == true and GameState.family_buried)
+	_check("Begräbnis schaltet 'heimkehr' frei", GameState.codex_has("heimkehr") and GameState.codex_has("familie"))
+	_check("Erfolg 'Heimkehr' (homecoming)", MemoryManager.is_homecoming())
+	_check("Gräber danach 'buried'", MemoryManager.graves_state() == "buried")
+	_check("bury_family zweimal = false", MemoryManager.bury_family() == false)

@@ -19,6 +19,9 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
   Sekunden-Tick nur bei aktiver Spielzeit, Kostenkurve, Ripple-Booster.
 - `scripts/GridInventoryBackend.gd` — **Modul 3:** reines Grid-Inventar (`class_name`,
   instanziierbar): Footprint-Prüfung, Insert/Remove, Auto-Platzierung.
+- `scripts/MemoryManager.gd` — **roter Faden** (GDD §7.5.12a/b/§8.3): Erinnerungs-Walzen
+  (geordnete 16er-Kette, Drop-Logik 3 %/50 %) & Familien-Bogen (Providence-Cut-Memorials,
+  gestufte Gräber, `bury_family`, Codex/Erfolge) — alles über `GameState` (`class_name`, `static`).
 - `scripts/WorldManager.gd` — Weltgeografie, Gating & **Biom-Zonierung** (GDD §1.6/§1.7/§1.6.3):
   POI-Registry mit Koordinaten, Sektor-Logik, die drei Tore (Sprengtore, Smog-Linie, Fraktions-
   Feindseligkeit) und die aus dem Prototyp portierten **Biom-Zonen** (Palette/Flora/Gegner-Leitmix,
@@ -126,11 +129,11 @@ godot --headless --path godot                    # Pass 2: führt TestRunner aus
 ```
 `tests/TestRunner.gd` prüft alle Module deterministisch gegen die GDD-Werte
 (Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
-Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**) und
-beendet mit Exit-Code 0 (alles grün) bzw. 1 (Fehler).
+Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**,
+**Erinnerungs-Walzen & Familien-Bogen**) und beendet mit Exit-Code 0 (alles grün) bzw. 1.
 
-> **Verifiziert:** Godot **4.3.stable**, headless — **104/104 Checks grün, Exit 0**
-> (inkl. der 22 Biom-Zonierungs-Tests). Der schwere 3D-Asset-Import unter `assets/models`
+> **Verifiziert:** Godot **4.3.stable**, headless — **133/133 Checks grün, Exit 0**
+> (inkl. 22 Biom-Zonierungs- und 29 roter-Faden-Tests). Der schwere 3D-Asset-Import unter `assets/models`
 > verlangsamt Pass 1; für reine Logik-Tests kann man Scripts/Tests/`project.godot` in ein
 > asset-freies Verzeichnis kopieren und dort testen.
 

@@ -53,6 +53,12 @@ var kills: int = 0
 var quests: Dictionary = {}       ## quest_id (String) -> "available" | "active" | "done"
 var quest_base: Dictionary = {}   ## quest_id (String) -> Kill-Stand zum Annahme-Zeitpunkt (int)
 
+# ── Roter Faden: Erinnerungs-Walzen & Familien-Bogen (Master-GDD §7.5.12a/b, §8.3) ──
+var memories_found: int = 0        ## 0..MemoryManager.chain_length(); geordnete Erinnerungskette
+var memorials_seen: Array = []     ## ids besuchter Erinnerungspunkte in Providence Cut
+var family_buried: bool = false    ## alle Walzen an den drei Gräbern beigesetzt (16/16)
+var codex: Array = []              ## freigeschaltete Codex-Einträge (ids)
+
 # ── Ablauf-Flags (nur backend-relevante; UI-Only-Flags leben in der UI-Schicht) ─
 var flags_ui: Dictionary = { "reveal_playing": false }
 
@@ -125,3 +131,15 @@ func building_level(id: String) -> int:
 
 func set_building_level(id: String, level: int) -> void:
 	economy[id] = maxi(0, level)
+
+
+# ── Codex ─────────────────────────────────────────────────────────────────────
+func codex_has(id: String) -> bool:
+	return codex.has(id)
+
+## Schaltet einen Codex-Eintrag frei; gibt false zurück, wenn schon bekannt (idempotent).
+func unlock_codex(id: String) -> bool:
+	if codex.has(id):
+		return false
+	codex.append(id)
+	return true
