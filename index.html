@@ -635,6 +635,8 @@
     spuersinn: { name: 'Spürsinn-Sensor', icon: '📡', desc: 'Apport-Radius', base: 50, max: 5 }
   };
   const COMP_ENGAGE = 280, COMP_BITE_DIST = 40, COMP_SPEED = 300;
+  const COMP_MAX_HP = 90, COMP_HURT_MUL = 0.7, COMP_REGEN = 8, DOG_WRECK_CELLS = 2;   // Bolzen kann fallen -> Wrack -> reparieren
+  const REPAIR_COST = { gold: 120, schrott: 5, zahnrad: 2 };
 
   // ---- Fähigkeitenbaum (Fallout-inspiriert): 3 Zweige, je 4 Perks in Rängen ----
   // Fallout-Prinzip: pro Stufe 1 Fähigkeitspunkt; Perks in Rängen; höhere Tiers durch
@@ -1051,7 +1053,7 @@
   for (const id in MAPS) MAPS[id].stations.forEach(s => STATION_INDEX[s.id] = { mapId: id, tx: s.tx, ty: s.ty, name: s.name });
 
   // ---- Laufzeit-Zustand --------------------------------------
-  let sceneRef, player, shadow, companionDog, companionShadow;
+  let sceneRef, player, shadow, companionDog, companionShadow, companionHpBar;
   let stickBase, stickThumb, hint, shootBtn, killText, goldText, mapNameText;
   let weaponBtn, weaponIcon, weaponName, ammoText, ammoBg;
   let miniBg, miniTitle, miniGfx, miniCollapse, miniExpand;
@@ -1099,7 +1101,7 @@
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, tragesystem: 0 },
-    companion: { active: true, dmg: 0, tempo: 0, spuersinn: 0 },   // Blechhund „Bolzen" (Begleiter)
+    companion: { active: true, dmg: 0, tempo: 0, spuersinn: 0, hp: 90, down: false, carried: false },   // Blechhund „Bolzen" (Begleiter)
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
@@ -1134,7 +1136,11 @@
     const dEar = scene.add.triangle(14, -9, 0, 0, 7, -8, 9, 1, 0x5c4326);
     const dEye = scene.add.circle(15, -3, 1.7, 0x38bdf8);
     companionDog = scene.add.container(0, 0, [dTail, dBody, dHead, dEar, dEye]).setDepth(5);
-    companionDog.facing = 0; companionDog.biteAt = 0; companionDog.setVisible(compActive());
+    companionDog.facing = 0; companionDog.biteAt = 0; companionDog.hurtAt = 0; companionDog.setVisible(compActive());
+    companionHpBar = {
+      bg: scene.add.rectangle(0, 0, 26, 4, 0x000000, 0.6).setOrigin(0.5).setDepth(6).setVisible(false),
+      fill: scene.add.rectangle(0, 0, 26, 4, 0x84cc16).setOrigin(0, 0.5).setDepth(6).setVisible(false)
+    };
 
     // Joystick
     stickBase = scene.add.circle(0, 0, STICK_RADIUS, 0xffffff, 0.10).setStrokeStyle(2, 0xffffff, 0.30).setScrollFactor(0).setDepth(20).setVisible(false);
@@ -1396,13 +1402,13 @@
   function regenRate() { return REGEN_RATE + state.upgrades.regen * 4 + perkVal('heilung') + (hasPower('autovent') ? 6 : 0); }   // Selbstschmier-Ventil
   function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0) + (hasPower('plunder') ? 60 : 0) + (compActive() ? (state.companion.spuersinn || 0) * 45 : 0); }   // Begleiter-Apport
   // ---- Begleiter: Blechhund „Bolzen" -------------------------
-  function compActive() { return !!(state.companion && state.companion.active); }
+  function compActive() { return !!(state.companion && state.companion.active && !state.companion.down); }   // aktiv nur solange nicht zerstört
   function compBite() { return 9 + (state.companion.dmg || 0) * 5; }                       // Bissschaden je Stufe
   function compCd() { return Math.max(450, 1350 - (state.companion.tempo || 0) * 170); }   // ms zwischen Bissen
-  // Bolzen folgt an der Ferse, stürzt sich auf den nächsten Gegner in Reichweite und beißt zu.
+  // Bolzen folgt an der Ferse, stürzt sich auf den nächsten Gegner, beißt zu — und kann selbst fallen.
   function updateCompanion(now, dt, uiBlocked) {
     const dog = companionDog; if (!dog) return;
-    if (!compActive()) { dog.setVisible(false); companionShadow.setVisible(false); return; }
+    if (!compActive()) { dog.setVisible(false); companionShadow.setVisible(false); companionHpBar.bg.setVisible(false); companionHpBar.fill.setVisible(false); return; }
     dog.setVisible(true); companionShadow.setVisible(true);
     let target = null;
     if (!uiBlocked && !state.transitioning) {
@@ -1418,12 +1424,55 @@
     if (dx < -3) dog.scaleX = -1; else if (dx > 3) dog.scaleX = 1;   // horizontal spiegeln statt drehen (bleibt aufrecht)
     companionShadow.setPosition(dog.x, dog.y + 9);
     dog.setDepth(dog.y >= player.y ? 6 : 4);
+    // Biss
     if (target && !uiBlocked && now >= dog.biteAt && Phaser.Math.Distance.Between(dog.x, dog.y, target.c.x, target.c.y) <= COMP_BITE_DIST) {
       dog.biteAt = now + compCd();
       sceneRef.tweens.add({ targets: dog, scaleY: 0.7, duration: 70, yoyo: true });   // kurzer Schnapp
       popLoot(dog.x, dog.y - 8, '🦷'); sfx('bite');
       damageEnemy(target, compBite(), { color: 0xc9a24a });
     }
+    // Bolzen nimmt Kontaktschaden von nahen, geweckten Gegnern; regeneriert sonst langsam.
+    if (!uiBlocked && !state.transitioning) {
+      let hurt = 0;
+      for (const e of enemies) { if (!e.aggro) continue; const d = Phaser.Math.Distance.Between(dog.x, dog.y, e.c.x, e.c.y); if (d <= 14 + e.r) hurt += e.contact; }
+      if (hurt > 0) { state.companion.hp -= hurt * COMP_HURT_MUL * dt; dog.setAlpha(Math.floor(now / 90) % 2 === 0 ? 0.5 : 1); }   // Trefferblinken
+      else { dog.setAlpha(1); if (state.companion.hp < COMP_MAX_HP && !target) state.companion.hp = Math.min(COMP_MAX_HP, state.companion.hp + COMP_REGEN * dt); }   // Selbstreparatur außer Gefecht
+    }
+    // HP-Leiste über Bolzen, sobald angeschlagen
+    const showBar = state.companion.hp < COMP_MAX_HP - 0.5;
+    companionHpBar.bg.setVisible(showBar).setPosition(dog.x, dog.y - 17);
+    companionHpBar.fill.setVisible(showBar).setPosition(dog.x - 13, dog.y - 17).width = 26 * Math.max(0, state.companion.hp) / COMP_MAX_HP;
+    if (state.companion.hp <= 0) downDog();
+  }
+  // Bolzen fällt: Wrack in die Welt, muss eingesammelt und in der Werkstatt repariert werden.
+  function downDog() {
+    state.companion.down = true; state.companion.hp = 0; state.companion.carried = false;
+    companionDog.setAlpha(1).setVisible(false); companionShadow.setVisible(false);
+    companionHpBar.bg.setVisible(false); companionHpBar.fill.setVisible(false);
+    dropDogWreck(companionDog.x, companionDog.y);
+    sceneRef.cameras.main.shake(220, 0.008); sfx('slam');
+    toast('🐕💥 Bolzen ist zerstört! Sammle seine Teile ein und repariere ihn in der Werkstatt.');
+    save();
+  }
+  function dropDogWreck(x, y) {
+    const wreck = sceneRef.add.ellipse(0, 0, 24, 15, 0x6b7280).setStrokeStyle(2, 0x374151);
+    const tool = sceneRef.add.text(0, -1, '🔧', { fontSize: '13px' }).setOrigin(0.5);
+    const s = sceneRef.add.container(x, y, [wreck, tool]).setDepth(3);
+    coins.push({ s, dogwreck: true });
+  }
+  function repairDog() {
+    if (!state.companion.down) return;
+    if (!state.companion.carried) { toast('🔧 Erst Bolzens Teile einsammeln'); return; }
+    const r = REPAIR_COST;
+    if (state.gold < r.gold || (state.inventory.schrott || 0) < r.schrott || (state.inventory.zahnrad || 0) < r.zahnrad) {
+      toast('Nicht genug: braucht ' + r.gold + '💰 ' + r.schrott + '🔩 ' + r.zahnrad + '⚙'); return;
+    }
+    state.gold -= r.gold; state.inventory.schrott -= r.schrott; state.inventory.zahnrad -= r.zahnrad;
+    state.companion.down = false; state.companion.carried = false; state.companion.hp = COMP_MAX_HP;
+    updateGold();
+    companionDog.x = player.x - 34; companionDog.y = player.y + 6; companionDog.biteAt = 0; companionDog.setAlpha(1);
+    toast('🐕 Bolzen repariert — wieder einsatzbereit!'); sfx('perk'); save();
+    closeWorkshop(); openWorkshop();
   }
   function applyUpgrades() { state.maxHp = Math.round((PLAYER_MAX_HP + state.upgrades.hp * 25 + equipStat('hp') + (state.level - 1) * LEVEL_HP_BONUS + perkVal('zaeh')) * (hasCap('grit') ? 1.2 : 1) * (hasPower('toughplate') ? 1.15 : 1)); if (state.hp > state.maxHp) state.hp = state.maxHp; updateLife(); }   // Kesselschädel-Haube: +15 % Leben
   // ---- Erfahrung & Level -------------------------------------
@@ -1566,7 +1615,8 @@
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, tragesystem: 0 }, s.upgrades || {});
       if (s.upgrades && s.upgrades.rucksack && !state.upgrades.tragesystem) state.upgrades.tragesystem = s.upgrades.rucksack;   // Migration: früherer Rucksack-Rang
-      state.companion = Object.assign({ active: true, dmg: 0, tempo: 0, spuersinn: 0 }, (s.companion && typeof s.companion === 'object') ? s.companion : {});
+      state.companion = Object.assign({ active: true, dmg: 0, tempo: 0, spuersinn: 0, hp: COMP_MAX_HP, down: false, carried: false }, (s.companion && typeof s.companion === 'object') ? s.companion : {});
+      if (state.companion.down && !state.companion.carried) state.companion.carried = true;   // Wrack nie verlieren (Softlock-Schutz)
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
       state.bounty = (s.bounty && typeof s.bounty === 'object' && s.bounty.id) ? s.bounty : null;   // altes Kill-Zähler-Format verwerfen
@@ -1596,6 +1646,7 @@
     enemies.forEach(e => { if (e.marker) e.marker.destroy(); clearTelegraph(e); e.c.destroy(); }); enemies.length = 0;
     bullets.forEach(b => b.sprite.destroy()); bullets.length = 0;
     eBullets.forEach(b => b.sprite.destroy()); eBullets.length = 0;
+    if (state.companion && state.companion.down && !state.companion.carried) state.companion.carried = true;   // Wrack beim Kartenwechsel nicht verlieren
     coins.forEach(c => c.s.destroy()); coins.length = 0;
     chests.forEach(c => c.c.destroy()); chests.length = 0;
     state.boss = null; hideBossBar(); state.killsSinceBoss = 0;
@@ -2274,7 +2325,8 @@
   // Filter-Reiter des Inventars (Tetris-Grid): schränken die Anzeige auf eine Kategorie ein.
   const INV_FILTERS = [['all', '▦', 'Alle'], ['weapon', '🔫', 'Waffen'], ['armor', '🛡️', 'Rüstung'], ['tech', '🔳', 'Tech'], ['misc', '🧪', 'Beutel']];
   function itemCat(it) {   // Kategorie eines Grid-Items für die Filter-Reiter
-    if (it.kind !== 'gear') return 'misc';               // Material + Tränke = Beutel
+    if (it.kind === 'dogwreck') return 'tech';           // Bolzens Wrack = Tech
+    if (it.kind !== 'gear') return 'misc';               // Material + Tränke + Munition = Beutel
     const s = it.gear.slot;
     if (s === 'weapon') return 'weapon';
     if (s === 'plate' || s === 'tech') return 'tech';    // Platten & Tech-Module
@@ -2285,6 +2337,7 @@
     for (const g of state.gearBag) items.push({ kind: 'gear', gear: g, foot: gearFoot(g) });
     for (const id of ['schrott', 'zahnrad', 'dampfkern']) if ((state.inventory[id] || 0) > 0) items.push({ kind: 'mat', id, foot: [1, 1] });
     for (const id of ['muni', 'kristall']) if (ammoOf(id) > 0) items.push({ kind: 'ammo', id, foot: [1, 1] });   // Munition = stapelbares Beutel-Item
+    if (state.companion && state.companion.carried) items.push({ kind: 'dogwreck', foot: [2, 1] });   // Bolzens Wrack (sperrig)
     if (state.potions > 0) items.push({ kind: 'potion', foot: [1, 1] });
     const out = (filter && filter !== 'all') ? items.filter(it => itemCat(it) === filter) : items;   // Reiter-Filter (Kapazität zählt weiter alles: ohne Arg)
     out.sort((a, b) => (b.foot[0] * b.foot[1]) - (a.foot[0] * a.foot[1]));   // Große zuerst packen
@@ -2526,6 +2579,12 @@
     const ix = L.gx0 + p.gx * (L.cell + L.gap), iy = L.gy0 + p.gy * (L.cell + L.gap);
     const iw = p.w * L.cell + (p.w - 1) * L.gap, ih = p.h * L.cell + (p.h - 1) * L.gap;
     const cx = ix + iw / 2, cy = iy + ih / 2, big = Math.min(iw, ih);
+    if (p.it.kind === 'dogwreck') {   // Bolzens Wrack: nicht ziehbar/verkaufbar (nur reparierbar)
+      add(sceneRef.add.rectangle(cx, cy, iw - 2, ih - 2, 0x6b7280, 0.3).setStrokeStyle(2, 0x9ca3af, 0.9).setScrollFactor(0).setDepth(53));
+      add(sceneRef.add.text(cx, cy - big * 0.06, '🐕', { fontSize: Math.round(big * 0.4) + 'px' }).setOrigin(0.5).setScrollFactor(0).setDepth(54).setAlpha(0.6));
+      add(sceneRef.add.text(cx, cy + ih / 2 - 10, '🔧 defekt', { fontFamily: 'system-ui', fontSize: '9px', color: '#9ca3af', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(54));
+      return;
+    }
     if (p.it.kind === 'gear') {
       const g = p.it.gear, col = RARITY[g.rarity].color, locked = state.level < gearReq(g);
       add(sceneRef.add.rectangle(cx, cy, iw - 2, ih - 2, col, 0.28).setStrokeStyle(2, col, 0.95).setScrollFactor(0).setDepth(53));
@@ -2866,7 +2925,11 @@
     const wlist = WEAPON_ORDER.filter(weaponUnlocked);
     rows.push({ kind: 'head', label: '🔫  Waffen-Armaturen' });
     wlist.forEach(id => rows.push({ kind: 'weapon', id }));
-    if (compActive()) { rows.push({ kind: 'head', label: '🐕  Blechhund „Bolzen"' }); Object.keys(COMPANION_UP).forEach(id => rows.push({ kind: 'comp', id })); }
+    if (state.companion) {
+      rows.push({ kind: 'head', label: '🐕  Blechhund „Bolzen"' });
+      if (state.companion.down) rows.push({ kind: 'comprepair' });
+      else Object.keys(COMPANION_UP).forEach(id => rows.push({ kind: 'comp', id }));
+    }
     const rowH = 46, headH = 66, footH = 38, subH = 26;
     const bodyH = rows.reduce((s, r) => s + (r.kind === 'head' ? subH : rowH + 6), 0);
     const pw = Math.min(360, size.width * 0.94), ph = Math.min(size.height * 0.96, headH + bodyH + footH);
@@ -2882,6 +2945,18 @@
       if (row.kind === 'head') {
         add(sceneRef.add.text(px - pw / 2 + 14, y + subH / 2, row.label, { fontFamily: 'system-ui', fontSize: '12px', color: '#c9a24a', fontStyle: 'bold' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
         y += subH; return;
+      }
+      if (row.kind === 'comprepair') {   // Bolzen ist defekt: Reparatur (braucht Teile im Beutel + Material)
+        const r = REPAIR_COST, carried = state.companion.carried;
+        const canR = carried && state.gold >= r.gold && (state.inventory.schrott || 0) >= r.schrott && (state.inventory.zahnrad || 0) >= r.zahnrad;
+        add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 - 7, '🛠️  Bolzen reparieren', { fontFamily: 'system-ui', fontSize: '14px', color: carried ? '#f3e9d2' : '#8a8172' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+        add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 + 10, carried ? (r.gold + '💰 · ' + r.schrott + '🔩 · ' + r.zahnrad + '⚙') : '🔒 Erst Bolzens Teile einsammeln', { fontFamily: 'system-ui', fontSize: '11px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+        if (carried) {
+          const btn = add(sceneRef.add.rectangle(px + pw / 2 - 58, y + rowH / 2, 96, 34, canR ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+          add(sceneRef.add.text(btn.x, btn.y, 'Reparieren', { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+          storeButtonsPush(btn, 'c_repair');
+        } else add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, '🔧', { fontFamily: 'system-ui', fontSize: '15px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+        y += rowH + 6; return;
       }
       let icon, nm, sub, lvl, max, cost, locked, maxed, id = row.id;
       if (row.kind === 'up') {
@@ -2923,6 +2998,7 @@
       toast(WEAPONS[wid].name + ' → Stufe ' + state.weaponLvl[wid]); save();
       closeWorkshop(); openWorkshop(); updateWeaponUI(); return;
     }
+    if (id === 'c_repair') { repairDog(); return; }
     if (id.startsWith('c_')) {   // Begleiter-Aufrüstung
       const cid = id.slice(2), c = COMPANION_UP[cid], lvl = state.companion[cid] || 0;
       if (lvl >= c.max) { toast('Bereits max'); return; }
@@ -4120,6 +4196,12 @@
             const a = AMMO[co.ammo]; addAmmo(co.ammo, co.n || 1); updateWeaponUI();
             popLoot(co.s.x, co.s.y, a.icon); co.s.destroy(); coins.splice(i, 1); continue;
           }
+        } else if (co.dogwreck) {   // Bolzens Wrack einsammeln (sperrig -> braucht Platz)
+          if (gridFree() >= DOG_WRECK_CELLS) {
+            state.companion.carried = true;
+            popLoot(co.s.x, co.s.y, '🐕'); toast('🔧 Bolzens Teile eingesammelt — in der Werkstatt reparieren'); save();
+            co.s.destroy(); coins.splice(i, 1); continue;
+          } else if (now > state.invFullAt) { toast('🎒 Kein Platz für Bolzens Teile (' + DOG_WRECK_CELLS + ' Felder)'); state.invFullAt = now + 4000; }
         } else if (co.carry) {   // Tragesystem: dauerhafte Beutel-Erweiterung (kein Slot nötig)
           if (carryLvl() < CARRY_MAX) {
             state.upgrades.tragesystem = carryLvl() + 1;
@@ -4128,7 +4210,7 @@
           sfx('perk'); popLoot(co.s.x, co.s.y, '🎒'); save(); co.s.destroy(); coins.splice(i, 1); continue;
         } else { state.gold += 1; updateGold(); popGold(co.s.x, co.s.y); sfx('coin'); co.s.destroy(); coins.splice(i, 1); continue; }
       }
-      const blocked = (co.item && !canTakeMat(co.item)) || (co.ammo && !canTakeAmmo(co.ammo)) || (co.gear && gearCells(co.gear) > gridFree());
+      const blocked = (co.item && !canTakeMat(co.item)) || (co.ammo && !canTakeAmmo(co.ammo)) || (co.dogwreck && gridFree() < DOG_WRECK_CELLS) || (co.gear && gearCells(co.gear) > gridFree());
       if (d < magnetDist() && !blocked) { co.s.x += (dx / d) * MAGNET_SPEED * dt; co.s.y += (dy / d) * MAGNET_SPEED * dt; }
     }
 
