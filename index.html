@@ -620,8 +620,12 @@
     hp:       { name: ['—', 'T-4 Torso-Panzerung'], icon: '🛡️', desc: 'Panzerung (Leben)', base: 60, max: 6, bodyMod: true },
     speed:    { name: ['—', 'Hydraulik-Laufbeine'], icon: '🦿', desc: 'Tempo', base: 60, max: 5, bodyMod: true },
     regen:    { name: ['—', 'Kühlsystem'], icon: '❄️', desc: 'Regeneration', base: 50, max: 5, bodyMod: true },
-    magnet:   { name: ['—', 'Magnet-Spule'], icon: '🧲', desc: 'Loot-Magnet', base: 40, max: 4, bodyMod: true }
+    magnet:   { name: ['—', 'Magnet-Spule'], icon: '🧲', desc: 'Loot-Magnet', base: 40, max: 4, bodyMod: true },
+    rucksack: { name: ['Größerer Rucksack', 'Lastentragwerk'], icon: '🎒', desc: 'Inventar-Plätze', base: 80, max: 6, bodyMod: false }
   };
+  // Inventar-Kapazität: Grundausstattung (über die sichtbaren Zeilen hinaus) + je Rucksack-Stufe
+  // zusätzliche Zeilen (cols × ROWS = Plätze pro Stufe). Alles scrollbar.
+  const INV_BASE_EXTRA_ROWS = 3, INV_ROWS_PER_PACK = 3;
   const WEAPON_UP = { base: 55, max: 5, per: 5 };   // pro Waffe: +5 Basisschaden/Stufe (Säure zusätzlich +2 Potenz)
 
   // ---- Fähigkeitenbaum (Fallout-inspiriert): 3 Zweige, je 4 Perks in Rängen ----
@@ -1086,7 +1090,7 @@
     isRevealed: false, storeOpen: false, shopMode: false, workshopOpen: false, tycoonOpen: false, stashOpen: false,
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
-    upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 },
+    upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, rucksack: 0 },
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
@@ -1511,7 +1515,7 @@
       state.familyBuried = !!s.familyBuried;
       state.biomesSeen = new Set(Array.isArray(s.biomesSeen) ? s.biomesSeen : []); state.curBiome = null;
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
-      state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
+      state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, rucksack: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
       state.bounty = (s.bounty && typeof s.bounty === 'object' && s.bounty.id) ? s.bounty : null;   // altes Kill-Zähler-Format verwerfen
@@ -2210,7 +2214,9 @@
     const filterH = 24;                    // Höhe der Filter-Reiter über dem Grid
     const gy0 = colTop + 22 + filterH;     // Grid beginnt unter Titel + Reitern
     const rows = Math.max(6, Math.floor((colBottom - gy0 + gap) / (cell + gap)));   // sichtbare Zeilen
-    const rowsTotal = rows * 3;                                                       // dreifache Kapazität (scrollbar)
+    // Kapazität = sichtbare Zeilen + Grundpuffer + Rucksack-Stufen (scrollbar). Größerer Rucksack ⇒ mehr Plätze.
+    const packRows = (state.upgrades.rucksack || 0) * INV_ROWS_PER_PACK;
+    const rowsTotal = rows + INV_BASE_EXTRA_ROWS + packRows;
     const cap = cols * rowsTotal;
     const gridW = cols * cell + (cols - 1) * gap, gx0 = rightX + Math.round((rightW - gridW) / 2);
     return { size, px, py, pw, ph, headH, colTop, colBottom, leftW, rightX, rightW, gap, cols, rows, rowsTotal, cap, cell, gx0, gy0, filterH, bx: px + leftW / 2, dollTop: colTop + 4, statsTop: colTop + 246 };
@@ -2830,6 +2836,7 @@
         const up = UPGRADES[id]; lvl = state.upgrades[id]; max = up.max; locked = up.bodyMod && !state.isRevealed; maxed = lvl >= max;
         icon = up.icon; nm = locked ? up.desc : up.name[state.isRevealed ? 1 : 0]; cost = up.base * (lvl + 1);
         sub = locked ? '🔒 nach dem Erwachen' : ('Stufe ' + lvl + '/' + max);
+        if (id === 'rucksack' && !locked) sub = 'Plätze ' + invLayout().cap + '  ·  +' + (INV_ROWS_PER_PACK * 5) + '/Stufe  ·  ' + lvl + '/' + max;
       } else {   // weapon
         const w = WEAPONS[id], dt = DMG_TYPES[w.type]; lvl = weaponLvl(id); max = WEAPON_UP.max; locked = false; maxed = lvl >= max;
         icon = dt.icon; nm = w.name; cost = WEAPON_UP.base * (lvl + 1);
