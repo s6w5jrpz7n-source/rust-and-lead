@@ -441,6 +441,7 @@
     { id: 'vane', title: 'Direktor Cornelius Vane', body: 'Die erste geglückte Seelen-Übertragung: ein Mann mit einem Gesicht aus Wachs, der von Menschen nur in Verwaltungsvokabular spricht. „Ich habe den Tod enteignet. Er war ein schlechter Verwalter." Unter dem Wachs — die erste Seele, die je in Stahl gegossen wurde.' },
     { id: 'q_garden', title: 'Der Garten aus Rost', body: 'Agata Dorn hält an der Smog-Linie einen Garten aus Kakteen, gepflanzt in geborstene Kessel. Ihr ältester Kaktus wächst durch das kniende Chassis von PSALM-Einheit 4 — einer Maschine, die sich weigerte, Waffe zu sein, und stattdessen Spalier wurde. „Er ist nicht tot. Er hat den Beruf gewechselt."' },
     { id: 'q_pip', title: 'Der Schutzengel', body: 'Pip, ein Waisenkind mit Zahnlücke, hat dich zu seinem Schutzengel erklärt — und weiß längst, was du bist. „Das ist nur der Kessel." — „Ja. Sag ich ja." Engel waren noch nie aus Fleisch.' },
+    { id: 'bolzen', title: 'Bolzen', body: 'Am Familienhof, unter einer verrotteten Plane: ein alter Blechhund, den Tom aus Schrott und Zahnrädern gebaut hatte — der Wächter der Familie. Vierzig Jahre stand sein Kessel still. Als du ihn weckst, klappt ein Auge auf, dann das Schwanzrad. Er kennt den Namen noch: „Bolzen". Er ist das Einzige, was den Hof überlebt hat. Jetzt läuft er neben dir. Mit der Zeit lernt er dazu — und lässt sich sogar bewaffnen.' },
     { id: 'q_vesper', title: 'Die Rivalin', body: 'Vesper Kane, Kopfgeldjägerin, forderte dich zum Jagd-Wettstreit — und wurde zur Verbündeten. „Wir jagen jetzt nebeneinander, Blechmann. Nicht gegeneinander. Kleiner Unterschied. Großer."' },
     { id: 'q_habakuk', title: 'Die Kirche der Fleischwerdung', body: 'Prediger Habakuk, in blankem Stahl, predigt die eine Silbe, die alles ändert: nicht ertragen — tragen. „Gesegnet sei, was rostet — denn es war draußen im Regen und ist geblieben."' },
     { id: 'q_lomax', title: 'Der blinde Projektionist', body: 'Lomax sieht nichts mehr, aber er hört am Lachen, wo alle sitzen. „Erste Reihe Mitte gehört dir. Für immer heißt für immer — ich bin blind, nicht wortbrüchig."' },
@@ -537,6 +538,7 @@
         checkAchievements(); save();
         toast('🪦 Du hast dich selbst zur Ruhe gebettet. Providence Cut ist stumm geworden.');
         if (state.map === 'providence_cut') sceneRef.time.delayedCall(400, () => loadMap('providence_cut', state.playerTile, player.facing));   // Walzen auf den Gräbern sichtbar machen
+        sceneRef.time.delayedCall(1600, recruitBolzen);   // Der Blechhund der Familie erwacht und schließt sich an
       };
     } else {
       lines = [
@@ -634,9 +636,12 @@
     tempo:     { name: 'Servo-Sehnen',    icon: '🦿', desc: 'Angriffstempo', base: 60, max: 5 },
     spuersinn: { name: 'Spürsinn-Sensor', icon: '📡', desc: 'Apport-Radius', base: 50, max: 5 }
   };
-  const COMP_ENGAGE = 280, COMP_BITE_DIST = 40, COMP_SPEED = 300;
+  const COMP_ENGAGE = 280, COMP_BITE_DIST = 40, COMP_SPEED = 300, COMP_LEASH = 190;   // Leine: Bolzen bleibt im Umkreis/Sichtfeld des Spielers
   const COMP_MAX_HP = 90, COMP_HURT_MUL = 0.7, COMP_REGEN = 8, DOG_WRECK_CELLS = 2;   // Bolzen kann fallen -> Wrack -> reparieren
   const REPAIR_COST = { gold: 120, schrott: 5, zahnrad: 2 };
+  // Bolzens eigenes Level-System: Waffenhalterung ab Stufe 3, eigene Munition (kein Beutel-Slot).
+  const DOG_WEAPON_LEVEL = 3, DOG_MAX_LEVEL = 10, DOG_AMMO_CAP = 200, DOG_FEED = 30;
+  const dogXpToNext = (lvl) => 30 + lvl * 25;
 
   // ---- Fähigkeitenbaum (Fallout-inspiriert): 3 Zweige, je 4 Perks in Rängen ----
   // Fallout-Prinzip: pro Stufe 1 Fähigkeitspunkt; Perks in Rängen; höhere Tiers durch
@@ -1101,7 +1106,7 @@
     chestOpen: false, chestLoot: null, merchant: {}, bounty: null,
     economy: { saloon: { level: 0 }, forge: { level: 0 }, distillery: { level: 0 } },
     upgrades: { damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, tragesystem: 0 },
-    companion: { active: true, dmg: 0, tempo: 0, spuersinn: 0, hp: 90, down: false, carried: false },   // Blechhund „Bolzen" (Begleiter)
+    companion: { unlocked: false, active: true, stay: false, dmg: 0, tempo: 0, spuersinn: 0, hp: 90, down: false, carried: false, xp: 0, level: 1, weapon: null, ammo: 0 },   // Blechhund „Bolzen" — stößt erst in der Story dazu
     dialogueOpen: false, dlg: null, quests: {}, questBase: {},
     currentChapter: 1, revealPlaying: false, revealSeq: null, chosenGuild: null,
     hp: PLAYER_MAX_HP, maxHp: PLAYER_MAX_HP, invulnUntil: 0, lastDamage: 0, portalGraceUntil: 0,
@@ -1402,47 +1407,121 @@
   function regenRate() { return REGEN_RATE + state.upgrades.regen * 4 + perkVal('heilung') + (hasPower('autovent') ? 6 : 0); }   // Selbstschmier-Ventil
   function magnetDist() { return MAGNET_DIST + state.upgrades.magnet * 45 + (perkRank('pluender') ? 60 : 0) + (hasPower('plunder') ? 60 : 0) + (compActive() ? (state.companion.spuersinn || 0) * 45 : 0); }   // Begleiter-Apport
   // ---- Begleiter: Blechhund „Bolzen" -------------------------
-  function compActive() { return !!(state.companion && state.companion.active && !state.companion.down); }   // aktiv nur solange nicht zerstört
+  function compExists() { return !!(state.companion && state.companion.unlocked); }                        // gehört zum Team (Story-Freischaltung)
+  function compActive() { return compExists() && !state.companion.down && !state.companion.stay; }         // aktiv im Feld (nicht defekt, nicht in der Stadt gelassen)
   function compBite() { return 9 + (state.companion.dmg || 0) * 5; }                       // Bissschaden je Stufe
-  function compCd() { return Math.max(450, 1350 - (state.companion.tempo || 0) * 170); }   // ms zwischen Bissen
-  // Bolzen folgt an der Ferse, stürzt sich auf den nächsten Gegner, beißt zu — und kann selbst fallen.
+  function compCd() { return Math.max(450, 1350 - (state.companion.tempo || 0) * 170); }   // ms zwischen Angriffen
+  function compHasSlot() { return state.companion.level >= DOG_WEAPON_LEVEL; }             // Waffenhalterung durch Level freigeschaltet
+  function compCanShoot() { return compHasSlot() && state.companion.weapon && state.companion.ammo > 0; }
+  function compShotDmg() { const w = state.companion.weapon; return 10 + (w ? (w.stat.val || 0) : 0) + state.companion.level * 2; }
+  function dogXpProgress() { return state.companion.level >= DOG_MAX_LEVEL ? 'MAX' : (state.companion.xp + '/' + dogXpToNext(state.companion.level)); }
+  function gainDogXp(n) {
+    const c = state.companion; if (c.level >= DOG_MAX_LEVEL) return;
+    c.xp += n;
+    while (c.level < DOG_MAX_LEVEL && c.xp >= dogXpToNext(c.level)) {
+      c.xp -= dogXpToNext(c.level); c.level++;
+      if (c.level === DOG_WEAPON_LEVEL) toast('🐕 Bolzen Stufe ' + c.level + ' — Waffenhalterung frei! Rüste ihn in der Werkstatt aus.');
+      else toast('🐕 Bolzen ist auf Stufe ' + c.level + ' gestiegen!');
+      sfx('level');
+    }
+  }
+  // Story: Bolzen stößt am Familienhof (Providence Cut) nach dem Begräbnis dazu.
+  function recruitBolzen() {
+    if (state.companion.unlocked) return;
+    state.companion.unlocked = true; state.companion.down = false; state.companion.stay = false; state.companion.hp = COMP_MAX_HP;
+    if (companionDog) { companionDog.x = player.x - 34; companionDog.y = player.y + 6; companionDog.setAlpha(1); }
+    toast('🐕 Unter einer Plane am Hof: der alte Blechhund der Familie. Du weckst ihn. „Bolzen" — er kennt den Namen noch.');
+    sfx('perk'); codexUnlock && codexUnlock('bolzen'); save();
+  }
+  function dogShoot(e) {
+    sfx('shoot');
+    const mx = companionDog.x + (companionDog.scaleX < 0 ? -12 : 12);
+    const flash = sceneRef.add.circle(mx, companionDog.y - 3, 3.5, 0xfde047).setDepth(6);
+    sceneRef.tweens.add({ targets: flash, alpha: 0, scale: 0.3, duration: 100, onComplete: () => flash.destroy() });
+    popLoot(e.c.x, e.c.y - 6, '✦');
+  }
+  // Bolzen bleibt im Umkreis des Spielers (Leine), beißt oder schießt (mit eigener Waffe/Munition), kann fallen.
   function updateCompanion(now, dt, uiBlocked) {
     const dog = companionDog; if (!dog) return;
     if (!compActive()) { dog.setVisible(false); companionShadow.setVisible(false); companionHpBar.bg.setVisible(false); companionHpBar.fill.setVisible(false); return; }
     dog.setVisible(true); companionShadow.setVisible(true);
+    const gun = compCanShoot();
+    // Ziel: nächster SICHTBARER Gegner in Leinen-Reichweite des SPIELERS (Hund jagt nicht aus dem Bild)
     let target = null;
     if (!uiBlocked && !state.transitioning) {
-      let bd = COMP_ENGAGE;
-      for (const e of enemies) { const d = Phaser.Math.Distance.Between(dog.x, dog.y, e.c.x, e.c.y); if (d < bd) { bd = d; target = e; } }
+      const v = sceneRef.cameras.main.worldView, m = 20; let bd = COMP_LEASH;
+      for (const e of enemies) {
+        if (e.c.x < v.x - m || e.c.x > v.right + m || e.c.y < v.y - m || e.c.y > v.bottom + m) continue;
+        const d = Phaser.Math.Distance.Between(player.x, player.y, e.c.x, e.c.y); if (d < bd) { bd = d; target = e; }
+      }
     }
+    // Bewegung: mit Gewehr an der Ferse bleiben & aus Distanz feuern; ohne Gewehr zum Ziel stürmen
     let tx, ty, sp;
-    if (target) { tx = target.c.x; ty = target.c.y; sp = COMP_SPEED; }
-    else { tx = player.x - Math.cos(player.facing) * 34; ty = player.y - Math.sin(player.facing) * 34 + 6; sp = moveSpeed() * 1.2; }   // Ferse: schräg hinter dem Spieler
+    if (target && !gun) { tx = target.c.x; ty = target.c.y; sp = COMP_SPEED; }
+    else { tx = player.x - Math.cos(player.facing) * 34; ty = player.y - Math.sin(player.facing) * 34 + 6; sp = moveSpeed() * 1.2; }
     const dx = tx - dog.x, dy = ty - dog.y, dd = Math.hypot(dx, dy) || 1;
-    const stop = target ? COMP_BITE_DIST * 0.75 : 10;
+    const stop = (target && !gun) ? COMP_BITE_DIST * 0.75 : 10;
     if (dd > stop) { const step = Math.min(dd - stop, sp * dt); dog.x += (dx / dd) * step; dog.y += (dy / dd) * step; }
-    if (dx < -3) dog.scaleX = -1; else if (dx > 3) dog.scaleX = 1;   // horizontal spiegeln statt drehen (bleibt aufrecht)
+    // Leine: nie weiter als COMP_LEASH vom Spieler entfernt (bleibt auf dem Bildschirm)
+    const lx = dog.x - player.x, ly = dog.y - player.y, ld = Math.hypot(lx, ly);
+    if (ld > COMP_LEASH) { dog.x = player.x + lx / ld * COMP_LEASH; dog.y = player.y + ly / ld * COMP_LEASH; }
+    const faceX = target ? target.c.x - dog.x : dx;
+    if (faceX < -3) dog.scaleX = -1; else if (faceX > 3) dog.scaleX = 1;
     companionShadow.setPosition(dog.x, dog.y + 9);
     dog.setDepth(dog.y >= player.y ? 6 : 4);
-    // Biss
-    if (target && !uiBlocked && now >= dog.biteAt && Phaser.Math.Distance.Between(dog.x, dog.y, target.c.x, target.c.y) <= COMP_BITE_DIST) {
-      dog.biteAt = now + compCd();
-      sceneRef.tweens.add({ targets: dog, scaleY: 0.7, duration: 70, yoyo: true });   // kurzer Schnapp
-      popLoot(dog.x, dog.y - 8, '🦷'); sfx('bite');
-      damageEnemy(target, compBite(), { color: 0xc9a24a });
+    // Angriff: Schuss (eigene Munition) bevorzugt, sonst Biss in Nahdistanz
+    if (target && !uiBlocked && now >= dog.biteAt) {
+      if (gun) {
+        dog.biteAt = now + compCd(); state.companion.ammo = Math.max(0, state.companion.ammo - 1);
+        dogShoot(target); const willKill = target.hp <= compShotDmg(); damageEnemy(target, compShotDmg(), { color: 0xfbbf24 }); gainDogXp(willKill ? 8 : 2);
+      } else if (Phaser.Math.Distance.Between(dog.x, dog.y, target.c.x, target.c.y) <= COMP_BITE_DIST) {
+        dog.biteAt = now + compCd();
+        sceneRef.tweens.add({ targets: dog, scaleY: 0.7, duration: 70, yoyo: true });
+        popLoot(dog.x, dog.y - 8, '🦷'); sfx('bite');
+        const willKill = target.hp <= compBite(); damageEnemy(target, compBite(), { color: 0xc9a24a }); gainDogXp(willKill ? 8 : 2);
+      }
     }
-    // Bolzen nimmt Kontaktschaden von nahen, geweckten Gegnern; regeneriert sonst langsam.
+    // Kontaktschaden von nahen, geweckten Gegnern; sonst langsame Selbstreparatur.
     if (!uiBlocked && !state.transitioning) {
       let hurt = 0;
       for (const e of enemies) { if (!e.aggro) continue; const d = Phaser.Math.Distance.Between(dog.x, dog.y, e.c.x, e.c.y); if (d <= 14 + e.r) hurt += e.contact; }
-      if (hurt > 0) { state.companion.hp -= hurt * COMP_HURT_MUL * dt; dog.setAlpha(Math.floor(now / 90) % 2 === 0 ? 0.5 : 1); }   // Trefferblinken
-      else { dog.setAlpha(1); if (state.companion.hp < COMP_MAX_HP && !target) state.companion.hp = Math.min(COMP_MAX_HP, state.companion.hp + COMP_REGEN * dt); }   // Selbstreparatur außer Gefecht
+      if (hurt > 0) { state.companion.hp -= hurt * COMP_HURT_MUL * dt; dog.setAlpha(Math.floor(now / 90) % 2 === 0 ? 0.5 : 1); }
+      else { dog.setAlpha(1); if (state.companion.hp < COMP_MAX_HP && !target) state.companion.hp = Math.min(COMP_MAX_HP, state.companion.hp + COMP_REGEN * dt); }
     }
-    // HP-Leiste über Bolzen, sobald angeschlagen
     const showBar = state.companion.hp < COMP_MAX_HP - 0.5;
     companionHpBar.bg.setVisible(showBar).setPosition(dog.x, dog.y - 17);
     companionHpBar.fill.setVisible(showBar).setPosition(dog.x - 13, dog.y - 17).width = 26 * Math.max(0, state.companion.hp) / COMP_MAX_HP;
     if (state.companion.hp <= 0) downDog();
+  }
+  // Bolzen in der Stadt lassen / mitnehmen; Waffe geben/abnehmen; Munition auffüllen.
+  function toggleDogStay() {
+    if (!compExists() || state.companion.down) return;
+    state.companion.stay = !state.companion.stay;
+    if (state.companion.stay) toast('🦴 Bolzen bleibt in der Stadt zurück.');
+    else { companionDog.x = player.x - 34; companionDog.y = player.y + 6; toast('🐕 Bolzen kommt wieder mit.'); }
+    save(); closeWorkshop(); openWorkshop();
+  }
+  function dogGiveWeapon() {
+    if (!compHasSlot()) { toast('🔒 Erst ab Bolzen-Stufe ' + DOG_WEAPON_LEVEL); return; }
+    if (state.companion.weapon) { toast('Bolzen trägt schon eine Waffe'); return; }
+    let best = null, bi = -1;
+    state.gearBag.forEach((g, i) => { if (g.slot === 'weapon' && (!best || (g.stat.val || 0) > (best.stat.val || 0))) { best = g; bi = i; } });
+    if (!best) { toast('Keine Waffe im Beutel'); return; }
+    state.gearBag.splice(bi, 1); state.companion.weapon = best;
+    toast('🔫 Bolzen trägt jetzt: ' + best.name); save(); closeWorkshop(); openWorkshop();
+  }
+  function dogTakeWeapon() {
+    const w = state.companion.weapon; if (!w) return;
+    if (gearCells(w) > gridFree()) { toast('🎒 Kein Platz im Beutel'); return; }
+    state.companion.weapon = null; state.gearBag.push(w);
+    toast('Waffe von Bolzen abgenommen'); save(); closeWorkshop(); openWorkshop();
+  }
+  function dogFeedAmmo() {
+    if (!state.companion.weapon) { toast('Bolzen braucht erst eine Waffe'); return; }
+    const give = Math.min(DOG_FEED, ammoOf('muni'), DOG_AMMO_CAP - state.companion.ammo);
+    if (give <= 0) { toast(ammoOf('muni') <= 0 ? '🧨 Keine Munition im Beutel' : 'Bolzens Vorrat ist voll'); return; }
+    state.ammo.muni -= give; state.companion.ammo += give;
+    toast('🧨 ' + give + ' Munition an Bolzen gegeben'); save(); closeWorkshop(); openWorkshop();
   }
   // Bolzen fällt: Wrack in die Welt, muss eingesammelt und in der Werkstatt repariert werden.
   function downDog() {
@@ -1615,7 +1694,8 @@
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0, tragesystem: 0 }, s.upgrades || {});
       if (s.upgrades && s.upgrades.rucksack && !state.upgrades.tragesystem) state.upgrades.tragesystem = s.upgrades.rucksack;   // Migration: früherer Rucksack-Rang
-      state.companion = Object.assign({ active: true, dmg: 0, tempo: 0, spuersinn: 0, hp: COMP_MAX_HP, down: false, carried: false }, (s.companion && typeof s.companion === 'object') ? s.companion : {});
+      state.companion = Object.assign({ unlocked: false, active: true, stay: false, dmg: 0, tempo: 0, spuersinn: 0, hp: COMP_MAX_HP, down: false, carried: false, xp: 0, level: 1, weapon: null, ammo: 0 }, (s.companion && typeof s.companion === 'object') ? s.companion : {});
+      if (state.companion.weapon && state.companion.weapon.slot !== 'weapon') state.companion.weapon = null;   // defensiv
       if (state.companion.down && !state.companion.carried) state.companion.carried = true;   // Wrack nie verlieren (Softlock-Schutz)
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
       state.merchant = (s.merchant && typeof s.merchant === 'object') ? s.merchant : {};
@@ -2925,10 +3005,14 @@
     const wlist = WEAPON_ORDER.filter(weaponUnlocked);
     rows.push({ kind: 'head', label: '🔫  Waffen-Armaturen' });
     wlist.forEach(id => rows.push({ kind: 'weapon', id }));
-    if (state.companion) {
-      rows.push({ kind: 'head', label: '🐕  Blechhund „Bolzen"' });
+    if (compExists()) {
+      rows.push({ kind: 'head', label: '🐕  Bolzen · Stufe ' + state.companion.level + '  (XP ' + dogXpProgress() + ')' });
       if (state.companion.down) rows.push({ kind: 'comprepair' });
-      else Object.keys(COMPANION_UP).forEach(id => rows.push({ kind: 'comp', id }));
+      else {
+        Object.keys(COMPANION_UP).forEach(id => rows.push({ kind: 'comp', id }));
+        if (compHasSlot()) { rows.push({ kind: 'compweapon' }); if (state.companion.weapon) rows.push({ kind: 'compammo' }); }
+        rows.push({ kind: 'comptether' });
+      }
     }
     const rowH = 46, headH = 66, footH = 38, subH = 26;
     const bodyH = rows.reduce((s, r) => s + (r.kind === 'head' ? subH : rowH + 6), 0);
@@ -2956,6 +3040,31 @@
           add(sceneRef.add.text(btn.x, btn.y, 'Reparieren', { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
           storeButtonsPush(btn, 'c_repair');
         } else add(sceneRef.add.text(px + pw / 2 - 58, y + rowH / 2, '🔧', { fontFamily: 'system-ui', fontSize: '15px', color: '#8a8172' }).setOrigin(0.5).setScrollFactor(0).setDepth(52));
+        y += rowH + 6; return;
+      }
+      // Bolzen-Aktionszeilen (Anbinden / Waffe / Munition): Titel + Unterzeile + Aktions-Button
+      if (row.kind === 'comptether' || row.kind === 'compweapon' || row.kind === 'compammo') {
+        let title, subl, blabel, bid, hot = true;
+        if (row.kind === 'comptether') {
+          const st = state.companion.stay;
+          title = '🦴  ' + (st ? 'Wartet in der Stadt' : 'Reist mit dir');
+          subl = st ? 'ohne Bolzen unterwegs — tippen zum Mitnehmen' : 'in der Stadt anbinden & ohne ihn los';
+          blabel = st ? 'Mitnehmen' : 'Anbinden'; bid = 'c_tether';
+        } else if (row.kind === 'compweapon') {
+          const w = state.companion.weapon;
+          title = '🔫  Waffe: ' + (w ? w.name : '— frei —');
+          subl = w ? ('+' + w.stat.val + ' Schaden · schießt mit eigener Munition') : 'beste Waffe aus dem Beutel geben';
+          blabel = w ? 'Abnehmen' : 'Geben'; bid = 'c_weapon';
+        } else {
+          title = '🧨  Bolzens Munition: ' + state.companion.ammo + '/' + DOG_AMMO_CAP;
+          subl = 'aus deinem Vorrat (' + ammoOf('muni') + ') · +' + DOG_FEED + '/Gabe';
+          blabel = '+' + DOG_FEED; bid = 'c_feed'; hot = ammoOf('muni') > 0 && state.companion.ammo < DOG_AMMO_CAP;
+        }
+        add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 - 7, title, { fontFamily: 'system-ui', fontSize: '14px', color: '#f3e9d2' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+        add(sceneRef.add.text(px - pw / 2 + 14, y + rowH / 2 + 10, subl, { fontFamily: 'system-ui', fontSize: '11px', color: '#a8a090' }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(52));
+        const btn = add(sceneRef.add.rectangle(px + pw / 2 - 58, y + rowH / 2, 96, 34, hot ? 0x3f6212 : 0x2a2f3a, 0.95).setStrokeStyle(2, 0xf3e9d2, 0.4).setScrollFactor(0).setDepth(52));
+        add(sceneRef.add.text(btn.x, btn.y, blabel, { fontFamily: 'system-ui', fontSize: '12px', color: '#f3e9d2' }).setOrigin(0.5).setScrollFactor(0).setDepth(53));
+        storeButtonsPush(btn, bid);
         y += rowH + 6; return;
       }
       let icon, nm, sub, lvl, max, cost, locked, maxed, id = row.id;
@@ -2999,6 +3108,9 @@
       closeWorkshop(); openWorkshop(); updateWeaponUI(); return;
     }
     if (id === 'c_repair') { repairDog(); return; }
+    if (id === 'c_tether') { toggleDogStay(); return; }
+    if (id === 'c_weapon') { state.companion.weapon ? dogTakeWeapon() : dogGiveWeapon(); return; }
+    if (id === 'c_feed') { dogFeedAmmo(); return; }
     if (id.startsWith('c_')) {   // Begleiter-Aufrüstung
       const cid = id.slice(2), c = COMPANION_UP[cid], lvl = state.companion[cid] || 0;
       if (lvl >= c.max) { toast('Bereits max'); return; }
@@ -3379,7 +3491,17 @@
     for (const e of enemies) { const d = Phaser.Math.Distance.Between(player.x, player.y, e.c.x, e.c.y); if (d < bd) { bd = d; best = e; } }
     return best;
   }
-  function aimAngle() { const t = nearestEnemy(AIM_RANGE); return t ? Math.atan2(t.c.y - player.y, t.c.x - player.x) : player.facing; }
+  // Auto-Ziel nur auf Gegner im Sichtfeld — nicht auf Feinde weit außerhalb des Bildschirms.
+  function nearestVisibleEnemy(range) {
+    const v = sceneRef.cameras.main.worldView, m = 30;
+    let best = null, bd = (range === undefined ? Infinity : range);
+    for (const e of enemies) {
+      if (e.c.x < v.x - m || e.c.x > v.right + m || e.c.y < v.y - m || e.c.y > v.bottom + m) continue;   // außerhalb des Sichtfelds
+      const d = Phaser.Math.Distance.Between(player.x, player.y, e.c.x, e.c.y); if (d < bd) { bd = d; best = e; }
+    }
+    return best;
+  }
+  function aimAngle() { const t = nearestVisibleEnemy(AIM_RANGE); return t ? Math.atan2(t.c.y - player.y, t.c.x - player.x) : player.facing; }
   function ammoOf(kind) { return state.ammo[kind] || 0; }
   // Ein NEUER Munitions-Stapel (Vorrat 0) braucht einen freien Beutel-Platz; ein bestehender wächst bis zum Cap.
   function canTakeAmmo(kind) { return ammoOf(kind) > 0 || gridFree() >= 1; }
@@ -4090,7 +4212,7 @@
     streamChunks(1);   // jeden Frame hoechstens 1 Chunk nachbacken -> ruckelfrei
 
     // Beim Angreifen automatisch zum nächsten Gegner ausrichten (kein Zielen per Bewegung nötig)
-    if (!uiBlocked && shooting) { const t = nearestEnemy(AIM_RANGE); if (t) { const a = Math.atan2(t.c.y - player.y, t.c.x - player.x); player.facing = a; player.rotation = a; } }
+    if (!uiBlocked && shooting) { const t = nearestVisibleEnemy(AIM_RANGE); if (t) { const a = Math.atan2(t.c.y - player.y, t.c.x - player.x); player.facing = a; player.rotation = a; } }
     fireTimer -= delta;
     if (!uiBlocked && shooting && fireTimer <= 0) { fireBullet(); fireTimer = fireMs(); }
 
