@@ -1,6 +1,6 @@
 # RUST & LEAD — DAS HÖRSPIEL
 
-> *Skript zur Vertonung. Adaption der Hauptstory (12 Kapitel, drei Enden) aus der Story-Bibel als Hörspiel in drei Folgen.*
+> *Skript zur Vertonung. Adaption der Hauptstory (12 Kapitel) aus der Story-Bibel als Hörspiel in drei Folgen — kanonische Linie: die Rebellen.*
 >
 > *„Ein Herz ist nur eine Pumpe, die an Lügen glaubt. Ein Kessel ist ehrlicher: Er sagt dir, wann er platzt."* — Silas „Kupferauge" Finch
 
@@ -11,6 +11,8 @@
 Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisungen (Tonfall), Atmosphären, Musik-Einsätzen und einer Geräusch-Bibliothek. Es kann direkt eingesprochen werden — von Sprecher:innen oder über eine **Text-to-Speech-Pipeline** (je Rolle eine Stimme, Regieklammern als Anweisung fürs Voice-Directing).
 
 **Ehrlicher Hinweis zur „Vertonung":** Dieses Dokument ist das *Skript*. Die eigentlichen Audiodateien entstehen erst im Studio bzw. in der TTS-Pipeline — dafür sind Sprecher, eine Aufnahme-Umgebung oder ein TTS-Dienst nötig. Das Skript ist so gebaut, dass beides sofort damit arbeiten kann.
+
+**Eine Linie, ein Ende.** Das Spiel bietet drei Fraktionen und drei Enden; ein Hörspiel ist linear und folgt genau einer. Kanon dieser Fassung ist die **Rebellen-Linie** — sie erfüllt das Befreiungs-Thema des Kraters wörtlich (das Monopol fällt, die Welt wird frei) und schließt den Trauer-/Schuld-Bogen am geschlossensten. Die beiden anderen Fraktions-Enden bleiben in der Story-Bibel als alternative Fassungen erhalten.
 
 **Format-Konventionen:**
 
@@ -34,9 +36,7 @@ Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisun
 | **SILAS „Kupferauge" FINCH** | Alter Schmied, bedächtig, ein leises mechanisches Surren (die Kupferlinse) unter der Stimme. |
 | **DOC ARIS** | Hager, präzise, nervöser Unterton wenn er lügt (er putzt dann hörbar seine Brille). |
 | **KOLBEN-JACK** | Riese, laut, Galgenhumor; spricht gegen Dampf und Fahrtwind. Redet mit Maschinen lieber als mit Menschen. |
-| **GIDEON CROSS** (Rebellen) | Hart, direkt, keine Höflichkeit — der Einzige, der dem Helden nie ausweicht. |
-| **AUFSEHER QUENTIN** (Eiserne Gilde) | Glatt, kühl, dosiert Wahrheit wie Morphium. Lügt nie direkt. |
-| **„SLICK" STERLING** (Schmuggler) | Charmant, schnell, Grinsen in der Stimme — das aber jederzeit kippen kann. |
+| **GIDEON CROSS** (Rebellen) | Hart, direkt, keine Höflichkeit — der Einzige, der dem Helden nie ausweicht. Anführer der kanonischen Linie. |
 | **DIREKTOR CORNELIUS VANE** | End-Antagonist. Warmes Maschinenöl, Predigergeduld. Spricht **nie** laut. Klingt wie ein Vater am Krankenbett — und genau das ist das Grauen. Leichter Messing-Hall (Sprachrohr). |
 | **PATROUILLENFÜHRER** | Beamtenkalt, liest von Lochkarten ab. |
 | **TESS „Spulen-Tess" MARLOW** | Signalmeisterin, redet schnell, denkt schneller — wird nur einmal langsam (die Naht). |
@@ -317,39 +317,23 @@ Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisun
 
 ---
 
-## SZENE 2.2 — Die drei Werbungen (Kapitel 5 · GILDENWAHL)
-
-> **Regie: In der Vertonung als drei kurze, aufeinanderfolgende Szenen. Im interaktiven Ende wählt der/die Hörer:in — im linearen Hörspiel alle drei nacheinander sprechen, sie charakterisieren die Fraktionen.**
-
-### 2.2a — REBELLEN · Gideon Cross
+## SZENE 2.2 — „Brich die Linsen" (Kapitel 5 · Die Wahl)
 
 [ATMO: Wind auf einer Wehr aus Schienenstahl. Unten exerzieren Arbeiter mit zusammengeflickten Gewehren.]
+
+**ERZÄHLER:** Drei Fraktionen werben um den wandelnden Stahlkessel. Die Eiserne Gilde bietet Zugriff auf ihre Bücher, die Schmuggler bieten Wege ins alte Leben. Aber nur eine sieht ihn zuerst als Menschen — indem sie ihn hart wie einen behandelt. Auf der Brustwehr von Fort Freedom steht Gideon Cross, die Narbe vom Kinn bis übers Ohr.
 
 **GIDEON (ohne Begrüßung, hart):** Weißt du, was der Konzern aus Menschen macht? Zahlen. Weißt du, was er aus dir gemacht hat? Einen Beweis. Den wandelnden Beweis, dass ihnen nicht mal unser Sterben mehr gehört — sie verwerten es.
 
 **HELD:** Ich bin nicht dein Beweis. Ich such meine Familie.
 
-**GIDEON (tritt dicht heran — der einzige, der dem Helden nie ausweicht):** Dann hör mir gut zu, Maschine, denn ich sag das nur einmal: Alles, was der Konzern dir je gezeigt hat, lief durch seine Linsen. Willst du deine Familie finden? Dann brich die Linsen. Wir brechen das Konzern-Monopol — oder sterben beim Versuch. *(hält ihm die Hand hin)* Du hast den Vorteil: Du bist beim Sterben nicht so leicht kleinzukriegen.
+**GIDEON (tritt dicht heran — der Einzige, der dem Helden nie ausweicht):** Dann hör mir gut zu, Maschine, denn ich sag das nur einmal: Alles, was der Konzern dir je gezeigt hat, lief durch seine Linsen. Willst du deine Familie finden? Dann brich die Linsen. Wir brechen das Konzern-Monopol — oder sterben beim Versuch. *(hält ihm die vernarbte Hand hin)* Du hast den Vorteil: Du bist beim Sterben nicht so leicht kleinzukriegen.
 
-### 2.2b — EISERNE GILDE · Aufseher Quentin
+[GERÄUSCH: Eine Stahlhand schließt sich um eine vernarbte. Ein fester, kurzer Griff.]
 
-[ATMO: Eine Kontrollhalle. Hundert Konstrukte in Reih und Glied. Eine Wand aus tickenden Manometern.]
+**HELD:** Dann brechen wir Linsen.
 
-**QUENTIN (glatt, kühl):** Einheit dreizehn. *(lässt es wirken)* Verzeihung — Sie bevorzugen vermutlich einen Namen. Namen sind Schmiermittel für den Umgang mit sentimentalen Systemen. Ich benutze sie gern.
-
-**HELD:** Sie wissen, was ich bin.
-
-**QUENTIN:** Ich weiß, was Sie **wert** sind, das ist mehr. Sehen Sie diese Zeiger? Jeder steht für tausend Leben, die heute nicht verhungern, weil die Züge fahren. Ordnung ist Profit. Profit ist Ordnung. Der Rest ist Romantik, und Romantik hat in diesem Territorium mehr Gräber gefüllt als die Cholera. *(dreht sich um)* Ihre Familie? Der Konzern führt Buch über alles. Dienen Sie der Gilde, und ich öffne Ihnen Bücher, von denen die Rebellen nicht mal wissen, dass es sie gibt. Kein Pathos. Ein Geschäft.
-
-### 2.2c — SCHMUGGLER · „Slick" Sterling
-
-[ATMO: Hehlerhöhle, Gaslicht zischt. Ein Dampfkern rollt über Fingerknöchel.]
-
-**SLICK (grinst hörbar):** Da ist er ja! Der Mann der Stunde. Beziehungsweise — *(klopft sich an die Stirn)* — das Uhrwerk der Stunde. Kein Anstoß gemeint. Ich hab Geschäftspartner mit Holzbeinen, Glasaugen und Blechherzen. Deins ist nur … konsequenter.
-
-**HELD:** Und was verkaufst du mir? Alle wollen mir heute was verkaufen.
-
-**SLICK (plötzlich ernst, das Grinsen bleibt, die Augen nicht):** Falsche Frage, Freund. Was verkaufst DU MIR? Rebellen sterben für Fahnen. Der Konzern stirbt für Bilanzen. Wir? Wir sterben gar nicht, wenn's sich vermeiden lässt. Alles hat seinen Preis. Auch Schweigen. Auch Wahrheit. *(wirft ihm den Dampfkern zu — GERÄUSCH: er fängt ihn)* Vor allem Wahrheit. Und ich kenn die Händler, bei denen deine auf Lager liegt.
+**ERZÄHLER:** Er ist der Erste, der den Helden nimmt, wie man einen Mann nimmt — nicht vorsichtig wie ein Ding. Die Wahl ist getroffen.
 
 [BLENDE]
 
@@ -432,7 +416,7 @@ Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisun
 ---
 
 # FOLGE 3 — DER EISERNE KREUZZUG
-### (Akt III · Kapitel 9–12 · Finale & die drei Enden)
+### (Akt III · Kapitel 9–12 · Finale & Ende)
 
 ---
 
@@ -549,51 +533,27 @@ Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisun
 
 ---
 
-## SZENE 3.6 — Die drei Enden
-
-> **Regie: Im Hörspiel als drei alternative Schluss-Szenen aufnehmen (Branch). Der Erzähler leitet jeweils ein.**
-
-### ENDE A — REBELLEN · „Der Morgen gehört niemandem"
+## SZENE 3.6 — „Der Morgen gehört niemandem" (Das Ende)
 
 [ATMO: Zum ersten Mal seit fünfzig Jahren totale Stille über dem Territorium. Dann — eine einzelne Schichtglocke, die läutet, einfach weil sie es kann.]
 
 **ERZÄHLER:** Das Eiserne Herz steht still. Gideon steht am zerstörten Schreibtisch und verbrennt die Schuldbücher, Blatt für Blatt.
 
+[GERÄUSCH: Papier fängt Feuer, Blatt um Blatt.]
+
 **GIDEON:** Kein neuer Direktor. Kein neuer Thron. Wir verteilen die Schienen an die, die auf ihnen bluten. *(zum Helden)* Und du? Du hast einen Krieg gewonnen, Maschine. Was baust du jetzt?
 
 **HELD:** Was ich nie hatte. Ein Zuhause, das mir keiner eingebaut hat.
 
-**ERZÄHLER:** Epilog. Providence Cut. Er begräbt die drei Walzen unter freiem Himmel. Wind. Er bleibt, bis die Sonne aufgeht. — Das Monopol fiel. Die Arbeiter sind frei. Und in Rustwater steht am Tresen eine Dose Öl. Aufs Haus. Wie immer.
+[MUSIK: FAMILIEN-MOTIV — zum ersten Mal wieder rein, unverzerrt, als Spieluhr.]
 
-### ENDE B — EISERNE GILDE · „Das geölte Getriebe"
+**ERZÄHLER:** Epilog. Providence Cut. Er begräbt die drei Walzen unter freiem Himmel. Wind. Er bleibt, bis die Sonne aufgeht.
 
-[ATMO: Trümmer, die geordnet weggeräumt werden. Manschetten werden gerichtet.]
+[GERÄUSCH: Wind über offener Erde — weit, hoch, frei. Am Horizont, wo tausend Meter Kraterwand standen, steht jetzt ein offenes Tor.]
 
-**ERZÄHLER:** Quentin tritt über die Trümmer. Er setzt sich nicht auf Vanes Stuhl — er lässt ihn hinaustragen.
+**ERZÄHLER:** Das Monopol fiel. Die Arbeiter sind frei. Und zum ersten Mal seit Menschengedenken hat der Krater einen offenen Himmel — der Tunnel steht auf, die eingesperrte Welt atmet. In Rustwater aber steht am Tresen eine Dose Öl. Aufs Haus. Wie immer.
 
-**QUENTIN:** Der Fehler des Direktors war nicht die Ordnung. Es war der Anspruch, geliebt zu werden. Ich verlange nur Pünktlichkeit. *(ein knappes, echtes Nicken)* Der Konzern dankt Ihnen. Ich … danke Ihnen. Erste Amtshandlung: Das PSALM-Programm ist beendet. Das Archiv wird versiegelt. Niemand wird mehr gebaut. *(Beat)* Sie waren der Letzte. Und der Beste.
-
-**HELD:** Dann sorgen Sie dafür, dass „der Letzte" in den Büchern steht, Aufseher. In Tinte, die nicht verblasst.
-
-**ERZÄHLER:** Die Ordnung siegte. Die Züge fahren pünktlich. Rustwater läuft wie ein geöltes Getriebe — und sein treuestes Chassis wacht darüber, dass Ordnung nie wieder Himmel spielen will.
-
-### ENDE C — SCHMUGGLER · „Der letzte Deal"
-
-[ATMO: Trümmer, aber jemand pfeift zufrieden. Ein Stempel wird in der Hand gewogen wie ein Goldklumpen.]
-
-**ERZÄHLER:** Slick sitzt auf Vanes Schreibtisch, den Direktoratsstempel in der Hand.
-
-**SLICK:** Rebellen wollen den Laden verbrennen, Konzernratten wollen ihn erben. Wir? *(grinst)* Wir haben in der Stunde des Chaos sämtliche Frachtbriefe, Minenrechte und Schuldscheine des Territoriums aufgekauft. Für 'nen Apfel, ein Ei und zehn Dampfkerne. Der Krieg ist aus, Freund — wir haben uns rausgekauft. Und alle anderen gleich mit.
-
-**HELD:** Und was kostet mich mein Anteil?
-
-**ERZÄHLER:** Slick schiebt ihm ein einzelnes Papier zu — die Besitzurkunde von Providence Cut. Und schweigt. Einmal keine Pointe.
-
-**SLICK:** Nichts. Der ging aufs Haus. — Sag's keinem.
-
-**ERZÄHLER:** Weder Fahne noch Bilanz gewann. Rustwater gehört fortan denen, die zahlen können — aber ein Stück Land am Rand der Smog-Linie gehört für immer drei Namen und einem Wächter aus Stahl.
-
-[MUSIK: FAMILIEN-MOTIV — zum ersten Mal wieder rein, unverzerrt, als Spieluhr. Wind. Sonnenaufgang.]
+[MUSIK: HERZ-MOTIV, das den Puls des Konzerns war, verklingt endgültig. Nur noch Wind und die Spieluhr.]
 
 **ERZÄHLER:** Ende.
 
@@ -620,4 +580,4 @@ Die Story-Bibel enthält sieben Nebenbögen, die sich als Einzel-Folgen des Hör
 2. **Zwei Stimmen in einer.** Fleisch-Timbre = Wärme/Menschlichkeit; Metall-Timbre = Wahrheit/Zorn. Die Mischung erzählt seinen inneren Zustand ohne ein Wort Erklärung.
 3. **Das Herz-Motiv ist eine Falle.** Von Szene 1.1 an präsent, entpuppt es sich im Finale als Vanes Puls. Nicht zu früh auflösen.
 4. **Nicht zeigen = am lautesten.** Das Massaker von Providence Cut ist ein Kolbenschlag und dann Sekunden Stille. Die Stille ist der Ton.
-5. **Das Familien-Motiv verrottet mit.** Anfangs schön, dann leiernd, dann zerschnitten, im Schluss (nur bei Ende C/A) wieder rein — der Klang der Trauerarbeit.
+5. **Das Familien-Motiv verrottet mit.** Anfangs schön, dann leiernd, dann zerschnitten — und am Schluss (Beisetzung unter freiem Himmel) zum ersten Mal wieder rein. Der Klang der Trauerarbeit.
