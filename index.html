@@ -87,6 +87,47 @@
     { id: 'herz',    name: 'Fleisch-Maschinen-Tiefe', decor: 'HERZ', floorA: 0x3a2740, floorB: 0x2f2035, grid: 0x211628, mini: 0x9a5aad, bg: 0x0c0610, callout: 'Fleisch und Getriebe verschmelzen. Du bist dem Herzen nah.' }
   ];
   function abyssBiomeFor(depth) { return ABYSS_BIOMES[Math.floor((Math.max(1, depth) - 1) / ABYSS_BAND) % ABYSS_BIOMES.length]; }
+  // Overworld-Biome: Regionen (Kreise in Kachelkoordinaten), die man beim Erkunden entdeckt.
+  // Jedes Biom hat eine eigene Bodenpalette; dazwischen bleibt die Standard-Wüste.
+  const DESERT_BIOME = { id: 'desert', name: 'Wüste', icon: '🏜', floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f };
+  const OVERWORLD_BIOMES = [
+    { id: 'oasis',    name: 'Grüne Senke',       icon: '🌿', cx: 15, cy: 64, rad: 13, floorA: 0x6f9e54, floorB: 0x5f8c48, grid: 0x3f6630 },
+    { id: 'forest',   name: 'Rostwald',          icon: '🌲', cx: 66, cy: 64, rad: 15, floorA: 0x4f7a45, floorB: 0x436b3b, grid: 0x2c4a27 },
+    { id: 'highland', name: 'Kupfer-Hochland',   icon: '⛰',  cx: 65, cy: 13, rad: 15, floorA: 0x9a8468, floorB: 0x87735a, grid: 0x5a4a38 },
+    { id: 'salt',     name: 'Salzpfanne',        icon: '🧂', cx: 16, cy: 17, rad: 12, floorA: 0xd7d2bf, floorB: 0xc8c2ac, grid: 0xa8a28c }
+  ];
+  function biomeAtTile(c, r) {
+    for (const b of OVERWORLD_BIOMES) { const dc = c - b.cx, dr = r - b.cy; if (dc * dc + dr * dr <= b.rad * b.rad) return b; }
+    return DESERT_BIOME;
+  }
+  // Kritter-Hallen (Mini-Dungeons): pro Betreten zufälliges Thema (Schwarm-Art + Palette) für Wiederspielwert.
+  const CRITTER_THEMES = [
+    { id: 'rats',     name: 'Rattennest',    type: 'fauna',    count: 11, floorA: 0x413a44, floorB: 0x37313f, grid: 0x241f2b, mini: 0x5a4f66, bg: 0x0d0a12 },
+    { id: 'klaeffer', name: 'Kläffer-Wurf',  type: 'klaeffer', count: 9,  floorA: 0x2f3a40, floorB: 0x283136, grid: 0x1b2226, mini: 0x4a5e66, bg: 0x0a1013 },
+    { id: 'outlaws',  name: 'Banditenloch',  type: 'outlaw',   count: 7,  floorA: 0x453a2f, floorB: 0x3a3026, grid: 0x28201a, mini: 0x6b5a48, bg: 0x120d08 }
+  ];
+  function applyHallTheme() {
+    const th = CRITTER_THEMES[Phaser.Math.Between(0, CRITTER_THEMES.length - 1)], m = MAPS.critter_hall;
+    m.floorA = th.floorA; m.floorB = th.floorB; m.grid = th.grid; m.mini = th.mini; m.bg = th.bg;
+    m.name = 'Verlassene Halle — ' + th.name;
+    state.hallTheme = th.id; return th;
+  }
+  function spawnCritterPack() {
+    const th = CRITTER_THEMES.find(t => t.id === state.hallTheme) || CRITTER_THEMES[0];
+    const m = MAPS.critter_hall, mul = mapHpMul(m), c0 = tileToWorld(8, 6);
+    for (let i = 0; i < th.count; i++) { const a = Math.random() * Math.PI * 2, d = 24 + Math.random() * 100; scaleEnemyHp(spawnTyped(th.type, c0.x + Math.cos(a) * d, c0.y + Math.sin(a) * d), mul); }
+    scaleEnemyHp(spawnElite(c0.x, c0.y - 24), mul);   // ein Anführer als Mini-Boss (Boss-Kiste)
+  }
+  function checkBiome(c, r) {
+    const b = biomeAtTile(c, r);
+    if (b.id === state.curBiome) return;
+    state.curBiome = b.id;
+    if (mapNameText) mapNameText.setText(b.icon + ' ' + b.name + ((state.ngPlus || 0) > 0 ? '   ·   🔄 NG+' + state.ngPlus : ''));
+    if (b.id === 'desert') return;
+    const first = !state.biomesSeen.has(b.id);
+    if (first) { state.biomesSeen.add(b.id); save(); checkAchievements(); }
+    toast(b.icon + (first ? '  Neu entdeckt: ' : '  ') + b.name);
+  }
   function applyAbyssBiome(depth) {
     const b = abyssBiomeFor(depth), m = MAPS.abyss;
     m.floorA = b.floorA; m.floorB = b.floorB; m.grid = b.grid; m.mini = b.mini; m.bg = b.bg;
@@ -484,7 +525,8 @@
     { id: 'abyss10', title: 'Tiefgänger', desc: 'Erreiche Ebene 10 im Abstieg.', check: () => (state.abyssBest || 0) >= 10 },
     { id: 'lorekeeper', title: 'Chronist', desc: 'Vervollständige den Codex.', check: () => state.codex.size >= CODEX.length },
     { id: 'rememberer', title: 'Jeremiah Hale', desc: 'Birg alle 16 Erinnerungswalzen — kenne dich ganz.', check: () => state.memoriesFound >= MEMORIES.length },
-    { id: 'homecoming', title: 'Heimkehr', desc: 'Bring die Walzen nach Providence Cut und bette deine Familie zur Ruhe.', check: () => state.familyBuried }
+    { id: 'homecoming', title: 'Heimkehr', desc: 'Bring die Walzen nach Providence Cut und bette deine Familie zur Ruhe.', check: () => state.familyBuried },
+    { id: 'cartograph', title: 'Kartograf', desc: 'Entdecke alle vier Biome der Wüste (Grüne Senke, Rostwald, Kupfer-Hochland, Salzpfanne).', check: () => OVERWORLD_BIOMES.every(b => state.biomesSeen.has(b.id)) }
   ];
   function checkAchievements(silent) {
     for (const a of ACHIEVEMENTS) {
@@ -572,7 +614,7 @@
   // ---- Karten-Definitionen -----------------------------------
   const MAPS = {
     overworld: {
-      name: 'Wüste', cols: 80, rows: 80, enemies: true, streamed: true, minimap: 'full',
+      name: 'Wüste', cols: 80, rows: 80, enemies: true, streamed: true, biomed: true, minimap: 'full',
       floorA: 0xd9b38c, floorB: 0xcda877, grid: 0xb8935f, mini: 0xcda877, bg: 0x2b2620,
       portals: [
         { tx: 26, ty: 12, to: 'rustwater', spawn: { c: 11, r: 3 }, short: 'Rustwater', label: '🏙️  Rustwater', mini: 0x22c55e, compound: { c0: 23, r0: 12, c1: 29, r1: 18 } },
@@ -582,7 +624,10 @@
         { tx: 40, ty: 66, to: 'rogues_landing', spawn: { c: 9, r: 3 }, short: "Rogue's Landing", label: "🎲  Rogue's Landing", mini: 0xeab308 },
         { tx: 8, ty: 72, to: 'garten', spawn: { c: 11, r: 20 }, short: 'Garten aus Rost', label: '🌵  Garten aus Rost', mini: 0x65a30d },
         { tx: 52, ty: 28, to: 'kessel_friedhof', spawn: { c: 12, r: 2 }, short: 'Kessel-Friedhof', label: '⚙️  Kessel-Friedhof', mini: 0x8a6d3b },
-        { tx: 30, ty: 8, to: 'providence_cut', spawn: { c: 10, r: 2 }, short: 'Providence Cut', label: '🏚️  Providence Cut', mini: 0x7c6a5a, revealOnly: true }
+        { tx: 30, ty: 8, to: 'providence_cut', spawn: { c: 10, r: 2 }, short: 'Providence Cut', label: '🏚️  Providence Cut', mini: 0x7c6a5a, revealOnly: true },
+        { tx: 72, ty: 58, to: 'critter_hall', spawn: { c: 8, r: 13 }, ret: { c: 71, r: 59 }, short: 'Höhle', label: '🕳️  Verlassene Halle', mini: 0x6b5a80 },
+        { tx: 69, ty: 9,  to: 'critter_hall', spawn: { c: 8, r: 13 }, ret: { c: 68, r: 10 }, short: 'Stollen', label: '🕳️  Alter Stollen', mini: 0x6b5a80 },
+        { tx: 11, ty: 23, to: 'critter_hall', spawn: { c: 8, r: 13 }, ret: { c: 12, r: 24 }, short: 'Grube', label: '🕳️  Vergessene Grube', mini: 0x6b5a80 }
       ],
       stations: [ { id: 'st_desert', tx: 18, ty: 62, name: 'Wüsten-Halt' } ], decor: [],
       caches: [ { tx: 45, ty: 40, count: 4, tier: 'rare' } ]   // Kessel-Friedhof: gebündelte Beute
@@ -920,6 +965,16 @@
           activeText: '„Sie kreisen da draußen, hör nur das Ticken. Zehn, hab ich gesagt. Dann ist Ruhe am Grab."',
           completeText: 'Elias sieht dir zu, wie du am mittleren Stein stehst — bei „Liv". „Du stehst da wie einer, der sie gekannt hat. Komisch, bei einem Blechding." Er drückt dir einen alten Dampfkern in die Hand. „Hale hieß der Mann, dem das hier gehörte. Jeremiah Hale. Frau, Junge, Mädchen — alle drei unter diesen Steinen. Wenn du wirklich was von ihm in dir trägst … dann bring ihn heim."',
           doneText: '„Die Strecke ist still. Geh zu den Steinen, wenn du bereit bist — wenn du ganz bist. Manche Wege geht man nur einmal, und nur allein."' } } ]
+    },
+    // Mini-Dungeon: verstreute Kritter-Hallen auf der Wüste. Ein Level, ein versteckter Schwarm, garantierte Beute.
+    critter_hall: {
+      name: 'Verlassene Halle', cols: 16, rows: 16, enemies: false, walled: true, minimap: 'small',
+      floorA: 0x413a44, floorB: 0x37313f, grid: 0x241f2b, mini: 0x5a4f66, bg: 0x0d0a12,
+      portals: [ { tx: 8, ty: 15, to: 'overworld', spawn: { c: 40, r: 40 }, short: 'Raus', label: '🚪  Ausgang', mini: 0x38bdf8 } ],
+      stations: [],
+      decor: [ { tx: 8, ty: 5, w: 66, h: 44, color: 0x241f2b, label: 'HALLE' }, { tx: 3, ty: 3, w: 30, h: 22, color: 0x2b2533, label: '' }, { tx: 13, ty: 4, w: 30, h: 22, color: 0x2b2533, label: '' } ],
+      caches: [ { tx: 3, ty: 12, count: 3, tier: 'rare' }, { tx: 13, ty: 12, count: 2, tier: 'rare' } ],
+      critters: true
     }
   };
   const STATION_INDEX = {};
@@ -965,7 +1020,7 @@
     explored: {}, discovered: new Set(), playerTile: { c: 0, r: 0 },
     miniSize: 140, miniCollapsed: false,
     fullMapOpen: false, travelOpen: false, inventoryOpen: false, questLogOpen: false, transitioning: false,
-    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0, memoriesFound: 0, flashbackPlaying: false, flashbackSeq: null, memorialsSeen: new Set(), familyBuried: false,
+    endingPlaying: false, gameWon: false, pendingEnding: null, ngPlus: 0, codex: new Set(), codexOpen: false, codexView: null, titleOpen: false, titleConfirmNew: false, pauseOpen: false, pauseView: 'menu', stats: { bossKills: 0, legendaries: 0 }, achievements: new Set(), mapVisit: {}, slot: 0, memoriesFound: 0, flashbackPlaying: false, flashbackSeq: null, memorialsSeen: new Set(), familyBuried: false, curBiome: null, biomesSeen: new Set(), hallReturn: null, hallTheme: null,
     gold: 0, inventory: {}, stash: { schrott: 0, zahnrad: 0, dampfkern: 0 }, invFullAt: 0,
     equip: { helmet: null, armor: null, weapon: null, gadget: null, boots: null, plate1: null, plate2: null, plate3: null, plate4: null, plate5: null, plate6: null, plate7: null, plate8: null }, gearBag: [],
     level: 1, xp: 0, perkPoints: 0, perks: {}, charTab: 'gear', itemDetail: null, muted: false,
@@ -1366,7 +1421,7 @@
   }
   function serialize() {
     const ex = {}; for (const k in state.explored) ex[k] = [...state.explored[k]];
-    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, memorialsSeen: [...state.memorialsSeen], familyBuried: state.familyBuried, ts: Date.now(), discovered: [...state.discovered], explored: ex };
+    return { gold: state.gold, economy: state.economy, kills, inv: state.inventory, revealed: state.isRevealed, chapter: state.currentChapter, guild: state.chosenGuild, weapon: state.weapon, weaponLvl: state.weaponLvl, stash: state.stash, equip: state.equip, gearBag: state.gearBag, level: state.level, xp: state.xp, perkPoints: state.perkPoints, perks: state.perks, upgrades: state.upgrades, quests: state.quests, questBase: state.questBase, merchant: state.merchant, bounty: state.bounty, ammo: state.ammo, tutorial: state.tutorial, tutOpenedInv: state.tutOpenedInv, muted: state.muted, abyssBest: state.abyssBest, gameWon: state.gameWon, ngPlus: state.ngPlus, codex: [...state.codex], stats: state.stats, achievements: [...state.achievements], mapVisit: state.mapVisit, memoriesFound: state.memoriesFound, memorialsSeen: [...state.memorialsSeen], familyBuried: state.familyBuried, biomesSeen: [...state.biomesSeen], ts: Date.now(), discovered: [...state.discovered], explored: ex };
   }
   function save() { try { localStorage.setItem(slotKey('auto'), JSON.stringify(serialize())); } catch (e) { } }   // Autospeichern -> dedizierter Auto-Slot
   function saveToManual(i) { try { localStorage.setItem(slotKey(i), JSON.stringify(serialize())); } catch (e) { } }   // manueller Snapshot
@@ -1395,6 +1450,7 @@
       state.memoriesFound = Math.min(MEMORIES.length, s.memoriesFound || 0);
       state.memorialsSeen = new Set(Array.isArray(s.memorialsSeen) ? s.memorialsSeen : []);
       state.familyBuried = !!s.familyBuried;
+      state.biomesSeen = new Set(Array.isArray(s.biomesSeen) ? s.biomesSeen : []); state.curBiome = null;
       if (muteBtn) muteBtn.icon.setText(state.muted ? '🔇' : '🔊');
       state.upgrades = Object.assign({ damage: 0, firerate: 0, hp: 0, speed: 0, regen: 0, magnet: 0 }, s.upgrades || {});
       state.quests = s.quests || {}; state.questBase = s.questBase || {};
@@ -1537,6 +1593,7 @@
     if (m.enemies) scatterEnemies(m);
     scatterChests(m);
     if (m.superboss) spawnSuperBoss(m.superboss.tx, m.superboss.ty, m.depth, m.superboss.name);
+    if (m.critters) spawnCritterPack();   // Mini-Dungeon: versteckter Schwarm + Anführer
     if (m.vane) spawnVane(m.vane.tx, m.vane.ty);   // Finale-Arena: Direktor Vane
     if (abyss && state.abyssDepth % 3 === 0) spawnSuperBoss(13, 13, state.abyssDepth);   // alle 3 Ebenen ein Titan
     if (abyss) sceneRef.time.delayedCall(700, abyssDepthBark);   // Tiefen-Meilenstein-Ausruf
@@ -1583,11 +1640,13 @@
     minX -= HALF_W; maxX += HALF_W; minY -= HALF_H; maxY += HALF_H;
     const offX = -minX, offY = -minY, texW = Math.max(1, Math.ceil(maxX - minX)), texH = Math.max(1, Math.ceil(maxY - minY));
     const fg = sceneRef.make.graphics({ add: false });
+    const biomed = m.biomed;
     for (let c = c0; c < c1; c++) for (let r = r0; r < r1; r++) {
       const cx = (c - r) * HALF_W + offX, cy = (c + r) * HALF_H + offY;
-      fg.fillStyle((c + r) % 2 === 0 ? m.floorA : m.floorB, 1);
+      const b = biomed ? biomeAtTile(c, r) : m;   // Overworld: Palette je Region
+      fg.fillStyle((c + r) % 2 === 0 ? b.floorA : b.floorB, 1);
       fg.beginPath(); fg.moveTo(cx, cy - HALF_H); fg.lineTo(cx + HALF_W, cy); fg.lineTo(cx, cy + HALF_H); fg.lineTo(cx - HALF_W, cy); fg.closePath(); fg.fillPath();
-      fg.lineStyle(1, m.grid, 0.4); fg.strokePath();
+      fg.lineStyle(1, b.grid, 0.4); fg.strokePath();
     }
     const key = 'floor_' + (floorTexN++);
     fg.generateTexture(key, texW, texH); fg.destroy();
@@ -2427,6 +2486,8 @@
     if (mapId === '__abyss') { enterAbyss(1); return; }                       // Eingang aus dungeon3
     if (mapId === '__deeper') { enterAbyss((state.abyssDepth || 0) + 1); return; }   // eine Ebene tiefer
     if (mapId === 'providence_cut' && !state.isRevealed) { toast('🏚️ Etwas an dieser Ruine lässt dich zögern. Noch nicht.'); return; }   // Familiensuche erst nach dem Erwachen
+    if (mapId === 'critter_hall') applyHallTheme();                                              // Mini-Dungeon: Thema pro Betreten würfeln
+    if (state.map === 'critter_hall' && mapId === 'overworld' && state.hallReturn) spawn = state.hallReturn;   // zurück zum Höhleneingang
     if (state.transitioning) return;
     state.transitioning = true; hideContext();
     const keepFacing = player.facing;                    // Laufrichtung übernehmen
@@ -3644,7 +3705,7 @@
     player.setAlpha(now < state.invulnUntil && Math.floor(now / 120) % 2 === 0 ? 0.45 : 1);
 
     const pt = worldToTile(player.x, player.y);
-    if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; }
+    if (pt.c !== state.playerTile.c || pt.r !== state.playerTile.r) { state.playerTile = pt; reveal(pt.c, pt.r); miniDirty = true; if (MAPS[state.map].biomed) checkBiome(pt.c, pt.r); }
     streamChunks(1);   // jeden Frame hoechstens 1 Chunk nachbacken -> ruckelfrei
 
     // Beim Angreifen automatisch zum nächsten Gegner ausrichten (kein Zielen per Bewegung nötig)
@@ -3766,7 +3827,7 @@
     for (const p of m.portals) {
       if (p.revealOnly && !state.isRevealed) continue;   // Providence Cut bleibt vor dem Erwachen verschlossen
       const w = tileToWorld(p.tx, p.ty);
-      if (Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y) < GATE_ENTER_DIST && sceneRef.time.now > state.portalGraceUntil) { transitionTo(p.to, p.spawn); return; }
+      if (Phaser.Math.Distance.Between(player.x, player.y, w.x, w.y) < GATE_ENTER_DIST && sceneRef.time.now > state.portalGraceUntil) { if (p.ret) state.hallReturn = p.ret; transitionTo(p.to, p.spawn); return; }
     }
     let best = null, bestType = null, bestD = 1e9;
     for (const s of m.stations) {

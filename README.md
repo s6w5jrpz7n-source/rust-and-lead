@@ -60,6 +60,11 @@ Die vollständige Story-Bibel (alle Dialoge, Kinoszenen, Casting-Notizen) liegt 
 - **Endlosmodus „Der Abstieg":** skalierende Tiefe mit Modifikatoren und **rotierenden Biomen**
   (Stollen → Frostkavernen → Magma-Schlund → Sporentiefe → Fleisch-Maschinen-Tiefe, alle 5 Ebenen),
   Tiefen-Ausrufer.
+- **Overworld-Biome:** Die Wüste trägt entdeckbare Regionen mit eigener Palette — 🌿 Grüne Senke,
+  🌲 Rostwald, ⛰ Kupfer-Hochland, 🧂 Salzpfanne (Erfolg *Kartograf*).
+- **Mini-Dungeons:** Über die Karte verstreute 🕳️ Kritter-Hallen (Verlassene Halle / Alter Stollen /
+  Vergessene Grube) — einstöckig, versteckter Schwarm + Anführer + garantierte Beute, Thema pro
+  Betreten neu gewürfelt.
 - **Zwei Nebengebiete:** Garten aus Rost (Smog-Linie) und Kessel-Friedhof (Schrott-Golem).
 - **Wirtschaft:** Rustwater-Gebäude generieren Einkommen; Händler mit Drag-Handel.
 - **Atmosphäre-Barks:** schwebende Story-Sprüche aus der Bibel (Stadt/Held/Gegner/Tiefe).

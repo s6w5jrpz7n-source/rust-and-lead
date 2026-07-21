@@ -946,6 +946,22 @@ zieht einen **zufälligen Modifikator** (👥 Andrang / 💪 Überdruck / 💨 R
 (Ebene 6 ≈ 6300 HP). Ein **Tiefenrekord** wird geführt und im Saloon (Tycoon-Panel)
 ausgehängt. „Wie tief kommst du?" ist der wiederholbare Post-Kampagnen-Loop.
 
+### 7.5.6a Overworld-Biome & Mini-Dungeons (Welten-Breite)
+**Overworld-Biome (`OVERWORLD_BIOMES`).** Die 80×80-Wüste ist nicht mehr eine einzige Sandfläche:
+vier Regionen (Kreise in Kachelkoordinaten) tragen eine eigene Bodenpalette und werden beim
+Erkunden entdeckt — **🌿 Grüne Senke**, **🌲 Rostwald**, **⛰ Kupfer-Hochland**, **🧂 Salzpfanne**;
+dazwischen bleibt die Standard-Wüste. `biomeAtTile(c,r)` liefert das Biom pro Kachel; der Boden-Bake
+(`bakeTileRange`) färbt jede Kachel entsprechend, sodass die Übergänge organisch auslaufen. Beim
+Betreten meldet ein Toast „Neu entdeckt: …", der Kartenname wechselt, und alle vier gefunden schaltet
+den Erfolg **„Kartograf"** frei (`biomesSeen` persistiert).
+
+**Mini-Dungeons (`critter_hall`).** Über die Wüste verstreut liegen **drei 🕳️-Eingänge** (Verlassene
+Halle, Alter Stollen, Vergessene Grube). Jeder führt in eine **einstöckige Kritter-Halle**: ein
+versteckter Schwarm plus Anführer-Elite (Boss-Kiste) und garantierte Loot-Caches. Pro Betreten würfelt
+`applyHallTheme` ein Thema (Rattennest / Kläffer-Wurf / Banditenloch) mit eigener Palette und Schwarm-Art
+— Wiederspielwert für den typischen Diablo-„was-ist-da-drin?"-Loop. Rückkehr per Ausgang landet am
+Eingang (`hallReturn`/`ret`). Kurz zu finden, klein, lohnend.
+
 **Rotierende Biome (`ABYSS_BIOMES`, Band = 5 Ebenen).** Damit der Endlosmodus optisch nie
 stehenbleibt, wechselt der Abstieg alle fünf Ebenen das Biom — jedes mit eigener Bodenpalette,
 Hintergrund, Stollen-Beschriftung und Ankunfts-Ausruf: **Verlassene Stollen** (1–5, grau) →
