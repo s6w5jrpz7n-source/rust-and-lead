@@ -34,6 +34,12 @@
   weiche, realistische indirekte Beleuchtung großflächiger Innen- und Außenräume.
 * **Atmosphäre:** **volumetrischer Nebel** (dient zugleich als Fog of War),
   dynamische, hochkontrastige **Echtzeit-Schatten**, grim-dark Farb-/Kontrast-Grading.
+* **Tag/Nacht-Zyklus (Phase 2):** In Godot skriptgesteuert, aber engine-nah gelöst —
+  ein rotierendes **`DirectionalLight3D`** (Sonne/Mond) + **`WorldEnvironment`** (Himmelfarbe,
+  Ambient, Nebeldichte) per Timer/Tween animiert; Laternen, Saloon-Fenster und Kessel-Glut als
+  **`OmniLight3D`/`SpotLight3D`** mit Echtzeitschatten. Nicht automatisch, aber ohne Kachel-Umfärben:
+  Schatten und Stimmung ergeben sich aus dem Lichtsystem. (Im Phaser-Prototyp bewusst weggelassen —
+  dort müsste man Texturen umbacken; die Biom-Paletten deuten die Tag-Stimmung an.)
 
 ## 1.2 Fixe 3D-Isometrische Kamera
 * **Winkel:** permanent fix, **nicht rotierbar** — Pitch **35°–45°** nach unten,
@@ -957,6 +963,13 @@ den Erfolg **„Kartograf"** frei (`biomesSeen` persistiert). Jedes Biom trägt 
 Natur-Deko** (`scatterBiomeDecor`/`drawFlora`): Bäume & Wassertümpel (Grüne Senke/Rostwald), Felsblöcke
 (Kupfer-Hochland), Salzkristalle (Salzpfanne), dazu spärliche Kakteen in der Wüste — als abstrakte
 Platzhalter-Geometrie mit weichem Bodenschatten, passend zur Prototyp-Ästhetik.
+
+**Biom-eigener Gegner-Mix (`BIOME_ENEMY_POOLS`).** Die Biome unterscheiden sich auch spielerisch:
+`pickEnemyType(c,r)` wählt die Gegner-Art nach dem **lokalen Tile-Biom** (nicht global) — Grüne Senke
+& **Rostwald** sind fauna-/schwarm-lastig (Wildnis), **Kupfer-Hochland** industriell/menschlich
+(Konstrukte, Revolverhelden in den Felsen), **Salzpfanne** karg mit menschlichen Räubern (vor dem
+Erwachen ohne Maschinen), Wüste = Standardmix. Jeder Pool verschiebt sich nach dem Reveal mechanisch
+(mehr Konstrukte/Kläffer). So trägt jedes Biom seine eigene Bedrohung, passend zur Kulisse.
 
 **Mini-Dungeons (`critter_hall`).** Über die Wüste verstreut liegen **drei 🕳️-Eingänge** (Verlassene
 Halle, Alter Stollen, Vergessene Grube). Jeder führt in eine **einstöckige Kritter-Halle**: ein

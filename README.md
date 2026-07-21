@@ -62,7 +62,8 @@ Die vollständige Story-Bibel (alle Dialoge, Kinoszenen, Casting-Notizen) liegt 
   Tiefen-Ausrufer.
 - **Overworld-Biome:** Die Wüste trägt entdeckbare Regionen mit eigener Palette **und Natur-Deko**
   (Bäume, Wassertümpel, Felsblöcke, Salzkristalle, Kakteen) — 🌿 Grüne Senke, 🌲 Rostwald,
-  ⛰ Kupfer-Hochland, 🧂 Salzpfanne (Erfolg *Kartograf*).
+  ⛰ Kupfer-Hochland, 🧂 Salzpfanne (Erfolg *Kartograf*) — **jedes Biom mit eigenem Gegner-Mix**
+  (Wildnis vs. Räuber vs. Maschinen).
 - **Mini-Dungeons:** Über die Karte verstreute 🕳️ Kritter-Hallen (Verlassene Halle / Alter Stollen /
   Vergessene Grube) — einstöckig, versteckter Schwarm + Anführer + garantierte Beute, Thema pro
   Betreten neu gewürfelt. **~30 %** ein benannter **Unique-Champion** (Diablo-Pack) mit eigener

@@ -1764,10 +1764,21 @@
     }
   }
   // Gewichteter Gegner-Pool: nach dem Reveal treten mechanische Konzern-Konstrukte auf.
-  function pickEnemyType() {
-    const pool = state.isRevealed
-      ? [['outlaw', 3], ['fauna', 2], ['revolver', 2], ['konstrukt', 4], ['klaeffer', 3]]
-      : [['outlaw', 4], ['fauna', 3], ['revolver', 2], ['konstrukt', 1]];
+  // Gegner-Pools je Biom (Wüste = Standard). Jedes Biom hat einen eigenen Mix, der sich nach dem
+  // Erwachen mechanisch verschiebt — so unterscheiden sich die Biome auch spielerisch, nicht nur optisch.
+  const BIOME_ENEMY_POOLS = {
+    desert:   { pre: [['outlaw', 4], ['fauna', 3], ['revolver', 2], ['konstrukt', 1]], post: [['outlaw', 3], ['fauna', 2], ['revolver', 2], ['konstrukt', 4], ['klaeffer', 3]] },
+    oasis:    { pre: [['fauna', 4], ['outlaw', 3], ['revolver', 1], ['konstrukt', 1]], post: [['fauna', 4], ['klaeffer', 3], ['outlaw', 2], ['konstrukt', 2], ['revolver', 1]] },
+    forest:   { pre: [['fauna', 5], ['outlaw', 2], ['revolver', 1], ['konstrukt', 1]], post: [['fauna', 4], ['klaeffer', 4], ['konstrukt', 2], ['outlaw', 1]] },
+    highland: { pre: [['revolver', 3], ['outlaw', 3], ['konstrukt', 2], ['fauna', 1]], post: [['konstrukt', 5], ['klaeffer', 3], ['revolver', 2], ['outlaw', 1]] },
+    salt:     { pre: [['revolver', 4], ['outlaw', 4], ['fauna', 1]],                   post: [['revolver', 3], ['outlaw', 3], ['konstrukt', 3], ['klaeffer', 1]] }
+  };
+  function pickEnemyType(c, r) {
+    const m = MAPS[state.map];
+    let biome = 'desert';
+    if (m.biomed) biome = (c !== undefined ? biomeAtTile(c, r).id : (state.curBiome || 'desert'));
+    const set = BIOME_ENEMY_POOLS[biome] || BIOME_ENEMY_POOLS.desert;
+    const pool = state.isRevealed ? set.post : set.pre;
     let total = 0; for (const p of pool) total += p[1];
     let x = Math.random() * total;
     for (const p of pool) { if ((x -= p[1]) <= 0) return p[0]; }
@@ -1801,7 +1812,7 @@
     for (let i = 0; i < count; i++) {
       const c = Phaser.Math.Between(1, m.cols - 2), r = Phaser.Math.Between(1, m.rows - 2), w = tileToWorld(c, r);
       if (Phaser.Math.Distance.Between(w.x, w.y, player.x, player.y) < 220) continue;   // Startbereich frei halten
-      scaleEnemyHp(spawnTyped(pickEnemyType(), w.x, w.y), mul);
+      scaleEnemyHp(spawnTyped(pickEnemyType(c, r), w.x, w.y), mul);   // Gegner-Art nach lokalem Biom
     }
     // Elite-Bosse stehen verteilt in der Karte (mit Gefolge) — ebenfalls gestaffelt wiederbesiedelt
     let elites = m.elites !== undefined ? m.elites : ELITE_PER_MAP;
@@ -3093,7 +3104,7 @@
     const ang = Math.random() * Math.PI * 2, dist = 360 + Math.random() * 160;
     const ex = Phaser.Math.Clamp(player.x + Math.cos(ang) * dist, state.bounds.minX, state.bounds.maxX);
     const ey = Phaser.Math.Clamp(player.y + Math.sin(ang) * dist, state.bounds.minY, state.bounds.maxY);
-    spawnTyped(pickEnemyType(), ex, ey);
+    const t = worldToTile(ex, ey); spawnTyped(pickEnemyType(t.c, t.r), ex, ey);   // Gegner-Art nach lokalem Biom
   }
   // Elite-Boss: steht als starker Gegner mitten in der Karte (kein Kill-Zähler mehr).
   function spawnElite(ex, ey) {
