@@ -24,6 +24,7 @@ func _ready() -> void:
 	_test_memory_manager()
 	_test_encounter_manager()
 	_test_progression_manager()
+	_test_rift_manager()
 	print("──────────────────────────────────────────────")
 	print("  Ergebnis: %d bestanden, %d fehlgeschlagen" % [_passed, _failed])
 	print("──────────────────────────────────────────────")
@@ -45,6 +46,8 @@ func _reset_state() -> void:
 	GameState.chosen_guild = null
 	GameState.level = 1
 	GameState.xp = 0
+	GameState.perk_points = 0
+	GameState.perks = {}
 	GameState.gold = 0
 	GameState.potions = 3
 	GameState.kills = 0
@@ -479,3 +482,86 @@ func _test_progression_manager() -> void:
 	# Tech-Modul: Haupt-Stat skaliert mit Seltenheit.
 	var tech: Dictionary = ProgressionManager.make_tech("schaden", "rare")
 	_check("make_tech Stat = round(base*mult)", int(tech["stat"]["val"]) == roundi(5.0 * 1.8) and String(tech["slot"]) == "tech")
+
+	# ── Perk-Baum (Fallout-Achse §7.5.1) ──
+	_reset_state()
+	_check("3 Perk-Zweige", ProgressionManager.PERK_BRANCHES.size() == 3)
+	# Kauf: Punkt vorhanden, Tier 1 sofort; Rang & Punkte aktualisieren, Wirkwert = Rang×per.
+	GameState.level = 1
+	GameState.perk_points = 3
+	_check("scharf kaufbar (Tier 1)", ProgressionManager.perk_can_buy("scharf"))
+	_check("buy_perk scharf", ProgressionManager.buy_perk("scharf") == true and ProgressionManager.perk_rank("scharf") == 1)
+	_check("Punkt abgezogen", GameState.perk_points == 2)
+	_check("perk_val = Rang×per (4)", ProgressionManager.perk_val("scharf") == 4)
+	ProgressionManager.buy_perk("scharf")
+	_check("perk_val Rang 2 = 8", ProgressionManager.perk_val("scharf") == 8)
+	ProgressionManager.buy_perk("scharf")
+	_check("Max-Rang: nicht weiter kaufbar", ProgressionManager.perk_can_buy("scharf") == false and GameState.perk_points == 0)
+
+	# Tier-Gating: Kapstein braucht Level 14 + 6 Punkte im Zweig.
+	_reset_state()
+	GameState.level = 5
+	GameState.perk_points = 20
+	_check("Kapstein Level 5 gesperrt", ProgressionManager.perk_can_buy("cap_gun") == false)
+	GameState.level = 14
+	# 6 Punkte im gun-Zweig investieren.
+	ProgressionManager.buy_perk("scharf"); ProgressionManager.buy_perk("scharf"); ProgressionManager.buy_perk("scharf")
+	ProgressionManager.buy_perk("schnell"); ProgressionManager.buy_perk("schnell"); ProgressionManager.buy_perk("schnell")
+	_check("Zweig-Punkte gun = 6", ProgressionManager.branch_points("gun") == 6)
+	_check("Kapstein jetzt kaufbar", ProgressionManager.perk_can_buy("cap_gun"))
+	ProgressionManager.buy_perk("cap_gun")
+	_check("has_cap gun", ProgressionManager.has_cap("gun"))
+	# XOR: nur ein Kapstein — die anderen sind gesperrt.
+	GameState.level = 14
+	# genug tech-Punkte für Tier 4 investieren, damit nur die xor-Sperre greift.
+	ProgressionManager.buy_perk("gurt"); ProgressionManager.buy_perk("gurt"); ProgressionManager.buy_perk("gurt")
+	ProgressionManager.buy_perk("aasgeier"); ProgressionManager.buy_perk("aasgeier"); ProgressionManager.buy_perk("aasgeier")
+	_check("zweiter Kapstein xor-gesperrt", ProgressionManager.perk_can_buy("cap_tech") == false and ProgressionManager.xor_blocked("cap_tech"))
+
+	# Respec: erst nach Reveal, erstattet Ränge als Punkte, kostet Gold + Dampfkern.
+	_reset_state()
+	GameState.level = 5
+	GameState.perk_points = 3
+	ProgressionManager.buy_perk("zaeh"); ProgressionManager.buy_perk("panzer")   # 2 Ränge im grit-Zweig
+	GameState.is_revealed = false
+	_check("Respec vor Reveal gesperrt", ProgressionManager.do_respec() == false)
+	GameState.is_revealed = true
+	GameState.gold = 1000
+	GameState.add_item("dampfkern", 2)
+	var pts_before: int = GameState.perk_points
+	_check("do_respec erfolgreich", ProgressionManager.do_respec() == true)
+	_check("Ränge erstattet (+2 Punkte)", GameState.perk_points == pts_before + 2 and GameState.perks.is_empty())
+	_check("Respec zieht Dampfkern ab", GameState.item_count("dampfkern") == 1)
+
+
+# ── RiftManager: Abstieg-Endlosmodus (Biome, Mods, Tiefen-Skalierung) §7.5.6/§8.1 ──
+func _test_rift_manager() -> void:
+	print("· RiftManager (Abstieg §7.5.6)")
+
+	# Biome rotieren alle 5 Ebenen, dann von vorn.
+	_check("5 Abstieg-Biome", RiftManager.BIOMES.size() == 5)
+	var ids: Array = []
+	for d in [1, 6, 11, 16, 21, 26]:
+		ids.append(String(RiftManager.biome_for(d)["id"]))
+	_check("Biom-Rotation stollen..herz..stollen", str(ids) == str(["stollen", "frost", "magma", "sporen", "herz", "stollen"]))
+	_check("Biom-Wechsel bei Bandgrenze (5->6)", RiftManager.biome_changed(5, 6) == true)
+	_check("kein Wechsel im Band (11->12)", RiftManager.biome_changed(11, 12) == false)
+
+	# Modifikatoren.
+	_check("4 Modifikatoren", RiftManager.MODS.size() == 4)
+	_check("roll_mod 0.0 = Andrang", String(RiftManager.roll_mod(0.0)["id"]) == "horde")
+	_check("roll_mod 0.99 = Elite-Nest", String(RiftManager.roll_mod(0.99)["id"]) == "elite")
+
+	# Tiefen-Skalierung (deterministische Formeln).
+	_check("HP-Faktor Ebene 3 = 2.0", is_equal_approx(RiftManager.enemy_hp_mul(3, "", 0), 2.0))
+	_check("HP-Faktor Ebene 3 + Überdruck = 2.6", is_equal_approx(RiftManager.enemy_hp_mul(3, "brute", 0), 2.6))
+	_check("HP-Faktor Ebene 1 + NG+1 = 1.6", is_equal_approx(RiftManager.enemy_hp_mul(1, "", 1), 1.6))
+	_check("Rasende Meute = Tempo x1.25", is_equal_approx(RiftManager.enemy_speed_mul("swift"), 1.25))
+	_check("Dichte Ebene 6 + Andrang = 3.0", is_equal_approx(RiftManager.density(6, "horde"), 3.0))
+	_check("Elite-Zahl Ebene 9 (Basis 1) = 4", RiftManager.elite_count(9, 1, "") == 4)
+	_check("Elite-Nest +2", RiftManager.elite_count(9, 1, "elite") == 6)
+
+	# Superboss alle 3 Ebenen.
+	_check("Superboss auf Ebene 3", RiftManager.has_superboss(3))
+	_check("Superboss auf Ebene 6", RiftManager.has_superboss(6))
+	_check("kein Superboss auf Ebene 4", not RiftManager.has_superboss(4))

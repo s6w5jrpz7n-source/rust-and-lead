@@ -19,9 +19,12 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
   Sekunden-Tick nur bei aktiver Spielzeit, Kostenkurve, Ripple-Booster.
 - `scripts/GridInventoryBackend.gd` — **Modul 3:** reines Grid-Inventar (`class_name`,
   instanziierbar): Footprint-Prüfung, Insert/Remove, Auto-Platzierung.
-- `scripts/ProgressionManager.gd` — **Itemization** (GDD §7.4.3/§7.5.2/§8.1): Seltenheiten,
-  Affixe mit Roll-Varianz (deterministisch via `quality_roll`), legendäre Kräfte (`make_gear`,
-  `force_power` für Boss-Drops) und Tech-Module — alles seedbar/testbar. (Perk-Baum: Folge-Port.)
+- `scripts/ProgressionManager.gd` — **Itemization & Perks** (GDD §7.4.3/§7.5.1/§7.5.2/§8.1):
+  Seltenheiten, Affixe mit Roll-Varianz (deterministisch via `quality_roll`), legendäre Kräfte
+  (`make_gear`, `force_power` für Boss-Drops), Tech-Module — sowie der **Fallout-Perk-Baum**
+  (Zweige/Tiers/Kapsteine mit xor, Kauf, Respec) über `GameState`. Alles seedbar/testbar.
+- `scripts/RiftManager.gd` — **Abstieg-Endlosmodus** (GDD §7.5.6/§8.1): rotierende Biome (alle 5
+  Ebenen), Zufalls-Modifikatoren, Tiefen-Skalierung (Leben/Dichte/Elite-Zahl), Superboss-Kadenz.
 - `scripts/EncounterManager.gd` — **Mini-Dungeons & Unique-Champions** (GDD §7.5.6a/§8.2):
   Kritter-Hallen-Themen (Roll), Champion-Wurf (~30 %), Champion-Aufbau (×6 HP, benannt, Boss) und
   der Champion-Beute-Kontrakt (garantiertes Legendary; Item-Gen via `ProgressionManager` offen).
@@ -136,11 +139,12 @@ godot --headless --path godot                    # Pass 2: führt TestRunner aus
 `tests/TestRunner.gd` prüft alle Module deterministisch gegen die GDD-Werte
 (Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
 Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**,
-**Erinnerungs-Walzen & Familien-Bogen**, **Mini-Dungeons & Champions**, **Itemization**) und
-beendet mit Exit-Code 0 (alles grün) bzw. 1.
+**Erinnerungs-Walzen & Familien-Bogen**, **Mini-Dungeons & Champions**, **Itemization & Perks**,
+**Abstieg-Endlosmodus**) und beendet mit Exit-Code 0 (alles grün) bzw. 1.
 
-> **Verifiziert:** Godot **4.3.stable**, headless — **175/175 Checks grün, Exit 0**
-> (inkl. 22 Biom-, 29 roter-Faden-, 21 Encounter/Champion- und 21 Itemization-Tests). Der schwere 3D-Asset-Import unter `assets/models`
+> **Verifiziert:** Godot **4.3.stable**, headless — **208/208 Checks grün, Exit 0**.
+> Die **gesamte Spiel-Logik** ist portiert; offen bleibt nur die Präsentations-/Render-Schicht.
+> Der schwere 3D-Asset-Import unter `assets/models`
 > verlangsamt Pass 1; für reine Logik-Tests kann man Scripts/Tests/`project.godot` in ein
 > asset-freies Verzeichnis kopieren und dort testen.
 

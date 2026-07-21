@@ -35,6 +35,9 @@ const LEVEL_HP_BONUS: int = 8
 const PLAYER_BASE_HP: int = 100
 var level: int = 1
 var xp: int = 0
+## Perk-Baum (Fallout-Achse, Master-GDD §7.5.1): Punkte + Ränge je Perk-id.
+var perk_points: int = 0
+var perks: Dictionary = {}   ## perk_id (String) -> Rang (int)
 
 # ── Wirtschaft & Beutel ───────────────────────────────────────────────────────
 var gold: int = 0

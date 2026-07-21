@@ -7,7 +7,8 @@ class_name ProgressionManager extends RefCounted
 ## Determinismus: die Würfe nehmen einen `RandomNumberGenerator` (seedbar) bzw. einen
 ## `quality_roll`/`roll` (0..1) statt globalem `randf()` — so ist die Erzeugung testbar.
 ##
-## Offen (Folge-Port): der Fallout-Perk-Baum (Zweige/Tiers/Capstones/Respec).
+## Enthält außerdem den Fallout-Perk-Baum (Zweige/Tiers/Capstones/Respec, §7.5.1), der über
+## `GameState.perks`/`perk_points` arbeitet.
 
 static var _uid: int = 1
 
@@ -212,3 +213,99 @@ static func gear_foot(g: Dictionary) -> Vector2i:
 static func gear_cells(g: Dictionary) -> int:
 	var f: Vector2i = gear_foot(g)
 	return f.x * f.y
+
+
+# ── Perk-Baum (Fallout-Achse, Master-GDD §7.5.1) ──────────────────────────────
+## Drei Zweige; Tiers nach Level & investierten Punkten gestaffelt; Tier 4 = exklusiver Kapstein.
+const PERK_BRANCHES: Array = [
+	{ "id": "gun", "name": "Revolverheld", "blurb": "Blei & Präzision" },
+	{ "id": "tech", "name": "Kesseltreiber", "blurb": "Dampf & Energie" },
+	{ "id": "grit", "name": "Grenzgänger", "blurb": "Zähigkeit & Beute" },
+]
+## Tier -> {lvl: Mindest-Level, inv: Mindest-Punkte im Zweig}.
+const PERK_TIER: Dictionary = {
+	1: { "lvl": 1, "inv": 0 }, 2: { "lvl": 5, "inv": 2 }, 3: { "lvl": 10, "inv": 4 }, 4: { "lvl": 14, "inv": 6 },
+}
+const PERKS: Dictionary = {
+	"scharf":   { "branch": "gun", "tier": 1, "max": 3, "per": 4, "name": "Scharfschütze" },
+	"schnell":  { "branch": "gun", "tier": 1, "max": 3, "per": 7, "name": "Schnellschuss" },
+	"krit":     { "branch": "gun", "tier": 2, "max": 3, "per": 8, "name": "Krit-Treffer" },
+	"brecher":  { "branch": "gun", "tier": 3, "max": 1, "per": 10, "name": "Panzerbrecher" },
+	"gurt":     { "branch": "tech", "tier": 1, "max": 3, "per": 25, "name": "Munitionsgurt" },
+	"aasgeier": { "branch": "tech", "tier": 1, "max": 3, "per": 25, "name": "Aasgeier" },
+	"ueberlad": { "branch": "tech", "tier": 2, "max": 3, "per": 5, "name": "Überladung" },
+	"granat":   { "branch": "tech", "tier": 3, "max": 1, "per": 35, "name": "Granatmeister" },
+	"zaeh":     { "branch": "grit", "tier": 1, "max": 3, "per": 25, "name": "Zähigkeit" },
+	"panzer":   { "branch": "grit", "tier": 1, "max": 3, "per": 4, "name": "Panzerhaut" },
+	"heilung":  { "branch": "grit", "tier": 2, "max": 3, "per": 3, "name": "Selbstheilung" },
+	"pluender": { "branch": "grit", "tier": 3, "max": 1, "per": 25, "name": "Plünderer" },
+	"cap_gun":  { "branch": "gun", "tier": 4, "max": 1, "per": 0, "xor": "cap", "name": "Ballistischer Rechenkern" },
+	"cap_tech": { "branch": "tech", "tier": 4, "max": 1, "per": 0, "xor": "cap", "name": "Überhitzter Kessel" },
+	"cap_grit": { "branch": "grit", "tier": 4, "max": 1, "per": 0, "xor": "cap", "name": "Eisernes Chassis" },
+}
+
+static func perk_rank(id: String) -> int:
+	return int(GameState.perks.get(id, 0))
+
+## Wirkwert eines Perks (Rang × per).
+static func perk_val(id: String) -> int:
+	return perk_rank(id) * int(PERKS.get(id, {}).get("per", 0))
+
+## Summe der investierten Ränge in einem Zweig (staffelt die Tiers).
+static func branch_points(branch: String) -> int:
+	var s: int = 0
+	for pid in PERKS:
+		if String(PERKS[pid]["branch"]) == branch:
+			s += perk_rank(pid)
+	return s
+
+## Tier-Freischaltung: Level hoch genug UND genug Punkte im Zweig investiert.
+static func perk_tier_ok(id: String) -> bool:
+	var t: Dictionary = PERK_TIER[int(PERKS[id]["tier"])]
+	return GameState.level >= int(t["lvl"]) and branch_points(String(PERKS[id]["branch"])) >= int(t["inv"])
+
+## Exklusiv-Gruppe (Kapsteine, xor "cap"): ist bereits ein ANDERER Perk der Gruppe aktiv?
+static func xor_blocked(id: String) -> bool:
+	var x: Variant = PERKS[id].get("xor", null)
+	if x == null:
+		return false
+	for pid in PERKS:
+		if pid != id and PERKS[pid].get("xor", null) == x and perk_rank(pid) > 0:
+			return true
+	return false
+
+static func has_cap(branch: String) -> bool:
+	return perk_rank("cap_" + branch) > 0
+
+static func perk_can_buy(id: String) -> bool:
+	if not PERKS.has(id):
+		return false
+	return GameState.perk_points > 0 and perk_rank(id) < int(PERKS[id]["max"]) and perk_tier_ok(id) and not xor_blocked(id)
+
+## Kauft einen Perk-Rang (ein Punkt). Gibt Erfolg zurück.
+static func buy_perk(id: String) -> bool:
+	if not perk_can_buy(id):
+		return false
+	GameState.perks[id] = perk_rank(id) + 1
+	GameState.perk_points -= 1
+	return true
+
+## Respec-Kosten: „Neuverdrahtung des Rechenkerns" (Gold + 1 Dampfkern).
+static func respec_cost() -> Dictionary:
+	return { "gold": 150 + GameState.level * 20, "kern": 1 }
+
+## Respec (erst nach dem Erwachen): erstattet alle Ränge als Punkte, leert die Perks, zieht Kosten ab.
+static func do_respec() -> bool:
+	if not GameState.is_revealed:
+		return false
+	var c: Dictionary = respec_cost()
+	if GameState.gold < int(c["gold"]) or GameState.item_count("dampfkern") < int(c["kern"]):
+		return false
+	var refunded: int = 0
+	for pid in GameState.perks:
+		refunded += int(GameState.perks[pid])
+	GameState.gold -= int(c["gold"])
+	GameState.remove_item("dampfkern", int(c["kern"]))
+	GameState.perks = {}
+	GameState.perk_points += refunded
+	return true

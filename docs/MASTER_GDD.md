@@ -1315,9 +1315,14 @@ Biom-Zonierung (§1.6.3) bereits nach `WorldManager` portiert ist.
 | **Mini-Dungeons & Unique-Champions** | `critter_hall`/`spawnUniqueLeader` | `EncounterManager` | ✅ portiert (§8.2); Champion-Beute erzeugt echtes Legendary via `ProgressionManager` |
 | **Erinnerungs-Walzen & Familien-Bogen** | `MEMORIES`/`playMemorial` | `MemoryManager` | ✅ portiert (§8.3) |
 | **Kampf-Lesbarkeit** (Effekt/Status/Klasse) | `eff`/`popEff`/Chip | Präsentations-Layer (View) | ⬜ offen (§8.4) |
-| Abstieg-Biome (Rift) | `ABYSS_BIOMES` | `RiftManager` (neu) | ⬜ offen |
+| Abstieg-Biome (Rift) | `ABYSS_BIOMES`/`ABYSS_MODS` | `RiftManager` | ✅ portiert |
 | Itemization (Seltenheiten, Affixe, Legendaries), Tech-Module | `RARITY`/`makeGear`/`LEGENDARIES`/`makeTech` | `ProgressionManager` | ✅ portiert |
-| Perks (Fallout-Baum: Zweige/Tiers/Capstones/Respec) | `PERKS` | `ProgressionManager` | ⬜ offen (Folge-Port) |
+| Perks (Fallout-Baum: Zweige/Tiers/Capstones/Respec) | `PERKS` | `ProgressionManager` | ✅ portiert |
+
+> **Stand:** Die **gesamte Spiel-Logik** ist ins Godot-Backend portiert und **headless verifiziert**
+> (Godot 4.3.stable, `godot --headless --path godot` → **208/208 Checks, Exit 0**). Offen bleibt allein
+> die **Präsentations-/Render-Schicht** (Kampf-Lesbarkeit §8.4, 3D-Szenen/Assets, Audio, UI) — kein
+> Logik-Port mehr, sondern View-Arbeit auf dem fertigen, getesteten Fundament.
 
 ## 8.2 Mini-Dungeons & Unique-Champions (Backend-Spec)
 * **Instanz-Modell:** Jeder verstreute 🕳️-Eingang (`POIS`-Einträge `typ:"critter_hall"` mit
