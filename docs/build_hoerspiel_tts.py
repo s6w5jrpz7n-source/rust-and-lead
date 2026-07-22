@@ -76,7 +76,7 @@ for raw in SRC.read_text(encoding="utf-8").splitlines():
                "BLENDE": "transition", "HARTER SCHNITT": "transition"}[kind]
         seq += 1
         events.append({"seq": seq, "folge": folge, "szene": szene, "typ": typ,
-                       "rolle": "", "voice_id": "", "regie": body if body else kind,
+                       "rolle": "", "voice_id": "", "delivery": "", "regie": body if body else kind,
                        "text": "", "spoken": False})
         continue
     ml = LINE_PAT.match(line)
@@ -87,19 +87,23 @@ for raw in SRC.read_text(encoding="utf-8").splitlines():
         if not text:
             continue
         v = VOICES.get(rolle, {"voice_id": "V_" + re.sub(r"[^A-Z]", "", rolle.upper())[:8] or "V_X", "hint": ""})
+        delivery = "gedanke" if re.match(r"\s*[Gg]edanke\b", regie) else "gesprochen"
         fx = ""
-        if rolle == "HELD":
-            if folge >= 2 or szene == "1.8":
-                fx = "doppel-timbre (Ring-Mod-Unterton)"
+        if delivery == "gedanke":
+            fx = "Gedanke — intim/close-mic, leiser, leichter Hall, keine Raum-Atmo"
+            if rolle == "HELD" and folge >= 2:
+                fx += " · Doppel-Timbre gedämpft"
+        elif rolle == "HELD" and (folge >= 2 or szene == "1.8"):
+            fx = "doppel-timbre (Ring-Mod-Unterton)"
         seq += 1
         events.append({"seq": seq, "folge": folge, "szene": szene, "typ": "line",
-                       "rolle": rolle, "voice_id": v["voice_id"], "regie": regie,
-                       "text": text, "spoken": True, "fx": fx})
+                       "rolle": rolle, "voice_id": v["voice_id"], "delivery": delivery,
+                       "regie": regie, "text": text, "spoken": True, "fx": fx})
 
 # JSON mit Meta + Voice-Map
 doc = {
     "titel": "RUST & LEAD — Hörspiel (Rebellen-Kanon)",
-    "hinweis": "TTS-fertige Zeilenliste, generiert aus docs/HOERSPIEL.md. Filtere spoken==true für reine Sprachausgabe; typ in {atmo,music,sfx,transition} sind nicht gesprochene Timeline-Events für den Mix.",
+    "hinweis": "TTS-fertige Zeilenliste, generiert aus docs/HOERSPIEL.md. Filtere spoken==true für reine Sprachausgabe; typ in {atmo,music,sfx,transition} sind nicht gesprochene Timeline-Events für den Mix. delivery=='gedanke' = innerer Monolog (intim, leiser, leichter Hall, keine Raum-Atmo).",
     "voices": VOICES,
     "events": events,
 }
@@ -108,13 +112,15 @@ OUT_JSON.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf
 # CSV (flach)
 with OUT_CSV.open("w", encoding="utf-8", newline="") as f:
     w = csv.writer(f)
-    w.writerow(["seq", "folge", "szene", "typ", "rolle", "voice_id", "regie", "text"])
+    w.writerow(["seq", "folge", "szene", "typ", "rolle", "voice_id", "delivery", "regie", "text"])
     for e in events:
         w.writerow([e["seq"], e["folge"], e["szene"], e["typ"], e["rolle"],
-                    e["voice_id"], e["regie"], e["text"]])
+                    e["voice_id"], e.get("delivery", ""), e["regie"], e["text"]])
 
 lines = [e for e in events if e["spoken"]]
 print(f"Events gesamt: {len(events)} | gesprochene Zeilen: {len(lines)}")
 from collections import Counter
 print("Zeilen je Rolle:", dict(Counter(e["rolle"] for e in lines)))
 print("Events je Typ:", dict(Counter(e["typ"] for e in events)))
+ged = [e for e in lines if e.get("delivery") == "gedanke"]
+print(f"Gedanken-Zeilen: {len(ged)} -> " + "; ".join(f"{e['szene']} „{e['text'][:32]}…\"" for e in ged))

@@ -68,17 +68,19 @@ REGIE_RULES = [
     (("keuchend", "müde", "heiser"),                             (-4, -2,  -4)),
 ]
 
-def prosody_for(role, regie):
+def prosody_for(role, regie, delivery="gesprochen"):
     r, p, v = ROLE_PROSODY.get(role, DEFAULT_PROSODY)
     low = (regie or "").lower()
     for keys, (dr, dp, dv) in REGIE_RULES:
         if any(k in low for k in keys):
             r += dr; p += dp; v += dv
+    if delivery == "gedanke":          # innerer Monolog: intim, leiser, etwas langsamer
+        r += -4; v += -16; p += -1
     clamp = lambda x: max(-50, min(50, x))
     return clamp(r), clamp(p), clamp(v)
 
-def build_ssml(voice, text, role, regie):
-    r, p, v = prosody_for(role, regie)
+def build_ssml(voice, text, role, regie, delivery="gesprochen"):
+    r, p, v = prosody_for(role, regie, delivery)
     fmt = lambda n: (f"+{n}%" if n >= 0 else f"{n}%")
     return (
         '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
@@ -114,15 +116,18 @@ def main():
             speechsdk.SpeechSynthesisOutputFormat.Riff24Khz16BitMonoPcm)
         speechsdk_ref = speechsdk
 
-    fx_files = []
+    timbre_files, gedanke_files = [], []
     for e in lines:
         role = e["rolle"]
         voice = role_voice.get(role)
         if not voice:
             print(f"  · seq {e['seq']}: keine Stimme für Rolle '{role}' — übersprungen")
             continue
+        delivery = e.get("delivery", "gesprochen")
         base = f"f{e['folge']}_{e['seq']:03d}_{role.replace(' ', '')}"
-        ssml = build_ssml(voice, e["text"], role, e.get("regie", ""))
+        if delivery == "gedanke":
+            base += "_GEDANKE"
+        ssml = build_ssml(voice, e["text"], role, e.get("regie", ""), delivery)
 
         if DRY_RUN:
             (OUT_DIR / (base + ".ssml.xml")).write_text(ssml, encoding="utf-8")
@@ -133,9 +138,12 @@ def main():
         s = speechsdk_ref.SpeechSynthesizer(speech_config=cfg, audio_config=audio_cfg)
         res = s.speak_ssml_async(ssml).get()
         if res.reason == speechsdk_ref.ResultReason.SynthesizingAudioCompleted:
-            tag = "  (Post-FX: Doppel-Timbre)" if e.get("fx") else ""
-            if e.get("fx"):
-                fx_files.append(wav.name)
+            tags = []
+            if delivery == "gedanke":
+                gedanke_files.append(wav.name); tags.append("Gedanke: Hall/close-mic")
+            elif e.get("fx"):
+                timbre_files.append(wav.name); tags.append("Doppel-Timbre")
+            tag = ("  (Post-FX: " + ", ".join(tags) + ")") if tags else ""
             print(f"  ✓ {wav.name}{tag}")
         else:
             det = getattr(res, "cancellation_details", None)
@@ -145,10 +153,15 @@ def main():
         print("Fertig (SSML). Kein Azure-Aufruf.")
     else:
         print("Fertig.")
-        if fx_files:
+        if timbre_files:
             print("\nDoppel-Timbre nachträglich auf diese HELD-Dateien legen "
                   "(Ringmodulator/Pitch-Layer in Audacity oder ffmpeg):")
-            for n in fx_files:
+            for n in timbre_files:
+                print("   ", n)
+        if gedanke_files:
+            print("\nGedanken-Zeilen: leichten Hall + Nahbesprechungs-EQ in Post legen, "
+                  "Raum-Atmo weglassen:")
+            for n in gedanke_files:
                 print("   ", n)
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisun
 
 - `ERZÄHLER:` — trägt alles, was das Auge sehen würde, ins Ohr. Trocken, lakonisch, Sergio-Leone-Ruhe.
 - `FIGUR (Regie):` — Dialog. Die Klammer sagt der Stimme, *wie*.
+- `FIGUR (Gedanke — …):` — **innerer Monolog**, nicht laut gesprochen. Klanglich abgesetzt: intime Nahbesprechung, leiser, leichter Hall, *keine* Raum-Atmo. Bewusst nur an wenigen Schlüsselstellen — der Normalfall dieses Helden ist laut ausgesprochene Rede (er *sagt* seine Wahrheit, zu sich, zu Toten, zu Objekten).
 - `[ATMO: …]` — durchlaufender Hintergrund-Klangteppich (Ambience-Bett).
 - `[MUSIK: …]` — Score-Einsatz; die Leitmotive stehen unten.
 - `[GERÄUSCH: …]` — punktuelles Sound-Effekt-Ereignis.
@@ -266,7 +267,7 @@ Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisun
 
 **ERZÄHLER (nüchtern, wie Systemmeldungen):** System-Neustart. Sensor-Illusion — Desynchronisation. Protokoll: Wahrheit. — Du bist keine Kreatur aus Fleisch. Du bist eine Maschine.
 
-**HELD (die Stimme kippt mitten im Satz von menschlich ins Doppel-Timbre):** Nein. Nein, ich — ich hab doch geblutet. Ich hab doch … *(berührt die eigene Wange — GERÄUSCH: es klirrt leise)* … Ich hab doch **geträumt**.
+**HELD (Gedanke — fassungslos, nach innen; noch reine Menschenstimme, das Doppel-Timbre kommt erst danach):** Nein. Nein, ich — ich hab doch geblutet. Ich hab doch … *(berührt die eigene Wange — GERÄUSCH: es klirrt leise)* … Ich hab doch **geträumt**.
 
 **ERZÄHLER:** Und dann tut er das Furchtbarste. Er lacht. Ein kurzes, kaputtes Lachen — halb Schluchzen, halb ein Ventil, das Druck ablässt.
 
@@ -352,7 +353,7 @@ Das hier ist ein **Hörspiel-Textbuch**: sprechfertig, mit Rollen, Regieanweisun
 
 [GERÄUSCH: Die Kurbel verharrt. Nur noch der Öltropfen.]
 
-**HELD:** Kinder winken nie zweimal gleich.
+**HELD (Gedanke — die Erkenntnis dämmert, nach innen):** Kinder winken nie zweimal gleich.
 
 [MUSIK: Das Familien-Motiv verzieht sich einen Halbton ins Falsche.]
 [BLENDE]
@@ -581,6 +582,7 @@ Die Story-Bibel enthält sieben Nebenbögen, die sich als Einzel-Folgen des Hör
 3. **Das Herz-Motiv ist eine Falle.** Von Szene 1.1 an präsent, entpuppt es sich im Finale als Vanes Puls. Nicht zu früh auflösen.
 4. **Nicht zeigen = am lautesten.** Das Massaker von Providence Cut ist ein Kolbenschlag und dann Sekunden Stille. Die Stille ist der Ton.
 5. **Das Familien-Motiv verrottet mit.** Anfangs schön, dann leiernd, dann zerschnitten — und am Schluss (Beisetzung unter freiem Himmel) zum ersten Mal wieder rein. Der Klang der Trauerarbeit.
+6. **Gedanke ≠ Rede.** Der Held *spricht* seine Wahrheit fast immer laut — das ist Signatur. Genau zwei Stellen sind echte Gedanken (Reveal: „…ich hab doch geträumt"; Projektor: „Kinder winken nie zweimal gleich"): nach innen, intim, mit leichtem Hall, ohne Raum-Atmo. Der Kontrast zum sonst lauten Denken macht sie größer.
 
 ---
 
@@ -592,7 +594,7 @@ Für die Vertonung per Sprachsynthese liegt dieses Skript zusätzlich als **stru
 - **`docs/hoerspiel_tts.csv`** — dieselben Ereignisse flach (Tabelle/Import).
 - **`docs/build_hoerspiel_tts.py`** — der Generator (`python3 docs/build_hoerspiel_tts.py`); nach jeder Skript-Änderung neu laufen lassen, dann bleiben JSON/CSV synchron.
 
-**Schema je Event:** `seq` (Reihenfolge) · `folge` · `szene` · `typ` (`line` = gesprochen; `atmo`/`music`/`sfx`/`transition` = nicht gesprochene Mix-Cues) · `rolle` · `voice_id` (Platzhalter, auf eine konkrete TTS-Stimme mappen) · `regie` (Tonfall/Anweisung — als Voice-Directing bzw. für SSML `rate`/`pitch`) · `text` (reiner Sprechtext, ohne Regie-Klammern) · `fx` (z. B. Doppel-Timbre des Helden ab Folge 2).
+**Schema je Event:** `seq` (Reihenfolge) · `folge` · `szene` · `typ` (`line` = gesprochen; `atmo`/`music`/`sfx`/`transition` = nicht gesprochene Mix-Cues) · `rolle` · `voice_id` (Platzhalter, auf eine konkrete TTS-Stimme mappen) · `delivery` (`gesprochen` oder `gedanke` = innerer Monolog, intim/mit Hall) · `regie` (Tonfall/Anweisung — als Voice-Directing bzw. für SSML `rate`/`pitch`) · `text` (reiner Sprechtext, ohne Regie-Klammern) · `fx` (z. B. Doppel-Timbre des Helden ab Folge 2, bzw. die Gedanken-Behandlung).
 
 **Pipeline in Kürze:** `spoken == true` filtern → je Zeile `voice_id` auf eine Stimme abbilden, `text` synthetisieren, `regie`/`fx` als Prosodie/Effekt anwenden → in `seq`-Reihenfolge mit den `atmo`/`music`/`sfx`-Cues zu Folgen mischen.
 

@@ -1,207 +1,207 @@
-seq,folge,szene,typ,rolle,voice_id,regie,text
-1,1,1.1,atmo,,,"Wüstenwind, weit und leer. Ein einzelner Geier, fern.",
-2,1,1.1,music,,,"HERZ-/KOLBEN-MOTIV, sehr fern, sehr tief — man weiß nicht, ist es ein Herzschlag oder ein Kolben.",
-3,1,1.1,line,ERZÄHLER,V_ERZAEHLER,,"In der Wüste gibt es zwei Sorten Männer. Die, die begraben werden. Und die, die vergessen haben, dass man sie begraben hat."
-4,1,1.1,sfx,,,"Eine Hand krallt sich in trockenen Sand. Stoff schleift. Ganz leise, kaum zu hören, ein sauberes metallisches Klicken.",
-5,1,1.1,line,HELD,V_HELD,"heiser, an sich gepresst",Mein Kopf … Wie heiß ich?
-6,1,1.1,line,ERZÄHLER,V_ERZAEHLER,,Er sieht an sich herab. Staubmantel. Stiefel. Ein Karabiner im Sand.
-7,1,1.1,line,HELD,V_HELD,"leiser, verloren",… Wie heiß ich?
-8,1,1.1,sfx,,,"Er hebt den Karabiner auf, repetiert einmal durch — die Bewegung sitzt perfekt, geübt, selbstverständlich.",
-9,1,1.1,line,ERZÄHLER,V_ERZAEHLER,,"Die Waffe liegt in seiner Hand, als hätte sie nie woanders gelegen. Sein Körper erinnert sich an Dinge, die sein Kopf nicht kennt."
-10,1,1.1,line,HELD,V_HELD,fasst einen Entschluss,"Da, wo Rauch ist, ist Feuer. Wo Feuer ist, sind Leute. Und wo Leute sind, weiß vielleicht einer, wer ich bin."
-11,1,1.1,music,,,Das Kolben-Motiv verklingt. Wind trägt es davon.,
-12,1,1.1,transition,,,BLENDE,
-13,1,1.2,atmo,,,"Der Wind legt sich. Von fern schwillt es an: ein verstimmtes Klavier, Stimmengewirr, klirrende Gläser.",
-14,1,1.2,music,,,"SALOON-KLAVIER, tapfer und schief.",
-15,1,1.2,line,ERZÄHLER,V_ERZAEHLER,,"Rustwater. Windschiefe Häuser aus Bahnschwellen und Kesselblech. Ein rostiger Wasserturm, an den jemand mit Teer den Namen der Stadt gepinselt hat — das W tropft seit Jahren. Und an jeder dritten Wand: das Zahnrad der Iron Rail, durchbohrt von einer Schiene wie von einem Schwert."
-16,1,1.2,sfx,,,Eine schwere Saloontür schwingt auf. Das Stimmengewirr dämpft sich einen Moment — der Fremde ist eingetreten.,
-17,1,1.2,line,MABEL,V_MABEL,"rau, gemustert","Tür zu, Fremder. Der Staub zahlt keine Zeche. Du siehst aus, als hätte dich die Wüste ausgespuckt, weil du ihr nicht geschmeckt hast."
-18,1,1.2,line,HELD,V_HELD,müde,"Fühlt sich auch so an. Ich such … Ehrlich gesagt weiß ich nicht, was ich suche. Ich weiß nicht mal, wie ich heiße."
-19,1,1.2,line,ERZÄHLER,V_ERZAEHLER,,Mabel hört auf zu wischen. Ein Schlag Stille.
-20,1,1.2,sfx,,,Eine Flasche gluckert; ein Glas wird über den Tresen geschoben.,
-21,1,1.2,line,MABEL,V_MABEL,weicher,"Hm. Kein Name, keine Vergangenheit, keine Schulden. Manche Männer reiten ihr Leben lang gen Westen, um das zu kriegen, was du gratis hast. — Aufs Haus, Kleiner."
-22,1,1.2,line,HELD,V_HELD,,"Warum „Kleiner""? Ich bin einen Kopf größer als Sie."
-23,1,1.2,line,MABEL,V_MABEL,,"Weil jeder, der in meinen Saloon kommt und nicht weiß, wer er ist, nochmal ganz von vorn anfängt. Und Neugeborene sind klein. Trink."
-24,1,1.2,sfx,,,"Er trinkt. Kein Zischen, kein Luftholen, kein Verziehen — beim schärfsten Fusel des Territoriums. Ganz kurz: Mabels Wischen stockt.",
-25,1,1.2,line,ERZÄHLER,V_ERZAEHLER,,Die Welt bemerkt die Wahrheit ständig. Sie will sie nur nicht sehen.
-26,1,1.2,line,MABEL,V_MABEL,Geschäftston,"Also. Arbeit. Draußen an der Südsenke hocken Wegelagerer und pressen jeden Karren aus, der zu uns will. Der Konzern rührt keinen Finger — Iron Rail schützt Schienen, keine Menschen. Acht von dem Gesindel weniger, und Rustwater schuldet dir was. Ich zahl in Gold, nicht in Dankbarkeit. Dankbarkeit rostet."
-27,1,1.2,line,HELD,V_HELD,"steht auf, nimmt den Karabiner",Gold rostet auch nicht schlecht.
-28,1,1.2,line,MABEL,V_MABEL,ruft ihm nach,"He, Fremder! Wenn die Wüste dich fragt, wer du bist — lass sie nicht antworten. Antworte selbst."
-29,1,1.2,music,,,Klavier setzt einen Akzent. Dann Wüstenwind.,
-30,1,1.2,transition,,,BLENDE,
-31,1,1.3,atmo,,,"Gleißender Mittag, Zikaden, tropfendes Wasser aus einem umgestürzten Fass.",
-32,1,1.3,line,ERZÄHLER,V_ERZAEHLER,,"Eine Wasserstelle am Rand der Wüste. Vier Konzern-Konstrukte in Schützenlinie — mannshohe Automaten, Dampf aus den Nackenventilen — eskortieren einen Menschen in makelloser grauer Uniform. Vor ihnen kniet ein alter Siedler an seinem Fass."
-33,1,1.3,sfx,,,Eine Messing-Lochkarte klackt in Position.,
-34,1,1.3,line,PATROUILLENFÜHRER,V_PATROUILLE,"beamtenkalt, ohne aufzusehen","Wasserentnahme ohne Konzession, Paragraph neun. Das Fass ist konfisziert. Der Rest ist Verwaltungsgebühr."
-35,1,1.3,line,HELD,V_HELD,"tritt hinzu, ruhig","Das Fass gehört ihm. Das Wasser fällt vom Himmel. Sogar hier, zwei Mal im Jahr."
-36,1,1.3,sfx,,,"Ein einziges, synchrones hydraulisches Zischen — vier Köpfe drehen sich wie einer. Das Grusel-Geräusch der Szene.",
-37,1,1.3,line,PATROUILLENFÜHRER,V_PATROUILLE,"näher, leiser","Der Himmel steht nicht in meinen Büchern. Du schon bald, wenn du den Arm nicht sinken lässt. Ein Rat, Wüstling: Der Konzern zählt alles. Tropfen. Schrauben. Männer, die Fragen stellen. Und was der Konzern gezählt hat, gehört ihm."
-38,1,1.3,sfx,,,"Stiefel und Automatenschritte entfernen sich. Doch einer der Schritte stockt — ein Konstrukt bleibt einen halben Takt zu lang vor dem Helden stehen. Ein leises Ratschen, wie ein Karteikasten, der eine Karte zieht. Dann marschiert es weiter.",
-39,1,1.3,line,ERZÄHLER,V_ERZAEHLER,,Die Maschine hat ihn erkannt. Er wird das erst viel später verstehen.
-40,1,1.3,line,SIEDLER,V_SIEDLER,spuckt aus,"Danke, Mister. Aber merk dir: Die zählen wirklich alles. Und irgendwann holen sie die Rechnung."
-41,1,1.3,transition,,,BLENDE,
-42,1,1.4,atmo,,,Feldlazarett. Petroleumlampe zischelt. Nachtgrillen draußen.,
-43,1,1.4,sfx,,,"Ein Messing-Stethoskop auf der Brust. Stille. Es wird abgesetzt, ausgeklopft wie ein defektes Gerät, neu angesetzt.",
-44,1,1.4,line,DOC ARIS,V_DOC,stirnrunzelnd,"Zwei Wochen Wüste, drei Feuergefechte, und Sie sitzen da wie frisch gebadet. Kein Fieber. Keine Blasen. Ihr Herz, Fremder … schlägt wie ein Metronom. Kein Stolpern, kein Rauschen. Ich höre so etwas sonst nur bei — — bei gar niemandem, ehrlich gesagt."
-45,1,1.4,line,HELD,V_HELD,,Ist das schlimm?
-46,1,1.4,sfx,,,"Er nimmt die Brille ab, putzt sie — sein Tick, wenn er lügt.",
-47,1,1.4,line,DOC ARIS,V_DOC,zu beiläufig,"Schlimm? Nein. Nein, das ist … eine zähe Konstitution. Ein Geschenk. Fremder. Falls Ihnen je etwas an sich selbst … merkwürdig vorkommt. Kommen Sie zuerst zu mir. Nicht zum Konzern. Niemals zum Konzern."
-48,1,1.4,line,HELD,V_HELD,,Warum sollte der Konzern sich für mein Herz interessieren?
-49,1,1.4,line,DOC ARIS,V_DOC,"wieder ganz Arzt, setzt die Brille auf","Der Konzern interessiert sich für alles, was läuft, ohne bezahlt zu werden. — Nächster Patient!"
-50,1,1.4,transition,,,BLENDE,
-51,1,1.5,atmo,,,Tief unter Tage. Tropfen hallen. Sehr fern ein Dröhnen — etwas Großes wälzt sich im Dunkel.,
-52,1,1.5,line,ERZÄHLER,V_ERZAEHLER,,"Drei Ebenen abwärts, in der Schatzkammer der Schrott-Mine. Zwischen Erzbrocken eine zerdrückte Konzern-Kiste. Der Stempel: PSALM-PROGRAMM. Eigentum der Iron Rail. Zugriff nur Direktorat. Darin eine einzelne Kinetoskop-Rolle, mit Wachs versiegelt. Ins Wachs geprägt: eine Zahl."
-53,1,1.5,sfx,,,Metall dreht sich langsam im Lampenlicht. Ein Daumen reibt über eine Prägung.,
-54,1,1.5,line,HELD,V_HELD,leise,Dreizehn. Warum kenn ich dich?
-55,1,1.5,sfx,,,"Aus der Tiefe ein Dröhnen, näher jetzt. Die Lampe flackert — hörbar am Sirren des Fadens.",
-56,1,1.5,line,ERZÄHLER,V_ERZAEHLER,,An der Wand tanzt sein Schatten. Und für einen Herzschlag hat der Schatten die falsche Silhouette: zu breite Schultern. Rohre am Rücken.
-57,1,1.5,music,,,"Ein einzelner, kalter Ton. Bruch.",
-58,1,1.5,transition,,,BLENDE,
-59,1,1.6,atmo,,,"Schmiedefeuer, leises Prasseln. Ein feines mechanisches Surren — Silas' Kupferlinse.",
-60,1,1.6,sfx,,,"Die Linse fährt auf und zu, fokussiert.",
-61,1,1.6,line,SILAS,V_SILAS,"bedächtig, dann ernst","Konzernwachs. Direktoratssiegel. Und 'ne Chiffre, die meine Linse zum Weinen bringt. Junge, ich sag dir das als Freund: Wirf das Ding in den tiefsten Schacht und vergiss den Weg dahin."
-62,1,1.6,line,HELD,V_HELD,,"Da stand meine Zahl drauf, Silas. Frag mich nicht, woher ich das weiß. Ich weiß es einfach."
-63,1,1.6,line,ERZÄHLER,V_ERZAEHLER,,Eine lange Pause. Die Kupferlinse fixiert ihn. Das müde Menschenauge weicht aus.
-64,1,1.6,line,SILAS,V_SILAS,,"… Es gibt 'nen Zug. Jeden Monat, Richtung Norden, Waggons versiegelt wie Särge. PSALM-Fracht. Was immer der Konzern dir genommen hat — wenn's Antworten gibt, fahren sie erster Klasse. Aber Züge überfällt man nicht, Junge. Züge überlebt man. Höchstens."
-65,1,1.6,line,HELD,V_HELD,,Dann werd ich überleben. Das kann ich anscheinend gut.
-66,1,1.6,transition,,,BLENDE,
-67,1,1.7,atmo,,,"Sturm. Peitschender Regen. Ein fahrender Panzerzug — Räder auf Schienen, rhythmisch, schnell. Überdruck zischt ab.",
-68,1,1.7,music,,,"HERZ-/KOLBEN-MOTIV, härter, schneller — zum ersten Mal aggressiv.",
-69,1,1.7,line,ERZÄHLER,V_ERZAEHLER,,"Nacht. Ein Gewitter. Auf dem Flachwagen steht breitbeinig der Zugmeister der Iron Rail — Kolben-Jack, zwei Meter, den rechten Arm ersetzt durch eine dampfgetriebene Ramme. Hinter ihm der versiegelte Waggon mit der Dreizehn."
-70,1,1.7,line,KOLBEN-JACK,V_JACK,"brüllt gegen den Wind, fast fröhlich","Ich hab Männer unter Räder fallen sehen und Räder auf Männer! Aber du bist der Erste, der FREIWILLIG auf meinen Zug steigt!"
-71,1,1.7,sfx,,,Die Ramme schnellt vor — WHAM — der ganze Wagen bebt.,
-72,1,1.7,line,KOLBEN-JACK,V_JACK,,Der Direktor zahlt für blinde Passagiere in Schrottpreisen!
-73,1,1.7,line,HELD,V_HELD,"ruhig, gegen den Sturm",Ich will nur einen Waggon. Den mit der Dreizehn.
-74,1,1.7,line,ERZÄHLER,V_ERZAEHLER,,"Jack erstarrt. Zum ersten Mal weicht das Grinsen. Er tritt näher, mustert das Gesicht des Helden im Blitzlicht — und etwas wie Erkennen, wie Aberglaube, flackert in ihm auf."
-75,1,1.7,line,KOLBEN-JACK,V_JACK,"leiser, Angst kriecht rein",… Nein. Neinneinnein. Dich ham sie doch abgeschrieben. Dich ham sie in die Wüste — EINHEIT—
-76,1,1.7,sfx,,,"Er spricht es nicht zu Ende. Donner. Der Bosskampf beginnt — Rammenschläge, splitterndes Holz. Mit jedem Treffer in den Waggon dahinter ein neues Geräusch: metallisches Klirren, tausendfach. Regale voller Messingwalzen.",
-77,1,1.8,atmo,,,Regen und Zug treten ganz in den Hintergrund.,
-78,1,1.8,line,ERZÄHLER,V_ERZAEHLER,,Der Held hat Jack an den Rand gedrängt. Da zündet Jack den Notdruck.
-79,1,1.8,sfx,,,Ein Kreischen wie von tausend Kesseln — die Ramme fährt aus und trifft den Helden voll in die Brust.,
-80,1,1.8,sfx,,,Er durchschlägt eine Wand. Holz splittert. Ein Kartentisch zerbirst. Kristallgläser klingen wie gefrorener Regen. Er schlittert über Parkett.,
-81,1,1.8,line,ERZÄHLER,V_ERZAEHLER,,"Er schlittert auf die gegenüberliegende Wand zu. Dort hängt ein hoher Garderoben-Spiegel. Und alles verstummt — bis auf ein einzelnes, sauberes, mechanisches Ticken, das immer lauter wird. Sein eigenes."
-82,1,1.8,sfx,,,"Ein Spiegel zerbricht sternförmig, dicht, direkt.",
-83,1,1.8,line,ERZÄHLER,V_ERZAEHLER,,"Er hebt den Kopf. Und sieht. In jeder Scherbe ein anderes Fragment. In einer — ein Auge, das keins ist: eine glühende Okular-Iris. In der nächsten — Zähne? Nein: verzahnter Stahl. In der dritten — Rauch, der aus einem Kiefergelenk sickert. Die Haut flackert wie eine schlecht projizierte Aufnahme. Und darunter: ein rauchender, einäugiger Stahl-Schädel. Zahnräder, wo ein Kiefer kauen sollte. Öl, das in den Nähten kocht wie schwarzes Blut."
-84,1,1.8,sfx,,,"Ein hartes System-Klicken, dann ein tiefes Anlaufen wie ein hochfahrender Rechenkern.",
-85,1,1.8,line,ERZÄHLER,V_ERZAEHLER,"nüchtern, wie Systemmeldungen",System-Neustart. Sensor-Illusion — Desynchronisation. Protokoll: Wahrheit. — Du bist keine Kreatur aus Fleisch. Du bist eine Maschine.
-86,1,1.8,line,HELD,V_HELD,die Stimme kippt mitten im Satz von menschlich ins Doppel-Timbre,"Nein. Nein, ich — ich hab doch geblutet. Ich hab doch … Ich hab doch geträumt."
-87,1,1.8,line,ERZÄHLER,V_ERZAEHLER,,"Und dann tut er das Furchtbarste. Er lacht. Ein kurzes, kaputtes Lachen — halb Schluchzen, halb ein Ventil, das Druck ablässt."
-88,1,1.8,sfx,,,"Schulterventile stoßen Dampf ab, in kurzen, harten Stößen.",
-89,1,1.8,line,HELD,V_HELD,"leise, in die Scherben",Wer hat mir mein Gesicht geschuldet … und mit einer Lüge bezahlt?
-90,1,1.8,sfx,,,"Hinter ihm bricht Kolben-Jack durch die Wand, hinkend, die Ramme leckgeschlagen und zischend.",
-91,1,1.8,line,KOLBEN-JACK,V_JACK,"keuchend, Galgenhumor eines toten Mannes","Na. Jetzt weißte's. Weißte was? Ich fahr seit zwanzig Jahren für den Konzern. Und du bist trotzdem der menschlichste Hurensohn, der je auf meinen Zug —"
-92,1,1.8,line,ERZÄHLER,V_ERZAEHLER,,"Der Held erhebt sich. Zum ersten Mal in voller mechanischer Silhouette: Dampf aus den Schulterventilen, das eine Auge eine ruhige, orange Glut."
-93,1,1.8,line,HELD,V_HELD,"neues Doppel-Timbre, sehr ruhig",Runter von meinem Zug.
-94,1,1.8,transition,,,HARTER SCHNITT,
-95,1,1.8,sfx,,,Der gekaperte Panzerzug donnert mit brennender Lok gegen die Iron-Rail-Sprengtore. Stahl birst wie Eis.,
-96,1,1.8,music,,,"HERZ-MOTIV, triumphal-düster, in ein Ende der Folge.",
-97,1,1.8,line,ERZÄHLER,V_ERZAEHLER,,Dahinter: Sektor Zwei. Offen. Bis zum vergifteten Horizont. — Ende der ersten Folge.
-98,2,2.1,atmo,,,"Saloon — aber die Stimmen ersticken schlagartig, als die Tür geht. Ein Glas zerspringt irgendwo.",
-99,2,2.1,music,,,Das Klavier bricht ab.,
-100,2,2.1,line,ERZÄHLER,V_ERZAEHLER,,"Er kehrt zurück als das, was er ist. Der Saloon verstummt. Ein Betrunkener greift zum Revolver — und lässt ihn stecken, weil seine Hand zu sehr zittert. Der Held geht durch eine Gasse aus Blicken zum Tresen. Mabel sieht ihn lange an. Dann bückt sie sich, kramt — und stellt ihm statt des Schnapsglases eine Dose feinstes Schmieröl hin. Mit Untertasse."
-101,2,2.1,line,MABEL,V_MABEL,,Aufs Haus. Wie immer.
-102,2,2.1,sfx,,,"Ventile zischen leise — sein neues „Atemholen"".",
-103,2,2.1,line,HELD,V_HELD,,Du … fragst nicht mal?
-104,2,2.1,line,MABEL,V_MABEL,,"Was fragen? Ob du 'ne Maschine bist? Kleiner, ich schenk seit dreißig Jahren aus. Ich hab Männer aus Fleisch gesehen, die weniger Herz hatten als deine Taschenuhr. Du hast der alten Vess das Dach geflickt. Du hast den Jungen vom Doc aus der Grube getragen. Das warst du. Aus was du dabei warst, ist deine Sache. UND WER DAS ANDERS SIEHT, TRINKT AB SOFORT WOANDERS!"
-105,2,2.1,music,,,Das Klavier setzt wieder ein. Zögernd. Aber es setzt ein.,
-106,2,2.1,transition,,,BLENDE,
-107,2,2.2,atmo,,,Wind auf einer Wehr aus Schienenstahl. Unten exerzieren Arbeiter mit zusammengeflickten Gewehren.,
-108,2,2.2,line,ERZÄHLER,V_ERZAEHLER,,"Drei Fraktionen werben um den wandelnden Stahlkessel. Die Eiserne Gilde bietet Zugriff auf ihre Bücher, die Schmuggler bieten Wege ins alte Leben. Aber nur eine sieht ihn zuerst als Menschen — indem sie ihn hart wie einen behandelt. Auf der Brustwehr von Fort Freedom steht Gideon Cross, die Narbe vom Kinn bis übers Ohr."
-109,2,2.2,line,GIDEON,V_GIDEON,"ohne Begrüßung, hart","Weißt du, was der Konzern aus Menschen macht? Zahlen. Weißt du, was er aus dir gemacht hat? Einen Beweis. Den wandelnden Beweis, dass ihnen nicht mal unser Sterben mehr gehört — sie verwerten es."
-110,2,2.2,line,HELD,V_HELD,,Ich bin nicht dein Beweis. Ich such meine Familie.
-111,2,2.2,line,GIDEON,V_GIDEON,"tritt dicht heran — der Einzige, der dem Helden nie ausweicht","Dann hör mir gut zu, Maschine, denn ich sag das nur einmal: Alles, was der Konzern dir je gezeigt hat, lief durch seine Linsen. Willst du deine Familie finden? Dann brich die Linsen. Wir brechen das Konzern-Monopol — oder sterben beim Versuch. Du hast den Vorteil: Du bist beim Sterben nicht so leicht kleinzukriegen."
-112,2,2.2,sfx,,,"Eine Stahlhand schließt sich um eine vernarbte. Ein fester, kurzer Griff.",
-113,2,2.2,line,HELD,V_HELD,,Dann brechen wir Linsen.
-114,2,2.2,line,ERZÄHLER,V_ERZAEHLER,,"Er ist der Erste, der den Helden nimmt, wie man einen Mann nimmt — nicht vorsichtig wie ein Ding. Die Wahl ist getroffen."
-115,2,2.2,transition,,,BLENDE,
-116,2,2.3,atmo,,,"Ein Unterschlupf aus Wellblech. Nachts. Öl tropft irgendwo im Chassis, wie ein zu langsamer Herzschlag.",
-117,2,2.3,music,,,"FAMILIEN-MOTIV, die Spieluhr — schön, aber man hört sie leiern.",
-118,2,2.3,line,ERZÄHLER,V_ERZAEHLER,,"Der Held ist allein. Er kurbelt den kleinen Kinetoskop-Projektor. An der Wand: seine Frau Liv, lachend, die Tochter Sara auf den Schultern, der Sohn Tom, der winkt. „Komm heim, Jeremiah."" Er sieht es zum hundertsten Mal."
-119,2,2.3,sfx,,,"Die Kurbel — vor, zurück, vor, zurück. Sein Okular fokussiert mit hartem Klicken.",
-120,2,2.3,line,HELD,V_HELD,"leise, tastend","… Sara. Du winkst. Du winkst genauso. Jedes Mal. Dreiundzwanzig Bilder, dann der Blick nach links."
-121,2,2.3,sfx,,,Die Kurbel verharrt. Nur noch der Öltropfen.,
-122,2,2.3,line,HELD,V_HELD,,Kinder winken nie zweimal gleich.
-123,2,2.3,music,,,Das Familien-Motiv verzieht sich einen Halbton ins Falsche.,
-124,2,2.3,transition,,,BLENDE,
-125,2,2.4,atmo,,,Ein Funkraum. Ein zerlegter Projektor surrt; ein Bild flackert an der Wand.,
-126,2,2.4,line,TESS,V_TESS,rattert schnell,"Okay, okay, sieh her: Frame vierhundertzwölf, die Sonne steht links, Schatten fallen rechts — Frame vierhundertdreizehn, Schatten falln LINKS. Die Sonne springt nicht, Großer. Sonnen tun das nicht."
-127,2,2.4,sfx,,,Das Bild hält an — die Kurbel stoppt.,
-128,2,2.4,line,TESS,V_TESS,wird zum ersten Mal langsam,Das ist 'ne Naht. Alchemistischer Bildsatz. Die haben … die haben deine Frau aus zwei verschiedenen Aufnahmen zusammengeklebt. Es tut mir leid. Das da … das ist nirgendwo. Das ist aus einem Labor.
-129,2,2.4,line,HELD,V_HELD,"sehr still, das Okular-Glühen dimmt — die mechanische Blässe","Die Stimme. Sie sagt meinen Namen. „Komm heim, Jeremiah."""
-130,2,2.4,line,TESS,V_TESS,leise,"… Aus wie vielen Botschaften, glaubst du, kann man ein „Komm heim"" zusammenschneiden?"
-131,2,2.4,music,,,"Das Familien-Motiv zerfällt in einzelne, wiederholte Silben — hörbar zerschnitten.",
-132,2,2.4,transition,,,BLENDE,
-133,2,2.5,atmo,,,Aschgraue Dämmerung. Ein toter Weiler an der Smog-Linie. Nur Wind durch verkohlte Balken. Ein Blechschild quietscht.,
-134,2,2.5,line,ERZÄHLER,V_ERZAEHLER,,"Die Ruine von Providence Cut. Verkohlte Balken wie Rippen aus dem Boden. Am Ortseingang ein verbogenes Schild: „Providence Cut — 214 Seelen."" Jemand hat die 214 durchgestrichen. Der Held stellt den Projektor auf einen Mauerrest und fädelt die eine echte Rolle ein — die, die nie hätte überleben dürfen."
-135,2,2.5,sfx,,,"Die Kurbel. Ein Projektor-Surren, das über die tote Stille läuft.",
-136,2,2.5,line,ERZÄHLER,V_ERZAEHLER,,"Die Bilder fallen auf die Ruine selbst — die lebende Stadt, deckungsgleich über ihrem eigenen Skelett. Streikposten an der Bahntrasse. Dann fährt ein Konzernzug ein. Eine Rampe fällt. Und herab schreitet — er. Einheit dreizehn. Neu. Glänzend. Das Okular kalt. Text im Bild: Ersteinsatz. Befehl: Strecke räumen."
-137,2,2.5,line,HELD,V_HELD,"rückwärts stolpernd, die Stimme zerfällt",Nein. Halt das an. Halt das an—
-138,2,2.5,line,ERZÄHLER,V_ERZAEHLER,,"Er hält es nicht an. Die Menge weicht. Eine Frau tritt vor — Liv. Sie tritt der Maschine in den Weg. So, wie man einem Mann in den Weg tritt, den man kennt. Ihr Mund formt ein Wort. Die Rolle hat keinen Ton. Aber jeder liest es: „Jeremiah?"""
-139,2,2.5,sfx,,,"Ein einzelner, schwerer Kolbenschlag. Dann — nichts. Absolute Stille. Mehrere Sekunden.",
-140,2,2.5,line,ERZÄHLER,V_ERZAEHLER,,Der Held steht sehr lange sehr still. Maschinen können das. Dann sinkt er auf die Knie und greift in die Asche.
-141,2,2.5,sfx,,,"Aus seinen Schulterventilen bricht Dampf, in kurzen, harten Stößen — das einzige Schluchzen, zu dem sein Körper fähig ist.",
-142,2,2.5,line,HELD,V_HELD,kaum hörbar,Ich hab euch nicht verloren. Ich wurde auf euch abgefeuert.
-143,2,2.5,sfx,,,"Er nimmt das Schild, rammt es gerade in die Erde. Ein glühender Fingerstahl zischt über Metall — er schreibt.",
-144,2,2.5,line,ERZÄHLER,V_ERZAEHLER,,Unter die durchgestrichene 214 schreibt er eine Ziffer. Plus eins.
-145,2,2.5,line,HELD,V_HELD,"zur toten Stadt, ganz ruhig; der Zorn ist jetzt kalt","Der Mann, der euer war, ist hier gestorben. Was übrig ist, gehört ab heute niemandem mehr — außer der Rechnung. Und die stell ich zu. Frei Haus. Bis ins Eiserne Herz."
-146,2,2.5,music,,,"HERZ-MOTIV, kalt und entschlossen, ins Ende der Folge.",
-147,2,2.5,line,ERZÄHLER,V_ERZAEHLER,,Ende der zweiten Folge.
-148,3,3.1,atmo,,,"Lazarett, Nacht. Doc näht Verwundete nach einem Goliath-Überfall. Gedämpftes Stöhnen, Instrumente klirren.",
-149,3,3.1,line,DOC ARIS,V_DOC,"näht, ohne aufzusehen","Ich habe damals gelogen, wissen Sie. „Zähe Konstitution."" Ich hab's geahnt und geschwiegen, weil ich dachte, ich schütze Sie. Sagen Sie mir eins, ehrlich, von Arzt zu … Patient: Wenn das hier vorbei ist — was wollen Sie dann noch sein?"
-150,3,3.1,line,HELD,V_HELD,,"Ich dachte lang, ich will wieder Mensch sein. Jetzt will ich nur noch einer sein, bei dem's einen Unterschied macht."
-151,3,3.1,line,DOC ARIS,V_DOC,sieht ihn über die Brille an,"… Das, mein Freund, ist die gesündeste Diagnose in diesem ganzen verdammten Territorium."
-152,3,3.1,transition,,,BLENDE,
-153,3,3.2,atmo,,,Eine gesprengte Pipeline brennt. Nacht. Feuer knistert groß.,
-154,3,3.2,line,ERZÄHLER,V_ERZAEHLER,,"Aus dem Feuerschein flackert eine überlebensgroße Projektion auf. Direktor Cornelius Vane. Ein väterliches Gesicht, wachsglatt, freundliche Augen. Und die Projektion sieht den Helden direkt an — sie ist nicht aufgezeichnet."
-155,3,3.2,music,,,"STAHL-CHORAL, sehr leise, unter Vanes Stimme.",
-156,3,3.2,line,VANE,V_VANE,"warm, wie ein Arzt am Krankenbett","Dreizehn. Du siehst mitgenommen aus. Ich verüble dir nichts davon. Ein Instrument, das sich verstimmt, klagt man nicht an — man stimmt es neu. Komm nach Norden. Ich habe, was du suchst: nicht Vergebung — die ist Aberglaube. Wiederherstellung. Ich kann sie dir zurückgeben, weißt du. Bild für Bild. Wort für Wort. Sie würden dich nie wieder verlassen. Und nie wieder altern. — Nun: Was ist ein Himmel mehr, nur weil er aus Messing ist?"
-157,3,3.2,sfx,,,Ein einzelner Karabiner-Schuss. Glas — die Projektionslinse — zersplittert.,
-158,3,3.2,line,HELD,V_HELD,in die Dunkelheit,Meine Familie hat einen Namen gehabt. Du kriegst nicht mal ein Echo davon.
-159,3,3.2,transition,,,BLENDE,
-160,3,3.3,atmo,,,"Saloon nach Sperrstunde. Stühle auf den Tischen. Sehr leise, sehr intim.",
-161,3,3.3,line,ERZÄHLER,V_ERZAEHLER,,Nur Mabel und der Held. Sie schenkt sich einen Schnaps ein und ihm ein Öl.
-162,3,3.3,sfx,,,"Glas gegen Blech — ein kleines, absurdes, perfektes Geräusch.",
-163,3,3.3,line,MABEL,V_MABEL,,"Weißt du noch, was ich dir am ersten Abend gesagt hab? Wenn die Wüste dich fragt, wer du bist —"
-164,3,3.3,line,HELD,V_HELD,,"— lass sie nicht antworten. Antworte selbst. Ich hab lang gebraucht, Mabel. Aber ich hab jetzt eine Antwort."
-165,3,3.3,line,MABEL,V_MABEL,,Und die wär?
-166,3,3.3,line,HELD,V_HELD,,"Ich bin das, was der Konzern gebaut hat — und nicht bestellen wollte. Auf Rustwater."
-167,3,3.3,line,MABEL,V_MABEL,rau,"Auf dich, Kleiner. Komm heim."
-168,3,3.3,sfx,,,Er erstarrt fast unmerklich bei den zwei Worten — ein winziges Ventil-Stocken.,
-169,3,3.3,line,MABEL,V_MABEL,"leise, und sie meint es GENAU deshalb","Ich sag's, wie ich's mein. Das hier ist heim. Es war's die ganze Zeit."
-170,3,3.3,music,,,"SALOON-KLAVIER, warm, ein einzelnes Motiv — die Menschlichkeit hält.",
-171,3,3.3,transition,,,BLENDE,
-172,3,3.4,atmo,,,Eine Kathedrale aus Metall. Tausende Messingwalzen rotieren im Leerlauf.,
-173,3,3.4,line,ERZÄHLER,V_ERZAEHLER,,"Das Eiserne Herz, zweite Ebene. Regale, kilometerweit, gefüllt mit Stanzwalzen. Jede trägt ein Namensschild. Jede murmelt Fragmente einer kopierten Seele. Der Held geht die Reihen entlang. Und bleibt stehen. Drei Walzen, nebeneinander. Hale, Liv. Hale, Sara. Hale, Tom."
-174,3,3.4,sfx,,,"Seine Hand schwebt über einer Kurbel. Eine Umdrehung, und er hörte ihre echten Stimmen. Die Hand zieht sich zurück.",
-175,3,3.4,line,HELD,V_HELD,"leise, fest","Nein. Ihr seid keine Aufnahmen. Ich hör euch nicht an. Ich trag euch raus. Ihr habt Wind verdient. Und Wetter. Und Erde, die keinem gehört."
-176,3,3.4,sfx,,,"Eine Brustklappe klickt zu — dort, wo der Kessel am wärmsten ist.",
-177,3,3.4,transition,,,BLENDE,
-178,3,3.5,atmo,,,Die Herzkammer. Ein hausgroßer Kolbenmotor — das Eiserne Herz — schlägt langsam und gewaltig. Sein Schlag ist der Puls des ganzen Konzerns.,
-179,3,3.5,music,,,"HERZ-MOTIV, jetzt in voller Größe — und man erkennt: es war von der ersten Szene an SEIN Puls.",
-180,3,3.5,line,ERZÄHLER,V_ERZAEHLER,,"Der oberste Saal. Vor dem schlagenden Herzen, an einem Schreibtisch aus schwarzem Walnussholz, sitzt Vane und stempelt Papiere, als wäre nichts."
-181,3,3.5,sfx,,,"Ein Stempel. Noch einer. Ruhig, unbeirrt.",
-182,3,3.5,line,VANE,V_VANE,ohne aufzusehen,"Zweihundert Elite-Chassis. Drei Sicherheitsringe. Ein Smog-Gürtel. Ich habe nie an Wunder geglaubt, Dreizehn, aber ich glaube an Stückkosten, und du warst jede einzelne Doppelkrone wert. Willkommen daheim. Du bist das einzige meiner Kinder, das je den Weg zurück gefunden hat."
-183,3,3.5,line,HELD,V_HELD,,Ich bin nicht dein Kind. Ich bin deine Quittung.
-184,3,3.5,line,ERZÄHLER,V_ERZAEHLER,,"Vane steht auf, tritt um den Schreibtisch. Im Licht des Herzens sieht man es: Sein Gesicht wirft keinen Schweiß. Keine Poren. Wachs."
-185,3,3.5,line,VANE,V_VANE,,"Quittung. Gut. Reden wir Zahlen. Providence Cut: zweihundertvierzehn Tote. Die Hungersnot von '88, bevor meine Züge fuhren: elftausend. Ich habe das Sterben in diesem Territorium um neunzig Prozent gesenkt — und man malt mich als Teufel an die Wände, weil ich für den Rest Rechnungen stelle. Und dich … dich habe ich dem Tod persönlich abgekauft, Jeremiah Hale. Du lagst unter einem eingestürzten Stollen, das Rückgrat zermalmt, deine Frau hat an meinem Zug um Hilfe gebettelt — und ich habe geholfen. Auf meine Art. Ich habe den Tod enteignet. Er war ein schlechter Verwalter."
-186,3,3.5,line,HELD,V_HELD,sehr still,Du hast mich gerettet … und dann auf meine eigene Stadt abgefeuert.
-187,3,3.5,line,VANE,V_VANE,"zum ersten Mal ohne Wärme, glatt wie eine Bilanz","Ich habe ein Werkzeug verwendet, das vorhanden war. Sentimentalität wäre Verschwendung gewesen. Sieh dich um, Dreizehn. Jede Walze da unten ist ein Mensch, den ich vor dem Vergessen bewahrt habe. Ich baue den einzigen Himmel, der nachweislich existiert — und du bist mein erster Engel. Komm heim."
-188,3,3.5,sfx,,,Kein Waffenziehen. Stattdessen — eine Glasscherbe wird aus einem Mantel gezogen. Die Spiegelscherbe aus dem Salonwaggon. Er hat sie die ganze Zeit getragen.,
-189,3,3.5,line,HELD,V_HELD,,"Zwei Worte, Direktor. Dieselben, die ihr mir geschenkt habt: Protokoll. Wahrheit."
-190,3,3.5,line,ERZÄHLER,V_ERZAEHLER,,"Vane sieht sein Spiegelbild. Und zuckt. Ein winziges, uraltes Zucken — der erste ehrliche Reflex seit hundert Jahren. Denn in der Scherbe sitzt unter dem Wachs dasselbe wie unter der Illusion des Helden: Stahl. Vane, der erste Transfer, hat sich selbst nie im Spiegel angesehen."
-191,3,3.5,line,VANE,V_VANE,"flüstert, das Wachslächeln hängt schief",Ich bin nicht … ich bin der Direktor—
-192,3,3.5,line,HELD,V_HELD,,"Du bist die älteste Maschine im Raum, die sich für einen Menschen hält. Ich weiß, wie das endet. Es endet hier."
-193,3,3.5,sfx,,,"Das Eiserne Herz beschleunigt. Vane verschmilzt mit der Maschine — der Bosskampf. Kolben-Telegraphs, berstender Stahl, die Halle selbst wird zur Waffe.",
-194,3,3.5,music,,,"HERZ-MOTIV, überwältigend, dann — ein letztes Mal — Stillstand.",
-195,3,3.5,sfx,,,Der große Kolben schlägt ein letztes Mal. Und hält. Absolute Stille.,
-196,3,3.6,atmo,,,"Zum ersten Mal seit fünfzig Jahren totale Stille über dem Territorium. Dann — eine einzelne Schichtglocke, die läutet, einfach weil sie es kann.",
-197,3,3.6,line,ERZÄHLER,V_ERZAEHLER,,"Das Eiserne Herz steht still. Gideon steht am zerstörten Schreibtisch und verbrennt die Schuldbücher, Blatt für Blatt."
-198,3,3.6,sfx,,,"Papier fängt Feuer, Blatt um Blatt.",
-199,3,3.6,line,GIDEON,V_GIDEON,,"Kein neuer Direktor. Kein neuer Thron. Wir verteilen die Schienen an die, die auf ihnen bluten. Und du? Du hast einen Krieg gewonnen, Maschine. Was baust du jetzt?"
-200,3,3.6,line,HELD,V_HELD,,"Was ich nie hatte. Ein Zuhause, das mir keiner eingebaut hat."
-201,3,3.6,music,,,"FAMILIEN-MOTIV — zum ersten Mal wieder rein, unverzerrt, als Spieluhr.",
-202,3,3.6,line,ERZÄHLER,V_ERZAEHLER,,"Epilog. Providence Cut. Er begräbt die drei Walzen unter freiem Himmel. Wind. Er bleibt, bis die Sonne aufgeht."
-203,3,3.6,sfx,,,"Wind über offener Erde — weit, hoch, frei. Am Horizont, wo tausend Meter Kraterwand standen, steht jetzt ein offenes Tor.",
-204,3,3.6,line,ERZÄHLER,V_ERZAEHLER,,"Das Monopol fiel. Die Arbeiter sind frei. Und zum ersten Mal seit Menschengedenken hat der Krater einen offenen Himmel — der Tunnel steht auf, die eingesperrte Welt atmet. In Rustwater aber steht am Tresen eine Dose Öl. Aufs Haus. Wie immer."
-205,3,3.6,music,,,"HERZ-MOTIV, das den Puls des Konzerns war, verklingt endgültig. Nur noch Wind und die Spieluhr.",
-206,3,3.6,line,ERZÄHLER,V_ERZAEHLER,,Ende.
+seq,folge,szene,typ,rolle,voice_id,delivery,regie,text
+1,1,1.1,atmo,,,,"Wüstenwind, weit und leer. Ein einzelner Geier, fern.",
+2,1,1.1,music,,,,"HERZ-/KOLBEN-MOTIV, sehr fern, sehr tief — man weiß nicht, ist es ein Herzschlag oder ein Kolben.",
+3,1,1.1,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"In der Wüste gibt es zwei Sorten Männer. Die, die begraben werden. Und die, die vergessen haben, dass man sie begraben hat."
+4,1,1.1,sfx,,,,"Eine Hand krallt sich in trockenen Sand. Stoff schleift. Ganz leise, kaum zu hören, ein sauberes metallisches Klicken.",
+5,1,1.1,line,HELD,V_HELD,gesprochen,"heiser, an sich gepresst",Mein Kopf … Wie heiß ich?
+6,1,1.1,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Er sieht an sich herab. Staubmantel. Stiefel. Ein Karabiner im Sand.
+7,1,1.1,line,HELD,V_HELD,gesprochen,"leiser, verloren",… Wie heiß ich?
+8,1,1.1,sfx,,,,"Er hebt den Karabiner auf, repetiert einmal durch — die Bewegung sitzt perfekt, geübt, selbstverständlich.",
+9,1,1.1,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Die Waffe liegt in seiner Hand, als hätte sie nie woanders gelegen. Sein Körper erinnert sich an Dinge, die sein Kopf nicht kennt."
+10,1,1.1,line,HELD,V_HELD,gesprochen,fasst einen Entschluss,"Da, wo Rauch ist, ist Feuer. Wo Feuer ist, sind Leute. Und wo Leute sind, weiß vielleicht einer, wer ich bin."
+11,1,1.1,music,,,,Das Kolben-Motiv verklingt. Wind trägt es davon.,
+12,1,1.1,transition,,,,BLENDE,
+13,1,1.2,atmo,,,,"Der Wind legt sich. Von fern schwillt es an: ein verstimmtes Klavier, Stimmengewirr, klirrende Gläser.",
+14,1,1.2,music,,,,"SALOON-KLAVIER, tapfer und schief.",
+15,1,1.2,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Rustwater. Windschiefe Häuser aus Bahnschwellen und Kesselblech. Ein rostiger Wasserturm, an den jemand mit Teer den Namen der Stadt gepinselt hat — das W tropft seit Jahren. Und an jeder dritten Wand: das Zahnrad der Iron Rail, durchbohrt von einer Schiene wie von einem Schwert."
+16,1,1.2,sfx,,,,Eine schwere Saloontür schwingt auf. Das Stimmengewirr dämpft sich einen Moment — der Fremde ist eingetreten.,
+17,1,1.2,line,MABEL,V_MABEL,gesprochen,"rau, gemustert","Tür zu, Fremder. Der Staub zahlt keine Zeche. Du siehst aus, als hätte dich die Wüste ausgespuckt, weil du ihr nicht geschmeckt hast."
+18,1,1.2,line,HELD,V_HELD,gesprochen,müde,"Fühlt sich auch so an. Ich such … Ehrlich gesagt weiß ich nicht, was ich suche. Ich weiß nicht mal, wie ich heiße."
+19,1,1.2,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Mabel hört auf zu wischen. Ein Schlag Stille.
+20,1,1.2,sfx,,,,Eine Flasche gluckert; ein Glas wird über den Tresen geschoben.,
+21,1,1.2,line,MABEL,V_MABEL,gesprochen,weicher,"Hm. Kein Name, keine Vergangenheit, keine Schulden. Manche Männer reiten ihr Leben lang gen Westen, um das zu kriegen, was du gratis hast. — Aufs Haus, Kleiner."
+22,1,1.2,line,HELD,V_HELD,gesprochen,,"Warum „Kleiner""? Ich bin einen Kopf größer als Sie."
+23,1,1.2,line,MABEL,V_MABEL,gesprochen,,"Weil jeder, der in meinen Saloon kommt und nicht weiß, wer er ist, nochmal ganz von vorn anfängt. Und Neugeborene sind klein. Trink."
+24,1,1.2,sfx,,,,"Er trinkt. Kein Zischen, kein Luftholen, kein Verziehen — beim schärfsten Fusel des Territoriums. Ganz kurz: Mabels Wischen stockt.",
+25,1,1.2,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Die Welt bemerkt die Wahrheit ständig. Sie will sie nur nicht sehen.
+26,1,1.2,line,MABEL,V_MABEL,gesprochen,Geschäftston,"Also. Arbeit. Draußen an der Südsenke hocken Wegelagerer und pressen jeden Karren aus, der zu uns will. Der Konzern rührt keinen Finger — Iron Rail schützt Schienen, keine Menschen. Acht von dem Gesindel weniger, und Rustwater schuldet dir was. Ich zahl in Gold, nicht in Dankbarkeit. Dankbarkeit rostet."
+27,1,1.2,line,HELD,V_HELD,gesprochen,"steht auf, nimmt den Karabiner",Gold rostet auch nicht schlecht.
+28,1,1.2,line,MABEL,V_MABEL,gesprochen,ruft ihm nach,"He, Fremder! Wenn die Wüste dich fragt, wer du bist — lass sie nicht antworten. Antworte selbst."
+29,1,1.2,music,,,,Klavier setzt einen Akzent. Dann Wüstenwind.,
+30,1,1.2,transition,,,,BLENDE,
+31,1,1.3,atmo,,,,"Gleißender Mittag, Zikaden, tropfendes Wasser aus einem umgestürzten Fass.",
+32,1,1.3,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Eine Wasserstelle am Rand der Wüste. Vier Konzern-Konstrukte in Schützenlinie — mannshohe Automaten, Dampf aus den Nackenventilen — eskortieren einen Menschen in makelloser grauer Uniform. Vor ihnen kniet ein alter Siedler an seinem Fass."
+33,1,1.3,sfx,,,,Eine Messing-Lochkarte klackt in Position.,
+34,1,1.3,line,PATROUILLENFÜHRER,V_PATROUILLE,gesprochen,"beamtenkalt, ohne aufzusehen","Wasserentnahme ohne Konzession, Paragraph neun. Das Fass ist konfisziert. Der Rest ist Verwaltungsgebühr."
+35,1,1.3,line,HELD,V_HELD,gesprochen,"tritt hinzu, ruhig","Das Fass gehört ihm. Das Wasser fällt vom Himmel. Sogar hier, zwei Mal im Jahr."
+36,1,1.3,sfx,,,,"Ein einziges, synchrones hydraulisches Zischen — vier Köpfe drehen sich wie einer. Das Grusel-Geräusch der Szene.",
+37,1,1.3,line,PATROUILLENFÜHRER,V_PATROUILLE,gesprochen,"näher, leiser","Der Himmel steht nicht in meinen Büchern. Du schon bald, wenn du den Arm nicht sinken lässt. Ein Rat, Wüstling: Der Konzern zählt alles. Tropfen. Schrauben. Männer, die Fragen stellen. Und was der Konzern gezählt hat, gehört ihm."
+38,1,1.3,sfx,,,,"Stiefel und Automatenschritte entfernen sich. Doch einer der Schritte stockt — ein Konstrukt bleibt einen halben Takt zu lang vor dem Helden stehen. Ein leises Ratschen, wie ein Karteikasten, der eine Karte zieht. Dann marschiert es weiter.",
+39,1,1.3,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Die Maschine hat ihn erkannt. Er wird das erst viel später verstehen.
+40,1,1.3,line,SIEDLER,V_SIEDLER,gesprochen,spuckt aus,"Danke, Mister. Aber merk dir: Die zählen wirklich alles. Und irgendwann holen sie die Rechnung."
+41,1,1.3,transition,,,,BLENDE,
+42,1,1.4,atmo,,,,Feldlazarett. Petroleumlampe zischelt. Nachtgrillen draußen.,
+43,1,1.4,sfx,,,,"Ein Messing-Stethoskop auf der Brust. Stille. Es wird abgesetzt, ausgeklopft wie ein defektes Gerät, neu angesetzt.",
+44,1,1.4,line,DOC ARIS,V_DOC,gesprochen,stirnrunzelnd,"Zwei Wochen Wüste, drei Feuergefechte, und Sie sitzen da wie frisch gebadet. Kein Fieber. Keine Blasen. Ihr Herz, Fremder … schlägt wie ein Metronom. Kein Stolpern, kein Rauschen. Ich höre so etwas sonst nur bei — — bei gar niemandem, ehrlich gesagt."
+45,1,1.4,line,HELD,V_HELD,gesprochen,,Ist das schlimm?
+46,1,1.4,sfx,,,,"Er nimmt die Brille ab, putzt sie — sein Tick, wenn er lügt.",
+47,1,1.4,line,DOC ARIS,V_DOC,gesprochen,zu beiläufig,"Schlimm? Nein. Nein, das ist … eine zähe Konstitution. Ein Geschenk. Fremder. Falls Ihnen je etwas an sich selbst … merkwürdig vorkommt. Kommen Sie zuerst zu mir. Nicht zum Konzern. Niemals zum Konzern."
+48,1,1.4,line,HELD,V_HELD,gesprochen,,Warum sollte der Konzern sich für mein Herz interessieren?
+49,1,1.4,line,DOC ARIS,V_DOC,gesprochen,"wieder ganz Arzt, setzt die Brille auf","Der Konzern interessiert sich für alles, was läuft, ohne bezahlt zu werden. — Nächster Patient!"
+50,1,1.4,transition,,,,BLENDE,
+51,1,1.5,atmo,,,,Tief unter Tage. Tropfen hallen. Sehr fern ein Dröhnen — etwas Großes wälzt sich im Dunkel.,
+52,1,1.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Drei Ebenen abwärts, in der Schatzkammer der Schrott-Mine. Zwischen Erzbrocken eine zerdrückte Konzern-Kiste. Der Stempel: PSALM-PROGRAMM. Eigentum der Iron Rail. Zugriff nur Direktorat. Darin eine einzelne Kinetoskop-Rolle, mit Wachs versiegelt. Ins Wachs geprägt: eine Zahl."
+53,1,1.5,sfx,,,,Metall dreht sich langsam im Lampenlicht. Ein Daumen reibt über eine Prägung.,
+54,1,1.5,line,HELD,V_HELD,gesprochen,leise,Dreizehn. Warum kenn ich dich?
+55,1,1.5,sfx,,,,"Aus der Tiefe ein Dröhnen, näher jetzt. Die Lampe flackert — hörbar am Sirren des Fadens.",
+56,1,1.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,An der Wand tanzt sein Schatten. Und für einen Herzschlag hat der Schatten die falsche Silhouette: zu breite Schultern. Rohre am Rücken.
+57,1,1.5,music,,,,"Ein einzelner, kalter Ton. Bruch.",
+58,1,1.5,transition,,,,BLENDE,
+59,1,1.6,atmo,,,,"Schmiedefeuer, leises Prasseln. Ein feines mechanisches Surren — Silas' Kupferlinse.",
+60,1,1.6,sfx,,,,"Die Linse fährt auf und zu, fokussiert.",
+61,1,1.6,line,SILAS,V_SILAS,gesprochen,"bedächtig, dann ernst","Konzernwachs. Direktoratssiegel. Und 'ne Chiffre, die meine Linse zum Weinen bringt. Junge, ich sag dir das als Freund: Wirf das Ding in den tiefsten Schacht und vergiss den Weg dahin."
+62,1,1.6,line,HELD,V_HELD,gesprochen,,"Da stand meine Zahl drauf, Silas. Frag mich nicht, woher ich das weiß. Ich weiß es einfach."
+63,1,1.6,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Eine lange Pause. Die Kupferlinse fixiert ihn. Das müde Menschenauge weicht aus.
+64,1,1.6,line,SILAS,V_SILAS,gesprochen,,"… Es gibt 'nen Zug. Jeden Monat, Richtung Norden, Waggons versiegelt wie Särge. PSALM-Fracht. Was immer der Konzern dir genommen hat — wenn's Antworten gibt, fahren sie erster Klasse. Aber Züge überfällt man nicht, Junge. Züge überlebt man. Höchstens."
+65,1,1.6,line,HELD,V_HELD,gesprochen,,Dann werd ich überleben. Das kann ich anscheinend gut.
+66,1,1.6,transition,,,,BLENDE,
+67,1,1.7,atmo,,,,"Sturm. Peitschender Regen. Ein fahrender Panzerzug — Räder auf Schienen, rhythmisch, schnell. Überdruck zischt ab.",
+68,1,1.7,music,,,,"HERZ-/KOLBEN-MOTIV, härter, schneller — zum ersten Mal aggressiv.",
+69,1,1.7,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Nacht. Ein Gewitter. Auf dem Flachwagen steht breitbeinig der Zugmeister der Iron Rail — Kolben-Jack, zwei Meter, den rechten Arm ersetzt durch eine dampfgetriebene Ramme. Hinter ihm der versiegelte Waggon mit der Dreizehn."
+70,1,1.7,line,KOLBEN-JACK,V_JACK,gesprochen,"brüllt gegen den Wind, fast fröhlich","Ich hab Männer unter Räder fallen sehen und Räder auf Männer! Aber du bist der Erste, der FREIWILLIG auf meinen Zug steigt!"
+71,1,1.7,sfx,,,,Die Ramme schnellt vor — WHAM — der ganze Wagen bebt.,
+72,1,1.7,line,KOLBEN-JACK,V_JACK,gesprochen,,Der Direktor zahlt für blinde Passagiere in Schrottpreisen!
+73,1,1.7,line,HELD,V_HELD,gesprochen,"ruhig, gegen den Sturm",Ich will nur einen Waggon. Den mit der Dreizehn.
+74,1,1.7,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Jack erstarrt. Zum ersten Mal weicht das Grinsen. Er tritt näher, mustert das Gesicht des Helden im Blitzlicht — und etwas wie Erkennen, wie Aberglaube, flackert in ihm auf."
+75,1,1.7,line,KOLBEN-JACK,V_JACK,gesprochen,"leiser, Angst kriecht rein",… Nein. Neinneinnein. Dich ham sie doch abgeschrieben. Dich ham sie in die Wüste — EINHEIT—
+76,1,1.7,sfx,,,,"Er spricht es nicht zu Ende. Donner. Der Bosskampf beginnt — Rammenschläge, splitterndes Holz. Mit jedem Treffer in den Waggon dahinter ein neues Geräusch: metallisches Klirren, tausendfach. Regale voller Messingwalzen.",
+77,1,1.8,atmo,,,,Regen und Zug treten ganz in den Hintergrund.,
+78,1,1.8,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Der Held hat Jack an den Rand gedrängt. Da zündet Jack den Notdruck.
+79,1,1.8,sfx,,,,Ein Kreischen wie von tausend Kesseln — die Ramme fährt aus und trifft den Helden voll in die Brust.,
+80,1,1.8,sfx,,,,Er durchschlägt eine Wand. Holz splittert. Ein Kartentisch zerbirst. Kristallgläser klingen wie gefrorener Regen. Er schlittert über Parkett.,
+81,1,1.8,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Er schlittert auf die gegenüberliegende Wand zu. Dort hängt ein hoher Garderoben-Spiegel. Und alles verstummt — bis auf ein einzelnes, sauberes, mechanisches Ticken, das immer lauter wird. Sein eigenes."
+82,1,1.8,sfx,,,,"Ein Spiegel zerbricht sternförmig, dicht, direkt.",
+83,1,1.8,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Er hebt den Kopf. Und sieht. In jeder Scherbe ein anderes Fragment. In einer — ein Auge, das keins ist: eine glühende Okular-Iris. In der nächsten — Zähne? Nein: verzahnter Stahl. In der dritten — Rauch, der aus einem Kiefergelenk sickert. Die Haut flackert wie eine schlecht projizierte Aufnahme. Und darunter: ein rauchender, einäugiger Stahl-Schädel. Zahnräder, wo ein Kiefer kauen sollte. Öl, das in den Nähten kocht wie schwarzes Blut."
+84,1,1.8,sfx,,,,"Ein hartes System-Klicken, dann ein tiefes Anlaufen wie ein hochfahrender Rechenkern.",
+85,1,1.8,line,ERZÄHLER,V_ERZAEHLER,gesprochen,"nüchtern, wie Systemmeldungen",System-Neustart. Sensor-Illusion — Desynchronisation. Protokoll: Wahrheit. — Du bist keine Kreatur aus Fleisch. Du bist eine Maschine.
+86,1,1.8,line,HELD,V_HELD,gedanke,"Gedanke — fassungslos, nach innen; noch reine Menschenstimme, das Doppel-Timbre kommt erst danach","Nein. Nein, ich — ich hab doch geblutet. Ich hab doch … Ich hab doch geträumt."
+87,1,1.8,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Und dann tut er das Furchtbarste. Er lacht. Ein kurzes, kaputtes Lachen — halb Schluchzen, halb ein Ventil, das Druck ablässt."
+88,1,1.8,sfx,,,,"Schulterventile stoßen Dampf ab, in kurzen, harten Stößen.",
+89,1,1.8,line,HELD,V_HELD,gesprochen,"leise, in die Scherben",Wer hat mir mein Gesicht geschuldet … und mit einer Lüge bezahlt?
+90,1,1.8,sfx,,,,"Hinter ihm bricht Kolben-Jack durch die Wand, hinkend, die Ramme leckgeschlagen und zischend.",
+91,1,1.8,line,KOLBEN-JACK,V_JACK,gesprochen,"keuchend, Galgenhumor eines toten Mannes","Na. Jetzt weißte's. Weißte was? Ich fahr seit zwanzig Jahren für den Konzern. Und du bist trotzdem der menschlichste Hurensohn, der je auf meinen Zug —"
+92,1,1.8,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Der Held erhebt sich. Zum ersten Mal in voller mechanischer Silhouette: Dampf aus den Schulterventilen, das eine Auge eine ruhige, orange Glut."
+93,1,1.8,line,HELD,V_HELD,gesprochen,"neues Doppel-Timbre, sehr ruhig",Runter von meinem Zug.
+94,1,1.8,transition,,,,HARTER SCHNITT,
+95,1,1.8,sfx,,,,Der gekaperte Panzerzug donnert mit brennender Lok gegen die Iron-Rail-Sprengtore. Stahl birst wie Eis.,
+96,1,1.8,music,,,,"HERZ-MOTIV, triumphal-düster, in ein Ende der Folge.",
+97,1,1.8,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Dahinter: Sektor Zwei. Offen. Bis zum vergifteten Horizont. — Ende der ersten Folge.
+98,2,2.1,atmo,,,,"Saloon — aber die Stimmen ersticken schlagartig, als die Tür geht. Ein Glas zerspringt irgendwo.",
+99,2,2.1,music,,,,Das Klavier bricht ab.,
+100,2,2.1,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Er kehrt zurück als das, was er ist. Der Saloon verstummt. Ein Betrunkener greift zum Revolver — und lässt ihn stecken, weil seine Hand zu sehr zittert. Der Held geht durch eine Gasse aus Blicken zum Tresen. Mabel sieht ihn lange an. Dann bückt sie sich, kramt — und stellt ihm statt des Schnapsglases eine Dose feinstes Schmieröl hin. Mit Untertasse."
+101,2,2.1,line,MABEL,V_MABEL,gesprochen,,Aufs Haus. Wie immer.
+102,2,2.1,sfx,,,,"Ventile zischen leise — sein neues „Atemholen"".",
+103,2,2.1,line,HELD,V_HELD,gesprochen,,Du … fragst nicht mal?
+104,2,2.1,line,MABEL,V_MABEL,gesprochen,,"Was fragen? Ob du 'ne Maschine bist? Kleiner, ich schenk seit dreißig Jahren aus. Ich hab Männer aus Fleisch gesehen, die weniger Herz hatten als deine Taschenuhr. Du hast der alten Vess das Dach geflickt. Du hast den Jungen vom Doc aus der Grube getragen. Das warst du. Aus was du dabei warst, ist deine Sache. UND WER DAS ANDERS SIEHT, TRINKT AB SOFORT WOANDERS!"
+105,2,2.1,music,,,,Das Klavier setzt wieder ein. Zögernd. Aber es setzt ein.,
+106,2,2.1,transition,,,,BLENDE,
+107,2,2.2,atmo,,,,Wind auf einer Wehr aus Schienenstahl. Unten exerzieren Arbeiter mit zusammengeflickten Gewehren.,
+108,2,2.2,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Drei Fraktionen werben um den wandelnden Stahlkessel. Die Eiserne Gilde bietet Zugriff auf ihre Bücher, die Schmuggler bieten Wege ins alte Leben. Aber nur eine sieht ihn zuerst als Menschen — indem sie ihn hart wie einen behandelt. Auf der Brustwehr von Fort Freedom steht Gideon Cross, die Narbe vom Kinn bis übers Ohr."
+109,2,2.2,line,GIDEON,V_GIDEON,gesprochen,"ohne Begrüßung, hart","Weißt du, was der Konzern aus Menschen macht? Zahlen. Weißt du, was er aus dir gemacht hat? Einen Beweis. Den wandelnden Beweis, dass ihnen nicht mal unser Sterben mehr gehört — sie verwerten es."
+110,2,2.2,line,HELD,V_HELD,gesprochen,,Ich bin nicht dein Beweis. Ich such meine Familie.
+111,2,2.2,line,GIDEON,V_GIDEON,gesprochen,"tritt dicht heran — der Einzige, der dem Helden nie ausweicht","Dann hör mir gut zu, Maschine, denn ich sag das nur einmal: Alles, was der Konzern dir je gezeigt hat, lief durch seine Linsen. Willst du deine Familie finden? Dann brich die Linsen. Wir brechen das Konzern-Monopol — oder sterben beim Versuch. Du hast den Vorteil: Du bist beim Sterben nicht so leicht kleinzukriegen."
+112,2,2.2,sfx,,,,"Eine Stahlhand schließt sich um eine vernarbte. Ein fester, kurzer Griff.",
+113,2,2.2,line,HELD,V_HELD,gesprochen,,Dann brechen wir Linsen.
+114,2,2.2,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Er ist der Erste, der den Helden nimmt, wie man einen Mann nimmt — nicht vorsichtig wie ein Ding. Die Wahl ist getroffen."
+115,2,2.2,transition,,,,BLENDE,
+116,2,2.3,atmo,,,,"Ein Unterschlupf aus Wellblech. Nachts. Öl tropft irgendwo im Chassis, wie ein zu langsamer Herzschlag.",
+117,2,2.3,music,,,,"FAMILIEN-MOTIV, die Spieluhr — schön, aber man hört sie leiern.",
+118,2,2.3,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Der Held ist allein. Er kurbelt den kleinen Kinetoskop-Projektor. An der Wand: seine Frau Liv, lachend, die Tochter Sara auf den Schultern, der Sohn Tom, der winkt. „Komm heim, Jeremiah."" Er sieht es zum hundertsten Mal."
+119,2,2.3,sfx,,,,"Die Kurbel — vor, zurück, vor, zurück. Sein Okular fokussiert mit hartem Klicken.",
+120,2,2.3,line,HELD,V_HELD,gesprochen,"leise, tastend","… Sara. Du winkst. Du winkst genauso. Jedes Mal. Dreiundzwanzig Bilder, dann der Blick nach links."
+121,2,2.3,sfx,,,,Die Kurbel verharrt. Nur noch der Öltropfen.,
+122,2,2.3,line,HELD,V_HELD,gedanke,"Gedanke — die Erkenntnis dämmert, nach innen",Kinder winken nie zweimal gleich.
+123,2,2.3,music,,,,Das Familien-Motiv verzieht sich einen Halbton ins Falsche.,
+124,2,2.3,transition,,,,BLENDE,
+125,2,2.4,atmo,,,,Ein Funkraum. Ein zerlegter Projektor surrt; ein Bild flackert an der Wand.,
+126,2,2.4,line,TESS,V_TESS,gesprochen,rattert schnell,"Okay, okay, sieh her: Frame vierhundertzwölf, die Sonne steht links, Schatten fallen rechts — Frame vierhundertdreizehn, Schatten falln LINKS. Die Sonne springt nicht, Großer. Sonnen tun das nicht."
+127,2,2.4,sfx,,,,Das Bild hält an — die Kurbel stoppt.,
+128,2,2.4,line,TESS,V_TESS,gesprochen,wird zum ersten Mal langsam,Das ist 'ne Naht. Alchemistischer Bildsatz. Die haben … die haben deine Frau aus zwei verschiedenen Aufnahmen zusammengeklebt. Es tut mir leid. Das da … das ist nirgendwo. Das ist aus einem Labor.
+129,2,2.4,line,HELD,V_HELD,gesprochen,"sehr still, das Okular-Glühen dimmt — die mechanische Blässe","Die Stimme. Sie sagt meinen Namen. „Komm heim, Jeremiah."""
+130,2,2.4,line,TESS,V_TESS,gesprochen,leise,"… Aus wie vielen Botschaften, glaubst du, kann man ein „Komm heim"" zusammenschneiden?"
+131,2,2.4,music,,,,"Das Familien-Motiv zerfällt in einzelne, wiederholte Silben — hörbar zerschnitten.",
+132,2,2.4,transition,,,,BLENDE,
+133,2,2.5,atmo,,,,Aschgraue Dämmerung. Ein toter Weiler an der Smog-Linie. Nur Wind durch verkohlte Balken. Ein Blechschild quietscht.,
+134,2,2.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Die Ruine von Providence Cut. Verkohlte Balken wie Rippen aus dem Boden. Am Ortseingang ein verbogenes Schild: „Providence Cut — 214 Seelen."" Jemand hat die 214 durchgestrichen. Der Held stellt den Projektor auf einen Mauerrest und fädelt die eine echte Rolle ein — die, die nie hätte überleben dürfen."
+135,2,2.5,sfx,,,,"Die Kurbel. Ein Projektor-Surren, das über die tote Stille läuft.",
+136,2,2.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Die Bilder fallen auf die Ruine selbst — die lebende Stadt, deckungsgleich über ihrem eigenen Skelett. Streikposten an der Bahntrasse. Dann fährt ein Konzernzug ein. Eine Rampe fällt. Und herab schreitet — er. Einheit dreizehn. Neu. Glänzend. Das Okular kalt. Text im Bild: Ersteinsatz. Befehl: Strecke räumen."
+137,2,2.5,line,HELD,V_HELD,gesprochen,"rückwärts stolpernd, die Stimme zerfällt",Nein. Halt das an. Halt das an—
+138,2,2.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Er hält es nicht an. Die Menge weicht. Eine Frau tritt vor — Liv. Sie tritt der Maschine in den Weg. So, wie man einem Mann in den Weg tritt, den man kennt. Ihr Mund formt ein Wort. Die Rolle hat keinen Ton. Aber jeder liest es: „Jeremiah?"""
+139,2,2.5,sfx,,,,"Ein einzelner, schwerer Kolbenschlag. Dann — nichts. Absolute Stille. Mehrere Sekunden.",
+140,2,2.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Der Held steht sehr lange sehr still. Maschinen können das. Dann sinkt er auf die Knie und greift in die Asche.
+141,2,2.5,sfx,,,,"Aus seinen Schulterventilen bricht Dampf, in kurzen, harten Stößen — das einzige Schluchzen, zu dem sein Körper fähig ist.",
+142,2,2.5,line,HELD,V_HELD,gesprochen,kaum hörbar,Ich hab euch nicht verloren. Ich wurde auf euch abgefeuert.
+143,2,2.5,sfx,,,,"Er nimmt das Schild, rammt es gerade in die Erde. Ein glühender Fingerstahl zischt über Metall — er schreibt.",
+144,2,2.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Unter die durchgestrichene 214 schreibt er eine Ziffer. Plus eins.
+145,2,2.5,line,HELD,V_HELD,gesprochen,"zur toten Stadt, ganz ruhig; der Zorn ist jetzt kalt","Der Mann, der euer war, ist hier gestorben. Was übrig ist, gehört ab heute niemandem mehr — außer der Rechnung. Und die stell ich zu. Frei Haus. Bis ins Eiserne Herz."
+146,2,2.5,music,,,,"HERZ-MOTIV, kalt und entschlossen, ins Ende der Folge.",
+147,2,2.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Ende der zweiten Folge.
+148,3,3.1,atmo,,,,"Lazarett, Nacht. Doc näht Verwundete nach einem Goliath-Überfall. Gedämpftes Stöhnen, Instrumente klirren.",
+149,3,3.1,line,DOC ARIS,V_DOC,gesprochen,"näht, ohne aufzusehen","Ich habe damals gelogen, wissen Sie. „Zähe Konstitution."" Ich hab's geahnt und geschwiegen, weil ich dachte, ich schütze Sie. Sagen Sie mir eins, ehrlich, von Arzt zu … Patient: Wenn das hier vorbei ist — was wollen Sie dann noch sein?"
+150,3,3.1,line,HELD,V_HELD,gesprochen,,"Ich dachte lang, ich will wieder Mensch sein. Jetzt will ich nur noch einer sein, bei dem's einen Unterschied macht."
+151,3,3.1,line,DOC ARIS,V_DOC,gesprochen,sieht ihn über die Brille an,"… Das, mein Freund, ist die gesündeste Diagnose in diesem ganzen verdammten Territorium."
+152,3,3.1,transition,,,,BLENDE,
+153,3,3.2,atmo,,,,Eine gesprengte Pipeline brennt. Nacht. Feuer knistert groß.,
+154,3,3.2,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Aus dem Feuerschein flackert eine überlebensgroße Projektion auf. Direktor Cornelius Vane. Ein väterliches Gesicht, wachsglatt, freundliche Augen. Und die Projektion sieht den Helden direkt an — sie ist nicht aufgezeichnet."
+155,3,3.2,music,,,,"STAHL-CHORAL, sehr leise, unter Vanes Stimme.",
+156,3,3.2,line,VANE,V_VANE,gesprochen,"warm, wie ein Arzt am Krankenbett","Dreizehn. Du siehst mitgenommen aus. Ich verüble dir nichts davon. Ein Instrument, das sich verstimmt, klagt man nicht an — man stimmt es neu. Komm nach Norden. Ich habe, was du suchst: nicht Vergebung — die ist Aberglaube. Wiederherstellung. Ich kann sie dir zurückgeben, weißt du. Bild für Bild. Wort für Wort. Sie würden dich nie wieder verlassen. Und nie wieder altern. — Nun: Was ist ein Himmel mehr, nur weil er aus Messing ist?"
+157,3,3.2,sfx,,,,Ein einzelner Karabiner-Schuss. Glas — die Projektionslinse — zersplittert.,
+158,3,3.2,line,HELD,V_HELD,gesprochen,in die Dunkelheit,Meine Familie hat einen Namen gehabt. Du kriegst nicht mal ein Echo davon.
+159,3,3.2,transition,,,,BLENDE,
+160,3,3.3,atmo,,,,"Saloon nach Sperrstunde. Stühle auf den Tischen. Sehr leise, sehr intim.",
+161,3,3.3,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Nur Mabel und der Held. Sie schenkt sich einen Schnaps ein und ihm ein Öl.
+162,3,3.3,sfx,,,,"Glas gegen Blech — ein kleines, absurdes, perfektes Geräusch.",
+163,3,3.3,line,MABEL,V_MABEL,gesprochen,,"Weißt du noch, was ich dir am ersten Abend gesagt hab? Wenn die Wüste dich fragt, wer du bist —"
+164,3,3.3,line,HELD,V_HELD,gesprochen,,"— lass sie nicht antworten. Antworte selbst. Ich hab lang gebraucht, Mabel. Aber ich hab jetzt eine Antwort."
+165,3,3.3,line,MABEL,V_MABEL,gesprochen,,Und die wär?
+166,3,3.3,line,HELD,V_HELD,gesprochen,,"Ich bin das, was der Konzern gebaut hat — und nicht bestellen wollte. Auf Rustwater."
+167,3,3.3,line,MABEL,V_MABEL,gesprochen,rau,"Auf dich, Kleiner. Komm heim."
+168,3,3.3,sfx,,,,Er erstarrt fast unmerklich bei den zwei Worten — ein winziges Ventil-Stocken.,
+169,3,3.3,line,MABEL,V_MABEL,gesprochen,"leise, und sie meint es GENAU deshalb","Ich sag's, wie ich's mein. Das hier ist heim. Es war's die ganze Zeit."
+170,3,3.3,music,,,,"SALOON-KLAVIER, warm, ein einzelnes Motiv — die Menschlichkeit hält.",
+171,3,3.3,transition,,,,BLENDE,
+172,3,3.4,atmo,,,,Eine Kathedrale aus Metall. Tausende Messingwalzen rotieren im Leerlauf.,
+173,3,3.4,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Das Eiserne Herz, zweite Ebene. Regale, kilometerweit, gefüllt mit Stanzwalzen. Jede trägt ein Namensschild. Jede murmelt Fragmente einer kopierten Seele. Der Held geht die Reihen entlang. Und bleibt stehen. Drei Walzen, nebeneinander. Hale, Liv. Hale, Sara. Hale, Tom."
+174,3,3.4,sfx,,,,"Seine Hand schwebt über einer Kurbel. Eine Umdrehung, und er hörte ihre echten Stimmen. Die Hand zieht sich zurück.",
+175,3,3.4,line,HELD,V_HELD,gesprochen,"leise, fest","Nein. Ihr seid keine Aufnahmen. Ich hör euch nicht an. Ich trag euch raus. Ihr habt Wind verdient. Und Wetter. Und Erde, die keinem gehört."
+176,3,3.4,sfx,,,,"Eine Brustklappe klickt zu — dort, wo der Kessel am wärmsten ist.",
+177,3,3.4,transition,,,,BLENDE,
+178,3,3.5,atmo,,,,Die Herzkammer. Ein hausgroßer Kolbenmotor — das Eiserne Herz — schlägt langsam und gewaltig. Sein Schlag ist der Puls des ganzen Konzerns.,
+179,3,3.5,music,,,,"HERZ-MOTIV, jetzt in voller Größe — und man erkennt: es war von der ersten Szene an SEIN Puls.",
+180,3,3.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Der oberste Saal. Vor dem schlagenden Herzen, an einem Schreibtisch aus schwarzem Walnussholz, sitzt Vane und stempelt Papiere, als wäre nichts."
+181,3,3.5,sfx,,,,"Ein Stempel. Noch einer. Ruhig, unbeirrt.",
+182,3,3.5,line,VANE,V_VANE,gesprochen,ohne aufzusehen,"Zweihundert Elite-Chassis. Drei Sicherheitsringe. Ein Smog-Gürtel. Ich habe nie an Wunder geglaubt, Dreizehn, aber ich glaube an Stückkosten, und du warst jede einzelne Doppelkrone wert. Willkommen daheim. Du bist das einzige meiner Kinder, das je den Weg zurück gefunden hat."
+183,3,3.5,line,HELD,V_HELD,gesprochen,,Ich bin nicht dein Kind. Ich bin deine Quittung.
+184,3,3.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Vane steht auf, tritt um den Schreibtisch. Im Licht des Herzens sieht man es: Sein Gesicht wirft keinen Schweiß. Keine Poren. Wachs."
+185,3,3.5,line,VANE,V_VANE,gesprochen,,"Quittung. Gut. Reden wir Zahlen. Providence Cut: zweihundertvierzehn Tote. Die Hungersnot von '88, bevor meine Züge fuhren: elftausend. Ich habe das Sterben in diesem Territorium um neunzig Prozent gesenkt — und man malt mich als Teufel an die Wände, weil ich für den Rest Rechnungen stelle. Und dich … dich habe ich dem Tod persönlich abgekauft, Jeremiah Hale. Du lagst unter einem eingestürzten Stollen, das Rückgrat zermalmt, deine Frau hat an meinem Zug um Hilfe gebettelt — und ich habe geholfen. Auf meine Art. Ich habe den Tod enteignet. Er war ein schlechter Verwalter."
+186,3,3.5,line,HELD,V_HELD,gesprochen,sehr still,Du hast mich gerettet … und dann auf meine eigene Stadt abgefeuert.
+187,3,3.5,line,VANE,V_VANE,gesprochen,"zum ersten Mal ohne Wärme, glatt wie eine Bilanz","Ich habe ein Werkzeug verwendet, das vorhanden war. Sentimentalität wäre Verschwendung gewesen. Sieh dich um, Dreizehn. Jede Walze da unten ist ein Mensch, den ich vor dem Vergessen bewahrt habe. Ich baue den einzigen Himmel, der nachweislich existiert — und du bist mein erster Engel. Komm heim."
+188,3,3.5,sfx,,,,Kein Waffenziehen. Stattdessen — eine Glasscherbe wird aus einem Mantel gezogen. Die Spiegelscherbe aus dem Salonwaggon. Er hat sie die ganze Zeit getragen.,
+189,3,3.5,line,HELD,V_HELD,gesprochen,,"Zwei Worte, Direktor. Dieselben, die ihr mir geschenkt habt: Protokoll. Wahrheit."
+190,3,3.5,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Vane sieht sein Spiegelbild. Und zuckt. Ein winziges, uraltes Zucken — der erste ehrliche Reflex seit hundert Jahren. Denn in der Scherbe sitzt unter dem Wachs dasselbe wie unter der Illusion des Helden: Stahl. Vane, der erste Transfer, hat sich selbst nie im Spiegel angesehen."
+191,3,3.5,line,VANE,V_VANE,gesprochen,"flüstert, das Wachslächeln hängt schief",Ich bin nicht … ich bin der Direktor—
+192,3,3.5,line,HELD,V_HELD,gesprochen,,"Du bist die älteste Maschine im Raum, die sich für einen Menschen hält. Ich weiß, wie das endet. Es endet hier."
+193,3,3.5,sfx,,,,"Das Eiserne Herz beschleunigt. Vane verschmilzt mit der Maschine — der Bosskampf. Kolben-Telegraphs, berstender Stahl, die Halle selbst wird zur Waffe.",
+194,3,3.5,music,,,,"HERZ-MOTIV, überwältigend, dann — ein letztes Mal — Stillstand.",
+195,3,3.5,sfx,,,,Der große Kolben schlägt ein letztes Mal. Und hält. Absolute Stille.,
+196,3,3.6,atmo,,,,"Zum ersten Mal seit fünfzig Jahren totale Stille über dem Territorium. Dann — eine einzelne Schichtglocke, die läutet, einfach weil sie es kann.",
+197,3,3.6,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Das Eiserne Herz steht still. Gideon steht am zerstörten Schreibtisch und verbrennt die Schuldbücher, Blatt für Blatt."
+198,3,3.6,sfx,,,,"Papier fängt Feuer, Blatt um Blatt.",
+199,3,3.6,line,GIDEON,V_GIDEON,gesprochen,,"Kein neuer Direktor. Kein neuer Thron. Wir verteilen die Schienen an die, die auf ihnen bluten. Und du? Du hast einen Krieg gewonnen, Maschine. Was baust du jetzt?"
+200,3,3.6,line,HELD,V_HELD,gesprochen,,"Was ich nie hatte. Ein Zuhause, das mir keiner eingebaut hat."
+201,3,3.6,music,,,,"FAMILIEN-MOTIV — zum ersten Mal wieder rein, unverzerrt, als Spieluhr.",
+202,3,3.6,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Epilog. Providence Cut. Er begräbt die drei Walzen unter freiem Himmel. Wind. Er bleibt, bis die Sonne aufgeht."
+203,3,3.6,sfx,,,,"Wind über offener Erde — weit, hoch, frei. Am Horizont, wo tausend Meter Kraterwand standen, steht jetzt ein offenes Tor.",
+204,3,3.6,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,"Das Monopol fiel. Die Arbeiter sind frei. Und zum ersten Mal seit Menschengedenken hat der Krater einen offenen Himmel — der Tunnel steht auf, die eingesperrte Welt atmet. In Rustwater aber steht am Tresen eine Dose Öl. Aufs Haus. Wie immer."
+205,3,3.6,music,,,,"HERZ-MOTIV, das den Puls des Konzerns war, verklingt endgültig. Nur noch Wind und die Spieluhr.",
+206,3,3.6,line,ERZÄHLER,V_ERZAEHLER,gesprochen,,Ende.
