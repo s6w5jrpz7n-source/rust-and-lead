@@ -1,0 +1,1413 @@
+{
+  "titel": "RUST & LEAD — ElevenLabs-Fassung (Rebellen-Kanon)",
+  "hinweis": "text_v3 = mit Audio-Tags (Modell v3). Bei Modell v2 die Tags weglassen -> Feld 'text'. voice_id pro Rolle aus deiner Voice Library eintragen.",
+  "voices": {
+    "ERZÄHLER": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+    "HELD": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+    "MABEL": "reife, warme, tiefe Frauenstimme",
+    "SILAS": "alter, rauer Mann (z. B. „Arnold\"-Typ)",
+    "DOC ARIS": "präziser, mittlerer Männerton (z. B. „Daniel\"-Typ)",
+    "KOLBEN-JACK": "großer, lauter Mann (kräftig, z. B. „Arnold\"-Typ)",
+    "GIDEON": "fester, harter Männerton (z. B. „Clyde\"/„Josh\"-Typ)",
+    "VANE": "glatter, warmer, ruhiger älterer Mann (z. B. „Charlie\"/„George\"-Typ)",
+    "PATROUILLENFÜHRER": "kühler, sachlicher Beamtenton",
+    "TESS": "schnelle, aufgeweckte Frauenstimme (z. B. „Domi\"/„Elli\"-Typ)",
+    "PIP": "junge, helle Stimme (Kind-Ersatz) — nur Nebenstory",
+    "SIEDLER": "alter, müder Mann"
+  },
+  "events": [
+    {
+      "seq": 3,
+      "folge": 1,
+      "szene": "1.1",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "In der Wüste gibt es zwei Sorten Männer. Die, die begraben werden. Und die, die vergessen haben, dass man sie begraben hat.",
+      "text_v3": "In der Wüste gibt es zwei Sorten Männer. Die, die begraben werden. Und die, die vergessen haben, dass man sie begraben hat."
+    },
+    {
+      "seq": 5,
+      "folge": 1,
+      "szene": "1.1",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[breathless]"
+      ],
+      "text": "Mein Kopf … Wie heiß ich?",
+      "text_v3": "[breathless] Mein Kopf … Wie heiß ich?"
+    },
+    {
+      "seq": 6,
+      "folge": 1,
+      "szene": "1.1",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Er sieht an sich herab. Staubmantel. Stiefel. Ein Karabiner im Sand.",
+      "text_v3": "Er sieht an sich herab. Staubmantel. Stiefel. Ein Karabiner im Sand."
+    },
+    {
+      "seq": 7,
+      "folge": 1,
+      "szene": "1.1",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "… Wie heiß ich?",
+      "text_v3": "[whispers] … Wie heiß ich?"
+    },
+    {
+      "seq": 9,
+      "folge": 1,
+      "szene": "1.1",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Die Waffe liegt in seiner Hand, als hätte sie nie woanders gelegen. Sein Körper erinnert sich an Dinge, die sein Kopf nicht kennt.",
+      "text_v3": "Die Waffe liegt in seiner Hand, als hätte sie nie woanders gelegen. Sein Körper erinnert sich an Dinge, die sein Kopf nicht kennt."
+    },
+    {
+      "seq": 10,
+      "folge": 1,
+      "szene": "1.1",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Da, wo Rauch ist, ist Feuer. Wo Feuer ist, sind Leute. Und wo Leute sind, weiß vielleicht einer, wer ich bin.",
+      "text_v3": "Da, wo Rauch ist, ist Feuer. Wo Feuer ist, sind Leute. Und wo Leute sind, weiß vielleicht einer, wer ich bin."
+    },
+    {
+      "seq": 15,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Rustwater. Windschiefe Häuser aus Bahnschwellen und Kesselblech. Ein rostiger Wasserturm, an den jemand mit Teer den Namen der Stadt gepinselt hat — das W tropft seit Jahren. Und an jeder dritten Wand: das Zahnrad der Iron Rail, durchbohrt von einer Schiene wie von einem Schwert.",
+      "text_v3": "Rustwater. Windschiefe Häuser aus Bahnschwellen und Kesselblech. Ein rostiger Wasserturm, an den jemand mit Teer den Namen der Stadt gepinselt hat — das W tropft seit Jahren. Und an jeder dritten Wand: das Zahnrad der Iron Rail, durchbohrt von einer Schiene wie von einem Schwert."
+    },
+    {
+      "seq": 17,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Tür zu, Fremder. Der Staub zahlt keine Zeche. Du siehst aus, als hätte dich die Wüste ausgespuckt, weil du ihr nicht geschmeckt hast.",
+      "text_v3": "Tür zu, Fremder. Der Staub zahlt keine Zeche. Du siehst aus, als hätte dich die Wüste ausgespuckt, weil du ihr nicht geschmeckt hast."
+    },
+    {
+      "seq": 18,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Fühlt sich auch so an. Ich such … Ehrlich gesagt weiß ich nicht, was ich suche. Ich weiß nicht mal, wie ich heiße.",
+      "text_v3": "Fühlt sich auch so an. Ich such … Ehrlich gesagt weiß ich nicht, was ich suche. Ich weiß nicht mal, wie ich heiße."
+    },
+    {
+      "seq": 19,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Mabel hört auf zu wischen. Ein Schlag Stille.",
+      "text_v3": "Mabel hört auf zu wischen. Ein Schlag Stille."
+    },
+    {
+      "seq": 21,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Hm. Kein Name, keine Vergangenheit, keine Schulden. Manche Männer reiten ihr Leben lang gen Westen, um das zu kriegen, was du gratis hast. — Aufs Haus, Kleiner.",
+      "text_v3": "Hm. Kein Name, keine Vergangenheit, keine Schulden. Manche Männer reiten ihr Leben lang gen Westen, um das zu kriegen, was du gratis hast. — Aufs Haus, Kleiner."
+    },
+    {
+      "seq": 22,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Warum „Kleiner\"? Ich bin einen Kopf größer als Sie.",
+      "text_v3": "Warum „Kleiner\"? Ich bin einen Kopf größer als Sie."
+    },
+    {
+      "seq": 23,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Weil jeder, der in meinen Saloon kommt und nicht weiß, wer er ist, nochmal ganz von vorn anfängt. Und Neugeborene sind klein. Trink.",
+      "text_v3": "Weil jeder, der in meinen Saloon kommt und nicht weiß, wer er ist, nochmal ganz von vorn anfängt. Und Neugeborene sind klein. Trink."
+    },
+    {
+      "seq": 25,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Die Welt bemerkt die Wahrheit ständig. Sie will sie nur nicht sehen.",
+      "text_v3": "Die Welt bemerkt die Wahrheit ständig. Sie will sie nur nicht sehen."
+    },
+    {
+      "seq": 26,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Also. Arbeit. Draußen an der Südsenke hocken Wegelagerer und pressen jeden Karren aus, der zu uns will. Der Konzern rührt keinen Finger — Iron Rail schützt Schienen, keine Menschen. Acht von dem Gesindel weniger, und Rustwater schuldet dir was. Ich zahl in Gold, nicht in Dankbarkeit. Dankbarkeit rostet.",
+      "text_v3": "Also. Arbeit. Draußen an der Südsenke hocken Wegelagerer und pressen jeden Karren aus, der zu uns will. Der Konzern rührt keinen Finger — Iron Rail schützt Schienen, keine Menschen. Acht von dem Gesindel weniger, und Rustwater schuldet dir was. Ich zahl in Gold, nicht in Dankbarkeit. Dankbarkeit rostet."
+    },
+    {
+      "seq": 27,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Gold rostet auch nicht schlecht.",
+      "text_v3": "Gold rostet auch nicht schlecht."
+    },
+    {
+      "seq": 28,
+      "folge": 1,
+      "szene": "1.2",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "He, Fremder! Wenn die Wüste dich fragt, wer du bist — lass sie nicht antworten. Antworte selbst.",
+      "text_v3": "He, Fremder! Wenn die Wüste dich fragt, wer du bist — lass sie nicht antworten. Antworte selbst."
+    },
+    {
+      "seq": 32,
+      "folge": 1,
+      "szene": "1.3",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Eine Wasserstelle am Rand der Wüste. Vier Konzern-Konstrukte in Schützenlinie — mannshohe Automaten, Dampf aus den Nackenventilen — eskortieren einen Menschen in makelloser grauer Uniform. Vor ihnen kniet ein alter Siedler an seinem Fass.",
+      "text_v3": "Eine Wasserstelle am Rand der Wüste. Vier Konzern-Konstrukte in Schützenlinie — mannshohe Automaten, Dampf aus den Nackenventilen — eskortieren einen Menschen in makelloser grauer Uniform. Vor ihnen kniet ein alter Siedler an seinem Fass."
+    },
+    {
+      "seq": 34,
+      "folge": 1,
+      "szene": "1.3",
+      "rolle": "PATROUILLENFÜHRER",
+      "stimmen_typ": "kühler, sachlicher Beamtenton",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[cold]"
+      ],
+      "text": "Wasserentnahme ohne Konzession, Paragraph neun. Das Fass ist konfisziert. Der Rest ist Verwaltungsgebühr.",
+      "text_v3": "[cold] Wasserentnahme ohne Konzession, Paragraph neun. Das Fass ist konfisziert. Der Rest ist Verwaltungsgebühr."
+    },
+    {
+      "seq": 35,
+      "folge": 1,
+      "szene": "1.3",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[calm]"
+      ],
+      "text": "Das Fass gehört ihm. Das Wasser fällt vom Himmel. Sogar hier, zwei Mal im Jahr.",
+      "text_v3": "[calm] Das Fass gehört ihm. Das Wasser fällt vom Himmel. Sogar hier, zwei Mal im Jahr."
+    },
+    {
+      "seq": 37,
+      "folge": 1,
+      "szene": "1.3",
+      "rolle": "PATROUILLENFÜHRER",
+      "stimmen_typ": "kühler, sachlicher Beamtenton",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Der Himmel steht nicht in meinen Büchern. Du schon bald, wenn du den Arm nicht sinken lässt. Ein Rat, Wüstling: Der Konzern zählt alles. Tropfen. Schrauben. Männer, die Fragen stellen. Und was der Konzern gezählt hat, gehört ihm.",
+      "text_v3": "[whispers] Der Himmel steht nicht in meinen Büchern. Du schon bald, wenn du den Arm nicht sinken lässt. Ein Rat, Wüstling: Der Konzern zählt alles. Tropfen. Schrauben. Männer, die Fragen stellen. Und was der Konzern gezählt hat, gehört ihm."
+    },
+    {
+      "seq": 39,
+      "folge": 1,
+      "szene": "1.3",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Die Maschine hat ihn erkannt. Er wird das erst viel später verstehen.",
+      "text_v3": "Die Maschine hat ihn erkannt. Er wird das erst viel später verstehen."
+    },
+    {
+      "seq": 40,
+      "folge": 1,
+      "szene": "1.3",
+      "rolle": "SIEDLER",
+      "stimmen_typ": "alter, müder Mann",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Danke, Mister. Aber merk dir: Die zählen wirklich alles. Und irgendwann holen sie die Rechnung.",
+      "text_v3": "Danke, Mister. Aber merk dir: Die zählen wirklich alles. Und irgendwann holen sie die Rechnung."
+    },
+    {
+      "seq": 44,
+      "folge": 1,
+      "szene": "1.4",
+      "rolle": "DOC ARIS",
+      "stimmen_typ": "präziser, mittlerer Männerton (z. B. „Daniel\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Zwei Wochen Wüste, drei Feuergefechte, und Sie sitzen da wie frisch gebadet. Kein Fieber. Keine Blasen. Ihr Herz, Fremder … schlägt wie ein Metronom. Kein Stolpern, kein Rauschen. Ich höre so etwas sonst nur bei — — bei gar niemandem, ehrlich gesagt.",
+      "text_v3": "Zwei Wochen Wüste, drei Feuergefechte, und Sie sitzen da wie frisch gebadet. Kein Fieber. Keine Blasen. Ihr Herz, Fremder … schlägt wie ein Metronom. Kein Stolpern, kein Rauschen. Ich höre so etwas sonst nur bei — — bei gar niemandem, ehrlich gesagt."
+    },
+    {
+      "seq": 45,
+      "folge": 1,
+      "szene": "1.4",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ist das schlimm?",
+      "text_v3": "Ist das schlimm?"
+    },
+    {
+      "seq": 47,
+      "folge": 1,
+      "szene": "1.4",
+      "rolle": "DOC ARIS",
+      "stimmen_typ": "präziser, mittlerer Männerton (z. B. „Daniel\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Schlimm? Nein. Nein, das ist … eine zähe Konstitution. Ein Geschenk. Fremder. Falls Ihnen je etwas an sich selbst … merkwürdig vorkommt. Kommen Sie zuerst zu mir. Nicht zum Konzern. Niemals zum Konzern.",
+      "text_v3": "Schlimm? Nein. Nein, das ist … eine zähe Konstitution. Ein Geschenk. Fremder. Falls Ihnen je etwas an sich selbst … merkwürdig vorkommt. Kommen Sie zuerst zu mir. Nicht zum Konzern. Niemals zum Konzern."
+    },
+    {
+      "seq": 48,
+      "folge": 1,
+      "szene": "1.4",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Warum sollte der Konzern sich für mein Herz interessieren?",
+      "text_v3": "Warum sollte der Konzern sich für mein Herz interessieren?"
+    },
+    {
+      "seq": 49,
+      "folge": 1,
+      "szene": "1.4",
+      "rolle": "DOC ARIS",
+      "stimmen_typ": "präziser, mittlerer Männerton (z. B. „Daniel\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Der Konzern interessiert sich für alles, was läuft, ohne bezahlt zu werden. — Nächster Patient!",
+      "text_v3": "Der Konzern interessiert sich für alles, was läuft, ohne bezahlt zu werden. — Nächster Patient!"
+    },
+    {
+      "seq": 52,
+      "folge": 1,
+      "szene": "1.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Drei Ebenen abwärts, in der Schatzkammer der Schrott-Mine. Zwischen Erzbrocken eine zerdrückte Konzern-Kiste. Der Stempel: PSALM-PROGRAMM. Eigentum der Iron Rail. Zugriff nur Direktorat. Darin eine einzelne Kinetoskop-Rolle, mit Wachs versiegelt. Ins Wachs geprägt: eine Zahl.",
+      "text_v3": "Drei Ebenen abwärts, in der Schatzkammer der Schrott-Mine. Zwischen Erzbrocken eine zerdrückte Konzern-Kiste. Der Stempel: PSALM-PROGRAMM. Eigentum der Iron Rail. Zugriff nur Direktorat. Darin eine einzelne Kinetoskop-Rolle, mit Wachs versiegelt. Ins Wachs geprägt: eine Zahl."
+    },
+    {
+      "seq": 54,
+      "folge": 1,
+      "szene": "1.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Dreizehn. Warum kenn ich dich?",
+      "text_v3": "[whispers] Dreizehn. Warum kenn ich dich?"
+    },
+    {
+      "seq": 56,
+      "folge": 1,
+      "szene": "1.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "An der Wand tanzt sein Schatten. Und für einen Herzschlag hat der Schatten die falsche Silhouette: zu breite Schultern. Rohre am Rücken.",
+      "text_v3": "An der Wand tanzt sein Schatten. Und für einen Herzschlag hat der Schatten die falsche Silhouette: zu breite Schultern. Rohre am Rücken."
+    },
+    {
+      "seq": 61,
+      "folge": 1,
+      "szene": "1.6",
+      "rolle": "SILAS",
+      "stimmen_typ": "alter, rauer Mann (z. B. „Arnold\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Konzernwachs. Direktoratssiegel. Und 'ne Chiffre, die meine Linse zum Weinen bringt. Junge, ich sag dir das als Freund: Wirf das Ding in den tiefsten Schacht und vergiss den Weg dahin.",
+      "text_v3": "Konzernwachs. Direktoratssiegel. Und 'ne Chiffre, die meine Linse zum Weinen bringt. Junge, ich sag dir das als Freund: Wirf das Ding in den tiefsten Schacht und vergiss den Weg dahin."
+    },
+    {
+      "seq": 62,
+      "folge": 1,
+      "szene": "1.6",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Da stand meine Zahl drauf, Silas. Frag mich nicht, woher ich das weiß. Ich weiß es einfach.",
+      "text_v3": "Da stand meine Zahl drauf, Silas. Frag mich nicht, woher ich das weiß. Ich weiß es einfach."
+    },
+    {
+      "seq": 63,
+      "folge": 1,
+      "szene": "1.6",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Eine lange Pause. Die Kupferlinse fixiert ihn. Das müde Menschenauge weicht aus.",
+      "text_v3": "Eine lange Pause. Die Kupferlinse fixiert ihn. Das müde Menschenauge weicht aus."
+    },
+    {
+      "seq": 64,
+      "folge": 1,
+      "szene": "1.6",
+      "rolle": "SILAS",
+      "stimmen_typ": "alter, rauer Mann (z. B. „Arnold\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "… Es gibt 'nen Zug. Jeden Monat, Richtung Norden, Waggons versiegelt wie Särge. PSALM-Fracht. Was immer der Konzern dir genommen hat — wenn's Antworten gibt, fahren sie erster Klasse. Aber Züge überfällt man nicht, Junge. Züge überlebt man. Höchstens.",
+      "text_v3": "… Es gibt 'nen Zug. Jeden Monat, Richtung Norden, Waggons versiegelt wie Särge. PSALM-Fracht. Was immer der Konzern dir genommen hat — wenn's Antworten gibt, fahren sie erster Klasse. Aber Züge überfällt man nicht, Junge. Züge überlebt man. Höchstens."
+    },
+    {
+      "seq": 65,
+      "folge": 1,
+      "szene": "1.6",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Dann werd ich überleben. Das kann ich anscheinend gut.",
+      "text_v3": "Dann werd ich überleben. Das kann ich anscheinend gut."
+    },
+    {
+      "seq": 69,
+      "folge": 1,
+      "szene": "1.7",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Nacht. Ein Gewitter. Auf dem Flachwagen steht breitbeinig der Zugmeister der Iron Rail — Kolben-Jack, zwei Meter, den rechten Arm ersetzt durch eine dampfgetriebene Ramme. Hinter ihm der versiegelte Waggon mit der Dreizehn.",
+      "text_v3": "Nacht. Ein Gewitter. Auf dem Flachwagen steht breitbeinig der Zugmeister der Iron Rail — Kolben-Jack, zwei Meter, den rechten Arm ersetzt durch eine dampfgetriebene Ramme. Hinter ihm der versiegelte Waggon mit der Dreizehn."
+    },
+    {
+      "seq": 70,
+      "folge": 1,
+      "szene": "1.7",
+      "rolle": "KOLBEN-JACK",
+      "stimmen_typ": "großer, lauter Mann (kräftig, z. B. „Arnold\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[shouting]"
+      ],
+      "text": "Ich hab Männer unter Räder fallen sehen und Räder auf Männer! Aber du bist der Erste, der FREIWILLIG auf meinen Zug steigt!",
+      "text_v3": "[shouting] Ich hab Männer unter Räder fallen sehen und Räder auf Männer! Aber du bist der Erste, der FREIWILLIG auf meinen Zug steigt!"
+    },
+    {
+      "seq": 72,
+      "folge": 1,
+      "szene": "1.7",
+      "rolle": "KOLBEN-JACK",
+      "stimmen_typ": "großer, lauter Mann (kräftig, z. B. „Arnold\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Der Direktor zahlt für blinde Passagiere in Schrottpreisen!",
+      "text_v3": "Der Direktor zahlt für blinde Passagiere in Schrottpreisen!"
+    },
+    {
+      "seq": 73,
+      "folge": 1,
+      "szene": "1.7",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[calm]"
+      ],
+      "text": "Ich will nur einen Waggon. Den mit der Dreizehn.",
+      "text_v3": "[calm] Ich will nur einen Waggon. Den mit der Dreizehn."
+    },
+    {
+      "seq": 74,
+      "folge": 1,
+      "szene": "1.7",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Jack erstarrt. Zum ersten Mal weicht das Grinsen. Er tritt näher, mustert das Gesicht des Helden im Blitzlicht — und etwas wie Erkennen, wie Aberglaube, flackert in ihm auf.",
+      "text_v3": "Jack erstarrt. Zum ersten Mal weicht das Grinsen. Er tritt näher, mustert das Gesicht des Helden im Blitzlicht — und etwas wie Erkennen, wie Aberglaube, flackert in ihm auf."
+    },
+    {
+      "seq": 75,
+      "folge": 1,
+      "szene": "1.7",
+      "rolle": "KOLBEN-JACK",
+      "stimmen_typ": "großer, lauter Mann (kräftig, z. B. „Arnold\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]",
+        "[nervously]"
+      ],
+      "text": "… Nein. Neinneinnein. Dich ham sie doch abgeschrieben. Dich ham sie in die Wüste — EINHEIT—",
+      "text_v3": "[whispers] [nervously] … Nein. Neinneinnein. Dich ham sie doch abgeschrieben. Dich ham sie in die Wüste — EINHEIT—"
+    },
+    {
+      "seq": 78,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Der Held hat Jack an den Rand gedrängt. Da zündet Jack den Notdruck.",
+      "text_v3": "Der Held hat Jack an den Rand gedrängt. Da zündet Jack den Notdruck."
+    },
+    {
+      "seq": 81,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Er schlittert auf die gegenüberliegende Wand zu. Dort hängt ein hoher Garderoben-Spiegel. Und alles verstummt — bis auf ein einzelnes, sauberes, mechanisches Ticken, das immer lauter wird. Sein eigenes.",
+      "text_v3": "Er schlittert auf die gegenüberliegende Wand zu. Dort hängt ein hoher Garderoben-Spiegel. Und alles verstummt — bis auf ein einzelnes, sauberes, mechanisches Ticken, das immer lauter wird. Sein eigenes."
+    },
+    {
+      "seq": 83,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Er hebt den Kopf. Und sieht. In jeder Scherbe ein anderes Fragment. In einer — ein Auge, das keins ist: eine glühende Okular-Iris. In der nächsten — Zähne? Nein: verzahnter Stahl. In der dritten — Rauch, der aus einem Kiefergelenk sickert. Die Haut flackert wie eine schlecht projizierte Aufnahme. Und darunter: ein rauchender, einäugiger Stahl-Schädel. Zahnräder, wo ein Kiefer kauen sollte. Öl, das in den Nähten kocht wie schwarzes Blut.",
+      "text_v3": "Er hebt den Kopf. Und sieht. In jeder Scherbe ein anderes Fragment. In einer — ein Auge, das keins ist: eine glühende Okular-Iris. In der nächsten — Zähne? Nein: verzahnter Stahl. In der dritten — Rauch, der aus einem Kiefergelenk sickert. Die Haut flackert wie eine schlecht projizierte Aufnahme. Und darunter: ein rauchender, einäugiger Stahl-Schädel. Zahnräder, wo ein Kiefer kauen sollte. Öl, das in den Nähten kocht wie schwarzes Blut."
+    },
+    {
+      "seq": 85,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "System-Neustart. Sensor-Illusion — Desynchronisation. Protokoll: Wahrheit. — Du bist keine Kreatur aus Fleisch. Du bist eine Maschine.",
+      "text_v3": "System-Neustart. Sensor-Illusion — Desynchronisation. Protokoll: Wahrheit. — Du bist keine Kreatur aus Fleisch. Du bist eine Maschine."
+    },
+    {
+      "seq": 86,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gedanke",
+      "tags": [
+        "[thoughtful]",
+        "[whispers]"
+      ],
+      "text": "Nein. Nein, ich — ich hab doch geblutet. Ich hab doch … Ich hab doch geträumt.",
+      "text_v3": "[thoughtful] [whispers] Nein. Nein, ich — ich hab doch geblutet. Ich hab doch … Ich hab doch geträumt."
+    },
+    {
+      "seq": 87,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Und dann tut er das Furchtbarste. Er lacht. Ein kurzes, kaputtes Lachen — halb Schluchzen, halb ein Ventil, das Druck ablässt.",
+      "text_v3": "Und dann tut er das Furchtbarste. Er lacht. Ein kurzes, kaputtes Lachen — halb Schluchzen, halb ein Ventil, das Druck ablässt."
+    },
+    {
+      "seq": 89,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Wer hat mir mein Gesicht geschuldet … und mit einer Lüge bezahlt?",
+      "text_v3": "[whispers] Wer hat mir mein Gesicht geschuldet … und mit einer Lüge bezahlt?"
+    },
+    {
+      "seq": 91,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "KOLBEN-JACK",
+      "stimmen_typ": "großer, lauter Mann (kräftig, z. B. „Arnold\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[breathless]"
+      ],
+      "text": "Na. Jetzt weißte's. Weißte was? Ich fahr seit zwanzig Jahren für den Konzern. Und du bist trotzdem der menschlichste Hurensohn, der je auf meinen Zug —",
+      "text_v3": "[breathless] Na. Jetzt weißte's. Weißte was? Ich fahr seit zwanzig Jahren für den Konzern. Und du bist trotzdem der menschlichste Hurensohn, der je auf meinen Zug —"
+    },
+    {
+      "seq": 92,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Der Held erhebt sich. Zum ersten Mal in voller mechanischer Silhouette: Dampf aus den Schulterventilen, das eine Auge eine ruhige, orange Glut.",
+      "text_v3": "Der Held erhebt sich. Zum ersten Mal in voller mechanischer Silhouette: Dampf aus den Schulterventilen, das eine Auge eine ruhige, orange Glut."
+    },
+    {
+      "seq": 93,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[calm]"
+      ],
+      "text": "Runter von meinem Zug.",
+      "text_v3": "[calm] Runter von meinem Zug."
+    },
+    {
+      "seq": 97,
+      "folge": 1,
+      "szene": "1.8",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Dahinter: Sektor Zwei. Offen. Bis zum vergifteten Horizont. — Ende der ersten Folge.",
+      "text_v3": "Dahinter: Sektor Zwei. Offen. Bis zum vergifteten Horizont. — Ende der ersten Folge."
+    },
+    {
+      "seq": 100,
+      "folge": 2,
+      "szene": "2.1",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Er kehrt zurück als das, was er ist. Der Saloon verstummt. Ein Betrunkener greift zum Revolver — und lässt ihn stecken, weil seine Hand zu sehr zittert. Der Held geht durch eine Gasse aus Blicken zum Tresen. Mabel sieht ihn lange an. Dann bückt sie sich, kramt — und stellt ihm statt des Schnapsglases eine Dose feinstes Schmieröl hin. Mit Untertasse.",
+      "text_v3": "Er kehrt zurück als das, was er ist. Der Saloon verstummt. Ein Betrunkener greift zum Revolver — und lässt ihn stecken, weil seine Hand zu sehr zittert. Der Held geht durch eine Gasse aus Blicken zum Tresen. Mabel sieht ihn lange an. Dann bückt sie sich, kramt — und stellt ihm statt des Schnapsglases eine Dose feinstes Schmieröl hin. Mit Untertasse."
+    },
+    {
+      "seq": 101,
+      "folge": 2,
+      "szene": "2.1",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Aufs Haus. Wie immer.",
+      "text_v3": "Aufs Haus. Wie immer."
+    },
+    {
+      "seq": 103,
+      "folge": 2,
+      "szene": "2.1",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Du … fragst nicht mal?",
+      "text_v3": "Du … fragst nicht mal?"
+    },
+    {
+      "seq": 104,
+      "folge": 2,
+      "szene": "2.1",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Was fragen? Ob du 'ne Maschine bist? Kleiner, ich schenk seit dreißig Jahren aus. Ich hab Männer aus Fleisch gesehen, die weniger Herz hatten als deine Taschenuhr. Du hast der alten Vess das Dach geflickt. Du hast den Jungen vom Doc aus der Grube getragen. Das warst du. Aus was du dabei warst, ist deine Sache. UND WER DAS ANDERS SIEHT, TRINKT AB SOFORT WOANDERS!",
+      "text_v3": "Was fragen? Ob du 'ne Maschine bist? Kleiner, ich schenk seit dreißig Jahren aus. Ich hab Männer aus Fleisch gesehen, die weniger Herz hatten als deine Taschenuhr. Du hast der alten Vess das Dach geflickt. Du hast den Jungen vom Doc aus der Grube getragen. Das warst du. Aus was du dabei warst, ist deine Sache. UND WER DAS ANDERS SIEHT, TRINKT AB SOFORT WOANDERS!"
+    },
+    {
+      "seq": 108,
+      "folge": 2,
+      "szene": "2.2",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Drei Fraktionen werben um den wandelnden Stahlkessel. Die Eiserne Gilde bietet Zugriff auf ihre Bücher, die Schmuggler bieten Wege ins alte Leben. Aber nur eine sieht ihn zuerst als Menschen — indem sie ihn hart wie einen behandelt. Auf der Brustwehr von Fort Freedom steht Gideon Cross, die Narbe vom Kinn bis übers Ohr.",
+      "text_v3": "Drei Fraktionen werben um den wandelnden Stahlkessel. Die Eiserne Gilde bietet Zugriff auf ihre Bücher, die Schmuggler bieten Wege ins alte Leben. Aber nur eine sieht ihn zuerst als Menschen — indem sie ihn hart wie einen behandelt. Auf der Brustwehr von Fort Freedom steht Gideon Cross, die Narbe vom Kinn bis übers Ohr."
+    },
+    {
+      "seq": 109,
+      "folge": 2,
+      "szene": "2.2",
+      "rolle": "GIDEON",
+      "stimmen_typ": "fester, harter Männerton (z. B. „Clyde\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[cold]"
+      ],
+      "text": "Weißt du, was der Konzern aus Menschen macht? Zahlen. Weißt du, was er aus dir gemacht hat? Einen Beweis. Den wandelnden Beweis, dass ihnen nicht mal unser Sterben mehr gehört — sie verwerten es.",
+      "text_v3": "[cold] Weißt du, was der Konzern aus Menschen macht? Zahlen. Weißt du, was er aus dir gemacht hat? Einen Beweis. Den wandelnden Beweis, dass ihnen nicht mal unser Sterben mehr gehört — sie verwerten es."
+    },
+    {
+      "seq": 110,
+      "folge": 2,
+      "szene": "2.2",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ich bin nicht dein Beweis. Ich such meine Familie.",
+      "text_v3": "Ich bin nicht dein Beweis. Ich such meine Familie."
+    },
+    {
+      "seq": 111,
+      "folge": 2,
+      "szene": "2.2",
+      "rolle": "GIDEON",
+      "stimmen_typ": "fester, harter Männerton (z. B. „Clyde\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Dann hör mir gut zu, Maschine, denn ich sag das nur einmal: Alles, was der Konzern dir je gezeigt hat, lief durch seine Linsen. Willst du deine Familie finden? Dann brich die Linsen. Wir brechen das Konzern-Monopol — oder sterben beim Versuch. Du hast den Vorteil: Du bist beim Sterben nicht so leicht kleinzukriegen.",
+      "text_v3": "Dann hör mir gut zu, Maschine, denn ich sag das nur einmal: Alles, was der Konzern dir je gezeigt hat, lief durch seine Linsen. Willst du deine Familie finden? Dann brich die Linsen. Wir brechen das Konzern-Monopol — oder sterben beim Versuch. Du hast den Vorteil: Du bist beim Sterben nicht so leicht kleinzukriegen."
+    },
+    {
+      "seq": 113,
+      "folge": 2,
+      "szene": "2.2",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Dann brechen wir Linsen.",
+      "text_v3": "Dann brechen wir Linsen."
+    },
+    {
+      "seq": 114,
+      "folge": 2,
+      "szene": "2.2",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Er ist der Erste, der den Helden nimmt, wie man einen Mann nimmt — nicht vorsichtig wie ein Ding. Die Wahl ist getroffen.",
+      "text_v3": "Er ist der Erste, der den Helden nimmt, wie man einen Mann nimmt — nicht vorsichtig wie ein Ding. Die Wahl ist getroffen."
+    },
+    {
+      "seq": 118,
+      "folge": 2,
+      "szene": "2.3",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Der Held ist allein. Er kurbelt den kleinen Kinetoskop-Projektor. An der Wand: seine Frau Liv, lachend, die Tochter Sara auf den Schultern, der Sohn Tom, der winkt. „Komm heim, Jeremiah.\" Er sieht es zum hundertsten Mal.",
+      "text_v3": "Der Held ist allein. Er kurbelt den kleinen Kinetoskop-Projektor. An der Wand: seine Frau Liv, lachend, die Tochter Sara auf den Schultern, der Sohn Tom, der winkt. „Komm heim, Jeremiah.\" Er sieht es zum hundertsten Mal."
+    },
+    {
+      "seq": 120,
+      "folge": 2,
+      "szene": "2.3",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "… Sara. Du winkst. Du winkst genauso. Jedes Mal. Dreiundzwanzig Bilder, dann der Blick nach links.",
+      "text_v3": "[whispers] … Sara. Du winkst. Du winkst genauso. Jedes Mal. Dreiundzwanzig Bilder, dann der Blick nach links."
+    },
+    {
+      "seq": 122,
+      "folge": 2,
+      "szene": "2.3",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gedanke",
+      "tags": [
+        "[thoughtful]",
+        "[whispers]"
+      ],
+      "text": "Kinder winken nie zweimal gleich.",
+      "text_v3": "[thoughtful] [whispers] Kinder winken nie zweimal gleich."
+    },
+    {
+      "seq": 126,
+      "folge": 2,
+      "szene": "2.4",
+      "rolle": "TESS",
+      "stimmen_typ": "schnelle, aufgeweckte Frauenstimme (z. B. „Domi\"/„Elli\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Okay, okay, sieh her: Frame vierhundertzwölf, die Sonne steht links, Schatten fallen rechts — Frame vierhundertdreizehn, Schatten falln LINKS. Die Sonne springt nicht, Großer. Sonnen tun das nicht.",
+      "text_v3": "Okay, okay, sieh her: Frame vierhundertzwölf, die Sonne steht links, Schatten fallen rechts — Frame vierhundertdreizehn, Schatten falln LINKS. Die Sonne springt nicht, Großer. Sonnen tun das nicht."
+    },
+    {
+      "seq": 128,
+      "folge": 2,
+      "szene": "2.4",
+      "rolle": "TESS",
+      "stimmen_typ": "schnelle, aufgeweckte Frauenstimme (z. B. „Domi\"/„Elli\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Das ist 'ne Naht. Alchemistischer Bildsatz. Die haben … die haben deine Frau aus zwei verschiedenen Aufnahmen zusammengeklebt. Es tut mir leid. Das da … das ist nirgendwo. Das ist aus einem Labor.",
+      "text_v3": "Das ist 'ne Naht. Alchemistischer Bildsatz. Die haben … die haben deine Frau aus zwei verschiedenen Aufnahmen zusammengeklebt. Es tut mir leid. Das da … das ist nirgendwo. Das ist aus einem Labor."
+    },
+    {
+      "seq": 129,
+      "folge": 2,
+      "szene": "2.4",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Die Stimme. Sie sagt meinen Namen. „Komm heim, Jeremiah.\"",
+      "text_v3": "[whispers] Die Stimme. Sie sagt meinen Namen. „Komm heim, Jeremiah.\""
+    },
+    {
+      "seq": 130,
+      "folge": 2,
+      "szene": "2.4",
+      "rolle": "TESS",
+      "stimmen_typ": "schnelle, aufgeweckte Frauenstimme (z. B. „Domi\"/„Elli\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "… Aus wie vielen Botschaften, glaubst du, kann man ein „Komm heim\" zusammenschneiden?",
+      "text_v3": "[whispers] … Aus wie vielen Botschaften, glaubst du, kann man ein „Komm heim\" zusammenschneiden?"
+    },
+    {
+      "seq": 134,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Die Ruine von Providence Cut. Verkohlte Balken wie Rippen aus dem Boden. Am Ortseingang ein verbogenes Schild: „Providence Cut — 214 Seelen.\" Jemand hat die 214 durchgestrichen. Der Held stellt den Projektor auf einen Mauerrest und fädelt die eine echte Rolle ein — die, die nie hätte überleben dürfen.",
+      "text_v3": "Die Ruine von Providence Cut. Verkohlte Balken wie Rippen aus dem Boden. Am Ortseingang ein verbogenes Schild: „Providence Cut — 214 Seelen.\" Jemand hat die 214 durchgestrichen. Der Held stellt den Projektor auf einen Mauerrest und fädelt die eine echte Rolle ein — die, die nie hätte überleben dürfen."
+    },
+    {
+      "seq": 136,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Die Bilder fallen auf die Ruine selbst — die lebende Stadt, deckungsgleich über ihrem eigenen Skelett. Streikposten an der Bahntrasse. Dann fährt ein Konzernzug ein. Eine Rampe fällt. Und herab schreitet — er. Einheit dreizehn. Neu. Glänzend. Das Okular kalt. Text im Bild: Ersteinsatz. Befehl: Strecke räumen.",
+      "text_v3": "Die Bilder fallen auf die Ruine selbst — die lebende Stadt, deckungsgleich über ihrem eigenen Skelett. Streikposten an der Bahntrasse. Dann fährt ein Konzernzug ein. Eine Rampe fällt. Und herab schreitet — er. Einheit dreizehn. Neu. Glänzend. Das Okular kalt. Text im Bild: Ersteinsatz. Befehl: Strecke räumen."
+    },
+    {
+      "seq": 137,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Nein. Halt das an. Halt das an—",
+      "text_v3": "Nein. Halt das an. Halt das an—"
+    },
+    {
+      "seq": 138,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Er hält es nicht an. Die Menge weicht. Eine Frau tritt vor — Liv. Sie tritt der Maschine in den Weg. So, wie man einem Mann in den Weg tritt, den man kennt. Ihr Mund formt ein Wort. Die Rolle hat keinen Ton. Aber jeder liest es: „Jeremiah?\"",
+      "text_v3": "Er hält es nicht an. Die Menge weicht. Eine Frau tritt vor — Liv. Sie tritt der Maschine in den Weg. So, wie man einem Mann in den Weg tritt, den man kennt. Ihr Mund formt ein Wort. Die Rolle hat keinen Ton. Aber jeder liest es: „Jeremiah?\""
+    },
+    {
+      "seq": 140,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Der Held steht sehr lange sehr still. Maschinen können das. Dann sinkt er auf die Knie und greift in die Asche.",
+      "text_v3": "Der Held steht sehr lange sehr still. Maschinen können das. Dann sinkt er auf die Knie und greift in die Asche."
+    },
+    {
+      "seq": 142,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Ich hab euch nicht verloren. Ich wurde auf euch abgefeuert.",
+      "text_v3": "[whispers] Ich hab euch nicht verloren. Ich wurde auf euch abgefeuert."
+    },
+    {
+      "seq": 144,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Unter die durchgestrichene 214 schreibt er eine Ziffer. Plus eins.",
+      "text_v3": "Unter die durchgestrichene 214 schreibt er eine Ziffer. Plus eins."
+    },
+    {
+      "seq": 145,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[cold]",
+        "[calm]"
+      ],
+      "text": "Der Mann, der euer war, ist hier gestorben. Was übrig ist, gehört ab heute niemandem mehr — außer der Rechnung. Und die stell ich zu. Frei Haus. Bis ins Eiserne Herz.",
+      "text_v3": "[cold] [calm] Der Mann, der euer war, ist hier gestorben. Was übrig ist, gehört ab heute niemandem mehr — außer der Rechnung. Und die stell ich zu. Frei Haus. Bis ins Eiserne Herz."
+    },
+    {
+      "seq": 147,
+      "folge": 2,
+      "szene": "2.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ende der zweiten Folge.",
+      "text_v3": "Ende der zweiten Folge."
+    },
+    {
+      "seq": 149,
+      "folge": 3,
+      "szene": "3.1",
+      "rolle": "DOC ARIS",
+      "stimmen_typ": "präziser, mittlerer Männerton (z. B. „Daniel\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ich habe damals gelogen, wissen Sie. „Zähe Konstitution.\" Ich hab's geahnt und geschwiegen, weil ich dachte, ich schütze Sie. Sagen Sie mir eins, ehrlich, von Arzt zu … Patient: Wenn das hier vorbei ist — was wollen Sie dann noch sein?",
+      "text_v3": "Ich habe damals gelogen, wissen Sie. „Zähe Konstitution.\" Ich hab's geahnt und geschwiegen, weil ich dachte, ich schütze Sie. Sagen Sie mir eins, ehrlich, von Arzt zu … Patient: Wenn das hier vorbei ist — was wollen Sie dann noch sein?"
+    },
+    {
+      "seq": 150,
+      "folge": 3,
+      "szene": "3.1",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ich dachte lang, ich will wieder Mensch sein. Jetzt will ich nur noch einer sein, bei dem's einen Unterschied macht.",
+      "text_v3": "Ich dachte lang, ich will wieder Mensch sein. Jetzt will ich nur noch einer sein, bei dem's einen Unterschied macht."
+    },
+    {
+      "seq": 151,
+      "folge": 3,
+      "szene": "3.1",
+      "rolle": "DOC ARIS",
+      "stimmen_typ": "präziser, mittlerer Männerton (z. B. „Daniel\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "… Das, mein Freund, ist die gesündeste Diagnose in diesem ganzen verdammten Territorium.",
+      "text_v3": "… Das, mein Freund, ist die gesündeste Diagnose in diesem ganzen verdammten Territorium."
+    },
+    {
+      "seq": 154,
+      "folge": 3,
+      "szene": "3.2",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Aus dem Feuerschein flackert eine überlebensgroße Projektion auf. Direktor Cornelius Vane. Ein väterliches Gesicht, wachsglatt, freundliche Augen. Und die Projektion sieht den Helden direkt an — sie ist nicht aufgezeichnet.",
+      "text_v3": "Aus dem Feuerschein flackert eine überlebensgroße Projektion auf. Direktor Cornelius Vane. Ein väterliches Gesicht, wachsglatt, freundliche Augen. Und die Projektion sieht den Helden direkt an — sie ist nicht aufgezeichnet."
+    },
+    {
+      "seq": 156,
+      "folge": 3,
+      "szene": "3.2",
+      "rolle": "VANE",
+      "stimmen_typ": "glatter, warmer, ruhiger älterer Mann (z. B. „Charlie\"/„George\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[softly]"
+      ],
+      "text": "Dreizehn. Du siehst mitgenommen aus. Ich verüble dir nichts davon. Ein Instrument, das sich verstimmt, klagt man nicht an — man stimmt es neu. Komm nach Norden. Ich habe, was du suchst: nicht Vergebung — die ist Aberglaube. Wiederherstellung. Ich kann sie dir zurückgeben, weißt du. Bild für Bild. Wort für Wort. Sie würden dich nie wieder verlassen. Und nie wieder altern. — Nun: Was ist ein Himmel mehr, nur weil er aus Messing ist?",
+      "text_v3": "[softly] Dreizehn. Du siehst mitgenommen aus. Ich verüble dir nichts davon. Ein Instrument, das sich verstimmt, klagt man nicht an — man stimmt es neu. Komm nach Norden. Ich habe, was du suchst: nicht Vergebung — die ist Aberglaube. Wiederherstellung. Ich kann sie dir zurückgeben, weißt du. Bild für Bild. Wort für Wort. Sie würden dich nie wieder verlassen. Und nie wieder altern. — Nun: Was ist ein Himmel mehr, nur weil er aus Messing ist?"
+    },
+    {
+      "seq": 158,
+      "folge": 3,
+      "szene": "3.2",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Meine Familie hat einen Namen gehabt. Du kriegst nicht mal ein Echo davon.",
+      "text_v3": "Meine Familie hat einen Namen gehabt. Du kriegst nicht mal ein Echo davon."
+    },
+    {
+      "seq": 161,
+      "folge": 3,
+      "szene": "3.3",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Nur Mabel und der Held. Sie schenkt sich einen Schnaps ein und ihm ein Öl.",
+      "text_v3": "Nur Mabel und der Held. Sie schenkt sich einen Schnaps ein und ihm ein Öl."
+    },
+    {
+      "seq": 163,
+      "folge": 3,
+      "szene": "3.3",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Weißt du noch, was ich dir am ersten Abend gesagt hab? Wenn die Wüste dich fragt, wer du bist —",
+      "text_v3": "Weißt du noch, was ich dir am ersten Abend gesagt hab? Wenn die Wüste dich fragt, wer du bist —"
+    },
+    {
+      "seq": 164,
+      "folge": 3,
+      "szene": "3.3",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "— lass sie nicht antworten. Antworte selbst. Ich hab lang gebraucht, Mabel. Aber ich hab jetzt eine Antwort.",
+      "text_v3": "— lass sie nicht antworten. Antworte selbst. Ich hab lang gebraucht, Mabel. Aber ich hab jetzt eine Antwort."
+    },
+    {
+      "seq": 165,
+      "folge": 3,
+      "szene": "3.3",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Und die wär?",
+      "text_v3": "Und die wär?"
+    },
+    {
+      "seq": 166,
+      "folge": 3,
+      "szene": "3.3",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ich bin das, was der Konzern gebaut hat — und nicht bestellen wollte. Auf Rustwater.",
+      "text_v3": "Ich bin das, was der Konzern gebaut hat — und nicht bestellen wollte. Auf Rustwater."
+    },
+    {
+      "seq": 167,
+      "folge": 3,
+      "szene": "3.3",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Auf dich, Kleiner. Komm heim.",
+      "text_v3": "Auf dich, Kleiner. Komm heim."
+    },
+    {
+      "seq": 169,
+      "folge": 3,
+      "szene": "3.3",
+      "rolle": "MABEL",
+      "stimmen_typ": "reife, warme, tiefe Frauenstimme",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Ich sag's, wie ich's mein. Das hier ist heim. Es war's die ganze Zeit.",
+      "text_v3": "[whispers] Ich sag's, wie ich's mein. Das hier ist heim. Es war's die ganze Zeit."
+    },
+    {
+      "seq": 173,
+      "folge": 3,
+      "szene": "3.4",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Das Eiserne Herz, zweite Ebene. Regale, kilometerweit, gefüllt mit Stanzwalzen. Jede trägt ein Namensschild. Jede murmelt Fragmente einer kopierten Seele. Der Held geht die Reihen entlang. Und bleibt stehen. Drei Walzen, nebeneinander. Hale, Liv. Hale, Sara. Hale, Tom.",
+      "text_v3": "Das Eiserne Herz, zweite Ebene. Regale, kilometerweit, gefüllt mit Stanzwalzen. Jede trägt ein Namensschild. Jede murmelt Fragmente einer kopierten Seele. Der Held geht die Reihen entlang. Und bleibt stehen. Drei Walzen, nebeneinander. Hale, Liv. Hale, Sara. Hale, Tom."
+    },
+    {
+      "seq": 175,
+      "folge": 3,
+      "szene": "3.4",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Nein. Ihr seid keine Aufnahmen. Ich hör euch nicht an. Ich trag euch raus. Ihr habt Wind verdient. Und Wetter. Und Erde, die keinem gehört.",
+      "text_v3": "[whispers] Nein. Ihr seid keine Aufnahmen. Ich hör euch nicht an. Ich trag euch raus. Ihr habt Wind verdient. Und Wetter. Und Erde, die keinem gehört."
+    },
+    {
+      "seq": 180,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Der oberste Saal. Vor dem schlagenden Herzen, an einem Schreibtisch aus schwarzem Walnussholz, sitzt Vane und stempelt Papiere, als wäre nichts.",
+      "text_v3": "Der oberste Saal. Vor dem schlagenden Herzen, an einem Schreibtisch aus schwarzem Walnussholz, sitzt Vane und stempelt Papiere, als wäre nichts."
+    },
+    {
+      "seq": 182,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "VANE",
+      "stimmen_typ": "glatter, warmer, ruhiger älterer Mann (z. B. „Charlie\"/„George\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[softly]"
+      ],
+      "text": "Zweihundert Elite-Chassis. Drei Sicherheitsringe. Ein Smog-Gürtel. Ich habe nie an Wunder geglaubt, Dreizehn, aber ich glaube an Stückkosten, und du warst jede einzelne Doppelkrone wert. Willkommen daheim. Du bist das einzige meiner Kinder, das je den Weg zurück gefunden hat.",
+      "text_v3": "[softly] Zweihundert Elite-Chassis. Drei Sicherheitsringe. Ein Smog-Gürtel. Ich habe nie an Wunder geglaubt, Dreizehn, aber ich glaube an Stückkosten, und du warst jede einzelne Doppelkrone wert. Willkommen daheim. Du bist das einzige meiner Kinder, das je den Weg zurück gefunden hat."
+    },
+    {
+      "seq": 183,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ich bin nicht dein Kind. Ich bin deine Quittung.",
+      "text_v3": "Ich bin nicht dein Kind. Ich bin deine Quittung."
+    },
+    {
+      "seq": 184,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Vane steht auf, tritt um den Schreibtisch. Im Licht des Herzens sieht man es: Sein Gesicht wirft keinen Schweiß. Keine Poren. Wachs.",
+      "text_v3": "Vane steht auf, tritt um den Schreibtisch. Im Licht des Herzens sieht man es: Sein Gesicht wirft keinen Schweiß. Keine Poren. Wachs."
+    },
+    {
+      "seq": 185,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "VANE",
+      "stimmen_typ": "glatter, warmer, ruhiger älterer Mann (z. B. „Charlie\"/„George\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[softly]"
+      ],
+      "text": "Quittung. Gut. Reden wir Zahlen. Providence Cut: zweihundertvierzehn Tote. Die Hungersnot von '88, bevor meine Züge fuhren: elftausend. Ich habe das Sterben in diesem Territorium um neunzig Prozent gesenkt — und man malt mich als Teufel an die Wände, weil ich für den Rest Rechnungen stelle. Und dich … dich habe ich dem Tod persönlich abgekauft, Jeremiah Hale. Du lagst unter einem eingestürzten Stollen, das Rückgrat zermalmt, deine Frau hat an meinem Zug um Hilfe gebettelt — und ich habe geholfen. Auf meine Art. Ich habe den Tod enteignet. Er war ein schlechter Verwalter.",
+      "text_v3": "[softly] Quittung. Gut. Reden wir Zahlen. Providence Cut: zweihundertvierzehn Tote. Die Hungersnot von '88, bevor meine Züge fuhren: elftausend. Ich habe das Sterben in diesem Territorium um neunzig Prozent gesenkt — und man malt mich als Teufel an die Wände, weil ich für den Rest Rechnungen stelle. Und dich … dich habe ich dem Tod persönlich abgekauft, Jeremiah Hale. Du lagst unter einem eingestürzten Stollen, das Rückgrat zermalmt, deine Frau hat an meinem Zug um Hilfe gebettelt — und ich habe geholfen. Auf meine Art. Ich habe den Tod enteignet. Er war ein schlechter Verwalter."
+    },
+    {
+      "seq": 186,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]"
+      ],
+      "text": "Du hast mich gerettet … und dann auf meine eigene Stadt abgefeuert.",
+      "text_v3": "[whispers] Du hast mich gerettet … und dann auf meine eigene Stadt abgefeuert."
+    },
+    {
+      "seq": 187,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "VANE",
+      "stimmen_typ": "glatter, warmer, ruhiger älterer Mann (z. B. „Charlie\"/„George\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[softly]"
+      ],
+      "text": "Ich habe ein Werkzeug verwendet, das vorhanden war. Sentimentalität wäre Verschwendung gewesen. Sieh dich um, Dreizehn. Jede Walze da unten ist ein Mensch, den ich vor dem Vergessen bewahrt habe. Ich baue den einzigen Himmel, der nachweislich existiert — und du bist mein erster Engel. Komm heim.",
+      "text_v3": "[softly] Ich habe ein Werkzeug verwendet, das vorhanden war. Sentimentalität wäre Verschwendung gewesen. Sieh dich um, Dreizehn. Jede Walze da unten ist ein Mensch, den ich vor dem Vergessen bewahrt habe. Ich baue den einzigen Himmel, der nachweislich existiert — und du bist mein erster Engel. Komm heim."
+    },
+    {
+      "seq": 189,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Zwei Worte, Direktor. Dieselben, die ihr mir geschenkt habt: Protokoll. Wahrheit.",
+      "text_v3": "Zwei Worte, Direktor. Dieselben, die ihr mir geschenkt habt: Protokoll. Wahrheit."
+    },
+    {
+      "seq": 190,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Vane sieht sein Spiegelbild. Und zuckt. Ein winziges, uraltes Zucken — der erste ehrliche Reflex seit hundert Jahren. Denn in der Scherbe sitzt unter dem Wachs dasselbe wie unter der Illusion des Helden: Stahl. Vane, der erste Transfer, hat sich selbst nie im Spiegel angesehen.",
+      "text_v3": "Vane sieht sein Spiegelbild. Und zuckt. Ein winziges, uraltes Zucken — der erste ehrliche Reflex seit hundert Jahren. Denn in der Scherbe sitzt unter dem Wachs dasselbe wie unter der Illusion des Helden: Stahl. Vane, der erste Transfer, hat sich selbst nie im Spiegel angesehen."
+    },
+    {
+      "seq": 191,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "VANE",
+      "stimmen_typ": "glatter, warmer, ruhiger älterer Mann (z. B. „Charlie\"/„George\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [
+        "[whispers]",
+        "[softly]"
+      ],
+      "text": "Ich bin nicht … ich bin der Direktor—",
+      "text_v3": "[whispers] [softly] Ich bin nicht … ich bin der Direktor—"
+    },
+    {
+      "seq": 192,
+      "folge": 3,
+      "szene": "3.5",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Du bist die älteste Maschine im Raum, die sich für einen Menschen hält. Ich weiß, wie das endet. Es endet hier.",
+      "text_v3": "Du bist die älteste Maschine im Raum, die sich für einen Menschen hält. Ich weiß, wie das endet. Es endet hier."
+    },
+    {
+      "seq": 197,
+      "folge": 3,
+      "szene": "3.6",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Das Eiserne Herz steht still. Gideon steht am zerstörten Schreibtisch und verbrennt die Schuldbücher, Blatt für Blatt.",
+      "text_v3": "Das Eiserne Herz steht still. Gideon steht am zerstörten Schreibtisch und verbrennt die Schuldbücher, Blatt für Blatt."
+    },
+    {
+      "seq": 199,
+      "folge": 3,
+      "szene": "3.6",
+      "rolle": "GIDEON",
+      "stimmen_typ": "fester, harter Männerton (z. B. „Clyde\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Kein neuer Direktor. Kein neuer Thron. Wir verteilen die Schienen an die, die auf ihnen bluten. Und du? Du hast einen Krieg gewonnen, Maschine. Was baust du jetzt?",
+      "text_v3": "Kein neuer Direktor. Kein neuer Thron. Wir verteilen die Schienen an die, die auf ihnen bluten. Und du? Du hast einen Krieg gewonnen, Maschine. Was baust du jetzt?"
+    },
+    {
+      "seq": 200,
+      "folge": 3,
+      "szene": "3.6",
+      "rolle": "HELD",
+      "stimmen_typ": "junger, ausdrucksstarker Bariton (z. B. „Antoni\"/„Josh\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Was ich nie hatte. Ein Zuhause, das mir keiner eingebaut hat.",
+      "text_v3": "Was ich nie hatte. Ein Zuhause, das mir keiner eingebaut hat."
+    },
+    {
+      "seq": 202,
+      "folge": 3,
+      "szene": "3.6",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Epilog. Providence Cut. Er begräbt die drei Walzen unter freiem Himmel. Wind. Er bleibt, bis die Sonne aufgeht.",
+      "text_v3": "Epilog. Providence Cut. Er begräbt die drei Walzen unter freiem Himmel. Wind. Er bleibt, bis die Sonne aufgeht."
+    },
+    {
+      "seq": 204,
+      "folge": 3,
+      "szene": "3.6",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Das Monopol fiel. Die Arbeiter sind frei. Und zum ersten Mal seit Menschengedenken hat der Krater einen offenen Himmel — der Tunnel steht auf, die eingesperrte Welt atmet. In Rustwater aber steht am Tresen eine Dose Öl. Aufs Haus. Wie immer.",
+      "text_v3": "Das Monopol fiel. Die Arbeiter sind frei. Und zum ersten Mal seit Menschengedenken hat der Krater einen offenen Himmel — der Tunnel steht auf, die eingesperrte Welt atmet. In Rustwater aber steht am Tresen eine Dose Öl. Aufs Haus. Wie immer."
+    },
+    {
+      "seq": 206,
+      "folge": 3,
+      "szene": "3.6",
+      "rolle": "ERZÄHLER",
+      "stimmen_typ": "ruhiger, tiefer Erzähler (z. B. „George\"/„Adam\"-Typ)",
+      "voice_id": "",
+      "delivery": "gesprochen",
+      "tags": [],
+      "text": "Ende.",
+      "text_v3": "Ende."
+    }
+  ]
+}
