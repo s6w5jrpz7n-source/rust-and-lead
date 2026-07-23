@@ -13,6 +13,25 @@ const BORDER_S1_S2_Y: int = 800     # Sprengtore (Hard Gate 1)
 const BORDER_S2_S3_Y: int = 1500    # Smog-Linie (Hard Gate 2), == SMOG_LINE_Y
 const SMOG_LINE_Y: int = 1500
 
+# ── Produktions-Maßstab (Master-GDD §1.4) ─────────────────────────────────────
+## Die POI-Tabelle beschreibt das RELATIVE Layout (0…2000); die Produktion spannt den
+## Kraterboden auf 5000×5000 m auf. Szenen-Mapping: X → +x (Ost), Y (Nord) → −z.
+const WORLD_METERS: float = 5000.0
+const METERS_PER_UNIT: float = WORLD_METERS / float(WORLD_SIZE)   # = 2.5
+const PLAYER_SPEED_MS: float = 4.7                                # Laufgeschwindigkeit (m/s)
+
+## Relative Weltkoordinate (0…2000) → Godot-Szenenposition in Metern.
+static func world_to_scene(rel: Vector2) -> Vector3:
+	return Vector3(rel.x * METERS_PER_UNIT, 0.0, -rel.y * METERS_PER_UNIT)
+
+## Godot-Szenenposition → relative Weltkoordinate (für Gating-/Biom-Abfragen).
+static func scene_to_world(p: Vector3) -> Vector2:
+	return Vector2(p.x / METERS_PER_UNIT, -p.z / METERS_PER_UNIT)
+
+## POI-Position direkt im Szenen-Maßstab (Meter).
+static func poi_scene_position(poi_id: String) -> Vector3:
+	return world_to_scene(poi_position(poi_id))
+
 # ── Gating-Parameter ──────────────────────────────────────────────────────────
 const BLAST_GATE_CHAPTER: int = 5              # ab hier ist der Panzerzug durchgebrochen
 const REFINERY_BUILDING: String = "laboratory" # Raffinerie/Labor fürs Smog-Gate (§1.7.2)

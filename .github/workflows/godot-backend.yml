@@ -48,10 +48,16 @@ jobs:
       - name: Prepare logic-only project (ohne 3D-Assets)
         run: |
           mkdir -p /tmp/gdproj
-          cp -r godot/scripts godot/tests godot/project.godot /tmp/gdproj/
+          cp -r godot/scripts godot/tests godot/scenes godot/project.godot /tmp/gdproj/
 
       - name: Import (Pass 1 — class_name-Cache)
         run: "$GODOT --headless --path /tmp/gdproj --editor --quit"
 
       - name: Backend-Tests (Pass 2 — Exit 0 = grün)
-        run: "$GODOT --headless --path /tmp/gdproj"
+        run: "$GODOT --headless --path /tmp/gdproj res://tests/TestRunner.tscn"
+
+      - name: Overworld-Smoke (Szene startet fehlerfrei, 30 Frames)
+        run: |
+          out=$("$GODOT" --headless --path /tmp/gdproj res://scenes/Overworld.tscn --quit-after 30 2>&1) || exit 1
+          # Dummy-Renderer-Rauschen (Label3D ohne echten Renderer) ignorieren, echte Skriptfehler nicht.
+          echo "$out" | grep -v "mesh_get_surface\|Parameter \"m\"" | grep -qiE "SCRIPT ERROR|Parse Error" && exit 1 || true

@@ -21,6 +21,7 @@ func _ready() -> void:
 	_test_tycoon_manager()
 	_test_grid_inventory()
 	_test_world_manager()
+	_test_world_scale()
 	_test_memory_manager()
 	_test_encounter_manager()
 	_test_progression_manager()
@@ -754,3 +755,24 @@ func _test_player_stats() -> void:
 	_check("Loot-Faktor: Plünderer(+0.25)+NG+2(+0.70) = 1.95", is_equal_approx(PlayerStats.loot_mul(), 1.95))
 	_check("Spread mit Dolores' Trommel = 11", PlayerStats.spread_count() == 11)
 	_check("Magnet +Plünderer-Sohlen (+60)", PlayerStats.magnet_dist() == 130 + 60)
+
+
+func _test_world_scale() -> void:
+	print("· Produktions-Maßstab (Krater 5000 m — GDD §1.4)")
+	_check("Weltgröße = 5000 m", WorldManager.WORLD_METERS == 5000.0)
+	_check("Skalierung 2000 Einheiten → ×2,5 m", WorldManager.METERS_PER_UNIT == 2.5)
+	_check("Lauftempo = 4,7 m/s", WorldManager.PLAYER_SPEED_MS == 4.7)
+	_check("Rustwater (300,300) → Szene (750, 0, −750)",
+		WorldManager.world_to_scene(Vector2(300, 300)).is_equal_approx(Vector3(750, 0, -750)))
+	_check("Eisernes Herz → Szene (2500, 0, −4875)",
+		WorldManager.poi_scene_position("eisernes_herz").is_equal_approx(Vector3(2500, 0, -4875)))
+	_check("Sprengtor-Linie liegt bei z = −2000 m",
+		is_equal_approx(WorldManager.world_to_scene(Vector2(0, WorldManager.BORDER_S1_S2_Y)).z, -2000.0))
+	var rt: Vector3 = WorldManager.world_to_scene(Vector2(1234, 567))
+	_check("scene_to_world ist die exakte Umkehrung",
+		WorldManager.scene_to_world(rt).is_equal_approx(Vector2(1234, 567)))
+	var hub_dist: float = WorldManager.poi_scene_position("rustwater").distance_to(
+		WorldManager.poi_scene_position("zugdepot"))
+	_check("Pacing: Rustwater→Zugdepot ≥ 1000 m (Hub-Abstand, §1.4)", hub_dist >= 1000.0)
+	_check("Pacing: Querung Rustwater→Zugdepot dauert Minuten (> 180 s)",
+		hub_dist / WorldManager.PLAYER_SPEED_MS > 180.0)

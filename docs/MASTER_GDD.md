@@ -1341,9 +1341,10 @@ Biom-Zonierung (§1.6.3) bereits nach `WorldManager` portiert ist.
 | Persistenz (Speichern/Laden, Save-Slots) | `serialize`/`save`/`load` | `SaveManager` | ✅ portiert |
 | Ausrüstung/Loadout + **legendäre Sets** | `equip`/`equipGear` + §7.4.4 | `EquipManager` | ✅ portiert |
 | **Effektive Kampfwerte** (Aggregat aller Systeme, „Kapstein") | `playerDamage`/`playerMaxHp` u. a. | `PlayerStats` | ✅ portiert |
+| **Overworld im Produktions-Maßstab** (5000 m, Biome, Tore, POIs, Kraterrand) | §1.4/§1.6 | `OverworldView` + `WorldManager`-Maßstabsschicht | ✅ erste sichtbare Szene (Primitives; finale Assets/Meshes folgen) |
 
 > **Stand:** Die **gesamte Spiel-Logik** ist ins Godot-Backend portiert und **headless verifiziert**
-> (Godot 4.3.stable, `godot --headless --path godot` → **256/256 Checks, Exit 0**), zusätzlich in
+> (Godot 4.3.stable, `godot --headless --path godot` → **265/265 Checks, Exit 0**), zusätzlich in
 > **CI** abgesichert (`.github/workflows/godot-backend.yml`). Offen bleibt allein die
 > **Präsentations-/Render-Schicht** (Kampf-Lesbarkeit §8.4, 3D-Szenen/Assets, Audio, UI) — kein
 > Logik-Port mehr, sondern View-Arbeit auf dem fertigen, getesteten Fundament.

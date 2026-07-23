@@ -1,13 +1,15 @@
-; Godot 4 Projekt-Manifest — "Rust & Lead" Backend (Phase 2).
+; Godot 4 Projekt-Manifest — "Rust & Lead" (Phase 2).
 ; Projekt-Wurzel ist dieser Ordner (godot/), daher res:// == godot/.
-; Reines Logik-Backend + headless Test-Runner (keine Spiel-Assets/Rendering).
+; Logik-Backend + headless Test-Runner + erste sichtbare Szene:
+;   Hauptszene = Overworld (Kraterboden im GDD-Maßstab, §1.4) — Play in Xogot/Editor.
+;   Tests laufen explizit: godot --headless --path godot res://tests/TestRunner.tscn
 
 config_version=5
 
 [application]
 
-config/name="Rust & Lead — Backend"
-run/main_scene="res://tests/TestRunner.tscn"
+config/name="Rust & Lead"
+run/main_scene="res://scenes/Overworld.tscn"
 config/features=PackedStringArray("4.3")
 
 [autoload]
@@ -16,3 +18,14 @@ config/features=PackedStringArray("4.3")
 GameState="*res://scripts/GameState.gd"
 QuestManager="*res://scripts/QuestManager.gd"
 TycoonManager="*res://scripts/TycoonManager.gd"
+
+[input_devices]
+
+; Maus-Drag emuliert den Touch-Joystick — gleiche Steuerung am Desktop wie am Handy.
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+
+; Mobile-Renderer: performant auf iPhone/iPad (Xogot) wie am Desktop.
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"

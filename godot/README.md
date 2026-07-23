@@ -1,8 +1,15 @@
-# Rust & Lead — Godot 4 Backend (Phase 2)
+# Rust & Lead — Godot 4 (Phase 2)
 
-Reine Logik-Singletons für die Godot-Produktion. **Keine UI, keine Szenen** — nur
-Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MASTER_GDD.md`
-(§2.3 State-Schema, §3 Kampagne, §4 Fraktions-Matrix).
+Logik-Backend **plus erste sichtbare Szene**: `scenes/Overworld.tscn` ist die Hauptszene —
+der begehbare **Kraterboden im Produktions-Maßstab (5000×5000 m, GDD §1.4)**, komplett aus
+den `WorldManager`-Daten generiert (Biome, Sektor-Tore, Kraterrand, alle POIs), mit
+steuerbarem Spieler (4,7 m/s, Touch-Joystick + Tastatur) und erstem Kampf über die echte
+`CombatEngine`. Basis: `docs/MASTER_GDD.md` (§1.4/§1.6 Welt, §2.3 State-Schema, §3 Kampagne).
+
+**Auf dem Handy (Xogot):** Repo als ZIP laden (oder via Working Copy klonen), in Xogot
+**den Unterordner `godot/` importieren** (dort liegt `project.godot`), Play drücken —
+die Overworld startet in Rustwater. Ziehen = laufen, Gegner in Reichweite werden
+automatisch beschossen. Erster Import dauert wegen der 3D-Assets etwas.
 
 ## Dateien
 - `scripts/GameState.gd` — globaler Laufzeit-Zustand (Single Source of Truth).
@@ -32,6 +39,11 @@ Zustandsverwaltung und die Quest-/Progressions-Zustandsmaschine. Basis: `docs/MA
   Systeme zu den finalen Zahlen — Basis-Waffe + Werkstatt-Upgrades + Loadout + Perks +
   getragene/Set-verliehene legendäre Kräfte (Schaden, Feuerrate, Krit, Rüstung/Mitigation,
   max. Leben, Tempo, Regen, Magnet, Spread/Pierce, Loot). Formeln 1:1 aus dem Prototyp, deterministisch.
+- `scripts/OverworldView.gd` + `scenes/Overworld.tscn` — **sichtbare Overworld** (GDD §1.4/§1.6):
+  generiert den 5000-m-Krater zur Laufzeit aus `WorldManager` (Boden, Biom-Zonen, Sprengtor-/
+  Smog-Linie, Kraterrand + Rand-Tunnel, POI-Landmarken, Eisernes-Herz-Turm), Spieler mit
+  virtuellem Joystick, Gegner-Rudel + Auto-Feuer via `PlayerStats`/`CombatEngine`. Nur
+  Primitives — keine Asset-Abhängigkeit, läuft sofort in Xogot/Editor/headless.
 - `scripts/SaveManager.gd` — **Persistenz** (GDD §2.3): serialisiert/lädt den `GameState`
   (inkl. Loadout; Dictionary/JSON, defensiv gegen JSON-Floats & fehlende Felder) inkl. Datei-Slots (`user://`).
 - `scripts/EncounterManager.gd` — **Mini-Dungeons & Unique-Champions** (GDD §7.5.6a/§8.2):
@@ -142,9 +154,11 @@ ausführen. Ohne den ersten Pass melden die `class_name`-Klassen (`CombatEngine`
 …) beim allerersten Lauf „Identifier … not declared".
 
 ```sh
-godot --headless --path godot --editor --quit   # Pass 1: Import + Klassen-Cache
-godot --headless --path godot                    # Pass 2: führt TestRunner aus, Exit 0/1
+godot --headless --path godot --editor --quit                    # Pass 1: Import + Klassen-Cache
+godot --headless --path godot res://tests/TestRunner.tscn        # Pass 2: Tests, Exit 0/1
+godot --headless --path godot res://scenes/Overworld.tscn --quit-after 30   # Szenen-Smoke
 ```
+(Hauptszene ist jetzt die Overworld — die Tests laufen deshalb über den expliziten Szenenpfad.)
 `tests/TestRunner.gd` prüft alle Module deterministisch gegen die GDD-Werte
 (Schadens-Matrix & Mitigation, Status/DOT, Quest-Fluss & Reveal, Gilden-Lock,
 Tycoon-Tick/Kosten/Ripple, Grid-Platzierung, Welt-Gates, **Biom-Zonierung**,
@@ -157,7 +171,7 @@ Bei jedem Push/PR fährt der **CI-Workflow** (`.github/workflows/godot-backend.y
 Prüfung automatisch: `gdparse` + Godot-4.3-Headless (Import-Pass + TestRunner) gegen eine
 asset-freie Projektkopie.
 
-> **Verifiziert:** Godot **4.3.stable**, headless — **256/256 Checks grün, Exit 0**.
+> **Verifiziert:** Godot **4.3.stable**, headless — **265/265 Checks grün, Exit 0**.
 > Die **gesamte Spiel-Logik** ist portiert; offen bleibt nur die Präsentations-/Render-Schicht.
 > Der schwere 3D-Asset-Import unter `assets/models`
 > verlangsamt Pass 1; für reine Logik-Tests kann man Scripts/Tests/`project.godot` in ein
