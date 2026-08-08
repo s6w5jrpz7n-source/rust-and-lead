@@ -6009,7 +6009,7 @@ func _process(delta: float) -> void:
 	# Ausstiegs davor nie an die Reihe kam. Das Spiel blieb schwarz stehen: keine Bewegung,
 	# keine Oberflaeche, kein Weiterkommen. Wer die Reihenfolge zweier Zeilen vertauscht, baut
 	# sich einen Deadlock, und dieser hier hat es bis zum Spieler geschafft.
-	if _im_vorspann() or _vorspann_t >= 0.0:
+	if vorspann_regel(_im_vorspann(), _vorspann_t):
 		_process_vorspann(delta)
 		return
 	_process_movement(delta)
@@ -6985,6 +6985,20 @@ func _process_vorspann(delta: float) -> void:
 ## Laeuft gerade der Vorspann? Solange sperrt er alles andere — Bewegung, Kamera, Ausloeser.
 func _im_vorspann() -> bool:
 	return _vorspann != null and is_instance_valid(_vorspann)
+
+
+## Ruht die Welt gerade wegen des Vorspanns?
+##
+## Die Antwort steht bewusst in EINER Funktion, und die Aufrufstelle benutzt sie fuer beides —
+## fuer das Ruhen der Welt UND dafuer, dass der Takt des Vorspanns laeuft. Damit koennen die
+## zwei nicht mehr auseinanderlaufen.
+##
+## Sie liefen einmal auseinander, und das Ergebnis war ein Spiel, das im ersten Bild
+## stehenblieb: Die Welt ruhte, weil ein Videoknoten existierte, und derselbe Videoknoten wurde
+## nur von dem Takt weggeraeumt, der wegen des Ruhens nicht lief. Zwei Zeilen in der falschen
+## Reihenfolge. Als eine Bedingung an einer Stelle ist dieser Fehler nicht mehr formulierbar.
+static func vorspann_regel(hat_video: bool, rest_t: float) -> bool:
+	return hat_video or rest_t >= 0.0
 
 # ── Ton ───────────────────────────────────────────────────────────────────────
 ## Die Waffengeraeusche.

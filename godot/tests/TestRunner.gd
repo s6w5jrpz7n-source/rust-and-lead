@@ -2357,8 +2357,21 @@ func _test_prolog() -> void:
 	# **Eine Pruefung auf Quelltext haelt fest, was DASTEHT, nicht, was passiert.** Deshalb
 	# steht hier jetzt die Eigenschaft statt der Zeile: Solange der Vorspann laeuft, MUSS sein
 	# eigener Takt weiterlaufen — sonst kann er sich nie beenden.
-	_check("Der Vorspann kann sich beenden",
-		quelle.contains("if _im_vorspann() or _vorspann_t >= 0.0:\n\t\t_process_vorspann(delta)\n\t\treturn"))
+	# Geprueft wird die REGEL, nicht die Zeile. Sie steht in einer eigenen Funktion, und die
+	# Aufrufstelle benutzt sie fuer beides: fuer das Ruhen der Welt UND dafuer, dass der Takt
+	# des Vorspanns laeuft. Damit koennen die zwei nicht mehr auseinanderlaufen — als EINE
+	# Bedingung an EINER Stelle ist der Fehler nicht mehr formulierbar.
+	_check("Die Regel steht an einer Stelle",
+		quelle.contains("static func vorspann_regel")
+		and quelle.contains("if vorspann_regel(_im_vorspann(), _vorspann_t):\n\t\t_process_vorspann(delta)"))
+	# Und die Wahrheitstafel dazu, durchgerechnet statt gelesen: Solange ein Videoknoten da ist
+	# ODER die Blende laeuft, ruht die Welt — und genau dann laeuft der Takt.
+	var regel_ok: bool = OW2.vorspann_regel(true, -1.0) \
+		and OW2.vorspann_regel(true, 0.5) \
+		and OW2.vorspann_regel(false, 0.5) \
+		and OW2.vorspann_regel(false, 0.0) \
+		and not OW2.vorspann_regel(false, -1.0)
+	_check("Und sie stimmt in allen vier Faellen", regel_ok)
 	# Und wenn der Film gar nicht erst anlaeuft, geht es trotzdem weiter. Godot spielt nur Ogg
 	# Theora, und ob eine Datei auf einem bestimmten Geraet dekodiert wird, entscheidet sich
 	# erst dort. Faellt es aus, kommt `finished` nie.
