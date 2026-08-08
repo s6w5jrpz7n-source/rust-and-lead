@@ -266,6 +266,17 @@ epischer Helm.
 epic 12 % · legendary 4 %`. Und durchweg schlechter als aus Truhen; ein Gegner, der so gut
 auswirft wie eine Beutekammer, macht die Beutekammer sinnlos.
 
-Im Stollen steht **einer je Ebene**, aber nur auf den ersten dreien — ab der vierten noch einen
-zu stellen hieße, Schlüssel zu verteilen, für die es kein Schloss gibt. Draußen führt einer
-jedes Rudel.
+Im Stollen steht **einer je Ebene**, aber auf einer Ebene *weniger*, als die Beutekammer
+Schlüssel verlangt — den letzten trägt der **Endgegner** der tiefsten Ebene. Damit geht die
+Rechnung genau auf: zwei Anführer (Ebene 1 und 2) plus der Abschluss = drei Schlüssel = die
+Truhe, die zwei Meter weiter steht. Kein Rest, keine Lücke. Die Zahl ist aus dem Schloss
+*abgeleitet*, nicht abgeschrieben: Wer die Beutekammer auf vier Schlüssel stellt, bekommt
+automatisch einen Anführer mehr. Draußen führt einer jedes Rudel.
+
+Der **Endgegner** (ein Konzern-Konstrukt, `elite`, 700 Leben gegen die 285 eines
+Konstrukt-Anführers) steht in der Kammer mit der Treppe — dort, wo auch die Beutekammer liegt.
+Das ist die ganze Anordnung: Man sieht die verschlossene Truhe, man sieht, was davorsteht, und
+man hat in dem Moment zwei Schlüssel in der Tasche.
+
+Sein Schimmer ist **glühendes Rot**, nicht das Violett der Anführer. Wer den Unterschied nicht
+sieht, hält ihn für den vierten Anführer und läuft mit halbem Leben hinein.

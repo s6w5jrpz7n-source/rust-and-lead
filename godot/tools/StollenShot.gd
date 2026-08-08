@@ -17,7 +17,9 @@ var _flut: DirectionalLight3D
 
 func _ready() -> void:
 	GameState.stollen_startwert = 4242
-	GameState.stollen_ebene = 1
+	# Ebene 2: Dort steht der Endgegner und dort liegt die Beutekammer — genau das Bild, das
+	# beurteilt werden muss.
+	GameState.stollen_ebene = 2
 	# Mit Waffe, sonst schiesst niemand und der Feuerknopf meldet dauerhaft „kein Ziel".
 	GameState.weapon_id = "karabiner"
 	GameState.gold = 120
@@ -92,8 +94,8 @@ func _nebel_aus() -> void:
 func _auf_anfuehrer() -> void:
 	var d: Node = get_child(0)
 	for e in (d.get("_gegner") as Array):
-		if not (e["target"] as CombatTarget).is_leader:
+		if not (e["target"] as CombatTarget).is_elite:
 			continue
 		var wo: Vector3 = (e["node"] as Node3D).position
-		(d.get("_spieler") as Node3D).position = wo + Vector3(0.0, 0.0, 5.0)
+		(d.get("_spieler") as Node3D).position = wo + Vector3(-3.0, 0.0, 7.0)
 		return

@@ -65,10 +65,24 @@ const BESATZUNG: Dictionary = {
 const SICHT_M: float = 16.0
 const ANGRIFF_M: float = 2.0
 const SCHUSS_M: float = 26.0
-## Auf wie vielen Ebenen ein Anfuehrer steht. Drei, weil drei Schluessel eine Beutekammer
-## oeffnen — auf einer vierten Ebene noch einen zu stellen hiesse, Schluessel zu verteilen,
-## fuer die es kein Schloss gibt.
-const SCHLUESSEL_EBENEN: int = 3
+## Die tiefste Ebene. Dort steht der Endgegner, dort liegt die Beutekammer.
+const LETZTE_EBENE: int = 2
+## Wer dort steht. Der Plan nennt ihn beim Namen: ein Konzern-Konstrukt als Abschluss.
+const ENDGEGNER: String = "konstrukt"
+## Sein Schimmer — glühendes Rot, nicht das Violett der Anführer. Wer den Unterschied nicht
+## sieht, hält ihn für den vierten Anführer und läuft mit halbem Leben hinein.
+const ENDGEGNER_SCHIMMER: Color = Color(1.0, 0.32, 0.16)
+## Auf wie vielen Ebenen ein Anfuehrer steht.
+##
+## Einer WENIGER, als die Beutekammer Schluessel verlangt — den letzten traegt der Endgegner.
+## Damit geht die Rechnung genau auf: Wer den Stollen ganz durchsteht, hat am Ende exakt die
+## drei Schluessel in der Hand, die die Truhe vor ihm oeffnen. Kein Rest, keine Luecke.
+##
+## Abgeleitet und nicht abgeschrieben: Wer das Schloss der Beutekammer aendert, aendert damit
+## automatisch die Zahl der Anfuehrer mit. Eine Drei, die an zwei Stellen steht, ist eine Drei,
+## die irgendwann an einer Stelle eine Vier wird.
+static func schluessel_ebenen() -> int:
+	return maxi(0, ChestData.schluessel(ChestData.BOSS) - 1)
 
 
 func _ready() -> void:
@@ -420,7 +434,7 @@ func _gegner_bauen() -> void:
 	# Schluessel oeffnen eine Beutekammer; ab der vierten Ebene noch einen zu stellen hiesse,
 	# Schluessel zu verteilen, fuer die es kein Schloss gibt.
 	var anfuehrer_nr: int = -1
-	if GameState.stollen_ebene <= SCHLUESSEL_EBENEN and not alle.is_empty():
+	if GameState.stollen_ebene <= schluessel_ebenen() and not alle.is_empty():
 		anfuehrer_nr = rng.randi() % alle.size()
 	for i in alle.size():
 		var f: Vector2i = alle[i] as Vector2i
@@ -453,6 +467,49 @@ func _gegner_bauen() -> void:
 		leiste.position = Vector3(0.0, 1.75, 0.0)
 		knoten.add_child(leiste)
 		_gegner.append({ "node": knoten, "target": ziel, "bar": leiste, "kaltzeit": 0.0 })
+	if GameState.stollen_ebene >= LETZTE_EBENE:
+		_endgegner_bauen()
+
+
+## Der Endgegner der tiefsten Ebene — und der dritte Schlüssel.
+##
+## Er steht in der Kammer mit der TREPPE, und dort liegt auch die Beutekammer. Das ist die
+## ganze Anordnung: Man sieht die verschlossene Truhe, man sieht, was davorsteht, und man hat
+## in dem Moment zwei Schlüssel in der Tasche. Die Rechnung geht damit genau auf — wer den
+## Stollen ganz durchsteht, hält am Ende exakt die drei in der Hand, die vor ihm liegen.
+##
+## `elite` und nicht „Anführer": Ein Anführer ist ein verstärkter gewöhnlicher Gegner, hier
+## steht der Abschluss. `CombatTarget` hebt ihn auf Boss-Niveau, und der Plan nennt ihn beim
+## Namen — ein Konzern-Konstrukt.
+func _endgegner_bauen() -> void:
+	var ziel: CombatTarget = CombatTarget.from_type(ENDGEGNER, { "elite": true })
+	var knoten: Node3D = AssetRegistry.instantiate(ENDGEGNER, 2.6)
+	if knoten == null:
+		knoten = MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(1.6, 2.6, 1.6)
+		(knoten as MeshInstance3D).mesh = box
+	# Neben die Treppe, nicht darauf: Wer die Ebene betritt und sofort im Gegner steht, hat
+	# keinen Augenblick, ihn anzusehen — und genau der ist der Auftritt.
+	knoten.position = _treppe_pos + Vector3(DungeonLayout.FELD_M * 1.2, 0.0, 0.0)
+	add_child(knoten)
+	# Ein ANDERES Rot als das Violett der Anführer. Beide leuchten, beide heißen „hier ist
+	# etwas Besonderes" — aber wer den Unterschied nicht sieht, hält den Endgegner für den
+	# vierten Anführer und läuft mit halbem Leben hinein.
+	AssetRegistry.schimmer_anlegen(knoten, ENDGEGNER_SCHIMMER, 2.0)
+	var leiste := MeshInstance3D.new()
+	var lb := BoxMesh.new()
+	lb.size = Vector3(1.8, 0.14, 0.02)
+	leiste.mesh = lb
+	var lm := StandardMaterial3D.new()
+	lm.albedo_color = ENDGEGNER_SCHIMMER
+	lm.emission_enabled = true
+	lm.emission = ENDGEGNER_SCHIMMER
+	lm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	leiste.material_override = lm
+	leiste.position = Vector3(0.0, 3.0, 0.0)
+	knoten.add_child(leiste)
+	_gegner.append({ "node": knoten, "target": ziel, "bar": leiste, "kaltzeit": 0.0 })
 
 
 ## Die Runde: Gegner laufen, greifen an, der Spieler schießt zurück.
@@ -554,9 +611,9 @@ func _faellt(e: Dictionary) -> void:
 	GameState.add_xp(CombatData.xp_for_kill(t))
 	# Ausruestung wandert drinnen direkt in den Beutel: Auf einem dunklen Boden ein 30-cm-Ding
 	# zu finden, das man nur sieht, wenn die Lampe daraufhaelt, ist keine Belohnung.
-	for _k in BeuteData.stuecke(t.is_leader):
+	for _k in BeuteData.stuecke(BeuteData.ist_besonders(t)):
 		BagManager.add(ProgressionManager.make_gear(BeuteData.slot(), BeuteData.seltenheit()))
-	if t.is_leader:
+	if BeuteData.traegt_schluessel(t):
 		GameState.schluessel += 1
 		_hinweis.text = "✦ Ein Schlüssel. %d von %d." % [GameState.schluessel,
 			ChestData.schluessel(ChestData.BOSS)]

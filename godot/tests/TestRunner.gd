@@ -85,7 +85,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_zeichen": 5,
 	"_test_stollen": 33,
 	"_test_truhen": 15,
-	"_test_anfuehrer": 38,
+	"_test_anfuehrer": 46,
 }
 
 
@@ -5412,10 +5412,50 @@ func _test_anfuehrer() -> void:
 	# Beutekammer, ab der vierten Ebene noch einen zu stellen hiesse, Schluessel zu verteilen,
 	# fuer die es kein Schloss gibt.
 	var DV = load("res://scripts/DungeonView.gd")
-	_check("Anfuehrer stehen auf drei Ebenen", int(DV.SCHLUESSEL_EBENEN) == 3)
-	_check("Und das passt zum Schloss der Beutekammer",
-		int(DV.SCHLUESSEL_EBENEN) == ChestData.schluessel(ChestData.BOSS))
+	# Anfuehrer stehen auf EINER Ebene weniger, als die Beutekammer Schluessel verlangt — den
+	# letzten traegt der Endgegner. Damit geht die Rechnung genau auf: Wer den Stollen ganz
+	# durchsteht, haelt am Ende exakt die drei in der Hand, die die Truhe vor ihm oeffnen.
+	_check("Anfuehrer stehen auf %d Ebenen" % DV.schluessel_ebenen(),
+		DV.schluessel_ebenen() == ChestData.schluessel(ChestData.BOSS) - 1)
+	# Und das ist ABGELEITET, nicht abgeschrieben. Eine Drei, die an zwei Stellen steht, ist
+	# eine Drei, die irgendwann an einer Stelle eine Vier wird.
+	_check("Die Zahl steht nicht doppelt im Quelltext",
+		dv_q.contains("ChestData.schluessel(ChestData.BOSS) - 1"))
 	_check("Je Ebene genau einer", dv_q.contains("anfuehrer_nr = rng.randi() % alle.size()"))
+
+	# ── Der Endgegner traegt den dritten ─────────────────────────────────────
+	#
+	# Er steht in der Kammer mit der Treppe, und dort liegt auch die Beutekammer. Das ist die
+	# ganze Anordnung: Man sieht die verschlossene Truhe, man sieht, was davorsteht, und man hat
+	# in dem Moment zwei Schluessel in der Tasche.
+	_check("Auf der tiefsten Ebene steht ein Endgegner",
+		dv_q.contains("func _endgegner_bauen") and int(DV.LETZTE_EBENE) == 2)
+	_check("Er steht bei der Treppe", dv_q.contains("knoten.position = _treppe_pos"))
+	var end_t: CombatTarget = CombatTarget.from_type(DV.ENDGEGNER, { "elite": true })
+	_check("Und er traegt einen Schluessel", BeuteData.traegt_schluessel(end_t))
+	# Er ist STAERKER als ein Anfuehrer — sonst waere der Abschluss der vierte Anfuehrer.
+	var kopf_konstrukt: CombatTarget = CombatTarget.from_type(DV.ENDGEGNER, { "anfuehrer": true })
+	_check("Er ist staerker als ein Anfuehrer (%d gegen %d Leben)"
+		% [end_t.max_health, kopf_konstrukt.max_health],
+		end_t.max_health > kopf_konstrukt.max_health)
+	# Und er sieht anders aus. Wer den Unterschied nicht sieht, haelt ihn fuer den vierten
+	# Anfuehrer und laeuft mit halbem Leben hinein.
+	_check("Sein Schimmer ist ein anderer als der der Anfuehrer",
+		DV.ENDGEGNER_SCHIMMER != CombatData.ANFUEHRER_SCHIMMER)
+
+	# ── Und die Rechnung geht auf ────────────────────────────────────────────
+	# Zwei Anfuehrer (Ebene 1 und 2) plus der Endgegner = drei Schluessel = eine Beutekammer.
+	var ausbeute: int = DV.schluessel_ebenen() + 1
+	_check("Ein ganzer Stollen gibt genau %d Schluessel — so viele, wie die Beutekammer "
+		% ausbeute + "verlangt", ausbeute == ChestData.schluessel(ChestData.BOSS))
+	# Wer traegt ueberhaupt einen: Anfuehrer und der Abschluss, sonst NIEMAND. Ein Schluessel
+	# von einer gewoehnlichen Ratte machte die drei Kaempfe ueberfluessig.
+	_check("Ein gewoehnlicher Gegner traegt keinen",
+		not BeuteData.traegt_schluessel(CombatTarget.from_type("fauna")))
+	# Und die Frage wird an EINER Stelle beantwortet, nicht an dreien.
+	_check("Beide Szenen fragen dieselbe Stelle",
+		ow_q.contains("BeuteData.traegt_schluessel(target)")
+		and dv_q.contains("BeuteData.traegt_schluessel(t)"))
 	_check("Und das Rudel draussen hat auch einen",
 		ow_q.contains("_make_enemy(type_id, i == 0)"))
 
@@ -5528,8 +5568,8 @@ func _test_anfuehrer() -> void:
 		and BeuteData.SELTENHEIT_BIAS < float(ChestData.art(ChestData.BOSS)["bias"]))
 	# Beide Szenen benutzen dieselbe Tabelle.
 	_check("Beide Szenen wuerfeln aus derselben Tabelle",
-		ow_q.contains("BeuteData.stuecke(target.is_leader)")
-		and dv_q.contains("BeuteData.stuecke(t.is_leader)"))
+		ow_q.contains("BeuteData.stuecke(BeuteData.ist_besonders(target))")
+		and dv_q.contains("BeuteData.stuecke(BeuteData.ist_besonders(t))"))
 
 	# ── Ein neues Spiel faengt ohne Schluessel an ────────────────────────────
 	GameState.schluessel = 3

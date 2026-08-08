@@ -6544,12 +6544,15 @@ func _process_combat(delta: float) -> void:
 		# liegen weiterhin ueberall; die braucht man laufend. Ausruestung ist der Grund, den
 		# Beutel ueberhaupt zu oeffnen, und wenn sie bei jedem Kadaver liegt, ist sie
 		# Verwaltungsarbeit statt Fund.
-		for _k in BeuteData.stuecke(target.is_leader):
+		for _k in BeuteData.stuecke(BeuteData.ist_besonders(target)):
 			_drop(at, "gear", ProgressionManager.make_gear(BeuteData.slot(),
 				BeuteData.seltenheit()))
-		if target.is_leader:
+		if BeuteData.traegt_schluessel(target):
 			GameState.schluessel += 1
-			_say("✦ Anführer erlegt — ein Schlüssel. %d von %d." % [GameState.schluessel,
+			# Der Satz nennt nicht mehr „Anführer": Seit der Endgegner ebenfalls einen trägt,
+			# wäre das an einer von zwei Stellen gelogen.
+			_say("✦ %s erlegt — ein Schlüssel. %d von %d." % [
+				String(CombatData.ENEMY_TYPES[target.type_id]["name"]), GameState.schluessel,
 				ChestData.schluessel(ChestData.BOSS)], 2.6)
 		else:
 			_say("☠ %s erlegt" % String(CombatData.ENEMY_TYPES[target.type_id]["name"]), 1.6)

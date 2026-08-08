@@ -71,3 +71,24 @@ static func slot(wurf: float = -1.0) -> String:
 ## Welche Güte — nach oben entsprechend unwahrscheinlicher.
 static func seltenheit(wurf: float = -1.0) -> String:
 	return ProgressionManager.roll_rarity(SELTENHEIT_BIAS, wurf)
+
+
+## Trägt dieser Gegner einen Schlüssel?
+##
+## Anführer und der Endgegner — sonst niemand. Beides sind Kämpfe, die man **sucht**, und genau
+## das soll ein Schlüssel bezahlen.
+##
+## Warum die Frage hier steht und nicht an den drei Stellen, die sie stellen: Sie wird in der
+## Oberwelt und im Stollen gebraucht, und beim nächsten Gegnerrang („Champion", „Superboss")
+## muss sie an **einer** Stelle erweitert werden. Sonst trägt der neue Rang drinnen einen
+## Schlüssel und draußen keinen.
+static func traegt_schluessel(t: CombatTarget) -> bool:
+	return t != null and (t.is_leader or t.is_elite or t.is_boss or t.is_superboss)
+
+
+## Wirft dieser Gegner wie ein Anführer aus?
+##
+## Dieselbe Antwort wie oben, und das ist Absicht: Wer einen Schlüssel wert ist, ist auch die
+## bessere Beutequote wert. Zwei getrennte Listen würden früher oder später auseinanderlaufen.
+static func ist_besonders(t: CombatTarget) -> bool:
+	return traegt_schluessel(t)
