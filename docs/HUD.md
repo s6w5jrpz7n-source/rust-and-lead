@@ -197,3 +197,24 @@ Emoji fällt beim nächsten Testlauf auf — nicht erst dem Spieler.
 
 Kommentare bleiben ausgenommen, und das mit Absicht: Sie müssen erklären dürfen, *welches*
 Zeichen früher dort stand.
+
+---
+
+## Ein Eingang, nicht zwei
+
+Oben links standen **zwei** Knöpfe, die an denselben Ort führten: das Porträt und darunter ein
+zweiter mit einem Rucksack-Zeichen. Zwei Eingänge zu einem Raum sind kein Komfort, sondern die
+Frage, ob dahinter zweierlei liegt — wer den Rucksack sieht, sucht seine **Fähigkeiten**
+woanders und findet sie nie.
+
+Jetzt gibt es einen: **das Porträt**. Dort sucht ohnehin jeder, denn wo man sich selbst sieht,
+greift man nach seinen Sachen. Dahinter liegt alles in Reitern:
+
+* **▣ Ausrüstung** — Puppe, angelegte Teile und der Beutel
+* **✴ Fähigkeiten (n)** — der Perk-Baum, mit den freien Punkten im Reiternamen
+
+Auf der Tastatur weiterhin `[C]`.
+
+Der Fähigkeitenbaum war die ganze Zeit da — Daten, Kauflogik, Reiter, und die Perks wirken in
+`PlayerStats` (Schaden, Krit, Panzerung, Leben, Magnet, Nachladen). Er war nur hinter dem
+zweiten Knopf schwer zu finden.

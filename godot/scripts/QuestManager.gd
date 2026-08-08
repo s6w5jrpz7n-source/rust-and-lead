@@ -56,6 +56,19 @@ const QUESTS: Dictionary = {
 		"count": 12, "reward_gold": 90, "reward_item": "", "target": "schrott_minen", "chapter": 1, "advance_to": 0 },
 	"q_rats":   { "title": "Plage: Schrott-Ratten", "giver": "doc", "kind": "kill",
 		"count": 5, "reward_gold": 70, "reward_item": "potion", "target": "schrott_minen", "chapter": 1, "advance_to": 0 },
+	# Der Auftrag, der den Stollen ueberhaupt erst zu etwas macht.
+	#
+	# Er war ein Loch im Boden ohne Grund hineinzugehen — man lief daran vorbei, und wenn man
+	# doch hinabstieg, wusste man nicht warum. Ein Dungeon braucht keinen Zwang, aber einen
+	# ANLASS, und Silas hat den besten: Er baut an einer Mauer und ihm fehlt Material. Dass
+	# unten Schrott liegt, den keiner holt, ist in dieser Welt kein Geheimnis, sondern der Grund,
+	# warum niemand hinuntergeht.
+	#
+	# `collect` und nicht `kill`: Wer unten aufraeumen soll, entscheidet selbst, ob er kaempft
+	# oder sich vorbeidrueckt — und lernt dabei den Stollen kennen, statt eine Strichliste zu
+	# fuehren.
+	"q_stollen": { "title": "Der Vorschacht", "giver": "silas", "kind": "collect", "item": "schrott",
+		"count": 20, "reward_gold": 160, "reward_item": "potion", "target": "stollen", "chapter": 1, "advance_to": 0 },
 
 	# ── Kapitel 1 geht weiter: je zwei Anschlussaufträge pro Auftraggeber ──
 	#

@@ -586,6 +586,8 @@ const RAIL_CORRIDOR_HALF_W: float = 3.0
 ## ohnehin quer laeuft, war eine Strasse ohne Ziel nur ein Band auf dem Boden.
 const ROUTES: Array = [
 	["rustwater", "rattengestruepp"], ["rustwater", "schrott_minen"], ["rustwater", "zugdepot"],
+	# Der Stollen liegt am Weg zwischen Stadt und Grube — genau das soll die Route auch zeigen.
+	["rustwater", "stollen"], ["stollen", "schrott_minen"],
 	["zugdepot", "rogues_landing"], ["rogues_landing", "fort_freedom"],
 	["rogues_landing", "sektor01"], ["rogues_landing", "alchemie_raffinerie"],
 	["fort_freedom", "goliath_testgelaende"], ["sektor01", "schmelzoefen_vulcan"],
@@ -700,6 +702,11 @@ const POIS: Dictionary = {
 	# noch 320 m. Die Ecke ist also weder leerer noch enger geworden.
 	"schrott_minen":        { "name": "Die Schrott-Minen", "x": 400, "y": 120, "sector": 1, "type": "dungeon", "multilevel": true, "floors": 3 },
 	"rattengestruepp":      { "name": "Das Rattengestrüpp", "x": 500, "y": 200, "sector": 1, "type": "hunting" },
+	# Der Stollen ist ein ORT und nicht nur ein Loch. Vorher war er eine Stelle, an der
+	# plötzlich ein Knopf erschien: nicht auf der Karte, nicht in der Wegweisung, kein Ziel für
+	# einen Auftrag. Als POI kann die Fußspur dorthin führen, und Silas kann jemanden
+	# hinschicken.
+	"stollen":              { "name": "Der Vorschacht", "x": 210, "y": 380, "sector": 1, "type": "dungeon" },
 	"zugdepot":             { "name": "Iron Rail Zugdepot", "x": 450, "y": 750, "sector": 1, "type": "boss_arena", "gate": "blast" },
 	# ── Sektor 2 (Kapitel 5–8) ──
 	"fort_freedom":         { "name": "Fort Freedom", "x": 200, "y": 1200, "sector": 2, "type": "base", "guild": "rebels" },

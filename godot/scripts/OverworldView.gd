@@ -1141,7 +1141,6 @@ var _world_map: Minimap          # dieselbe Klasse im Vollbild-Modus
 var _map_overlay: Control        # Abdunklung + Weltkarte; unsichtbar, solange sie zu ist
 var _shop: ShopScreen            # Werkstatt/Geschäfte; unsichtbar, solange zu
 var _char: CharacterScreen       # Ausrüstung + Fähigkeiten
-var _char_btn: Button            # ruft ihn auf (auf dem Handy der einzige Weg dorthin)
 var _stick: VirtualStick
 var _toast: Label
 var _toast_until: float = 0.0
@@ -4723,18 +4722,14 @@ func _build_hud() -> void:
 		_zoom_btns.add_child(zb)
 		_hud_buttons.append(zb)
 	layer.add_child(_zoom_btns)
-	# Charakter-Knopf oben links unter der Statuszeile. Ohne ihn waere der Bildschirm auf dem
-	# Handy unerreichbar — dort gibt es kein [C].
-	_char_btn = Button.new()
-	_char_btn.text = "▣"
-	_char_btn.tooltip_text = "Ausrüstung & Fähigkeiten [C]"
-	_char_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_char_btn.position = Vector2(14.0, 84.0)
-	_char_btn.custom_minimum_size = Vector2(52.0, 46.0)
-	_char_btn.add_theme_font_size_override("font_size", 20)
-	_char_btn.pressed.connect(_toggle_character)
-	layer.add_child(_char_btn)
-	_hud_buttons.append(_char_btn)
+	# Hier stand ein zweiter Knopf mit einem Rucksack-Zeichen, direkt unter dem Portraet — und
+	# beide fuehrten an denselben Ort. Zwei Eingaenge zu einem Raum sind kein Komfort, sondern
+	# die Frage, ob dahinter zweierlei liegt: Wer den Rucksack sieht, sucht seine Faehigkeiten
+	# woanders und findet sie nie.
+	#
+	# Jetzt gibt es EINEN Eingang: das Portraet. Dort sucht ohnehin jeder — wo man sich selbst
+	# sieht, greift man nach seinen Sachen —, und dahinter liegt alles in Reitern: Ausruestung
+	# samt Beutel, und Faehigkeiten. Auf der Tastatur weiterhin [C].
 	# Weltkarte ZULETZT: In einem CanvasLayer ist die Kindreihenfolge die Zeichenreihenfolge,
 	# und eine Vollbildkarte, unter der die Aktionsleiste hervorlugt, ist keine.
 	_build_world_map(layer)
@@ -4812,8 +4807,6 @@ func _set_hud_hidden(hidden: bool) -> void:
 		_fire_btn.visible = not hidden
 	if _ammo_lbl != null:
 		_ammo_lbl.visible = not hidden
-	if _char_btn != null:
-		_char_btn.visible = not hidden
 	if _zoom_btns != null:
 		_zoom_btns.visible = not hidden
 
