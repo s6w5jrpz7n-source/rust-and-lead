@@ -596,3 +596,55 @@ static func mesh_instances(node: Node) -> Array:
 	for c in node.get_children():
 		out.append_array(mesh_instances(c))
 	return out
+
+
+## Einem fertigen Modell einen farbigen Schimmer verpassen.
+##
+## Gebraucht für die **Anführer**: Sie sind kein eigener Gegnertyp, sondern ein verstärkter
+## gewöhnlicher — man soll sie als das erkennen, was man schon kennt, und trotzdem auf den
+## ersten Blick sehen, dass diesmal etwas anderes davorsteht.
+##
+## Warum das hier steht und nicht in den Szenen: Es gibt zwei davon (Oberwelt und Stollen), und
+## ein Anführer, der drinnen anders leuchtet als draußen, ist zweimal dieselbe Regel mit zwei
+## Antworten.
+##
+## Gearbeitet wird über `material_overlay` und nicht über `material_override`: Ein Override
+## *ersetzt* das Material des Modells — der Anführer verlöre damit seine gesamte Textur und
+## stünde als einfarbige Figur da. Ein Overlay legt sich **darüber** und lässt das Modell
+## darunter sichtbar.
+static func schimmer_anlegen(wurzel: Node3D, farbe: Color, staerke: float = 1.6) -> void:
+	if wurzel == null:
+		return
+	var glanz := StandardMaterial3D.new()
+	# Additiv und ohne Beleuchtung: Der Schimmer soll AUS der Figur kommen und nicht von der
+	# Sonne abhängen — im Stollen gibt es keine, und dort muss er am deutlichsten sein.
+	glanz.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glanz.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	glanz.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glanz.albedo_color = Color(farbe.r, farbe.g, farbe.b, 0.30)
+	glanz.emission_enabled = true
+	glanz.emission = farbe
+	glanz.emission_energy_multiplier = staerke
+	# Vom Rand her am stärksten: Eine gleichmäßig überzogene Figur sieht bemalt aus, ein Saum
+	# sieht aus, als ginge etwas von ihr aus.
+	glanz.rim_enabled = true
+	glanz.rim = 1.0
+	glanz.rim_tint = 0.9
+	for kind in _alle_meshes(wurzel):
+		kind.material_overlay = glanz
+	# Und ein echtes Licht dazu, sonst bleibt der Schimmer im Dunkeln eine Farbe ohne Wirkung.
+	var licht := OmniLight3D.new()
+	licht.omni_range = 4.5
+	licht.light_energy = 1.5
+	licht.light_color = farbe
+	licht.position = Vector3(0.0, 1.0, 0.0)
+	wurzel.add_child(licht)
+
+
+static func _alle_meshes(n: Node) -> Array[MeshInstance3D]:
+	var raus: Array[MeshInstance3D] = []
+	if n is MeshInstance3D:
+		raus.append(n as MeshInstance3D)
+	for k in n.get_children():
+		raus.append_array(_alle_meshes(k))
+	return raus

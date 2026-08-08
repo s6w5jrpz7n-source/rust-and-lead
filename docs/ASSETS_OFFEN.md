@@ -218,3 +218,29 @@ fehlende Datei darf nie den Start verhindern — das prüft `_test_truhen()` mit
 Bisher am **Ende der Kaverne** (Stollen, Ebene 2) — in der Kammer mit der Treppe, also am Ende
 des Wegs. Weitere Plätze sind eine Zeile: `_spawn_chest_at(pos, ChestData.BOSS)`. Sobald es
 richtige Bossgegner gibt, gehört je eine hinter jeden von ihnen.
+
+### Und sie ist verschlossen
+
+Drei **Schlüssel** braucht sie, und die gibt es ausschließlich bei **Anführern**. Damit steht
+die beste Truhe im Spiel sichtbar da und lässt sich trotzdem nicht einfach einsammeln: Man muss
+dreimal einen Kampf suchen, den man umgehen könnte.
+
+Ein Anführer ist **kein eigener Gegnertyp**, sondern ein verstärkter gewöhnlicher — dreimal
+Leben, doppelter Schaden, gemessen an *seinem* Typ. Ein Anführer der Ratten hat dreimal so viel
+Leben wie eine Ratte; er ist immer der Stärkste *seiner* Gruppe und nie versehentlich ein Boss
+(er bleibt deutlich unter `BOSS_HP`). Genau das ist der Reiz: Man erkennt ihn als das, was man
+schon kennt, und merkt am dritten Schuss, dass diesmal etwas anderes davorsteht.
+
+Erkennbar an einem **violetten Schimmer** und 25 % mehr Höhe. Violett, weil in dieser Welt
+sonst nichts violett ist — Rost, Sand, Kupfer und Messing sind warm, die Nacht ist blau. Eine
+kalte Buntfarbe fällt hier auf, ohne dass man sie erklären muss, und ist auch für
+Rot-Grün-Blinde von allem anderen trennbar. Der Schimmer liegt als `material_overlay` **über**
+dem Modell — ein `material_override` würde die Textur *ersetzen* und den Anführer zu einer
+einfarbigen Silhouette machen.
+
+**Für dich heißt das: kein zusätzliches Modell.** Anführer benutzen die Modelle ihrer
+gewöhnlichen Artgenossen.
+
+Im Stollen steht **einer je Ebene**, aber nur auf den ersten dreien — ab der vierten noch einen
+zu stellen hieße, Schlüssel zu verteilen, für die es kein Schloss gibt. Draußen führt einer
+jedes Rudel.

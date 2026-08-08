@@ -43,6 +43,7 @@ const ARTEN: Dictionary = {
 		"trank": 0.5,
 		"muni_mul": 3,
 		"hoehe": 0.7,
+		"schluessel": 0,
 	},
 	BOSS: {
 		"name": "Beutekammer",
@@ -54,6 +55,10 @@ const ARTEN: Dictionary = {
 		"trank": 1.0,
 		"muni_mul": 7,
 		"hoehe": 0.95,
+		# Drei Schlüssel, und die gibt es nur bei Anführern. Die beste Truhe im Spiel steht damit
+		# sichtbar da und lässt sich trotzdem nicht einfach einsammeln: Man muss dreimal einen
+		# Kampf suchen, den man umgehen könnte.
+		"schluessel": 3,
 	},
 }
 
@@ -101,3 +106,24 @@ static func seltenheit(id: String, roll: float = -1.0) -> String:
 ## Gibt es hier einen Trank?
 static func trank(id: String, roll: float = -1.0) -> bool:
 	return (roll if roll >= 0.0 else randf()) < float(art(id)["trank"])
+
+
+## Wie viele Schlüssel diese Truhe verlangt.
+static func schluessel(id: String) -> int:
+	return int(art(id).get("schluessel", 0))
+
+
+## Darf sie mit dem aufgemacht werden, was man bei sich trägt?
+static func offen_mit(id: String, im_beutel: int) -> bool:
+	return im_beutel >= schluessel(id)
+
+
+## Der Satz, der erklärt, warum sie zubleibt.
+##
+## Er nennt die Zahl — „verschlossen" allein sagt niemandem, ob er zwei Schlüssel braucht oder
+## zwanzig, und eine Sperre, deren Preis man nicht kennt, ist keine Aufgabe, sondern eine Wand.
+static func schloss_text(id: String, im_beutel: int) -> String:
+	var noetig: int = schluessel(id)
+	if im_beutel >= noetig:
+		return ""
+	return "⊘ Verschlossen — %d von %d Schlüsseln. Anführer tragen sie." % [im_beutel, noetig]

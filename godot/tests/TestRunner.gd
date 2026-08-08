@@ -85,6 +85,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_zeichen": 5,
 	"_test_stollen": 33,
 	"_test_truhen": 15,
+	"_test_anfuehrer": 24,
 }
 
 
@@ -5327,3 +5328,113 @@ func _test_truhen() -> void:
 		(e1["truhen"] as Array).size() > 0 and (e2["truhen"] as Array).size() > 0)
 	_check("Die Beutekammer steht erst in der Kaverne",
 		dv_q.contains("GameState.stollen_ebene >= 2 and i == alle.size() - 1"))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Anfuehrer und Schluessel
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Die beste Truhe im Spiel steht sichtbar da und laesst sich trotzdem nicht einfach einsammeln:
+# Drei Schluessel, und die gibt es nur bei Anfuehrern. Damit ist die Beutekammer keine Belohnung
+# fuers Hinlaufen, sondern fuer dreimal einen Kampf, den man haette umgehen koennen.
+func _test_anfuehrer() -> void:
+	print("· Anfuehrer und Schluessel")
+
+	# ── Die Zahlen: dreimal Leben, doppelter Schaden ─────────────────────────
+	#
+	# Und zwar gemessen am EIGENEN Typ, nicht an einem festen Wert. Ein Anfuehrer der Ratten hat
+	# dreimal so viel Leben wie eine Ratte — er ist immer der Staerkste SEINER Gruppe und nie
+	# versehentlich ein Boss.
+	var falsch_hp: Array[String] = []
+	var falsch_dmg: Array[String] = []
+	for art in CombatData.ENEMY_TYPES:
+		var normal: CombatTarget = CombatTarget.from_type(String(art))
+		var kopf: CombatTarget = CombatTarget.from_type(String(art), { "anfuehrer": true })
+		if kopf.max_health != roundi(float(normal.max_health) * 3.0):
+			falsch_hp.append("%s: %d statt %d" % [art, kopf.max_health, normal.max_health * 3])
+		if normal.contact_dps > 0 and kopf.contact_dps != roundi(float(normal.contact_dps) * 2.0):
+			falsch_dmg.append("%s: %d statt %d" % [art, kopf.contact_dps, normal.contact_dps * 2])
+	_check("Jeder Anfuehrer hat dreimal das Leben seiner Gruppe", falsch_hp.is_empty(),
+		", ".join(falsch_hp.slice(0, 5)))
+	_check("Und macht doppelten Nahschaden", falsch_dmg.is_empty(),
+		", ".join(falsch_dmg.slice(0, 5)))
+	# Auch der FERNSCHADEN. „Doppelter Schaden" heisst doppelter Schaden, und ein Revolverheld
+	# traegt seinen im Lauf und nicht in der Faust — ohne diese Zeile waere ausgerechnet der
+	# gefaehrlichste Anfuehrer der harmloseste.
+	var r_normal: CombatTarget = CombatTarget.from_type("revolver")
+	var r_kopf: CombatTarget = CombatTarget.from_type("revolver", { "anfuehrer": true })
+	_check("Auch der Fernschaden ist doppelt (%d statt %d)"
+		% [int(r_kopf.ranged["dmg"]), int(r_normal.ranged["dmg"])],
+		int(r_kopf.ranged["dmg"]) == int(r_normal.ranged["dmg"]) * 2)
+	_check("Er ist als Anfuehrer erkennbar", r_kopf.is_leader and not r_normal.is_leader)
+	# Und er bleibt ein verstaerkter GEWOEHNLICHER, kein Boss: Sonst waere „Anfuehrer" nur ein
+	# zweites Wort fuer Elite, und die Gruppe haette keinen Kopf, sondern einen Fremdkoerper.
+	_check("Ein Anfuehrer ist trotzdem kein Boss",
+		not r_kopf.is_boss and not r_kopf.is_elite and not r_kopf.is_superboss)
+	_check("Und schwaecher als ein Elite-Gegner (%d < %d Leben)"
+		% [r_kopf.max_health, CombatData.BOSS_HP], r_kopf.max_health < CombatData.BOSS_HP)
+
+	# ── Das Schloss ──────────────────────────────────────────────────────────
+	_check("Die Beutekammer verlangt drei Schluessel",
+		ChestData.schluessel(ChestData.BOSS) == 3)
+	_check("Die gewoehnliche Truhe keinen",
+		ChestData.schluessel(ChestData.STANDARD) == 0)
+	_check("Ohne Schluessel bleibt sie zu",
+		not ChestData.offen_mit(ChestData.BOSS, 0)
+		and not ChestData.offen_mit(ChestData.BOSS, 2))
+	_check("Mit dreien geht sie auf", ChestData.offen_mit(ChestData.BOSS, 3))
+	_check("Und die gewoehnliche immer", ChestData.offen_mit(ChestData.STANDARD, 0))
+	# Der Satz nennt die ZAHL. „Verschlossen" allein sagt niemandem, ob er zwei Schluessel
+	# braucht oder zwanzig — und eine Sperre, deren Preis man nicht kennt, ist keine Aufgabe,
+	# sondern eine Wand.
+	var satz: String = ChestData.schloss_text(ChestData.BOSS, 1)
+	_check("Der Sperrsatz nennt beide Zahlen (%s)" % satz,
+		satz.contains("1") and satz.contains("3"))
+	_check("Und verraet, wo die Schluessel herkommen", satz.contains("Anführer"))
+	_check("Bei genug Schluesseln sagt er nichts", ChestData.schloss_text(ChestData.BOSS, 3) == "")
+
+	# ── Sie werden auch verbraucht ───────────────────────────────────────────
+	# Ohne das oeffnete ein Satz Schluessel jede Beutekammer im Spiel.
+	var ow_q: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	var dv_q: String = FileAccess.get_file_as_string("res://scripts/DungeonView.gd")
+	_check("Die Oberwelt verbraucht die Schluessel",
+		ow_q.contains("GameState.schluessel -= ChestData.schluessel("))
+	_check("Der Stollen auch",
+		dv_q.contains("GameState.schluessel -= ChestData.schluessel("))
+	# Und geprueft wird VOR dem Oeffnen, nicht danach.
+	_check("Geprueft wird vor dem Oeffnen",
+		ow_q.find("if not ChestData.offen_mit(art_pruef") < ow_q.find('c["looted"] = true'))
+	# Anfuehrer lassen sie fallen — an beiden Orten.
+	_check("Anfuehrer lassen einen Schluessel fallen",
+		ow_q.contains("GameState.schluessel += 1") and dv_q.contains("GameState.schluessel += 1"))
+
+	# ── Wo sie stehen ────────────────────────────────────────────────────────
+	# Genau EINER je Ebene, und nur auf den ersten dreien: Drei Schluessel oeffnen eine
+	# Beutekammer, ab der vierten Ebene noch einen zu stellen hiesse, Schluessel zu verteilen,
+	# fuer die es kein Schloss gibt.
+	var DV = load("res://scripts/DungeonView.gd")
+	_check("Anfuehrer stehen auf drei Ebenen", int(DV.SCHLUESSEL_EBENEN) == 3)
+	_check("Und das passt zum Schloss der Beutekammer",
+		int(DV.SCHLUESSEL_EBENEN) == ChestData.schluessel(ChestData.BOSS))
+	_check("Je Ebene genau einer", dv_q.contains("anfuehrer_nr = rng.randi() % alle.size()"))
+	_check("Und das Rudel draussen hat auch einen",
+		ow_q.contains("_make_enemy(type_id, i == 0)"))
+
+	# ── Man sieht ihn ────────────────────────────────────────────────────────
+	# Violett, weil in dieser Welt sonst nichts violett ist: Rost, Sand, Kupfer und Messing sind
+	# warm, die Nacht ist blau.
+	var f: Color = CombatData.ANFUEHRER_SCHIMMER
+	_check("Der Schimmer ist violett und kalt", f.b > 0.7 and f.r > 0.4 and f.g < f.r and f.g < f.b)
+	_check("Beide Szenen legen denselben an",
+		ow_q.contains("AssetRegistry.schimmer_anlegen(node, CombatData.ANFUEHRER_SCHIMMER)")
+		and dv_q.contains("AssetRegistry.schimmer_anlegen(knoten, CombatData.ANFUEHRER_SCHIMMER)"))
+	# Und er ERSETZT das Modellmaterial nicht: Ein `material_override` nimmt der Figur ihre
+	# ganze Textur, und der Anfuehrer stuende als einfarbige Silhouette da.
+	var ar_q: String = FileAccess.get_file_as_string("res://scripts/AssetRegistry.gd")
+	_check("Der Schimmer liegt UEBER dem Modell, statt es zu ersetzen",
+		ar_q.contains("kind.material_overlay = glanz")
+		and not ar_q.contains("kind.material_override = glanz"))
+
+	# ── Ein neues Spiel faengt ohne Schluessel an ────────────────────────────
+	GameState.schluessel = 3
+	GameState.neu_beginnen()
+	_check("Ein neues Spiel faengt ohne Schluessel an", GameState.schluessel == 0)

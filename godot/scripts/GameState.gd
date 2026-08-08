@@ -138,6 +138,17 @@ var met: Dictionary = {}
 ## aufhoert, faengt abends wieder an.
 var hour: float = DayCycle.START_HOUR
 
+## Wie viele Schlüssel man bei sich trägt.
+##
+## Sie kommen ausschließlich von **Anführern** und öffnen ausschließlich **Beutekammern**. Das
+## ist der ganze Zweck: Die beste Truhe im Spiel steht sichtbar da und lässt sich trotzdem nicht
+## einfach einsammeln — man muss dafür dreimal einen Kampf suchen, den man umgehen könnte.
+##
+## Sie stehen hier und nicht im Beutel: Ein Schlüssel ist kein Gegenstand, den man ablegt,
+## verkauft oder verschrottet, und im Rucksack wäre er beides — ein Platz, den er wegnimmt, und
+## ein Versehen, das man nicht rückgängig machen kann.
+var schluessel: int = 0
+
 # ── Der Stollen ───────────────────────────────────────────────────────────────
 #
 # Ein Dungeon ist eine EIGENE Szene, und der Weg zurück muss ihn überleben. Diese drei Werte
@@ -226,6 +237,7 @@ func neu_beginnen() -> void:
 	stollen_ebene = 0
 	stollen_startwert = 0
 	stollen_rueckkehr = Vector3.ZERO
+	schluessel = 0
 
 
 # ── Erfahrungs-Kurve & abgeleitete Werte ──────────────────────────────────────

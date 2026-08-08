@@ -65,6 +65,10 @@ const BESATZUNG: Dictionary = {
 const SICHT_M: float = 16.0
 const ANGRIFF_M: float = 2.0
 const SCHUSS_M: float = 26.0
+## Auf wie vielen Ebenen ein Anfuehrer steht. Drei, weil drei Schluessel eine Beutekammer
+## oeffnen — auf einer vierten Ebene noch einen zu stellen hiesse, Schluessel zu verteilen,
+## fuer die es kein Schloss gibt.
+const SCHLUESSEL_EBENEN: int = 3
 
 
 func _ready() -> void:
@@ -265,10 +269,11 @@ func _kopf_setzen() -> void:
 	for e in _gegner:
 		if (e["target"] as CombatTarget).health > 0:
 			steht += 1
-	_text.text = "⌂ %s — Ebene %d   ▩ %d Kammern   ❤ %d/%d   ¤ %d   ☠ %d/%d" % [
+	_text.text = "⌂ %s — Ebene %d   ▩ %d Kammern   ❤ %d/%d   ¤ %d   ☠ %d/%d   ✦ %d/%d" % [
 		name, GameState.stollen_ebene, (_plan["raeume"] as Array).size(),
 		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold,
-		_gegner.size() - steht, _gegner.size()]
+		_gegner.size() - steht, _gegner.size(),
+		GameState.schluessel, ChestData.schluessel(ChestData.BOSS)]
 
 
 func _process(delta: float) -> void:
@@ -410,17 +415,28 @@ func _gegner_bauen() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("besatzung-%d-%d" % [GameState.stollen_startwert, GameState.stollen_ebene])
 	var arten: Array = BESATZUNG.get(GameState.stollen_ebene, BESATZUNG[1])
-	for f in (_plan["gegner"] as Array):
+	var alle: Array = _plan["gegner"] as Array
+	# GENAU EINER je Ebene ist der Anfuehrer — und nur auf den ersten drei Ebenen. Drei
+	# Schluessel oeffnen eine Beutekammer; ab der vierten Ebene noch einen zu stellen hiesse,
+	# Schluessel zu verteilen, fuer die es kein Schloss gibt.
+	var anfuehrer_nr: int = -1
+	if GameState.stollen_ebene <= SCHLUESSEL_EBENEN and not alle.is_empty():
+		anfuehrer_nr = rng.randi() % alle.size()
+	for i in alle.size():
+		var f: Vector2i = alle[i] as Vector2i
 		var art: String = String(arten[rng.randi() % arten.size()])
-		var ziel: CombatTarget = CombatTarget.from_type(art)
-		var knoten: Node3D = AssetRegistry.instantiate(art, 1.4)
+		var ist_kopf: bool = i == anfuehrer_nr
+		var ziel: CombatTarget = CombatTarget.from_type(art, { "anfuehrer": ist_kopf })
+		var knoten: Node3D = AssetRegistry.instantiate(art, 1.4 if not ist_kopf else 1.75)
 		if knoten == null:
 			knoten = MeshInstance3D.new()
 			var box := BoxMesh.new()
 			box.size = Vector3(0.9, 1.4, 0.9)
 			(knoten as MeshInstance3D).mesh = box
-		knoten.position = DungeonLayout.feld_zu_szene(f as Vector2i)
+		knoten.position = DungeonLayout.feld_zu_szene(f)
 		add_child(knoten)
+		if ist_kopf:
+			AssetRegistry.schimmer_anlegen(knoten, CombatData.ANFUEHRER_SCHIMMER)
 		# Die Lebensleiste über dem Kopf, wie draußen: Ohne sie sieht man nur, DASS man trifft,
 		# nicht wie weit man ist.
 		var leiste := MeshInstance3D.new()
@@ -535,6 +551,10 @@ func _faellt(e: Dictionary) -> void:
 	GameState.gold += t.gold
 	GameState.kills += 1
 	GameState.add_xp(CombatData.xp_for_kill(t))
+	if t.is_leader:
+		GameState.schluessel += 1
+		_hinweis.text = "✦ Ein Schlüssel. %d von %d." % [GameState.schluessel,
+			ChestData.schluessel(ChestData.BOSS)]
 	# Auf die Seite kippen statt verschwinden. Wer im Dunkeln kämpft, verliert sonst den
 	# Ueberblick, wen er schon erledigt hat — und laeuft dreimal um dieselbe Kammer.
 	n.rotation.x = PI * 0.5
@@ -560,12 +580,19 @@ func _truhe_oeffnen() -> bool:
 		var n: MeshInstance3D = tr["node"]
 		if n.position.distance_to(_spieler.position) > NAH_M:
 			continue
+		var art_pruef: String = String(tr.get("art", ChestData.STANDARD))
+		# Erst das Schloss. Wer davorsteht und nicht aufkriegt, muss ERFAHREN warum — und mit
+		# welcher Zahl. „Verschlossen" allein ist eine Wand, keine Aufgabe.
+		if not ChestData.offen_mit(art_pruef, GameState.schluessel):
+			_hinweis.text = ChestData.schloss_text(art_pruef, GameState.schluessel)
+			return true
 		tr["offen"] = true
 		n.visible = false
 		# Beute aus `ChestData` — dieselbe Tabelle wie draussen. Der Stollen rechnete vorher
 		# `18 + Ebene · 22` und die Oberwelt wuerfelte 18–45: zwei Zahlenreihen fuer dieselbe
 		# Sache, die beim ersten „die Truhe gibt zu wenig" niemand mehr auseinanderhaelt.
-		var art: String = String(tr.get("art", ChestData.STANDARD))
+		var art: String = art_pruef
+		GameState.schluessel -= ChestData.schluessel(art)
 		var gold: int = ChestData.gold(art)
 		GameState.gold += gold
 		var namen: Array[String] = []

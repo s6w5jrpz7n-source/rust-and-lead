@@ -4937,12 +4937,15 @@ func _hp_streifen(breite: float, hoehe: float, farbe: Color, versatz: float) -> 
 
 ## Baut einen Gegner-Node (Modell oder Primitive + Lebensleiste), fügt ihn NICHT in die Szene
 ## ein (Aufrufer setzt zuerst die Position) und trägt ihn NICHT in `_enemies` ein.
-func _make_enemy(type_id: String) -> Dictionary:
-	var target: CombatTarget = CombatTarget.from_type(type_id)
+func _make_enemy(type_id: String, anfuehrer: bool = false) -> Dictionary:
+	var target: CombatTarget = CombatTarget.from_type(type_id, { "anfuehrer": anfuehrer })
 	var node := Node3D.new()
 	# Modell, sobald eines unter assets/models/enemies/<typ>.glb liegt — sonst Primitive.
 	var asset: String = AssetRegistry.enemy_asset(type_id)
-	var model: Node3D = AssetRegistry.instantiate(asset, AssetRegistry.height_of(asset))
+	# Der Anfuehrer ist auch groesser. Der Schimmer allein traegt bei Tageslicht nicht weit
+	# genug — eine Silhouette schon.
+	var hoehe: float = AssetRegistry.height_of(asset) * (1.25 if anfuehrer else 1.0)
+	var model: Node3D = AssetRegistry.instantiate(asset, hoehe)
 	if model != null:
 		node.add_child(model)
 		AssetRegistry.play_clip(model, "idle")
@@ -5001,6 +5004,8 @@ func _make_enemy(type_id: String) -> Dictionary:
 	marken.position = Vector3(0.0, 0.30, 0.0)
 	marken.visibility_range_end = 90.0
 	traeger.add_child(marken)
+	if anfuehrer:
+		AssetRegistry.schimmer_anlegen(node, CombatData.ANFUEHRER_SCHIMMER)
 	return { "node": node, "target": target, "bar": bar, "model": model, "marken": marken,
 		"animated": animated, "phase": randf() * TAU, "radius": radius,
 		"windup": -1.0, "cooldown": 0.0 }
@@ -5048,7 +5053,9 @@ func _spawn_pack() -> void:
 	var gate: Vector3 = WorldManager.poi_scene_position("rustwater") + Vector3(0.0, 0.0, TOWN_SAFE_M + 12.0)
 	for i in 4:
 		var type_id: String = "klaeffer" if i == 3 else "outlaw"
-		var e: Dictionary = _make_enemy(type_id)
+		# Einer fuehrt. Ein Rudel ohne Kopf ist eine Menge gleicher Gegner; mit einem hat es
+		# eine Mitte, auf die man zuerst schiesst oder um die man einen Bogen macht.
+		var e: Dictionary = _make_enemy(type_id, i == 0)
 		(e["node"] as Node3D).position = gate + Vector3(float(i) * 5.0 - 7.5, 0.0, float(i % 2) * 6.0)
 		add_child(e["node"])
 		_enemies.append(e)
@@ -5268,6 +5275,14 @@ const ERSTE_WAFFE: String = "karabiner"
 func _open_chest(c: Dictionary) -> void:
 	if c.is_empty() or bool(c["looted"]):
 		return
+	# Erst das Schloss. Eine Beutekammer steht sichtbar da und laesst sich trotzdem nicht
+	# einfach einsammeln — und wer davorsteht, muss ERFAHREN warum und mit welcher Zahl.
+	# „Verschlossen" allein ist eine Wand, keine Aufgabe.
+	var art_pruef: String = String(c.get("art", ChestData.STANDARD))
+	if not ChestData.offen_mit(art_pruef, GameState.schluessel):
+		_say(ChestData.schloss_text(art_pruef, GameState.schluessel), 3.0)
+		return
+	GameState.schluessel -= ChestData.schluessel(art_pruef)
 	c["looted"] = true
 	c["cd"] = CHEST_RESPAWN_SEC
 	(c["node"] as Node3D).visible = false
@@ -5298,7 +5313,7 @@ func _open_chest(c: Dictionary) -> void:
 	# Was drin ist, steht in `ChestData` und nicht hier: Truhen stehen an zwei ganz
 	# verschiedenen Orten (Oberwelt und Stollen), und zwei Zahlenreihen fuer dieselbe Sache
 	# driften auseinander, sobald jemand an einer davon dreht.
-	var art: String = String(c.get("art", ChestData.STANDARD))
+	var art: String = art_pruef
 	_drop(at, "gold", { "amount": ChestData.gold(art) })
 	var pool: String = AmmoData.pool_for(_weapon_id if _weapon_id != "" else ERSTE_WAFFE)
 	_drop(at, "ammo", { "pool": pool,
@@ -6526,7 +6541,12 @@ func _process_combat(delta: float) -> void:
 		var pool: String = AmmoData.pool_for(_weapon_id)
 		_drop(at, "ammo", { "pool": pool, "amount": AmmoData.roll_drop(pool) })
 		_roll_material_drop(at)
-		_say("☠ %s erlegt" % String(CombatData.ENEMY_TYPES[target.type_id]["name"]), 1.6)
+		if target.is_leader:
+			GameState.schluessel += 1
+			_say("✦ Anführer erlegt — ein Schlüssel. %d von %d." % [GameState.schluessel,
+				ChestData.schluessel(ChestData.BOSS)], 2.6)
+		else:
+			_say("☠ %s erlegt" % String(CombatData.ENEMY_TYPES[target.type_id]["name"]), 1.6)
 		# ── Steuerwalzen ──────────────────────────────────────────────────────
 		#
 		# Sechzehn Erinnerungen stehen seit Langem fertig in `MemoryManager` — und nichts im

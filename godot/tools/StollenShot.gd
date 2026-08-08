@@ -50,8 +50,19 @@ func _process(_dt: float) -> void:
 	_warte -= 1
 	if _warte > 0:
 		return
-	var bild: Image = get_viewport().get_texture().get_image()
 	if _i == 0:
+		# Die Spieleransicht auf den ANFUEHRER richten. Ob ein violetter Schimmer im Dunkeln
+		# traegt, sieht man nicht an der Figur, die unter der eigenen Lampe steht.
+		#
+		# Und dann WARTEN. Der erste Anlauf hat die Figur versetzt und im selben Bild
+		# ausgeloest — die Kamera des Stollens zieht aber erst in ihrem eigenen `_process`
+		# nach, also stand sie noch am alten Fleck und knipste den Eingang.
+		_auf_anfuehrer()
+		_i = 1
+		_warte = 12
+		return
+	var bild: Image = get_viewport().get_texture().get_image()
+	if _i == 1:
 		bild.save_png("%s_spieler.png" % OUT)
 		_oben.current = true
 		_flut.visible = true
@@ -60,7 +71,7 @@ func _process(_dt: float) -> void:
 		# uebrig — exp(-0,035 · 108) ist rund zwei Prozent. Die Beleuchtung war nie das
 		# Problem, die Sichtweite war es.
 		_nebel_aus()
-		_i = 1
+		_i = 2
 		_warte = 25
 		return
 	bild.save_png("%s_oben.png" % OUT)
@@ -75,3 +86,14 @@ func _nebel_aus() -> void:
 			env.fog_enabled = false
 			env.ambient_light_energy = 1.0
 			env.background_color = Color(0.05, 0.05, 0.07)
+
+
+## Kamera und Spieler zum Anfuehrer schieben, damit das Nahbild ihn zeigt.
+func _auf_anfuehrer() -> void:
+	var d: Node = get_child(0)
+	for e in (d.get("_gegner") as Array):
+		if not (e["target"] as CombatTarget).is_leader:
+			continue
+		var wo: Vector3 = (e["node"] as Node3D).position
+		(d.get("_spieler") as Node3D).position = wo + Vector3(0.0, 0.0, 5.0)
+		return

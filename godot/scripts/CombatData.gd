@@ -29,6 +29,24 @@ const DOT_MS: int = 3000
 const DOT_TICK_SEC: float = 0.4
 
 # ── Boss-/Elite-/Superboss-Konstanten ─────────────────────────────────────────
+# ── Anführer ──────────────────────────────────────────────────────────────────
+#
+# Der Kopf einer Gruppe: kein eigener Gegnertyp, sondern ein VERSTÄRKTER gewöhnlicher. Genau
+# das ist der Reiz — man erkennt ihn als das, was man schon kennt, und merkt am dritten Schuss,
+# dass diesmal etwas anderes davorsteht.
+#
+# Die Faktoren wirken auf den EIGENEN Typ, nicht auf einen festen Wert. Ein Anführer der Ratten
+# hat dreimal so viel Leben wie eine Ratte, ein Anführer der Konstrukte dreimal so viel wie ein
+# Konstrukt — er ist immer der Stärkste SEINER Gruppe und nie plötzlich ein Boss.
+const ANFUEHRER_HP_MUL: float = 3.0
+const ANFUEHRER_SCHADEN_MUL: float = 2.0
+## Was er zusätzlich an Gold trägt. Er hat länger gelebt als die anderen.
+const ANFUEHRER_GOLD_MUL: float = 2.5
+## Der violette Schimmer. Violett, weil in dieser Welt sonst nichts violett ist: Rost, Sand,
+## Kupfer und Messing sind warm, die Nacht ist blau. Eine kalte Buntfarbe fällt hier auf, ohne
+## dass man sie erklären muss — und sie ist auch für Rot-Grün-Blinde von allem anderen trennbar.
+const ANFUEHRER_SCHIMMER: Color = Color(0.62, 0.30, 0.95)
+
 const BOSS_HP: int = 700
 const BOSS_CONTACT: int = 28
 const BOSS_GOLD: int = 20

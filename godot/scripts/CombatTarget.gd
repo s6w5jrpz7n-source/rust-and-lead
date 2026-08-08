@@ -20,6 +20,7 @@ var ranged: Dictionary = {}                           # {} = Nahkämpfer
 var is_boss: bool = false
 var is_elite: bool = false
 var is_superboss: bool = false
+var is_leader: bool = false                           # Anführer einer Gruppe (violett, lässt Schlüssel fallen)
 var is_unique: bool = false                           # benannter Champion (Kritter-Hallen, §8.2)
 var display_name: String = ""                         # Anzeigename für Boss-/Champion-Leiste
 
@@ -53,6 +54,19 @@ static func from_type(type_id: String, opts: Dictionary = {}) -> CombatTarget:
 		e.max_health = maxi(e.max_health, CombatData.BOSS_HP)
 		e.contact_dps = maxi(e.contact_dps, CombatData.BOSS_CONTACT)
 		e.gold = CombatData.BOSS_GOLD
+
+	# Anfuehrer: der Kopf einer Gruppe. Kein eigener Typ, sondern ein verstaerkter gewoehnlicher
+	# — dreimal Leben, doppelter Schaden, gemessen an SEINEM Typ. Damit ist er immer der
+	# Staerkste seiner Gruppe und nie versehentlich ein Boss.
+	if bool(opts.get("anfuehrer", false)):
+		e.is_leader = true
+		e.max_health = roundi(float(e.max_health) * CombatData.ANFUEHRER_HP_MUL)
+		e.contact_dps = roundi(float(e.contact_dps) * CombatData.ANFUEHRER_SCHADEN_MUL)
+		# Auch der Fernschaden. „Doppelter Schaden" heisst doppelter Schaden, und ein
+		# Revolverheld traegt seinen im Lauf und nicht in der Faust.
+		if not e.ranged.is_empty():
+			e.ranged["dmg"] = roundi(float(e.ranged["dmg"]) * CombatData.ANFUEHRER_SCHADEN_MUL)
+		e.gold = roundi(float(e.gold) * CombatData.ANFUEHRER_GOLD_MUL)
 
 	# Superboss (Dungeon-Endgegner, tiefste Ebene): 4x Boss-Leben, front-immun.
 	if bool(opts.get("superboss", false)):
