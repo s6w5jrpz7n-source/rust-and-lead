@@ -149,8 +149,17 @@ Szene, wer das Wrack im Editor verschiebt, nimmt die Truhe mit. Darin liegt der 
 garantiert, nicht ausgewürfelt. Der Anfang einer Geschichte darf nicht auswürfeln, ob sie
 stattfindet. Dazu Gold, Munition, ein Ausrüstungsteil.
 
-> *Ein Karabiner, Lauf voller Sand. Er passt in deine Hand, als hättest du das schon tausendmal
-> gemacht. Woher weißt du das?*
+Und er **sagt es auch** — eine kurze Nahaufnahme, sechs Sekunden, kein Rundflug: Hier geht es um
+einen Gegenstand in zwei Händen, nicht um einen Ort.
+
+> **DER NAMENLOSE:** „Ein Karabiner. Lauf voller Sand."
+> „Er passt in meine Hand, als hätte ich das schon tausendmal gemacht."
+> „Woher weiß ich das?"
+
+Das ist die erste Stelle, an der die Figur etwas kann, was sie sich nicht erklären kann —
+dieselbe Frage, die beim ersten Gegner wiederkommt (*„…und woher weiß ich, wo man so ein Ding
+trifft?"*) und die die ganze Geschichte trägt. Der Satz stand seit Langem in diesem Blatt und
+wurde im Spiel nie gesprochen; ohne ihn ist der Fund eine Ausrüstungsmeldung.
 
 **4. Das Pferd.** Steht am Kraterrand, auf der Seite von Rustwater, mit Namensschild. Aus 4 m
 erscheint **🐎 Aufsitzen** in der Aktionsleiste (oder `[E]`): **dreifaches Tempo, kein Schuss aus
@@ -164,6 +173,18 @@ ein Kessel, der aus dem Blech kommt, ist eine, und er stellt die Frage des ganze
 ersten Minute. **Er schießt selbst** — der Spieler drückt nicht. Danach die Kamera langsam auf den Toten, und **erst dann** liegt Beute da.
 Die ganze Szene steht in `docs/TITEL_UND_GRENZEN.md`; der Kern ist die letzte Sprechzeile, die
 das Plündern begründet statt es als Spielfunktion zu erklären.
+
+**4c. Die erste Steuerwalze.** Aus dem Konstrukt, garantiert. Sechzehn Erinnerungen stehen in
+`MemoryManager` und waren bis jetzt unerreichbar — sie kommen aus **mechanischen** Gegnern
+(3 %, beim Boss 50 %), und das ist keine Willkür: Was der Held von sich selbst nicht weiß, steckt
+in Maschinen derselben Bauart. Wer eine aufschneidet, findet ein Stück von sich.
+
+Gezeigt wird sie unter dem Heldennamen und nicht als Fundmeldung — eine Erinnerung ist kein
+Gegenstand, den man einsteckt, sie fällt jemandem ein.
+
+> **DER NAMENLOSE:** „Da ist eine Walze drin. Sie dreht sich noch."
+> *(die erste Erinnerung — „Der Nagel")*
+> „…das war nicht meine Erinnerung. Das ist sie aber."
 
 **5. Der Weg.** Die Fußspur führt aus der Grube **zuerst auf den Ausguck**, danach nach
 Rustwater — und dort, seit die Palisade steht, **durch das Tor** statt gegen die Mauer.

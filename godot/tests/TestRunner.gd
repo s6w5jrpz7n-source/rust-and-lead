@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 59,
+	"_test_titel_und_erster": 63,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1105,6 +1105,12 @@ func _test_titel_und_erster() -> void:
 	# Der Rahmen liegt DARUEBER und darf keine Tipps schlucken, sonst waere der Knopf tot.
 	_check("Der Rahmen schluckt keine Tipps",
 		ow_q.contains("_portrait_rahmen.mouse_filter = Control.MOUSE_FILTER_IGNORE"))
+	# Und er hat die Groesse, die ihm zugewiesen wird. Godots Vorgabe fuer `TextureRect` ist
+	# `EXPAND_KEEP_SIZE`: Die Textur bestimmt die Mindestgroesse, und ein gesetztes `size` wird
+	# beim Eintritt in den Baum wieder darauf hochgezogen. Im Bild stand deshalb ein 470 px
+	# grosser Rahmen ueber dem halben Bildschirm, obwohl 72 px zugewiesen waren.
+	_check("Der Rahmen haelt seine Groesse",
+		ow_q.contains("_portrait_rahmen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE"))
 	# Leben und Erfahrung als Balken. Eine Zahl muss man lesen, einen Balken sieht man.
 	_check("Leben und Erfahrung stehen als Balken da",
 		ow_q.contains("_hp_bar = _hud_balken") and ow_q.contains("_xp_bar = _hud_balken"))
@@ -1147,6 +1153,19 @@ func _test_titel_und_erster() -> void:
 	# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen.
 	_check("Der Knopf wird ausgegraut, nicht versteckt",
 		ow_q.contains("_trank_btn.disabled = GameState.potions <= 0"))
+
+	# ── Die erste Truhe ───────────────────────────────────────────────────────
+	#
+	# Der Satz stand seit Langem im Storyblatt und wurde im Spiel nie gesprochen. Er ist die
+	# erste Stelle, an der die Figur etwas kann, was sie sich nicht erklaeren kann — dieselbe
+	# Frage, die spaeter beim ersten Gegner wiederkommt. Ohne ihn ist der Fund eine
+	# Ausruestungsmeldung.
+	_check("Die erste Truhe ist eine Szene", ow_q.contains("func _erste_truhe_szene"))
+	_check("Und der Held fragt sich, woher er das kann",
+		ow_q.contains("Woher weiß ich das?"))
+	# Kein Rundflug: Hier geht es um einen Gegenstand in zwei Haenden, nicht um einen Ort.
+	_check("Die Kamera geht heran und bleibt stehen",
+		not ow_q.contains("spirale_punkte(") or ow_q.count("spirale_punkte(") <= 2)
 
 	# ── Die Steuerwalzen ──────────────────────────────────────────────────────
 	#

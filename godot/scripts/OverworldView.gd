@@ -4545,9 +4545,18 @@ func _build_hud() -> void:
 	if rahmen != null:
 		_portrait_rahmen = TextureRect.new()
 		_portrait_rahmen.texture = rahmen
-		_portrait_rahmen.position = Vector2(HUD_RAND, HUD_RAND)
-		_portrait_rahmen.size = Vector2(PORTRAIT_PX, PORTRAIT_PX)
+		# `expand_mode` MUSS gesetzt werden, sonst gilt die Bildgroesse.
+		#
+		# Godots Vorgabe ist `EXPAND_KEEP_SIZE`: Die Textur bestimmt die Mindestgroesse, und ein
+		# gesetztes `size` wird beim Eintritt in den Baum wieder darauf hochgezogen. Im Bild
+		# stand deshalb ein 470 px grosser Rahmen ueber dem halben Bildschirm, obwohl hier
+		# 72 px zugewiesen sind. Es sah aus wie ein Fehler in der Grafik und war einer in einer
+		# Vorgabe.
+		_portrait_rahmen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		_portrait_rahmen.stretch_mode = TextureRect.STRETCH_SCALE
+		_portrait_rahmen.position = Vector2(HUD_RAND, HUD_RAND)
+		_portrait_rahmen.custom_minimum_size = Vector2(PORTRAIT_PX, PORTRAIT_PX)
+		_portrait_rahmen.size = Vector2(PORTRAIT_PX, PORTRAIT_PX)
 		_portrait_rahmen.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(_portrait_rahmen)
 	# Leben und Erfahrung als BALKEN neben dem Portraet. Eine Zahl muss man lesen; einen Balken
@@ -5125,6 +5134,16 @@ func _open_chest(c: Dictionary) -> void:
 		GameState.add_weapon(ERSTE_WAFFE)
 		_sync_weapon()
 		_say("🔫 %s gefunden — angelegt." % String(erste["name"]), 3.2)
+		# Und er sagt etwas dazu. Der Satz stand seit Langem im Storyblatt und wurde im Spiel
+		# nie gesprochen:
+		#
+		#   „Ein Karabiner, Lauf voller Sand. Er passt in deine Hand, als haettest du das schon
+		#    tausendmal gemacht. Woher weisst du das?"
+		#
+		# Er ist die erste Stelle, an der die Figur etwas kann, was sie sich nicht erklaeren
+		# kann — dieselbe Frage, die spaeter beim ersten Gegner wiederkommt und die die ganze
+		# Geschichte traegt. Ohne ihn ist der Fund eine Ausruestungsmeldung.
+		_erste_truhe_szene(at)
 	var gold: int = randi_range(18, 45)
 	_drop(at, "gold", { "amount": gold })
 	var pool: String = AmmoData.pool_for(_weapon_id if _weapon_id != "" else ERSTE_WAFFE)
@@ -7541,4 +7560,35 @@ func _walze_bergen(ist_boss: bool, erzwingen: bool = false) -> void:
 		"„%s“" % String(m.get("title", "")),
 		"„%s“" % String(m.get("text", "")),
 		"„…das war nicht meine Erinnerung. Das ist sie aber.“",
+	])
+
+
+# ── Die erste Truhe ───────────────────────────────────────────────────────────
+## Eine kurze Nahaufnahme auf den Fund, und der Held sagt, was er nicht erklaeren kann.
+##
+## Kein Rundflug: Hier geht es um einen Gegenstand in zwei Haenden, nicht um einen Ort. Die
+## Kamera geht heran, bleibt stehen, geht zurueck. Drei Wegpunkte, gut sechs Sekunden.
+const TRUHE_SEK_HIN: float = 2.2
+const TRUHE_SEK_HALT: float = 2.6
+const TRUHE_SEK_HEIM: float = 1.6
+func _erste_truhe_szene(at: Vector3) -> void:
+	if _cam == null or _player == null:
+		return
+	var heim: Transform3D = _cam.global_transform
+	var hin := Vector3(at.x - _player.position.x, 0.0, at.z - _player.position.z)
+	if hin.length() < 0.5:
+		hin = -_player.global_transform.basis.z
+	hin = Vector3(hin.x, 0.0, hin.z).normalized()
+	var brust: Vector3 = _player.position + Vector3(0.0, 1.15, 0.0)
+	var nah: Vector3 = _player.position + hin * 2.2 + Vector3(0.0, 1.5, 0.0)
+	_play_flight([
+		{ "pos": nah, "ziel": brust, "sek": TRUHE_SEK_HIN, "fov": 42.0 },
+		{ "pos": nah, "ziel": brust, "sek": TRUHE_SEK_HALT, "fov": 40.0 },
+		{ "pos": heim.origin, "ziel": heim.origin - heim.basis.z * 10.0,
+			"sek": TRUHE_SEK_HEIM, "fov": CAM_FOV },
+	])
+	_play_speech(HELD_NAME, "held", [
+		"„Ein Karabiner. Lauf voller Sand.“",
+		"„Er passt in meine Hand, als hätte ich das schon tausendmal gemacht.“",
+		"„Woher weiß ich das?“",
 	])
