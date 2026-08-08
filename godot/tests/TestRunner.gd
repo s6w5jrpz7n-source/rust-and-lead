@@ -51,7 +51,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_reload": 18,
 	"_test_weapons": 13,
 	"_test_titel_und_erster": 72,
-	"_test_steg_und_biome": 16,
+	"_test_steg_und_biome": 23,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1335,6 +1335,30 @@ func _test_steg_und_biome() -> void:
 		OW6.status_marken(mt, jetzt).contains("‼") and mt.max_armor > 0)
 	# Sie stehen UEBER der Lebensleiste: Der Blick geht beim Zielen nach oben zum Kopf.
 	_check("Die Marken haengen am Gegner", ow_q.contains('"marken": marken'))
+
+	# ── Und dieselben Marken am SPIELER ───────────────────────────────────────
+	#
+	# Ueber den Gegnern standen sie laengst, ueber dem Spieler nie — dabei wiegt es hier
+	# schwerer: Ein Gegner, der Schaden nimmt, ist erklaert, man hat ja geschossen. Leben, das
+	# ohne sichtbaren Grund sinkt, liest sich als FEHLER DES SPIELS. Genau das passierte im
+	# Smog und im Strahlensumpf: Dazu gab es nur alle 2,2 Sekunden einen Satz, und wer den
+	# verpasst, sieht bloss Leben verschwinden.
+	#
+	# Geprueft wird die Wahrheitstafel, nicht der Quelltext.
+	var t0: float = 100.0
+	_check("Ohne Gefahr keine Spielermarke", OW6.spieler_marken(t0, 0.0, 0.0) == "")
+	_check("Smog wird angezeigt", OW6.spieler_marken(t0, t0 + 1.0, 0.0) == "☣")
+	_check("Strahlung wird angezeigt", OW6.spieler_marken(t0, 0.0, t0 + 1.0) == "☢")
+	_check("Beides zugleich, Strahlung zuerst",
+		OW6.spieler_marken(t0, t0 + 1.0, t0 + 1.0) == "☢☣")
+	# Und sie verschwindet wieder — eine Marke, die haengen bleibt, waere eine Dauerwarnung vor
+	# einer Gefahr, die man laengst verlassen hat.
+	_check("Abgelaufen ist weg", OW6.spieler_marken(t0, t0 - 0.1, t0 - 0.1) == "")
+	# Der Nachlauf ist der Grund, warum ueberhaupt eine Frist mitgegeben wird: Der Schaden
+	# faellt schubweise an, und ohne ihn ginge die Marke im Sekundentakt an und aus.
+	_check("Es gibt einen Nachlauf gegen das Flackern", float(OW6.MARKE_NACHLAUF_SEK) >= 0.5)
+	_check("Die Spielermarken haengen an der Lebensleiste",
+		ow_q.contains("_spieler_marken.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + BALKEN_W"))
 
 	# ── Zwei Reden, die sich ins Wort fielen ──────────────────────────────────
 	#

@@ -48,7 +48,13 @@ drei Zeilen Text mit vierzehn Zahlen darin. Im Gefecht liest die niemand. Was ma
   nichts passiert, lernt daraus nur, dass Säureflaschen nichts tun; dass sie gerade die Panzerung
   aufgelöst hat, stand nirgends. Jetzt steht ⚡ (Kurzschluss), ☣ (DOT) und ‼ (zerfressene
   Panzerung) über der Lebensleiste des Gegners — dorthin geht der Blick beim Zielen ohnehin.
-  *Noch offen:* dieselben Marken für den **Spieler**, sobald ihn etwas davon treffen kann.
+  ~~*Noch offen:* dieselben Marken für den **Spieler**.~~ **Erledigt** — und dort wiegen sie
+  schwerer. Ein Gegner, der Schaden nimmt, ist erklärt: man hat geschossen. Leben, das ohne
+  sichtbaren Grund sinkt, liest sich als *Fehler des Spiels* — und genau das passierte im
+  Smog (☣) und im Strahlensumpf (☢). Dazu gab es nur alle 2,2 Sekunden einen Satz; wer den
+  verpasst, sieht bloß Leben verschwinden. Die Marke steht jetzt rechts neben der
+  Lebensleiste, solange es frisst, mit 1,2 s Nachlauf — der Schaden fällt schubweise an, und
+  ohne Nachlauf ginge die Warnung im Sekundentakt an und aus.
 
 ### Oben rechts — wo ich bin
 

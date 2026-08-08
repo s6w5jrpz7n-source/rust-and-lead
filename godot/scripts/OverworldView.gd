@@ -4502,6 +4502,14 @@ var _portrait_btn: TextureButton = null
 var _portrait_rahmen: TextureRect = null
 var _hp_bar: ProgressBar = null
 var _xp_bar: ProgressBar = null
+var _spieler_marken: Label = null
+## Wie lange eine Spielermarke nach dem letzten Schaden noch stehen bleibt.
+##
+## Ohne Nachlauf flackert sie: Der Smog-Schaden faellt nicht jeden Frame an, sondern in
+## Schueben — die Marke ginge im Sekundentakt an und aus und waere als Warnung wertlos.
+const MARKE_NACHLAUF_SEK: float = 1.2
+var _marke_smog_bis: float = 0.0
+var _marke_sumpf_bis: float = 0.0
 
 
 ## Einen Trank trinken — und sagen, was passiert ist.
@@ -4597,6 +4605,20 @@ func _build_hud() -> void:
 	_xp_bar.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, HUD_RAND + 6.0 + BALKEN_H + 5.0)
 	_xp_bar.size.y = BALKEN_H * 0.6
 	layer.add_child(_xp_bar)
+	# Was gerade AN MIR frisst — rechts neben dem Lebensbalken, wohin der Blick beim Sinken
+	# ohnehin faellt.
+	#
+	# Ueber den Gegnern stehen diese Marken seit Langem, ueber dem Spieler stand nie eine.
+	# Dabei ist der Schaden hier am schwersten zu deuten: Smog und Strahlensumpf ziehen Leben
+	# ab, ohne dass jemand schiesst. Einen Satz dazu gab es, aber nur alle 2,2 Sekunden — wer
+	# ihn verpasst, sieht bloss Leben verschwinden und haelt es fuer einen Fehler. Eine Marke,
+	# die STEHT, solange es frisst, beantwortet das dauerhaft.
+	_spieler_marken = Label.new()
+	_spieler_marken.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + BALKEN_W + 8.0,
+		HUD_RAND + 3.0)
+	_spieler_marken.add_theme_font_size_override("font_size", 17)
+	_spieler_marken.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_spieler_marken)
 	_hud = Label.new()
 	_hud.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0,
 		HUD_RAND + 6.0 + BALKEN_H + 5.0 + BALKEN_H * 0.6 + 6.0)
@@ -4982,6 +5004,25 @@ static func status_marken(t: CombatTarget, jetzt_ms: int) -> String:
 		m += HudGlyph.z("dot")
 	if t.armor <= 0 and t.max_armor > 0:
 		m += HudGlyph.z("panzer_weg")
+	return m
+
+
+## Welche Zustandsmarken traegt der SPIELER gerade?
+##
+## Dieselbe Idee wie ueber den Gegnern, nur an der eigenen Lebensleiste — und hier wiegt sie
+## schwerer: Ein Gegner, der Schaden nimmt, ist erklaert (man hat geschossen). Leben, das ohne
+## sichtbaren Grund sinkt, liest sich als Fehler des Spiels. Genau das passiert im Smog und im
+## Strahlensumpf.
+##
+## Rein gerechnet und ohne Zugriff auf die Szene, damit der Test die Wahrheitstafel durchgehen
+## kann, statt ein Bild zu beschreiben.
+static func spieler_marken(jetzt: float, smog_bis: float, sumpf_bis: float) -> String:
+	var m: String = ""
+	# Der Sumpf zuerst: Er ist die haertere Grenze und soll vorne stehen, wenn beides zutrifft.
+	if jetzt < sumpf_bis:
+		m += HudGlyph.z("strahlung")
+	if jetzt < smog_bis:
+		m += HudGlyph.z("smog")
 	return m
 
 
@@ -6887,6 +6928,12 @@ func _process_hazards(delta: float) -> void:
 		# Sagen, WAS passiert. Leben, das ohne Erklaerung sinkt, liest sich als Fehler; erst der
 		# Satz macht aus dem Schaden eine Grenze, die man versteht und respektiert.
 		var jetzt: float = Time.get_ticks_msec() / 1000.0
+		# Die Marke merkt sich, WAS gerade frisst — mit Nachlauf, weil der Schaden schubweise
+		# anfaellt und eine flackernde Warnung keine ist.
+		if WorldManager.is_in_swamp(rel):
+			_marke_sumpf_bis = jetzt + MARKE_NACHLAUF_SEK
+		else:
+			_marke_smog_bis = jetzt + MARKE_NACHLAUF_SEK
 		if jetzt - _swamp_warned > 2.2:
 			_swamp_warned = jetzt
 			if WorldManager.is_in_swamp(rel):
@@ -6935,6 +6982,13 @@ func _update_hud() -> void:
 		# braucht deshalb nur den Bedarf der laufenden Stufe, keine Summe ueber alle.
 		_xp_bar.max_value = maxf(1.0, float(GameState.xp_to_next(GameState.level)))
 		_xp_bar.value = clampf(float(GameState.xp), 0.0, _xp_bar.max_value)
+	if _spieler_marken != null:
+		var jetzt_s: float = Time.get_ticks_msec() / 1000.0
+		_spieler_marken.text = spieler_marken(jetzt_s, _marke_smog_bis, _marke_sumpf_bis)
+		# Giftgruen, wenn der Smog frisst, giftgelb bei Strahlung — die Farbe sagt schon aus
+		# dem Augenwinkel, welche der beiden Grenzen man gerade uebertritt.
+		_spieler_marken.add_theme_color_override("font_color",
+			Color(1.0, 0.86, 0.25) if jetzt_s < _marke_sumpf_bis else Color(0.62, 0.95, 0.42))
 	_hud.text = "❤ %d/%d   ¤ %d   ★ Lv %d   ▣ %d/%d   %s   %s\n➡ %s (%d m)   Sektor %d · %s" % [
 		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold, GameState.level,
 		worn_n, EquipManager.GEAR_SLOTS.size(), waffe,

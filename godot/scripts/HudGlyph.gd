@@ -47,6 +47,10 @@ const Z: Dictionary = {
 	"panzer_weg":  "‼",   # U+203C Panzerung durch, Treffer gehen voll durch
 	"tot":         "☠",   # U+2620
 
+	# ── Zustände am Spieler ───────────────────────────────────────────────────
+	"strahlung": "☢",   # U+2622 Strahlensumpf
+	"smog":      "☣",   # U+2623 Smoggürtel
+
 	# ── Beute am Boden ────────────────────────────────────────────────────────
 	"gold":     "¤",   # U+00A4 Währung
 	"material": "▬",   # U+25AC Schrottbalken
