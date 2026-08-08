@@ -5998,11 +5998,19 @@ func _process(delta: float) -> void:
 	# koennte: keine Bewegung, keine Gegner, keine Ausloeser. Sonst spielte das Spiel hinter
 	# dem Film weiter, und wer ihn zu Ende sieht, faende die Figur woanders vor als der, der
 	# ihn wegtippt.
-	if _im_vorspann():
-		return
-	_process_vorspann(delta)
-	# Nach dem Film haelt der schwarze Deckel noch kurz — auch dann ruht die Welt.
-	if _vorspann_t >= 0.0:
+	#
+	# ABER: `_process_vorspann` muss dabei WEITERLAUFEN. Hier stand
+	#
+	#     if _im_vorspann(): return
+	#     _process_vorspann(delta)
+	#
+	# und das war ein Stillstand im ersten Bild des Spiels. `_im_vorspann()` ist wahr, solange
+	# der Videoknoten existiert — und weggeraeumt wird er von `_process_vorspann`, das wegen des
+	# Ausstiegs davor nie an die Reihe kam. Das Spiel blieb schwarz stehen: keine Bewegung,
+	# keine Oberflaeche, kein Weiterkommen. Wer die Reihenfolge zweier Zeilen vertauscht, baut
+	# sich einen Deadlock, und dieser hier hat es bis zum Spieler geschafft.
+	if _im_vorspann() or _vorspann_t >= 0.0:
+		_process_vorspann(delta)
 		return
 	_process_movement(delta)
 	_process_facing(delta)
@@ -6849,9 +6857,18 @@ const VORSPANN_PFAD: String = "res://assets/video/intro_muellkippe.ogv"
 ## Vergleich zwischen Film und Spielbild ab.
 const VORSPANN_BLENDE_SEK: float = 1.2
 const VORSPANN_SCHWARZ_SEK: float = 0.7
+## Wie lange gewartet wird, ob der Film ueberhaupt anlaeuft — und wie lange er hoechstens darf.
+##
+## Beides ist eine Versicherung gegen dasselbe: Godot spielt nur Ogg Theora, und ob eine Datei
+## auf einem bestimmten Geraet wirklich dekodiert wird, entscheidet sich erst dort. Faellt das
+## aus, kommt `finished` nie.
+const VORSPANN_ANLAUF_SEK: float = 1.5
+const VORSPANN_FRIST_SEK: float = 60.0
 var _vorspann: VideoStreamPlayer = null
 var _vorspann_deckel: ColorRect = null
 var _vorspann_t: float = -1.0        # < 0 = laeuft nicht; sonst Restzeit des Ausblendens
+var _vorspann_wacht: float = -1.0    # Restzeit, bis der Anlauf geprueft wird
+var _vorspann_frist: float = -1.0    # harte Obergrenze fuer den ganzen Vorspann
 
 
 ## Startet den Vorspann. `false`, wenn es keinen gibt — dann geht es sofort weiter.
@@ -6881,6 +6898,8 @@ func _vorspann_starten() -> bool:
 	_set_hud_hidden(true)
 	_vorspann.finished.connect(_vorspann_ende)
 	_vorspann.play()
+	_vorspann_wacht = VORSPANN_ANLAUF_SEK
+	_vorspann_frist = VORSPANN_FRIST_SEK
 	return true
 
 
@@ -6894,6 +6913,23 @@ func _vorspann_ueberspringen() -> void:
 	_vorspann_ende()
 
 
+## Sofort abbrechen — ohne Blende, weil hier ohnehin nichts zu sehen war.
+func _vorspann_abbrechen(warum: String) -> void:
+	if _vorspann != null and is_instance_valid(_vorspann):
+		var lage: Node = _vorspann.get_parent()
+		if lage != null:
+			lage.queue_free()
+	_vorspann = null
+	_vorspann_deckel = null
+	_vorspann_t = -1.0
+	_vorspann_wacht = -1.0
+	_vorspann_frist = -1.0
+	_set_hud_hidden(false)
+	if warum != "":
+		_say("🎞 " + warum, 3.0)
+	_erwachen()
+
+
 func _vorspann_ende() -> void:
 	if _vorspann_t >= 0.0:
 		return   # laeuft schon aus
@@ -6902,6 +6938,26 @@ func _vorspann_ende() -> void:
 
 ## Ausblenden, Schwarz halten, aufraeumen, Erwachen starten.
 func _process_vorspann(delta: float) -> void:
+	# ── Zwei Wachhunde ────────────────────────────────────────────────────────
+	#
+	# Ein Vorspann darf unter keinen Umstaenden das Spiel behalten. Godot spielt nur Ogg
+	# Theora, und ob eine bestimmte Datei auf einem bestimmten Geraet wirklich dekodiert wird,
+	# entscheidet sich erst dort. Faellt das aus, kommt `finished` nie — und ohne diese beiden
+	# Zaehler waere das ein schwarzer Bildschirm ohne Ausweg.
+	#
+	#  * `_vorspann_wacht` prueft den ANLAUF: Laeuft nach anderthalb Sekunden nichts, laeuft es
+	#    gar nicht.
+	#  * `_vorspann_frist` ist die harte Obergrenze fuer die ganze Sache.
+	if _im_vorspann() and _vorspann_t < 0.0:
+		_vorspann_frist -= delta
+		if _vorspann_wacht > 0.0:
+			_vorspann_wacht -= delta
+			if _vorspann_wacht <= 0.0 and not _vorspann.is_playing():
+				_vorspann_abbrechen("Der Film laeuft nicht — weiter ohne ihn.")
+				return
+		if _vorspann_frist <= 0.0:
+			_vorspann_abbrechen("")
+			return
 	if _vorspann_t < 0.0:
 		return
 	_vorspann_t -= delta

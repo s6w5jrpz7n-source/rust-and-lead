@@ -164,8 +164,83 @@ func _starten(frisch: bool, tutorial: bool) -> void:
 		# Der Film waere gelaufen und danach haette die Figur wortlos in der Grube gestanden.
 		SaveManager.delete_slot(SAVE_SLOT)
 		GameState.neu_beginnen()
+	_laden_zeigen()
+	# ZWEI Bilder warten, und das ist der ganze Trick.
+	#
+	# Der Aufbau der Welt blockiert: Gelaendeflicken, Stadt, Streuung, Gegner — das sind
+	# Sekunden, in denen Godot nichts zeichnet. Ein Ladebildschirm, der im selben Atemzug wie
+	# der Szenenwechsel gesetzt wird, ist deshalb nie zu sehen; das letzte gezeichnete Bild
+	# waere der Titel mit einem gerade gedrueckten Knopf, und danach steht alles still.
+	#
+	# Wer vorher zwei Bilder verstreichen laesst, bekommt den Ladebildschirm einmal gezeichnet —
+	# und weil danach nichts mehr gezeichnet wird, bleibt genau er stehen, bis die Welt fertig
+	# ist. Ein Bild reicht dafuer nicht verlaesslich: Das erste beendet nur den laufenden
+	# Durchlauf, gezeichnet wird am Ende des zweiten.
+	await get_tree().process_frame
+	await get_tree().process_frame
 	get_tree().change_scene_to_packed(OVERWORLD)
 
+
+## Der Ladebildschirm.
+##
+## Kein Balken. Ein Fortschrittsbalken muss wissen, wie weit er ist, und das weiss hier niemand:
+## Der Aufbau ist ein einziger blockierender Durchlauf, kein Ablauf mit Zwischenstaenden. Ein
+## Balken, der bei 30 % stehenbleibt und dann springt, ist schlimmer als keiner — er behauptet
+## etwas, das er nicht halten kann.
+##
+## Stattdessen dasselbe Bild, dunkler, und eine Zeile aus der Welt. Wer laedt, soll in der Welt
+## bleiben und nicht auf einen Fortschritt starren.
+func _laden_zeigen() -> void:
+	var lage := CanvasLayer.new()
+	lage.layer = 200
+	add_child(lage)
+	var wurzel := Control.new()
+	wurzel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lage.add_child(wurzel)
+	var bild := TextureRect.new()
+	bild.texture = TITELBILD
+	bild.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bild.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	# Deutlich abgedunkelt: Das Bild soll noch da sein, aber nicht mehr um Aufmerksamkeit
+	# bitten — es ist jetzt Hintergrund und nicht mehr Titel.
+	bild.modulate = Color(0.34, 0.32, 0.31)
+	wurzel.add_child(bild)
+	var box := VBoxContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.position = Vector2(-360.0, -60.0)
+	box.custom_minimum_size = Vector2(720.0, 0.0)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_theme_constant_override("separation", 18)
+	wurzel.add_child(box)
+	var spruch := Label.new()
+	spruch.text = SPRUECHE[randi() % SPRUECHE.size()]
+	spruch.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	spruch.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	spruch.add_theme_font_size_override("font_size", 25)
+	spruch.add_theme_color_override("font_color", Color(0.90, 0.84, 0.72))
+	spruch.add_theme_constant_override("outline_size", 6)
+	spruch.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.03, 0.9))
+	box.add_child(spruch)
+	var laed := Label.new()
+	laed.text = "… wird geladen"
+	laed.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	laed.add_theme_font_size_override("font_size", 17)
+	laed.add_theme_color_override("font_color", Color(0.66, 0.61, 0.54))
+	box.add_child(laed)
+
+
+## Zeilen fuer den Ladebildschirm. Keine Spieltipps („Druecke [R] zum Nachladen") — die gehoeren
+## ins Tutorial. Das hier sind Saetze AUS der Welt, damit die Wartezeit zur Welt gehoert.
+const SPRUECHE: Array = [
+	"„Wer aus dem Schrott kommt, hat meistens keinen Namen mehr.“",
+	"„Der Konzern besitzt die Schienen, das Wasser und die Zeit.“",
+	"„Fünftausend Meter Kante zu Kante. Danach kommt nur noch Fels.“",
+	"„Nachts kommen die Dinge aus den Rohren.“",
+	"„Alles hat seinen Preis. Auch Schweigen.“",
+	"„Ordnung ist Profit. Profit ist Ordnung.“",
+	"„Ein Riss geht durch das Land, und keiner hat ihn gegraben.“",
+	"„Trink was, Fremder. Geht aufs Haus.“",
+]
 
 # ── Die Unterblätter ──────────────────────────────────────────────────────────
 func _blatt_zeigen(art: String) -> void:

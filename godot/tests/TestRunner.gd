@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 42,
+	"_test_titel_und_erster": 46,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1049,6 +1049,23 @@ func _test_titel_und_erster() -> void:
 	# wofuer es da ist.
 	_check("Die Schrift bekommt Schleier statt eines Kastens",
 		q.contains("func _schleier") and not q.contains("PanelContainer.new()\n\tvar hintergrund"))
+
+	# ── Der Ladebildschirm ────────────────────────────────────────────────────
+	#
+	# Der Aufbau der Welt blockiert: Gelaendeflicken, Stadt, Streuung, Gegner — Sekunden, in
+	# denen Godot nichts zeichnet. Ein Ladebildschirm, der im selben Atemzug wie der
+	# Szenenwechsel gesetzt wird, ist deshalb NIE zu sehen. Es braucht zwei verstrichene Bilder
+	# dazwischen: Das erste beendet nur den laufenden Durchlauf, gezeichnet wird am Ende des
+	# zweiten.
+	_check("Es gibt einen Ladebildschirm", q.contains("func _laden_zeigen"))
+	_check("Und er wird gezeichnet, bevor der Aufbau blockiert",
+		q.find("_laden_zeigen()") < q.find("change_scene_to_packed")
+		and q.count("await get_tree().process_frame") >= 2)
+	# Kein Fortschrittsbalken: Er muesste wissen, wie weit er ist, und das weiss hier niemand.
+	# Einer, der bei 30 % stehenbleibt und dann springt, behauptet etwas, das er nicht halten
+	# kann.
+	_check("Ohne Fortschrittsbalken, der nichts weiss", not q.contains("ProgressBar.new()"))
+	_check("Dafuer mit Zeilen aus der Welt", q.contains("const SPRUECHE"))
 
 	# ── „Neues Spiel" muss wirklich neu sein ──────────────────────────────────
 	#
@@ -2326,8 +2343,32 @@ func _test_prolog() -> void:
 		and quelle.contains("_erwachen()"))
 	# Die Welt ruht dabei. Sonst spielte das Spiel hinter dem Film weiter, und wer ihn zu Ende
 	# sieht, faende die Figur woanders vor als der, der ihn wegtippt.
-	_check("Waehrend des Vorspanns ruht die Welt",
-		quelle.contains("if _im_vorspann():\n\t\treturn\n\t_process_vorspann(delta)"))
+	# ── Der Stillstand im ersten Bild ─────────────────────────────────────────
+	#
+	# Hier stand genau die Zeile, die den Fehler festgehalten hat:
+	#
+	#     _check(..., quelle.contains("if _im_vorspann():\\n\\t\\treturn\\n\\t_process_vorspann(delta)"))
+	#
+	# Sie hat gruen gemeldet, dass der Code so aussieht, wie er aussah — und so sah er falsch
+	# aus. `_im_vorspann()` ist wahr, solange der Videoknoten existiert, und weggeraeumt wird er
+	# von `_process_vorspann`, das wegen des Ausstiegs davor nie an die Reihe kam. Das Spiel
+	# blieb schwarz stehen: keine Bewegung, keine Oberflaeche, kein Weiterkommen.
+	#
+	# **Eine Pruefung auf Quelltext haelt fest, was DASTEHT, nicht, was passiert.** Deshalb
+	# steht hier jetzt die Eigenschaft statt der Zeile: Solange der Vorspann laeuft, MUSS sein
+	# eigener Takt weiterlaufen — sonst kann er sich nie beenden.
+	_check("Der Vorspann kann sich beenden",
+		quelle.contains("if _im_vorspann() or _vorspann_t >= 0.0:\n\t\t_process_vorspann(delta)\n\t\treturn"))
+	# Und wenn der Film gar nicht erst anlaeuft, geht es trotzdem weiter. Godot spielt nur Ogg
+	# Theora, und ob eine Datei auf einem bestimmten Geraet dekodiert wird, entscheidet sich
+	# erst dort. Faellt es aus, kommt `finished` nie.
+	_check("Ein Film, der nicht anlaeuft, haelt das Spiel nicht auf",
+		quelle.contains("_vorspann_abbrechen") and quelle.contains("not _vorspann.is_playing()"))
+	_check("Und es gibt eine harte Obergrenze (%.0f s)" % OW2.VORSPANN_FRIST_SEK,
+		OW2.VORSPANN_FRIST_SEK > 20.0 and OW2.VORSPANN_FRIST_SEK < 180.0)
+	# Jeder Abbruchweg muendet ins Erwachen — sonst stuende die Figur wortlos in der Grube.
+	_check("Jeder Ausgang fuehrt ins Erwachen",
+		quelle.count("_erwachen()") >= 3)
 	_check("Und ein Tipp ueberspringt ihn",
 		quelle.contains("if druck and _im_vorspann():"))
 	# Fehlt die Datei, faellt der Vorspann still aus — ein Intro darf nie zwischen dem Spieler
