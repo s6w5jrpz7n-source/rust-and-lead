@@ -158,7 +158,12 @@ func _gewaehlt(kennung: String) -> void:
 func _starten(frisch: bool, tutorial: bool) -> void:
 	GameState.tutorial = tutorial
 	if frisch:
+		# Die Datei loeschen reicht NICHT. `GameState` ist ein Autoload und ueberlebt den
+		# Szenenwechsel: Wer im Titel „Neues Spiel" waehlt, nachdem er schon einmal gespielt
+		# hat, brachte sonst Gold, Stufe und — schlimmer — die erledigten Prolog-Marken mit.
+		# Der Film waere gelaufen und danach haette die Figur wortlos in der Grube gestanden.
 		SaveManager.delete_slot(SAVE_SLOT)
+		GameState.neu_beginnen()
 	get_tree().change_scene_to_packed(OVERWORLD)
 
 

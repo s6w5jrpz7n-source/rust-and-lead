@@ -34,8 +34,16 @@ static var _regionen: Dictionary = {}
 static func texture(basename: String) -> Texture2D:
 	if _cache.has(basename):
 		return _cache[basename]
-	var pfad: String = ORDNER + basename + ".png"
-	var tex: Texture2D = load(pfad) as Texture2D if ResourceLoader.exists(pfad) else null
+	# PNG zuerst, dann WEBP. Die gemalten Oberflaechen sind PNG; was aus einem Videobild kommt
+	# (das Titelbild, das Heldenportraet), ist ein Foto und als PNG unnoetig gross — 1,5 MB
+	# gegen 118 kB beim Titelbild, bei nicht unterscheidbarem Ergebnis.
+	var tex: Texture2D = null
+	for endung in [".png", ".webp"]:
+		var pfad: String = ORDNER + basename + String(endung)
+		if ResourceLoader.exists(pfad):
+			tex = load(pfad) as Texture2D
+			if tex != null:
+				break
 	_cache[basename] = tex
 	return tex
 

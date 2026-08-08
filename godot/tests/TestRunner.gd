@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 32,
+	"_test_titel_und_erster": 42,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1049,6 +1049,55 @@ func _test_titel_und_erster() -> void:
 	# wofuer es da ist.
 	_check("Die Schrift bekommt Schleier statt eines Kastens",
 		q.contains("func _schleier") and not q.contains("PanelContainer.new()\n\tvar hintergrund"))
+
+	# ── „Neues Spiel" muss wirklich neu sein ──────────────────────────────────
+	#
+	# Die Spielstanddatei zu loeschen reicht nicht: `GameState` ist ein Autoload und ueberlebt
+	# jeden Szenenwechsel. Wer im Titel „Neues Spiel" waehlt, nachdem er schon gespielt hat,
+	# braechte sonst Gold, Stufe und Ausruestung mit — und, schlimmer, die erledigten Marken des
+	# Prologs: Der Film waere gelaufen, und danach haette die Figur wortlos in der Grube
+	# gestanden, weil `saw_wake` noch stand.
+	_check("Neues Spiel loescht nicht nur die Datei",
+		q.contains("GameState.neu_beginnen()"))
+	var g_gold: int = GameState.gold
+	var g_lvl: int = GameState.level
+	GameState.gold = 4711
+	GameState.level = 9
+	GameState.saw_wake = true
+	GameState.prolog_done = true
+	GameState.erst_gegner_done = true
+	GameState.neu_beginnen()
+	_check("Und setzt Gold und Stufe zurueck", GameState.gold == 0 and GameState.level == 1)
+	_check("Und alle Prolog-Marken",
+		not GameState.saw_wake and not GameState.prolog_done
+		and not GameState.erst_gegner_done and not GameState.saw_vista)
+	_check("Und die Uhr auf den Anfang (%s)" % DayCycle.clock_text(GameState.hour),
+		absf(GameState.hour - DayCycle.START_HOUR) < 0.01)
+	GameState.gold = g_gold
+	GameState.level = g_lvl
+
+	# ── Die Oberflaeche oben links ────────────────────────────────────────────
+	#
+	# Das Portraet ist kein Schmuck, sondern der KNOPF fuer den Rucksack. Vorher gab es dafuer
+	# nur `[Tab]` — also ausgerechnet auf der Zielplattform gar nichts.
+	_check("Das Portraet oeffnet den Rucksack",
+		ow_q.contains("_portrait_btn.pressed.connect(_toggle_character)"))
+	var Ui = load("res://scripts/UiAssets.gd")
+	_check("Und es gibt ein Heldenportraet", Ui.has("portrait_held"))
+	_check("Und einen Rahmen darum", Ui.has("portrait_frame"))
+	# Der Rahmen liegt DARUEBER und darf keine Tipps schlucken, sonst waere der Knopf tot.
+	_check("Der Rahmen schluckt keine Tipps",
+		ow_q.contains("_portrait_rahmen.mouse_filter = Control.MOUSE_FILTER_IGNORE"))
+	# Leben und Erfahrung als Balken. Eine Zahl muss man lesen, einen Balken sieht man.
+	_check("Leben und Erfahrung stehen als Balken da",
+		ow_q.contains("_hp_bar = _hud_balken") and ow_q.contains("_xp_bar = _hud_balken"))
+	# Und der Tastaturhinweis ist weg: Auf dem Handy gibt es kein [Tab], und ein Bild braucht
+	# keine Beschriftung.
+	# Geprueft wird die ANZEIGE, nicht die Quelle: „[Tab] Inventar" steht weiterhin im
+	# Kommentar daneben, der erklaert, warum es weg ist. Ein Test, der auf den Kommentar
+	# anschlaegt, verbietet die Begruendung.
+	_check("Der Tastaturhinweis ist aus dem Kopfbereich raus",
+		not ow_q.contains('· %s   [Tab] Inventar"'))
 
 	# ── Der erste Gegner ──────────────────────────────────────────────────────
 	var OW4 = load("res://scripts/OverworldView.gd")

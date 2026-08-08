@@ -158,6 +158,58 @@ var fog: Dictionary = {}
 var flags_ui: Dictionary = { "reveal_playing": false }
 
 
+## Alles auf Anfang — fuer „Neues Spiel" im Titelbildschirm.
+##
+## Die Spielstanddatei zu loeschen reicht nicht: Dieser Knoten ist ein Autoload und ueberlebt
+## jeden Szenenwechsel. Wer im Titel „Neues Spiel" waehlt, nachdem er schon einmal gespielt hat,
+## braechte sonst Gold, Stufe und Ausruestung mit — und, schlimmer, die erledigten Marken des
+## Prologs: Der Film waere gelaufen, und danach haette die Figur wortlos in der Grube gestanden,
+## weil `saw_wake` noch stand.
+##
+## Aufgezaehlt wird hier ABSICHTLICH von Hand und nicht ueber eine Schleife: Wer ein neues Feld
+## einfuehrt, das eine Runde ueberdauert, soll gezwungen sein, sich zu entscheiden, ob es beim
+## Neuanfang stehenbleibt. Eine Schleife wuerde diese Entscheidung stillschweigend treffen.
+func neu_beginnen() -> void:
+	current_chapter = 1
+	is_revealed = false
+	chosen_guild = null
+	level = 1
+	xp = 0
+	perk_points = 0
+	perks = {}
+	upgrades = { "damage": 0, "firerate": 0, "reload": 0, "hp": 0, "speed": 0,
+		"regen": 0, "magnet": 0 }
+	ng_plus = 0
+	gold = 0
+	potions = 3
+	inventory = { "schrott": 0, "zahnrad": 0, "dampfkern": 0 }
+	equip = {}
+	bag = []
+	ammo = { "muni": 90, "kristall": 45 }
+	mag = {}
+	economy = { "saloon": 0, "forge": 0, "distillery": 0, "laboratory": 0 }
+	kills = 0
+	quests = {}
+	quest_base = {}
+	tracked_quest = ""
+	weapons = []
+	weapon_id = ""
+	met = {}
+	memories_found = 0
+	memorials_seen = []
+	family_buried = false
+	codex = []
+	fog = {}
+	flags_ui = { "reveal_playing": false }
+	# Der Prolog. Alles hier muss zurueck, sonst faengt das „neue" Spiel mittendrin an.
+	prolog_done = false
+	saw_wake = false
+	saw_rustwater = false
+	saw_vista = false
+	erst_gegner_done = false
+	hour = 18.6
+
+
 # ── Erfahrungs-Kurve & abgeleitete Werte ──────────────────────────────────────
 func xp_to_next(lvl: int) -> int:
 	# Kurve laut GDD: Level 1->2 = 70 XP, danach +30 pro Stufe.

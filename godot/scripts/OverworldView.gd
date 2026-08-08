@@ -4450,12 +4450,84 @@ func _equip_weapon_model() -> void:
 
 
 var _hud_layer: CanvasLayer
+## Der Rand, an dem die Oberflaeche oben links anfaengt, und die Groesse des Portraets.
+const HUD_RAND: float = 12.0
+const PORTRAIT_PX: float = 72.0
+const BALKEN_W: float = 210.0
+const BALKEN_H: float = 16.0
+var _portrait_btn: TextureButton = null
+var _portrait_rahmen: TextureRect = null
+var _hp_bar: ProgressBar = null
+var _xp_bar: ProgressBar = null
+
+
+## Ein Balken im Ton der Welt: dunkle Fassung, warme Fuellung, kein Rahmen.
+func _hud_balken(voll: Color, leer: Color) -> ProgressBar:
+	var b := ProgressBar.new()
+	b.custom_minimum_size = Vector2(BALKEN_W, BALKEN_H)
+	b.size = Vector2(BALKEN_W, BALKEN_H)
+	b.show_percentage = false
+	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hinten := StyleBoxFlat.new()
+	hinten.bg_color = leer
+	hinten.set_corner_radius_all(3)
+	hinten.set_border_width_all(1)
+	hinten.border_color = Color(0.10, 0.08, 0.07, 0.85)
+	var vorn := StyleBoxFlat.new()
+	vorn.bg_color = voll
+	vorn.set_corner_radius_all(3)
+	b.add_theme_stylebox_override("background", hinten)
+	b.add_theme_stylebox_override("fill", vorn)
+	return b
+
+
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	_hud_layer = layer
+	# ── Das Portraet oben links ───────────────────────────────────────────────
+	#
+	# Es ist kein Schmuck, sondern der KNOPF fuer den Rucksack. Auf dem Handy gab es dafuer
+	# bisher nur `[Tab]` — also ausgerechnet auf der Zielplattform gar nichts. Und ein Portraet
+	# ist der Ort, an dem jeder danach sucht: Wo man sich selbst sieht, greift man nach seinen
+	# Sachen.
+	#
+	# Das Bild ist aus dem letzten Bild des Intro-Films geschnitten. Damit ist die Figur oben
+	# links dieselbe, die man im Film gesehen hat und die auf dem Titel steht — drei Stellen,
+	# ein Gesicht, ohne dass jemand etwas malen musste.
+	_portrait_btn = TextureButton.new()
+	_portrait_btn.texture_normal = UiAssets.texture("portrait_held")
+	_portrait_btn.ignore_texture_size = true
+	_portrait_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_COVERED
+	_portrait_btn.custom_minimum_size = Vector2(PORTRAIT_PX, PORTRAIT_PX)
+	_portrait_btn.size = Vector2(PORTRAIT_PX, PORTRAIT_PX)
+	_portrait_btn.position = Vector2(HUD_RAND, HUD_RAND)
+	_portrait_btn.tooltip_text = "Rucksack & Charakter  [Tab]"
+	_portrait_btn.pressed.connect(_toggle_character)
+	layer.add_child(_portrait_btn)
+	# Der Rahmen liegt DARUEBER und schluckt keine Tipps — sonst waere der Knopf darunter tot.
+	var rahmen: Texture2D = UiAssets.texture("portrait_frame")
+	if rahmen != null:
+		_portrait_rahmen = TextureRect.new()
+		_portrait_rahmen.texture = rahmen
+		_portrait_rahmen.position = Vector2(HUD_RAND, HUD_RAND)
+		_portrait_rahmen.size = Vector2(PORTRAIT_PX, PORTRAIT_PX)
+		_portrait_rahmen.stretch_mode = TextureRect.STRETCH_SCALE
+		_portrait_rahmen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.add_child(_portrait_rahmen)
+	# Leben und Erfahrung als BALKEN neben dem Portraet. Eine Zahl muss man lesen; einen Balken
+	# sieht man. Beides steht trotzdem noch als Zahl darin, weil „wie viel genau" im Kampf
+	# zaehlt und ein Balken das nicht beantwortet.
+	_hp_bar = _hud_balken(Color(0.72, 0.16, 0.14), Color(0.34, 0.09, 0.08))
+	_hp_bar.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, HUD_RAND + 6.0)
+	layer.add_child(_hp_bar)
+	_xp_bar = _hud_balken(Color(0.86, 0.68, 0.24), Color(0.32, 0.26, 0.10))
+	_xp_bar.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, HUD_RAND + 6.0 + BALKEN_H + 5.0)
+	_xp_bar.size.y = BALKEN_H * 0.6
+	layer.add_child(_xp_bar)
 	_hud = Label.new()
-	_hud.position = Vector2(14.0, 10.0)
+	_hud.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0,
+		HUD_RAND + 6.0 + BALKEN_H + 5.0 + BALKEN_H * 0.6 + 6.0)
 	_hud.add_theme_font_size_override("font_size", 15)
 	layer.add_child(_hud)
 	# Ortsschrift: Beim Betreten eines Ortes zieht sein Name gross und gesperrt ueber die Mitte
@@ -6688,7 +6760,19 @@ func _update_hud() -> void:
 	if _weapon_id != "":
 		waffe = "%s %s" % [String(WEAPON_ICON.get(_weapon_id, "🔫")),
 			String(CombatData.WEAPONS[_weapon_id]["name"])]
-	_hud.text = "❤ %d/%d   💰 %d   ⭐ Lv %d   🎽 %d/%d   %s   %s\n➡ %s (%d m)   Sektor %d · %s   [Tab] Inventar" % [
+	# Leben und Erfahrung stehen als BALKEN daneben — hier bleibt die Zahl, weil „wie viel
+	# genau" im Kampf zaehlt und ein Balken das nicht beantwortet. Was WEG ist: der Hinweis
+	# „[Tab] Inventar". Er stand dort fuer die Tastatur, und auf dem Handy gibt es keine; jetzt
+	# ist das Portraet daneben der Knopf, und ein Bild braucht keine Beschriftung.
+	if _hp_bar != null:
+		_hp_bar.max_value = maxf(1.0, float(PlayerStats.max_hp()))
+		_hp_bar.value = clampf(_hp, 0.0, _hp_bar.max_value)
+	if _xp_bar != null:
+		# `xp` zaehlt INNERHALB der Stufe und wird beim Aufstieg zurueckgesetzt — der Balken
+		# braucht deshalb nur den Bedarf der laufenden Stufe, keine Summe ueber alle.
+		_xp_bar.max_value = maxf(1.0, float(GameState.xp_to_next(GameState.level)))
+		_xp_bar.value = clampf(float(GameState.xp), 0.0, _xp_bar.max_value)
+	_hud.text = "❤ %d/%d   💰 %d   ⭐ Lv %d   🎽 %d/%d   %s   %s\n➡ %s (%d m)   Sektor %d · %s" % [
 		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold, GameState.level,
 		worn_n, EquipManager.GEAR_SLOTS.size(), waffe,
 		DayCycle.phase_label(GameState.hour),
