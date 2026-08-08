@@ -65,6 +65,16 @@ var _gegner: Array = []
 var _hp: float = 0.0
 var _feuer: FireButton
 var _feuer_bereit: float = 0.0
+## Ton und Lebensbalken — beides fehlte hier, und beides fehlt man erst im Gefecht.
+var _sfx_schuss: AudioStreamPlayer3D = null
+var _sfx_repetieren: AudioStreamPlayer3D = null
+var _repetier_t: float = -1.0
+var _hp_bar: ProgressBar = null
+## Im Stollen wird IMMER der Nachtklang genommen. Es gibt hier keine Sonne, und der trockene
+## Tagesknall klaenge in einem Felsgang wie im Freien — der Hall ist der halbe Ort.
+const SFX_SCHUSS: String = "res://assets/audio/karabiner_schuss_nacht.ogg"
+const SFX_REPETIEREN: String = "res://assets/audio/karabiner_repetieren.ogg"
+const SFX_REPETIER_VERZUG: float = 0.42
 
 ## Welche Gegner in welcher Ebene stehen. Ebene 1 ist der Vorschacht — Ratten und Grenzgänger,
 ## also das, was man draußen schon kennt. Ebene 2 ist die Kaverne: Kläffer im Schwarm und ein
@@ -120,6 +130,7 @@ func _ready() -> void:
 	_gegner_bauen()
 	_spieler_bauen()
 	_oberflaeche_bauen()
+	_ton_bauen()
 	_hp = float(PlayerStats.max_hp())
 
 
@@ -293,6 +304,25 @@ func _oberflaeche_bauen() -> void:
 	layer.add_child(_hinweis)
 	_feuer = FireButton.new()
 	layer.add_child(_feuer)
+	# Ein BALKEN, nicht nur die Zahl in der Kopfzeile. Draussen gibt es ihn seit Langem, hier
+	# stand nur „69/100" zwischen fuenf anderen Angaben — und eine Zahl muss man lesen, einen
+	# Balken sieht man. Im Stollen wiegt das schwerer als draussen: Dort kommt der Schaden aus
+	# der Ferne, hier steht das Konstrukt bereits neben einem.
+	_hp_bar = ProgressBar.new()
+	_hp_bar.custom_minimum_size = Vector2(210.0, 16.0)
+	_hp_bar.size = Vector2(210.0, 16.0)
+	_hp_bar.position = Vector2(14.0, 36.0)
+	_hp_bar.show_percentage = false
+	_hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hinten := StyleBoxFlat.new()
+	hinten.bg_color = Color(0.34, 0.09, 0.08)
+	hinten.set_corner_radius_all(3)
+	var vorn := StyleBoxFlat.new()
+	vorn.bg_color = Color(0.72, 0.16, 0.14)
+	vorn.set_corner_radius_all(3)
+	_hp_bar.add_theme_stylebox_override("background", hinten)
+	_hp_bar.add_theme_stylebox_override("fill", vorn)
+	layer.add_child(_hp_bar)
 	_kopf_setzen()
 
 
@@ -309,12 +339,16 @@ func _kopf_setzen() -> void:
 		GameState.schluessel, ChestData.schluessel(ChestData.BOSS)]
 	if GameState.item_count("grubenstahl") > 0:
 		_text.text += "   ▬ %d" % GameState.item_count("grubenstahl")
+	if _hp_bar != null:
+		_hp_bar.max_value = maxf(1.0, float(PlayerStats.max_hp()))
+		_hp_bar.value = clampf(_hp, 0.0, _hp_bar.max_value)
 
 
 func _process(delta: float) -> void:
 	_gehen(delta)
 	_kamera_nachziehen()
 	_kampf(delta)
+	_ton_ticken(delta)
 	_naehe_pruefen()
 	_kopf_setzen()
 
@@ -644,6 +678,7 @@ func _schiessen(jetzt: int) -> void:
 	if e.is_empty():
 		return
 	_feuer_bereit = float(PlayerStats.fire_ms(waffe)) / 1000.0
+	_schuss_ton()
 	var t: CombatTarget = e["target"]
 	var art: String = String(CombatData.WEAPONS[waffe]["type"])
 	CombatEngine.resolve_hit(art, t, PlayerStats.damage_per_bullet(waffe),
@@ -867,3 +902,48 @@ func _gear_aufheben() -> bool:
 	return true
 
 
+## Zwei Tonquellen am Helden — dieselbe Aufteilung wie draußen.
+##
+## Der Stollen war **stumm**. Man drückte den Abzug, ein Gegner verlor Leben, und nichts sagte
+## einem, dass geschossen wurde — bei einer Trefferanzeige, die im Dunkeln ohnehin schwer zu
+## lesen ist, fehlte damit die einzige verlässliche Rückmeldung. Die Dateien lagen längst da;
+## sie waren nur nie angeschlossen worden.
+func _ton_bauen() -> void:
+	if _spieler == null:
+		return
+	_sfx_schuss = AudioStreamPlayer3D.new()
+	# Enger als draußen: Ein Gang ist kein offenes Feld, und ein Knall, der über 320 m trägt,
+	# klingt in vier Metern Fels falsch.
+	_sfx_schuss.unit_size = 14.0
+	_sfx_schuss.max_distance = 90.0
+	_spieler.add_child(_sfx_schuss)
+	_sfx_repetieren = AudioStreamPlayer3D.new()
+	_sfx_repetieren.unit_size = 4.0
+	_sfx_repetieren.max_distance = 40.0
+	_sfx_repetieren.volume_db = -4.0
+	_spieler.add_child(_sfx_repetieren)
+
+
+func _schuss_ton() -> void:
+	_ton(_sfx_schuss, SFX_SCHUSS, randf_range(-0.04, 0.04))
+	_repetier_t = SFX_REPETIER_VERZUG
+
+
+## Das Repetieren kommt NACH dem Knall, nicht mit ihm. Zusammen wäre es ein Geräusch; getrennt
+## ist es eine Waffe, die man nachziehen muss.
+func _ton_ticken(delta: float) -> void:
+	if _repetier_t < 0.0:
+		return
+	_repetier_t -= delta
+	if _repetier_t <= 0.0:
+		_repetier_t = -1.0
+		_ton(_sfx_repetieren, SFX_REPETIEREN, randf_range(-0.06, 0.06))
+
+
+func _ton(quelle: AudioStreamPlayer3D, pfad: String, hoehe: float) -> void:
+	if quelle == null or not is_instance_valid(quelle) or not ResourceLoader.exists(pfad):
+		return
+	quelle.stream = load(pfad) as AudioStream
+	# Kleine Tonhöhenstreuung, sonst klingt die dritte Salve wie ein Metronom.
+	quelle.pitch_scale = 1.0 + hoehe
+	quelle.play()

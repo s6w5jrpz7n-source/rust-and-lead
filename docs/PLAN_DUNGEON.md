@@ -166,3 +166,25 @@ optional.
 `GameState.NUR_IM_STOLLEN` hält die Zusicherung fest, und der Test liest die Beutetabellen der
 Oberwelt daraufhin durch: Rutscht Grubenstahl je in eine davon, wäre der Auftrag wieder ohne
 Stollen zu erledigen — und niemand würde es merken.
+
+---
+
+## Was der Stollen vom Rest des Spiels nachgereicht bekommen hat
+
+Beim Durchsehen fiel auf, dass die zweite Szene an mehreren Stellen ein Bürger zweiter Klasse
+war — nicht falsch gebaut, sondern schlicht **nicht angeschlossen**:
+
+* **Er war stumm.** Man drückte den Abzug, ein Gegner verlor Leben, und nichts sagte einem, dass
+  geschossen wurde. Bei einer Trefferanzeige, die im Dunkeln ohnehin schwer zu lesen ist, fehlte
+  damit die einzige verlässliche Rückmeldung. Die Tondateien lagen längst da. Jetzt knallt es —
+  immer im *Nachtklang*, denn unter Tage gibt es keine Sonne, und mit kürzerer Reichweite als
+  draußen: Ein Schuss, der über 320 m schallt, klingt in vier Metern Fels falsch.
+* **Kein Lebensbalken**, nur eine Zahl zwischen fünf anderen in der Kopfzeile. Eine Zahl muss man
+  lesen, einen Balken sieht man — und drinnen wiegt das schwerer, weil der Schaden nicht aus der
+  Ferne kommt, sondern von dem Konstrukt, das bereits neben einem steht.
+* **Truhen meldeten sich nicht.** Man stand davor, und nichts sagte, dass man drücken kann. Im
+  Dunkeln ist ein Kasten ohne Beschriftung ein Stein.
+* **Antworten waren unsichtbar.** Die Hinweiszeile wurde jedes Bild neu geschrieben, also stand
+  eine Antwort auf einen Tastendruck genau ein Bild lang da. Der Sperrsatz der Beutekammer
+  erschien nie, obwohl er richtig gesetzt wurde. Gesehen habe ich das erst, als das Kontrollbild
+  die Truhe zeigte und den Satz nicht.

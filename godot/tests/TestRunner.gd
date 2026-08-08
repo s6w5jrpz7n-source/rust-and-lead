@@ -85,7 +85,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_zeichen": 5,
 	"_test_spielstand_vollstaendig": 6,
 	"_test_stollen": 33,
-	"_test_truhen": 33,
+	"_test_truhen": 37,
 	"_test_anfuehrer": 54,
 }
 
@@ -5370,6 +5370,27 @@ func _test_truhen() -> void:
 	# Man stand davor, und nichts sagte einem, dass man druecken kann — im Dunkeln ist ein
 	# Kasten ohne Beschriftung ein Stein.
 	_check("Eine Truhe in Reichweite meldet sich", dv_q.contains("öffnen   [E]"))
+
+	# ── Der Stollen war stumm und hatte keinen Balken ────────────────────────
+	#
+	# Man drueckte den Abzug, ein Gegner verlor Leben, und nichts sagte einem, dass geschossen
+	# wurde. Bei einer Trefferanzeige, die im Dunkeln ohnehin schwer zu lesen ist, fehlte damit
+	# die einzige verlaessliche Rueckmeldung. Die Tondateien lagen laengst da — sie waren nur
+	# nie angeschlossen.
+	_check("Im Stollen knallt es beim Schuss",
+		dv_q.contains("_schuss_ton()") and dv_q.contains("AudioStreamPlayer3D"))
+	_check("Und das Repetieren kommt danach, nicht gleichzeitig",
+		dv_q.contains("SFX_REPETIER_VERZUG") and float(DVT.SFX_REPETIER_VERZUG) > 0.1)
+	# Der Knall traegt drinnen KUERZER. Ein Schuss, der ueber 320 m schallt, klingt in vier
+	# Metern Fels falsch — die Enge ist die halbe Miete.
+	_check("Der Knall traegt drinnen kuerzer als draussen",
+		dv_q.contains("_sfx_schuss.max_distance = 90.0")
+		and ow_q.contains("_sfx_schuss.max_distance = 320.0"))
+	# Und ein BALKEN statt nur der Zahl. Eine Zahl muss man lesen, einen Balken sieht man —
+	# drinnen wiegt das schwerer als draussen, weil der Schaden nicht aus der Ferne kommt,
+	# sondern von dem Konstrukt, das bereits neben einem steht.
+	_check("Und es gibt einen Lebensbalken", dv_q.contains("_hp_bar = ProgressBar.new()")
+		and dv_q.contains("_hp_bar.value = clampf(_hp"))
 
 	# ── Grubenstahl: das Material, das es NUR im Stollen gibt ────────────────
 	#
