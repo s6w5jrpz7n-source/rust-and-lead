@@ -51,7 +51,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_reload": 18,
 	"_test_weapons": 13,
 	"_test_titel_und_erster": 63,
-	"_test_steg_und_biome": 9,
+	"_test_steg_und_biome": 14,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1265,6 +1265,28 @@ func _test_steg_und_biome() -> void:
 	# Und die Figur steht DARAUF und nicht im Boden darunter.
 	_check("Die Figur steht auf dem Steg, nicht im Spalt",
 		ow_q.contains("next.y = _boden_hoehe(next.x, next.z)"))
+
+	# ── Die Zustandsmarken ────────────────────────────────────────────────────
+	#
+	# Das Kampfsystem verteilt seit Langem Zustaende — Kurzschluss, Verbluten, Ueberhitzung,
+	# Korrosion —, und der Spieler konnte KEINEN davon sehen. Wer eine Saeureflasche wirft und
+	# nichts passiert, lernt daraus nur, dass Saeureflaschen nichts tun; dass sie gerade die
+	# Panzerung aufgeloest hat, stand nirgends.
+	var OW6 = load("res://scripts/OverworldView.gd")
+	var mt: CombatTarget = CombatTarget.from_type("konstrukt")
+	var jetzt: int = Time.get_ticks_msec()
+	_check("Ohne Zustand keine Marke", OW6.status_marken(mt, jetzt) == "")
+	mt.stun_until = jetzt + 2000
+	_check("Kurzschluss wird angezeigt", OW6.status_marken(mt, jetzt).contains("⚡"))
+	mt.stun_until = 0
+	CombatEngine.apply_status(mt, CombatData.FX_BLEED, jetzt)
+	_check("Ein DOT wird angezeigt", OW6.status_marken(mt, jetzt).contains("🩸"))
+	mt.dot = {}
+	mt.armor = 0
+	_check("Und zerfressene Panzerung auch",
+		OW6.status_marken(mt, jetzt).contains("🜁") and mt.max_armor > 0)
+	# Sie stehen UEBER der Lebensleiste: Der Blick geht beim Zielen nach oben zum Kopf.
+	_check("Die Marken haengen am Gegner", ow_q.contains('"marken": marken'))
 
 	# ── Die Biom-Kanten ───────────────────────────────────────────────────────
 	#

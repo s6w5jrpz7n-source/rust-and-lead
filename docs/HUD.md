@@ -43,9 +43,12 @@ drei Zeilen Text mit vierzehn Zahlen darin. Im Gefecht liest die niemand. Was ma
 * **Lebensbalken**, darunter schmaler der **Erfahrungsbalken**. *(steht)*
 * Darunter eine Zeile: Gold, getragene Ausrüstung, Tageszeit. *(noch Text — soll Symbole
   bekommen)*
-* **Statusmarken** unter dem Porträt: Vergiftung, Blutung, Kurzschluss, Betäubung. Die gibt es im
-  Kampfsystem längst (`CombatEngine`), aber der Spieler sieht sie nirgends — **das ist die
-  auffälligste Lücke im ganzen HUD.**
+* **Statusmarken** — *(steht, aber am Gegner statt am Spieler)*. Das Kampfsystem verteilt seit
+  Langem Zustände, und der Spieler konnte **keinen** davon sehen. Wer eine Säureflasche wirft und
+  nichts passiert, lernt daraus nur, dass Säureflaschen nichts tun; dass sie gerade die Panzerung
+  aufgelöst hat, stand nirgends. Jetzt steht ⚡ (Kurzschluss), 🩸 (DOT) und 🜁 (zerfressene
+  Panzerung) über der Lebensleiste des Gegners — dorthin geht der Blick beim Zielen ohnehin.
+  *Noch offen:* dieselben Marken für den **Spieler**, sobald ihn etwas davon treffen kann.
 
 ### Oben rechts — wo ich bin
 
@@ -124,7 +127,10 @@ nie den Start verhindern.
 
 ## Die Reihenfolge, die ich vorschlagen würde
 
-1. **Statusmarken.** Größte Lücke: Das Kampfsystem verteilt Zustände, die man nicht sehen kann.
+1. ~~Statusmarken. Größte Lücke: Das Kampfsystem verteilt Zustände, die man nicht sehen kann.~~
+   **Erledigt** für Gegner — als Zeichen und nicht als Bild, solange keine Symbole da sind. Ein
+   Zeichen, das man sieht, ist besser als ein Bild, das noch niemand gemalt hat; kommen die
+   Symbole, wird hier eine Zeile ausgetauscht.
 2. ~~Die Gürtelleiste. Tränke existieren und sind unbenutzbar.~~ **Erledigt.** Ein Trank heilt
    **35 % des Höchstwerts** und nicht eine feste Zahl: Eine feste Zahl ist auf Stufe 1 ein halbes
    Leben und auf Stufe 20 ein Tropfen. Bei vollem Leben wird keiner verbraucht — auf dem Handy

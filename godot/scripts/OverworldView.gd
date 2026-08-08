@@ -4919,9 +4919,42 @@ func _make_enemy(type_id: String) -> Dictionary:
 	# `windup` = −1 heisst „holt gerade nicht aus", `cooldown` zaehlt bis zum naechsten Angriff.
 	# Beide gehoeren in den Gegner, nicht in eine Nebenliste: Ein Gegner, der stirbt, nimmt
 	# seinen halb ausgefuehrten Schlag mit.
-	return { "node": node, "target": target, "bar": bar, "model": model,
+	# ── Die Zustandsmarken ────────────────────────────────────────────────────
+	#
+	# Das Kampfsystem verteilt seit Langem Zustaende — Kurzschluss, Verbluten, Ueberhitzung,
+	# Korrosion —, und der Spieler konnte KEINEN davon sehen. Wer eine Saeureflasche wirft und
+	# nichts passiert, lernt daraus nur, dass Saeureflaschen nichts tun; dass sie gerade die
+	# Panzerung aufgeloest hat, stand nirgends.
+	#
+	# Sie stehen ueber der Lebensleiste und nicht darunter: Der Blick geht beim Zielen nach oben
+	# zum Kopf, und was dort steht, sieht man beilaeufig mit.
+	var marken := Label3D.new()
+	marken.font_size = 44
+	marken.pixel_size = LABEL_PIXEL
+	marken.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	marken.outline_size = 5
+	marken.position = Vector3(0.0, 0.30, 0.0)
+	marken.visibility_range_end = 90.0
+	traeger.add_child(marken)
+	return { "node": node, "target": target, "bar": bar, "model": model, "marken": marken,
 		"animated": animated, "phase": randf() * TAU, "radius": radius,
 		"windup": -1.0, "cooldown": 0.0 }
+
+
+## Welche Zustandsmarken traegt dieser Gegner gerade?
+##
+## Als Text und nicht als Bild, solange keine Symbole da sind (`docs/HUD.md` listet sie auf).
+## Ein Zeichen, das man sieht, ist besser als ein Bild, das noch niemand gemalt hat — und wenn
+## die Symbole kommen, wird hier eine Zeile ausgetauscht.
+static func status_marken(t: CombatTarget, jetzt_ms: int) -> String:
+	var m: String = ""
+	if t.is_stunned(jetzt_ms):
+		m += "⚡"
+	if t.has_dot():
+		m += "🩸"
+	if t.armor <= 0 and t.max_armor > 0:
+		m += "🜁"
+	return m
 
 
 func _spawn_pack() -> void:
@@ -6536,8 +6569,11 @@ func _tracer(von: Vector3, nach: Vector3, farbe: Color) -> void:
 ## Meter herangerannt. Jetzt bleiben sie in ihrem Reichweitenband stehen und **weichen zurück**,
 ## wenn man ihnen zu nah kommt.
 func _process_enemies(delta: float) -> void:
+	var jetzt: int = Time.get_ticks_msec()
 	for e in _enemies:
 		var node: Node3D = e["node"]
+		if e.has("marken") and is_instance_valid(e["marken"]):
+			(e["marken"] as Label3D).text = status_marken(e["target"], jetzt)
 		var zu := Vector3(_player.position.x - node.position.x, 0.0,
 			_player.position.z - node.position.z)
 		var d: float = zu.length()
