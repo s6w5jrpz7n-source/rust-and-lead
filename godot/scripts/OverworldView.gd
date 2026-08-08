@@ -4477,9 +4477,25 @@ const BALKEN_W: float = 210.0
 const BALKEN_H: float = 16.0
 ## Wo die Trabanten am Schussknopf sitzen — als Winkel, 0° = rechts, gegen den Uhrzeigersinn.
 ##
-## Der Trank sitzt bei 0°, also GENAU RECHTS. Das ist die Stelle, an die der Daumen am
-## kuerzesten kommt, ohne den Schussknopf zu ueberstreichen; alles darueber muesste er umrunden.
-const TRABANT_WINKEL: Array = [0.0]
+## Der Trank steht **so weit rechts, wie er überhaupt stehen kann** — und das ist nicht 0°.
+##
+## Der erste Anlauf setzte ihn auf 0°, also genau rechts: kürzester Daumenweg, ohne den
+## Schussknopf zu überstreichen. Auf dem Papier richtig. Im Kontrollbild lag er **halb außerhalb
+## des Bildschirms**. Der Schussknopf klebt selbst schon in der Ecke, seine Mitte liegt nur
+## `MARGIN + RADIUS` = 92 px vom rechten Rand entfernt, und der Trabant sitzt noch einmal 86 px
+## weiter draußen. Rechts von diesem Knopf ist schlicht kein Bildschirm mehr.
+##
+## Der äußerste Winkel, der noch ganz ins Bild passt, folgt direkt aus der Geometrie:
+##
+##     abstand·cos(w) + trabantradius ≤ 92 − luft   →   w ≥ 47,6°
+##
+## Und weil der Schussknopf **am Rand verankert** ist, gilt das auf jeder Auflösung gleich: Der
+## Abstand zur Kante ändert sich nie. 55° hält gut 16 px Luft und liegt trotzdem klar rechts
+## oben — der Daumen bleibt auf seiner Seite. `_trabanten_setzen()` klemmt zusätzlich ins Bild,
+## falls jemand später an `MARGIN` oder den Radien dreht.
+const TRABANT_WINKEL: Array = [55.0]
+## Wie viel Luft ein Trabant mindestens zum Bildrand behält.
+const TRABANT_LUFT: float = 8.0
 var _trabanten: Array = []
 var _trank_btn: ActionSatellite = null
 var _portrait_btn: TextureButton = null
@@ -7824,5 +7840,13 @@ func _trabanten_setzen() -> void:
 		# Godots y zeigt nach unten — ein Winkel von 0° ist damit rechts, und positive Winkel
 		# laufen im Bild nach oben, wenn man den Sinus abzieht.
 		s.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		s.position = mitte + Vector2(cos(w), -sin(w)) * abstand \
-			- Vector2(ActionSatellite.RADIUS, ActionSatellite.RADIUS)
+		var ziel: Vector2 = mitte + Vector2(cos(w), -sin(w)) * abstand
+		# Und dann INS BILD geklemmt. Der Winkel oben ist so gewaehlt, dass das gar nicht noetig
+		# sein sollte — aber genau dieser Knopf lag schon einmal halb ausserhalb, weil niemand
+		# nachgerechnet hatte, wie nah der Schussknopf selbst am Rand klebt. Eine Klemme kostet
+		# zwei Zeilen; ein Trank, den man im Gefecht nicht treffen kann, kostet den Spieler.
+		var bild: Vector2 = Vector2(get_viewport().get_visible_rect().size)
+		var rand: float = ActionSatellite.RADIUS + TRABANT_LUFT
+		ziel.x = clampf(ziel.x, rand, maxf(rand, bild.x - rand))
+		ziel.y = clampf(ziel.y, rand, maxf(rand, bild.y - rand))
+		s.position = ziel - Vector2(ActionSatellite.RADIUS, ActionSatellite.RADIUS)

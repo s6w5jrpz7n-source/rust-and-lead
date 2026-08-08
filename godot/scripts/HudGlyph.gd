@@ -88,26 +88,38 @@ static func zeichne_flakon(ci: CanvasItem, mitte: Vector2, r: float, farbe: Colo
 		inhalt: Color) -> void:
 	# Punkte in Einheiten von `r`, y zeigt nach unten. Der Bauch ist eine Zwiebel, der Hals
 	# ein schmaler Schacht — die Silhouette, an der man einen Flakon erkennt.
+	var form: Array[Vector2] = [
+		Vector2(-0.17, -0.66), Vector2(0.17, -0.66),   # Hals oben
+		Vector2(0.17, -0.22),                           # Hals unten
+		Vector2(0.50, 0.10), Vector2(0.42, 0.46),       # Bauch rechts
+		Vector2(0.0, 0.62),                             # Boden
+		Vector2(-0.42, 0.46), Vector2(-0.50, 0.10),     # Bauch links
+		Vector2(-0.17, -0.22),                          # zurück zum Hals
+	]
 	var umriss: PackedVector2Array = PackedVector2Array()
-	for p in [
-			Vector2(-0.17, -0.66), Vector2(0.17, -0.66),   # Hals oben
-			Vector2(0.17, -0.22),                           # Hals unten
-			Vector2(0.50, 0.10), Vector2(0.42, 0.46),       # Bauch rechts
-			Vector2(0.0, 0.62),                             # Boden
-			Vector2(-0.42, 0.46), Vector2(-0.50, 0.10),     # Bauch links
-			Vector2(-0.17, -0.22),                          # zurück zum Hals
-		]:
+	for p in form:
 		umriss.append(mitte + p * r)
 
-	# Der Inhalt füllt den Bauch bis knapp unter die Schulter. Er wird ZUERST gemalt und vom
-	# Umriss überzeichnet, damit die Kante sauber bleibt.
+	# Der Inhalt wird AUS DEM UMRISS geschnitten und nicht daneben noch einmal beschrieben.
+	#
+	# Der erste Anlauf tippte eigene Punkte für den Füllstand ab — und im Kontrollbild stand
+	# der Saft links und rechts aus dem Glas heraus. Zwei Zahlenreihen, die dieselbe Kontur
+	# meinen, driften auseinander, sobald jemand an einer davon dreht. Also: alles unterhalb
+	# der Wasserlinie vom Umriss übernehmen und die Linie selbst dort schneiden, wo sie die
+	# Wand trifft. Damit liegt der Inhalt **per Konstruktion** im Glas.
+	var linie: float = 0.16
 	var fuell: PackedVector2Array = PackedVector2Array()
-	for p in [
-			Vector2(-0.47, 0.16), Vector2(0.47, 0.16),
-			Vector2(0.42, 0.46), Vector2(0.0, 0.62), Vector2(-0.42, 0.46),
-		]:
-		fuell.append(mitte + p * r)
-	ci.draw_colored_polygon(fuell, inhalt)
+	for i in form.size():
+		var a: Vector2 = form[i]
+		var b: Vector2 = form[(i + 1) % form.size()]
+		if a.y >= linie:
+			fuell.append(mitte + a * r)
+		# Kreuzt die Kante die Wasserlinie, kommt der Schnittpunkt dazu.
+		if (a.y < linie) != (b.y < linie) and not is_equal_approx(a.y, b.y):
+			var t: float = (linie - a.y) / (b.y - a.y)
+			fuell.append(mitte + Vector2(a.x + (b.x - a.x) * t, linie) * r)
+	if fuell.size() >= 3:
+		ci.draw_colored_polygon(fuell, inhalt)
 
 	# Umriss als geschlossener Linienzug.
 	var zug: PackedVector2Array = umriss.duplicate()

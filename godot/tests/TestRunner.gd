@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 69,
+	"_test_titel_und_erster": 72,
 	"_test_steg_und_biome": 16,
 	"_test_riss": 15,
 	"_test_terrain": 25,
@@ -1138,13 +1138,28 @@ func _test_titel_und_erster() -> void:
 	_check("Es gibt einen Trankknopf", ow_q.contains("_trank_btn.ausgeloest.connect(_trank_trinken)"))
 	_check("Und eine Taste dafuer", ow_q.contains("event.keycode == KEY_F"))
 	_check("Er sitzt als Trabant am Schussknopf", ow_q.contains("func _trabanten_setzen"))
-	# Und zwar GENAU RECHTS: Dorthin kommt der Daumen am kuerzesten, ohne den Schussknopf zu
-	# ueberstreichen. Alles darueber muesste er umrunden.
-	_check("Und zwar genau rechts (%.0f°)" % float(OW4.TRABANT_WINKEL[0]),
-		is_zero_approx(float(OW4.TRABANT_WINKEL[0])))
+	var d_mitten: float = FireButton.RADIUS + ActionSatellite.RADIUS + ActionSatellite.SPALT
+	# ── Und zwar so weit RECHTS, wie er ueberhaupt stehen kann ────────────────
+	#
+	# Der erste Anlauf setzte ihn auf 0° — genau rechts, kuerzester Daumenweg, auf dem Papier
+	# richtig. Im Kontrollbild lag er HALB AUSSERHALB DES BILDSCHIRMS: Der Schussknopf klebt
+	# selbst schon in der Ecke, seine Mitte steht nur `MARGIN + RADIUS` vom rechten Rand, und
+	# der Trabant sitzt noch einmal `d_mitten` weiter draussen.
+	#
+	# Gemessen wird deshalb nicht der Winkel, sondern die FOLGE des Winkels: Passt der Knopf
+	# ins Bild? Das haelt auf jeder Aufloesung, weil der Schussknopf am Rand verankert ist —
+	# sein Abstand zur Kante aendert sich nie.
+	var w_rad: float = deg_to_rad(float(OW4.TRABANT_WINKEL[0]))
+	var bis_kante: float = FireButton.MARGIN + FireButton.RADIUS      # Knopfmitte → rechter Rand
+	var ueberstand: float = d_mitten * cos(w_rad) + ActionSatellite.RADIUS - bis_kante
+	_check("Der Trabant passt ins Bild (%.0f px Luft zum Rand)" % -ueberstand, ueberstand <= 0.0)
+	# Er steht trotzdem RECHTS OBEN und nicht links: Der Daumen bleibt auf seiner Seite.
+	_check("Und er steht rechts vom Schussknopf (%.0f°)" % float(OW4.TRABANT_WINKEL[0]),
+		cos(w_rad) > 0.2 and sin(w_rad) > 0.0)
+	# Und die Klemme fangt auch den Fall, dass jemand spaeter an MARGIN oder den Radien dreht.
+	_check("Und wird zusaetzlich ins Bild geklemmt", ow_q.contains("get_viewport().get_visible_rect().size"))
 	# Die Trefferflaechen beruehren sich NICHT: Ein Fehlgriff soll den Schuss ausloesen und
 	# nicht den Trank verbrauchen.
-	var d_mitten: float = FireButton.RADIUS + ActionSatellite.RADIUS + ActionSatellite.SPALT
 	var r_summe: float = FireButton.RADIUS * FireButton.TOUCH_SLACK \
 		+ ActionSatellite.RADIUS * ActionSatellite.TOUCH_SLACK
 	_check("Die Trefferflaechen ueberlappen sich kaum (%.0f px Abstand, %.0f px Radien)"
@@ -1154,6 +1169,12 @@ func _test_titel_und_erster() -> void:
 	_check("Der Trabant wird vor dem Schussknopf geprueft",
 		ow_q.find("_trabant_tap(event.position)") < ow_q.find("_fire_btn.hits(event.position)"))
 	# Die Zahl steht IM Knopf, nicht daneben: Sie gehoert zum Vorrat und nicht zum Bildrand.
+	# Und zwar GANZ darin — beim ersten Anlauf reichte ihr Rand einen Punkt darueber hinaus,
+	# und im Kontrollbild hing die Zahl halb in der Luft. Gerechnet statt geschaut:
+	var plakette: float = (ActionSatellite.ZAHL_VERSATZ * ActionSatellite.RADIUS).length() \
+		+ ActionSatellite.ZAHL_R
+	_check("Die Zahlplakette bleibt im Knopf (%.1f von %.0f px)"
+		% [plakette, ActionSatellite.RADIUS], plakette <= ActionSatellite.RADIUS)
 	var sat_q: String = FileAccess.get_file_as_string("res://scripts/ActionSatellite.gd")
 	_check("Die Zahl steht im Knopf", sat_q.contains("if zahl >= 0:"))
 	_check("Und der Knopf ist kleiner als der Schussknopf",

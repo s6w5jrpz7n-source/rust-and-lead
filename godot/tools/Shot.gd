@@ -83,6 +83,11 @@ func _ready() -> void:
 	_views.append(["nahaufnahme", null, "nahaufnahme"])
 	_views.append(["quest_umweg", null, "umweg"])
 	_views.append(["ui_charakter2", null, "charakter"])   # jetzt mit Sinnbildern und Puppe
+	# Das SPIEL-HUD selbst: Kopfzeile, Abzug, Trank-Trabant. Es gab lange kein Bild davon, und
+	# genau deshalb ist niemandem aufgefallen, dass die halbe Kopfzeile aus leeren Kaestchen
+	# bestand — die Schrift kannte kein einziges der Symbole. Was man nicht knipst, prueft man
+	# nicht.
+	_views.append(["ui_hud", null, "hud"])
 	# Die beiden neuen Gegner: nebeneinander, aus Spielerhoehe.
 	var buehne: Vector3 = WorldManager.poi_scene_position("rustwater") + Vector3(0.0, 0.0, 60.0)
 	_views.append(["gegner_neu", null, "gegner"])
@@ -268,6 +273,32 @@ func _setup_ui(art: String) -> void:
 			i2 += 1
 		_cam.position = _buehne + Vector3(0.0, 1.5, 4.2)
 		_cam.look_at(_buehne + Vector3(0.0, 0.9, 0.0), Vector3.UP)
+		_cam.current = true
+	elif art == "hud":
+		# Das HUD zeigt nur etwas, wenn es auch etwas zu zeigen GIBT: ohne Waffe keine
+		# Munitionsanzeige, ohne Traenke ein ausgegrauter Trabant, ohne Auftrag keine
+		# Auftragszeile. Also erst den Zustand herstellen, in dem man tatsaechlich spielt.
+		ow._end_cine()
+		ow._close_character()
+		GameState.gold = 340
+		GameState.potions = 3
+		GameState.level = 4
+		GameState.add_item("schrott", 12)
+		GameState.add_item("zahnrad", 5)
+		GameState.add_item("dampfkern", 2)
+		for slot in ["helmet", "armor", "boots", "weapon"]:
+			EquipManager.equip_item(ProgressionManager.make_gear(String(slot), "rare"), String(slot))
+		QuestManager.accept_quest("q_rats")
+		# Die gefuehrte Waffe haengt an der angelegten Ausruestung, sie wird nicht gesetzt.
+		ow._sync_weapon()
+		# Angeschlagen, sonst ist der Trankknopf ausgegraut — und ausgerechnet den soll das
+		# Bild ja beurteilen.
+		ow._hp = float(PlayerStats.max_hp()) * 0.45
+		ow._update_hud()
+		var hw: Vector3 = WorldManager.poi_scene_position("rustwater") + Vector3(0.0, 0.0, 40.0)
+		ow._player.position = Vector3(hw.x, WorldManager.height_at(hw.x, hw.z), hw.z)
+		_cam.position = ow._player.position + Vector3(0.0, 9.0, 12.0)
+		_cam.look_at(ow._player.position + Vector3(0.0, 1.0, 0.0), Vector3.UP)
 		_cam.current = true
 	elif art == "leiste":
 		# Echte Gegner aus `_make_enemy`, nicht nur Modelle: Nur so ist die Lebensleiste dabei.

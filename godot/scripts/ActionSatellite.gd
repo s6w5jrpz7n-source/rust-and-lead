@@ -23,6 +23,10 @@ const RADIUS: float = 26.0
 ## beim Zielen trinkt.
 const SPALT: float = 6.0
 const TOUCH_SLACK: float = 1.22
+## Radius der Zahlplakette. Sie muss samt Rand innerhalb von `RADIUS` bleiben — siehe `_draw()`.
+const ZAHL_R: float = 9.0
+## Wo die Plakette sitzt, in Einheiten von `RADIUS`.
+const ZAHL_VERSATZ: Vector2 = Vector2(0.30, 0.46)
 
 var zeichen: String = ""          ## Name aus `HudGlyph.Z`, oder "trank" fuer den gemalten Flakon
 var zahl: int = 0                 ## kleine Zahl unten rechts; < 0 = keine
@@ -91,11 +95,15 @@ func _draw() -> void:
 			rim if aktiv else Color(0.55, 0.55, 0.55, 0.7))
 	# Die Zahl sitzt unten rechts im Knopf, nicht daneben: Sie gehört zum Vorrat und nicht zum
 	# Bildschirmrand — und wer den Daumen darüber hat, verdeckt sie sonst.
+	# Sie sitzt GANZ im Knopf: Beim ersten Anlauf stand sie bei (0,34 · r | 0,56 · r) mit 10 px
+	# Radius, und damit reichte ihr Rand auf 27 px hinaus — einen Punkt weiter als der Knopf
+	# selbst. Im Bild hing die Zahl halb in der Luft. Jetzt bleibt sie mit Abstand drin:
+	# hypot(0,30 | 0,46) · 26 + 9 ≈ 23 px.
 	if zahl >= 0:
 		var t: String = str(zahl)
 		var gz: Vector2 = schrift.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
-		var wo: Vector2 = c + Vector2(RADIUS * 0.34, RADIUS * 0.56)
-		draw_circle(wo, 10.0, Color(0.05, 0.05, 0.05, 0.72))
+		var wo: Vector2 = c + ZAHL_VERSATZ * RADIUS
+		draw_circle(wo, ZAHL_R, Color(0.05, 0.05, 0.05, 0.78))
 		draw_string(schrift, wo - gz * 0.5 + Vector2(0.0, gz.y * 0.36), t,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
 			Color(1.0, 0.94, 0.82) if aktiv else Color(0.55, 0.55, 0.55))
