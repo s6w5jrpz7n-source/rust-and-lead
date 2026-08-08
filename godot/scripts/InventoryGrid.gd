@@ -102,7 +102,7 @@ func _draw() -> void:
 			draw_rect(_rect_of(Rect2i(spalte, zeile, 1, 1)), Color(0.28, 0.24, 0.19, 0.9),
 				false, 1.0)
 	# 2. Die Teile darüber, jedes über seinen ganzen Fußabdruck.
-	var schrift: Font = ThemeDB.fallback_font
+	var schrift: Font = get_theme_default_font()
 	for i in _layout.size():
 		var r: Rect2i = _layout[i]
 		if r.position.x < 0 or i >= GameState.bag.size():
@@ -131,5 +131,5 @@ func _draw() -> void:
 ## Sinnbild je Ausrüstungs-Kategorie. Bewusst hier und nicht in `ProgressionManager`: Das ist
 ## eine Darstellungsfrage, keine Spielregel.
 const SLOT_ICON: Dictionary = {
-	"helmet": "⛑", "armor": "🧥", "weapon": "🔫", "gadget": "⚙", "boots": "🥾", "plate": "▦",
+	"helmet": "◓", "armor": "♜", "weapon": "⚔", "gadget": "⚙", "boots": "◣", "plate": "▦",
 }

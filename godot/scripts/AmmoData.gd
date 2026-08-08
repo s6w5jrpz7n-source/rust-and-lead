@@ -9,8 +9,8 @@ class_name AmmoData
 ## Munitionsvorrat für rund 36 Sekunden Dauerfeuer — im Gefecht netto-positiv durch Drops.
 
 const POOLS: Dictionary = {
-	"muni":     { "name": "Munition", "icon": "🧨", "cap": 180, "start": 90, "drop": [3, 6], "color": Color(0.98, 0.75, 0.14) },
-	"kristall": { "name": "Energiekristalle", "icon": "🔷", "cap": 120, "start": 45, "drop": [3, 5], "color": Color(0.22, 0.74, 0.97) },
+	"muni":     { "name": "Munition", "icon": "◆", "cap": 180, "start": 90, "drop": [3, 6], "color": Color(0.98, 0.75, 0.14) },
+	"kristall": { "name": "Energiekristalle", "icon": "◇", "cap": 120, "start": 45, "drop": [3, 5], "color": Color(0.22, 0.74, 0.97) },
 }
 const ORDER: Array = ["muni", "kristall"]
 

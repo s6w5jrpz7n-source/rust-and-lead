@@ -160,7 +160,7 @@ func _build_grid_column() -> void:
 	_act_equip.pressed.connect(_equip_selected)
 	_cols.add_child(_act_equip)
 	_act_scrap = Button.new()
-	_act_scrap.text = "🔩 Verschrotten"
+	_act_scrap.text = "▬ Verschrotten"
 	_act_scrap.position = Vector2(GRID_W + 18.0, 224.0)
 	_act_scrap.custom_minimum_size = Vector2(300.0, 46.0)
 	_act_scrap.add_theme_font_size_override("font_size", 15)
@@ -318,11 +318,11 @@ func refresh() -> void:
 		if c == _doll:
 			continue     # die Puppe überlebt, siehe `_ready`
 		c.queue_free()
-	_head.text = "⭐ Stufe %d   💰 %d   %s %d/%d   %s %d/%d" % [
+	_head.text = "★ Stufe %d   ¤ %d   %s %d/%d   %s %d/%d" % [
 		GameState.level, GameState.gold,
 		String(AmmoData.POOLS["muni"]["icon"]), AmmoData.amount("muni"), AmmoData.cap("muni"),
 		String(AmmoData.POOLS["kristall"]["icon"]), AmmoData.amount("kristall"), AmmoData.cap("kristall")]
-	_add_tab("🎽 Ausrüstung", Tab.AUSRUESTUNG)
+	_add_tab("▣ Ausrüstung", Tab.AUSRUESTUNG)
 	_add_tab("✴ Fähigkeiten (%d)" % GameState.perk_points, Tab.FAEHIGKEITEN)
 	# Die rechte Spalte gehört zur Ausrüstung. Im Fähigkeiten-Reiter wird sie versteckt und die
 	# linke bekommt die ganze Breite — ein leeres Raster neben dem Perk-Baum wäre nur Ballast.
@@ -337,7 +337,7 @@ func refresh() -> void:
 	_list.custom_minimum_size = Vector2(breite - 18.0, 0.0)
 	if zeige_raster:
 		_grid.refresh()
-		_grid_head.text = "🎒 Beutel — %d/%d Zellen" % [
+		_grid_head.text = "▤ Beutel — %d/%d Zellen" % [
 			BagManager.used_cells(), BagManager.total_cells()]
 		_refresh_selection()
 		_build_gear()
@@ -384,12 +384,12 @@ func _build_gear() -> void:
 func _stat_sheet() -> String:
 	var zeilen: Array = [
 		["❤ Leben", "%d" % PlayerStats.max_hp()],
-		["🔫 Schaden/Schuss", "%d" % PlayerStats.damage_per_bullet("karabiner")],
+		["⚔ Schaden/Schuss", "%d" % PlayerStats.damage_per_bullet("karabiner")],
 		["⚡ Feuerrate", "%d ms" % PlayerStats.fire_ms("karabiner")],
-		["💥 Krit", "%.0f %% x%.1f" % [PlayerStats.crit_chance() * 100.0, PlayerStats.crit_mult()]],
-		["🛡 Rüstung", "%d" % PlayerStats.player_armor()],
-		["🦿 Tempo", "%.0f" % PlayerStats.move_speed()],
-		["🧲 Magnet", "%d" % PlayerStats.magnet_dist()],
+		["∗ Krit", "%.0f %% x%.1f" % [PlayerStats.crit_chance() * 100.0, PlayerStats.crit_mult()]],
+		["♜ Rüstung", "%d" % PlayerStats.player_armor()],
+		["» Tempo", "%.0f" % PlayerStats.move_speed()],
+		["Ω Magnet", "%d" % PlayerStats.magnet_dist()],
 	]
 	var out: Array = ["Wirksame Werte"]
 	for r in zeilen:
@@ -440,7 +440,7 @@ func _build_perks() -> void:
 				# Warum es zu ist, gehoert daneben: „gesperrt" allein ist eine Sackgasse.
 				btn = "Stufe %d · %d Pkt" % [int(t["lvl"]), int(t["inv"])]
 				col = Color(0.52, 0.52, 0.52)
-				text = "🔒 " + text
+				text = "⊘ " + text
 			elif ProgressionManager.xor_blocked(id):
 				btn = "anderer Kapstein"
 				col = Color(0.52, 0.52, 0.52)

@@ -1,0 +1,120 @@
+class_name HudGlyph
+## Ein Ort für alle Zeichen, die in der Oberfläche stehen.
+##
+## ## Warum es das gibt
+##
+## Vorher standen **Emoji** direkt im Quelltext — ein Reagenzglas für den Trank, ein
+## Blutstropfen über den Gegnern, ein Geldsack bei der Beute. Das sah beim Schreiben gut aus
+## und war **unsichtbar im Spiel**: Godots eingebaute Schrift ist ein schmaler
+## Latin-Ausschnitt und kennt **kein einziges** dieser Zeichen. Wer das Spiel startete, sah
+## leere Kästchen, wo Symbole stehen sollten — die Trankzahl schwebte neben einem Nichts, und
+## über den Gegnern stand statt „betäubt" nur ein Loch. Es waren **54 verschiedene** Zeichen,
+## quer durch Kopfzeile, Beutel, Werkstatt, Aufträge und Ortsschilder.
+##
+## Aufgefallen ist es nicht beim Lesen des Codes, sondern beim **Nachfragen bei der Schrift**:
+## `Font.has_char()` sagte bei jedem einzelnen Symbol „nein".
+##
+## ## Was jetzt gilt
+##
+## Zwei Regeln, und die zweite wird von `TestRunner._test_zeichen()` erzwungen:
+##
+## 1. **Die Schrift liegt im Projekt** (`assets/fonts/DejaVuSans.ttf`, als Vorgabe in
+##    `project.godot`). Sie deckt Umlaute, Typografie und die Symbolblöcke ab — aber **nicht**
+##    den Emoji-Bereich ab U+1F300. Emoji sind Farbbilder, keine Buchstaben; keine normale
+##    Schrift hat sie.
+## 2. **Kein Zeichen darf in die Schrift fehlen.** `_test_zeichen()` liest **jede** Zeile
+##    **jedes** Skripts und jeder Szene, wirft die Kommentare weg und fragt die Schrift zu
+##    jedem übrigen Zeichen einzeln. Wer ein Emoji einbaut, sieht es beim nächsten Testlauf —
+##    nicht erst der Spieler.
+##
+## Die Tabelle `Z` unten hält die Zeichen, die **im Code ausgerechnet** werden (Zustände,
+## Waffen). Fließtext trägt sein Zeichen weiter direkt bei sich: „⚗ Trank getrunken" liest
+## sich beim Schreiben besser als eine Formatierung, und die Prüfung fängt Fehler ohnehin ab.
+##
+## ## Und wo es wirklich zählt: gezeichnet statt gesetzt
+##
+## Der Trankknopf liegt unter dem Daumen und muss im Gefecht auf einen Blick erkennbar sein.
+## Dafür ist ein Schriftzeichen zu schwach — es hängt an der Schrift, an der Größe und daran,
+## dass jemand die Vorgabe nicht überschreibt. `zeichne_flakon()` malt den Flakon aus Punkten:
+## Das sieht überall gleich aus und kann nicht zu einem leeren Kästchen werden.
+
+## Die Zeichen des Spiels. Alles hier muss in `assets/fonts/DejaVuSans.ttf` vorkommen —
+## `_test_zeichen()` fragt die Schrift bei **jedem** Eintrag einzeln nach.
+const Z: Dictionary = {
+	# ── Zustände über den Gegnern ──────────────────────────────────────────────
+	"kurzschluss": "⚡",   # U+26A1 betäubt
+	"dot":         "☣",   # U+2623 frisst weiter (Säure, Blutung)
+	"panzer_weg":  "‼",   # U+203C Panzerung durch, Treffer gehen voll durch
+	"tot":         "☠",   # U+2620
+
+	# ── Beute am Boden ────────────────────────────────────────────────────────
+	"gold":     "¤",   # U+00A4 Währung
+	"material": "▬",   # U+25AC Schrottbalken
+	"zahnrad":  "⚙",   # U+2699
+	"dampfkern": "◉",  # U+25C9
+	"trank":    "⚗",   # U+2697 Retorte — der Flakon selbst wird gezeichnet, nicht gesetzt
+
+	# ── Waffen ────────────────────────────────────────────────────────────────
+	# Sie stehen im Fließtext („⚔ Karabiner gefunden!"), deshalb Zeichen und keine Bilder.
+	"karabiner": "⚔",   # U+2694
+	"gatling":   "✳",   # U+2733 acht Speichen — der Lauf, der sich dreht
+	"voltgun":   "⚡",   # U+26A1
+	"saeure":    "⚗",   # U+2697
+	"brenner":   "☼",   # U+263C Strahlenkranz — NICHT ☀, das ist der Tag
+
+	# ── Sonstiges ─────────────────────────────────────────────────────────────
+	"tag":     "☀",   # U+2600
+	"nacht":   "☾",   # U+263E
+	"warnung": "⚠",   # U+26A0
+	"quest":   "✦",   # U+2726
+	"punkt":   "·",   # U+00B7 Trenner zwischen Kopfzeilenfeldern
+}
+
+
+## Ein Zeichen holen. Unbekannte Namen geben den Namen selbst zurück statt abzustürzen —
+## eine Oberfläche darf an einem fehlenden Symbol nicht sterben.
+static func z(name: String) -> String:
+	return String(Z.get(name, name))
+
+
+## Der Flakon, aus Punkten gemalt.
+##
+## `mitte` ist die Mitte des Knopfes, `r` sein Radius; die Form wird darauf skaliert. Gezeichnet
+## wird auf `ci` — jeden Aufruf in `_draw()` hinein.
+##
+## Die Form ist bewusst grob: Hals, Bauch, Füllstand. Bei 26 px Radius auf einem Telefon ist
+## alles Feinere Matsch, und was man nicht erkennt, hilft im Gefecht nicht.
+static func zeichne_flakon(ci: CanvasItem, mitte: Vector2, r: float, farbe: Color,
+		inhalt: Color) -> void:
+	# Punkte in Einheiten von `r`, y zeigt nach unten. Der Bauch ist eine Zwiebel, der Hals
+	# ein schmaler Schacht — die Silhouette, an der man einen Flakon erkennt.
+	var umriss: PackedVector2Array = PackedVector2Array()
+	for p in [
+			Vector2(-0.17, -0.66), Vector2(0.17, -0.66),   # Hals oben
+			Vector2(0.17, -0.22),                           # Hals unten
+			Vector2(0.50, 0.10), Vector2(0.42, 0.46),       # Bauch rechts
+			Vector2(0.0, 0.62),                             # Boden
+			Vector2(-0.42, 0.46), Vector2(-0.50, 0.10),     # Bauch links
+			Vector2(-0.17, -0.22),                          # zurück zum Hals
+		]:
+		umriss.append(mitte + p * r)
+
+	# Der Inhalt füllt den Bauch bis knapp unter die Schulter. Er wird ZUERST gemalt und vom
+	# Umriss überzeichnet, damit die Kante sauber bleibt.
+	var fuell: PackedVector2Array = PackedVector2Array()
+	for p in [
+			Vector2(-0.47, 0.16), Vector2(0.47, 0.16),
+			Vector2(0.42, 0.46), Vector2(0.0, 0.62), Vector2(-0.42, 0.46),
+		]:
+		fuell.append(mitte + p * r)
+	ci.draw_colored_polygon(fuell, inhalt)
+
+	# Umriss als geschlossener Linienzug.
+	var zug: PackedVector2Array = umriss.duplicate()
+	zug.append(umriss[0])
+	ci.draw_polyline(zug, farbe, maxf(1.5, r * 0.075), true)
+
+	# Der Korken sitzt quer auf dem Hals.
+	var k_h: float = r * 0.12
+	ci.draw_line(mitte + Vector2(-0.24, -0.70) * r, mitte + Vector2(0.24, -0.70) * r,
+		farbe, k_h * 2.0)

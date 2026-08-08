@@ -42,8 +42,9 @@ const SWARM_SPREAD_M: float = 4.5
 # ── Waffen (alle vier Schadensarten testbar — Kapitel-Gating folgt später über
 # das Quest-/Reveal-System; dieser Sandbox-Screen ist bewusst ungesperrt). ────
 const WEAPON_ORDER: Array = ["karabiner", "gatling", "voltgun", "saeure", "brenner"]
-const WEAPON_ICON: Dictionary = { "karabiner": "🔫", "gatling": "🌀", "voltgun": "⚡",
-	"saeure": "🧪", "brenner": "🔥" }
+# Die Waffenzeichen stehen in `HudGlyph.Z` und nicht mehr hier: Jedes Zeichen des Spiels
+# gehört an EINEN Ort, an dem die Prüfung nachsehen kann, ob die Schrift es überhaupt hergibt.
+# Vorher stand hier eine Pistole als Emoji — im Spiel ein leeres Kästchen.
 const TRACER_COLOR: Dictionary = {
 	"karabiner": Color(0.98, 0.75, 0.14), "gatling": Color(0.95, 0.86, 0.55),
 	"voltgun": Color(0.35, 0.75, 0.98),
@@ -231,11 +232,11 @@ const TOWN_R: float = 52.0
 const STREET_HALF_W: float = 6.0
 ## [Beschriftung, Registry-Name ("" = nur Platzhalter), Versatz, Blickrichtung, Ersatzmaße, Farbe]
 const TOWN_LAYOUT: Array = [
-	["🍺 Gatling-Saloon", "saloon", Vector2(-13.5, 1.0), 14.0,
+	["♠ Gatling-Saloon", "saloon", Vector2(-13.5, 1.0), 14.0,
 		Vector3(13.0, 8.5, 11.0), Color(0.45, 0.28, 0.16)],
-	["🔨 Eiserne Schmiede", "forge", Vector2(13.5, 1.0), 28.0,
+	["⚒ Eiserne Schmiede", "forge", Vector2(13.5, 1.0), 28.0,
 		Vector3(10.0, 7.0, 9.0), Color(0.36, 0.30, 0.27)],
-	["🥃 Destille", "", Vector2(-14.0, 17.0), 16.0,
+	["♨ Destille", "", Vector2(-14.0, 17.0), 16.0,
 		Vector3(11.0, 6.5, 9.0), Color(0.40, 0.34, 0.20)],
 	["⚗ Alchemie-Labor", "", Vector2(14.0, 17.0), 25.0,
 		Vector3(12.0, 6.0, 10.0), Color(0.30, 0.36, 0.31)],
@@ -1117,7 +1118,7 @@ var _reload_total: float = 0.0       # Gesamtdauer, für die Fortschrittsanzeige
 var _ground_tile_m: float = 2.5      # Kantenlaenge einer Bodentextur-Kachel (gemessen)
 var _ammo_lbl: Label                 # Vorrat der getragenen Waffe, unter dem Schuss-Knopf
 var _cam_dist: float = CAM_DIST      # aktueller Abstand, weich nachgezogen
-var _zoom_btns: HBoxContainer        # ＋/－ unter der Minikarte
+var _zoom_btns: HBoxContainer        # +/− unter der Minikarte
 var _hud_buttons: Array = []         # echte Knoepfe im HUD — duerfen den Joystick nicht ausloesen
 var _touch_pos: Dictionary = {}      # Finger-Index -> Position (fuer das Kneifen)
 var _pinch_a: int = -1               # die beiden Finger einer Kneifgeste
@@ -1197,10 +1198,10 @@ func _ready() -> void:
 		if not _vorspann_starten():
 			_erwachen()
 	elif _save_loaded:
-		_say("💾 Spielstand geladen — Lv %d · %d 💰 · 🎽 %d/%d" % [
+		_say("❖ Spielstand geladen — Lv %d · %d ¤ · ▣ %d/%d" % [
 			GameState.level, GameState.gold, EquipManager.worn().size(), EquipManager.GEAR_SLOTS.size()], 4.0)
 	else:
-		_say("🤠 Willkommen im Krater — 5000 m Kante zu Kante. Ziehen (Maus/Finger) = laufen.", 5.0)
+		_say("☺ Willkommen im Krater — 5000 m Kante zu Kante. Ziehen (Maus/Finger) = laufen.", 5.0)
 
 
 ## Lädt den laufenden Spielstand (falls vorhanden), BEVOR irgendetwas anderes GameState liest
@@ -1985,7 +1986,7 @@ func _maybe_intro_flight() -> void:
 	punkte.append({ "pos": heim.origin, "ziel": heim.origin - heim.basis.z * 10.0,
 		"sek": INTRO_SEK_EINSCHWENKEN })
 	_play_flight(punkte)
-	_say("🌙 Rustwater. Licht in der Wüste.", 4.0)
+	_say("☾ Rustwater. Licht in der Wüste.", 4.0)
 
 
 ## Die Mondscheibe am Himmel.
@@ -2394,7 +2395,7 @@ func _build_sector_lines_and_rim() -> void:
 	var smog_z: float = -float(WorldManager.SMOG_LINE_Y) * WorldManager.METERS_PER_UNIT
 	# Gate 1 — Iron-Rail-Sprengtore (dunkle Stahlwand quer über den Krater).
 	_box(Vector3(w, 22.0, 5.0), Vector3(half, 11.0, blast_z), Color(0.24, 0.16, 0.13))
-	_label(Vector3(half, 30.0, blast_z), "⛔ IRON-RAIL-SPRENGTORE", Color(1.0, 0.55, 0.35), LBL_LANDMARKE, 600.0)
+	_label(Vector3(half, 30.0, blast_z), "✖ IRON-RAIL-SPRENGTORE", Color(1.0, 0.55, 0.35), LBL_LANDMARKE, 600.0)
 	# Gate 2 — Smog-Linie (durchscheinend, giftgrün).
 	_box(Vector3(w, 28.0, 4.0), Vector3(half, 14.0, smog_z), Color(0.35, 0.75, 0.30), 0.45)
 	_label(Vector3(half, 38.0, smog_z), "☣ SMOG-LINIE", Color(0.6, 1.0, 0.5), LBL_LANDMARKE, 600.0)
@@ -2417,7 +2418,7 @@ func _build_sector_lines_and_rim() -> void:
 	_build_rim_walls(w, half)
 	# Rand-Tunnel (§1.7.4): das eine, verriegelte Tor durch die Nordwand.
 	_box(Vector3(60.0, 80.0, 40.0), Vector3(half, 40.0, -w - 20.0), Color(0.08, 0.07, 0.06))
-	_label(Vector3(half, 95.0, -w + 5.0), "🚪 RAND-TUNNEL (verriegelt)", Color(0.95, 0.85, 0.6), LBL_LANDMARKE, 500.0)
+	_label(Vector3(half, 95.0, -w + 5.0), "✖ RAND-TUNNEL (verriegelt)", Color(0.95, 0.85, 0.6), LBL_LANDMARKE, 500.0)
 
 
 ## Schwebende Beschriftung. Höhe in Weltmetern = font_size × pixel_size; mit LABEL_PIXEL
@@ -2463,7 +2464,7 @@ func _build_pois() -> void:
 			# Zentrale Landmarke: hoher, dunkler Turm — von überall am Horizont sichtbar.
 			# Der Turm trägt die Fernsicht; die Schrift bleibt dezent und blendet früher aus.
 			_solid_box(Vector3(120.0, 420.0, 120.0), pos + Vector3(0.0, 210.0, 0.0), Color(0.15, 0.13, 0.14))
-			_label(pos + Vector3(0.0, 445.0, 0.0), "🖤 " + String(p["name"]), Color(1.0, 0.45, 0.35), LBL_LANDMARKE, 900.0)
+			_label(pos + Vector3(0.0, 445.0, 0.0), "♥ " + String(p["name"]), Color(1.0, 0.45, 0.35), LBL_LANDMARKE, 900.0)
 			continue
 		# Ein Ort ist eine SCHRIFT, kein Pfahl.
 		#
@@ -2701,7 +2702,7 @@ func _build_station(poi_id: String) -> void:
 	# breiter als die Halle. Die Halle misst 9,8 m — 13 m sind knapp darueber, und die kleinere
 	# Schrift laesst das Gebaeude die Hauptsache bleiben.
 	var label_at: Vector3 = platform + Vector3(0.0, 13.0, 0.0)
-	_label(label_at, "🚂 Bahnhof " + String(WorldManager.poi(poi_id)["name"]),
+	_label(label_at, "⇄ Bahnhof " + String(WorldManager.poi(poi_id)["name"]),
 		Color(0.92, 0.86, 0.70), LBL_HAUS, 200.0)
 	_stations.append({ "id": poi_id, "pos": platform })
 	# Eine Station ohne Licht findet nachts niemand — und reisen soll man auch im Dunkeln.
@@ -3391,27 +3392,27 @@ func _process_interactions(_delta: float) -> void:
 		_actions.remove_child(child)
 		child.queue_free()
 	if ctx.begins_with("chest:"):
-		_add_action("✋  Truhe öffnen   [E]", _open_chest.bind(_chest_in_range()))
+		_add_action("∅  Truhe öffnen   [E]", _open_chest.bind(_chest_in_range()))
 	elif ctx.begins_with("gear:"):
-		_add_action("✋  %s aufheben   [E]" % String(_gear_in_range()["data"]["name"]), _pick_up_gear)
+		_add_action("∅  %s aufheben   [E]" % String(_gear_in_range()["data"]["name"]), _pick_up_gear)
 	elif ctx.begins_with("npc:"):
-		_add_action("🗣  %s ansprechen   [E]" % String(npc["name"]),
+		_add_action("«  %s ansprechen   [E]" % String(npc["name"]),
 			_talk_to.bind(String(npc["giver"])))
 		# Die Laeden haengen an den LEUTEN, nicht an ihren Haeusern. Zwei Gruende: Die Stadt
 		# wird von Hand umgestellt, ein Haus kann also morgen woanders stehen — die NPCs setzt
 		# `TOWN_NPCS` im Code. Und Destille und Labor haben noch gar kein Modell, waeren als
 		# Anlaufstelle also unerreichbar.
 		if String(npc["giver"]) == "silas":
-			_add_action("🔨  Werkstatt", _open_shop.bind(ShopScreen.Mode.WERKSTATT))
+			_add_action("⚒  Werkstatt", _open_shop.bind(ShopScreen.Mode.WERKSTATT))
 		elif String(npc["giver"]) == "mabel":
-			_add_action("💰  Geschäfte", _open_shop.bind(ShopScreen.Mode.WIRTSCHAFT))
+			_add_action("¤  Geschäfte", _open_shop.bind(ShopScreen.Mode.WIRTSCHAFT))
 	elif ctx.begins_with("pferd:"):
 		if _mounted:
-			_add_action("🐎  Absteigen   [E]", _toggle_mount)
+			_add_action("♞  Absteigen   [E]", _toggle_mount)
 		else:
-			_add_action("🐎  Aufsitzen   [E]", _toggle_mount)
+			_add_action("♞  Aufsitzen   [E]", _toggle_mount)
 	elif ctx.begins_with("station:"):
-		_add_action("🚂  Iron Rail — Ziel wählen", Callable())
+		_add_action("⇄  Iron Rail — Ziel wählen", Callable())
 		for i in FAST_TRAVEL.size():
 			var id: String = String(FAST_TRAVEL[i])
 			if id == station:
@@ -3492,17 +3493,17 @@ func _talk_to(giver: String) -> void:
 			if ziel != "" and WorldManager.has_poi(ziel):
 				var d: int = roundi(_player.position.distance_to(
 					WorldManager.poi_scene_position(ziel)))
-				wohin = "\n🧭 %s — %d m. Der Spur folgen." % [String(WorldManager.poi(ziel)["name"]), d]
+				wohin = "\n⊕ %s — %d m. Der Spur folgen." % [String(WorldManager.poi(ziel)["name"]), d]
 			zeilen.append_array(_dialog_zeilen(giver, "offer"))
-			zeilen.append("📜 „%s“ — %s%s" % [title, goal, wohin])
+			zeilen.append("✦ „%s“ — %s%s" % [title, goal, wohin])
 			_talk_lines(npc, giver, zeilen)
 		else:
-			_say("🔒 „%s“ ist noch nicht verfügbar." % title, 2.5)
+			_say("⊘ „%s“ ist noch nicht verfügbar." % title, 2.5)
 	elif QuestManager.is_quest_complete(qid):
 		var gold_before: int = GameState.gold
 		if QuestManager.complete_quest(qid):
 			zeilen.append_array(_dialog_zeilen(giver, "done"))
-			zeilen.append("✅ „%s“ — +%d Gold" % [title, GameState.gold - gold_before])
+			zeilen.append("✓ „%s“ — +%d Gold" % [title, GameState.gold - gold_before])
 			_talk_lines(npc, giver, zeilen)
 			sfx_equip()
 		else:
@@ -3510,7 +3511,7 @@ func _talk_to(giver: String) -> void:
 	else:
 		var p: Dictionary = QuestManager.check_quest_progress(qid)
 		zeilen.append_array(_dialog_zeilen(giver, "wait"))
-		zeilen.append("📜 „%s“: %d/%d" % [title, int(p["current"]), int(p["target"])])
+		zeilen.append("✦ „%s“: %d/%d" % [title, int(p["current"]), int(p["target"])])
 		_talk_lines(npc, giver, zeilen)
 
 
@@ -3879,10 +3880,10 @@ func _advance_trail(dir: Vector3) -> void:
 func _cycle_tracked_quest() -> void:
 	var laufend: Array = QuestManager.active_quests()
 	if laufend.is_empty():
-		_say("📜 Kein laufender Auftrag. Sprich in Rustwater mit Mabel, Silas oder Doc.", 3.0)
+		_say("✦ Kein laufender Auftrag. Sprich in Rustwater mit Mabel, Silas oder Doc.", 3.0)
 		return
 	if laufend.size() == 1:
-		_say("📜 Nur ein Auftrag läuft: „%s“"
+		_say("✦ Nur ein Auftrag läuft: „%s“"
 			% String(QuestManager.QUESTS[QuestManager.tracked_quest()]["title"]), 2.5)
 		return
 	var neu_id: String = QuestManager.track_next()
@@ -3890,7 +3891,7 @@ func _cycle_tracked_quest() -> void:
 		return
 	var ziel: String = QuestManager.quest_target(neu_id)
 	var wohin: String = String(WorldManager.poi(ziel)["name"]) if ziel != "" else "—"
-	_say("🧭 Verfolgt: „%s“ → %s" % [String(QuestManager.QUESTS[neu_id]["title"]), wohin], 3.0)
+	_say("⊕ Verfolgt: „%s“ → %s" % [String(QuestManager.QUESTS[neu_id]["title"]), wohin], 3.0)
 
 
 ## Zeile für den HUD-Quest-Tracker: der VERFOLGTE Auftrag mit Fortschritt und Wegangabe.
@@ -3913,7 +3914,7 @@ func _active_quest_line() -> String:
 		var d: int = roundi(_player.position.distance_to(WorldManager.poi_scene_position(ziel)))
 		# „abgeben bei" statt „nach", sobald das Ziel erfüllt ist: Der Ort ist derselbe Kasten
 		# im HUD, aber die Aufgabe ist eine andere.
-		zeile += "   %s %s (%d m)" % ["💰 abgeben bei" if fertig else "🧭 nach",
+		zeile += "   %s %s (%d m)" % ["¤ abgeben bei" if fertig else "⊕ nach",
 			String(WorldManager.poi(ziel)["name"]), d]
 	var laufend: int = QuestManager.active_quests().size()
 	if laufend > 1:
@@ -4497,13 +4498,13 @@ func _trank_trinken() -> void:
 	var neu_hp: float = GameState.trank_trinken(_hp)
 	if neu_hp < 0.0:
 		if GameState.potions <= 0:
-			_say("🧪 Kein Trank mehr.", 1.6)
+			_say("⚗ Kein Trank mehr.", 1.6)
 		else:
-			_say("🧪 Nicht noetig — du bist heil.", 1.6)
+			_say("⚗ Nicht noetig — du bist heil.", 1.6)
 		return
 	var geheilt: int = roundi(neu_hp - _hp)
 	_hp = neu_hp
-	_say("🧪 Trank getrunken — %d Leben zurueck (%d uebrig)." % [geheilt, GameState.potions], 2.0)
+	_say("⚗ Trank getrunken — %d Leben zurueck (%d uebrig)." % [geheilt, GameState.potions], 2.0)
 	_update_hud()
 
 
@@ -4665,7 +4666,7 @@ func _build_hud() -> void:
 	_zoom_btns.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_zoom_btns.position = Vector2(-Minimap.MAP_PX - 14.0, 12.0 + Minimap.MAP_PX + 8.0)
 	_zoom_btns.add_theme_constant_override("separation", 6)
-	for entry in [["－", -1], ["＋", 1]]:
+	for entry in [["−", -1], ["+", 1]]:
 		var zb := Button.new()
 		zb.text = String(entry[0])
 		zb.custom_minimum_size = Vector2(46.0, 42.0)
@@ -4677,7 +4678,7 @@ func _build_hud() -> void:
 	# Charakter-Knopf oben links unter der Statuszeile. Ohne ihn waere der Bildschirm auf dem
 	# Handy unerreichbar — dort gibt es kein [C].
 	_char_btn = Button.new()
-	_char_btn.text = "🎽"
+	_char_btn.text = "▣"
 	_char_btn.tooltip_text = "Ausrüstung & Fähigkeiten [C]"
 	_char_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_char_btn.position = Vector2(14.0, 84.0)
@@ -4740,7 +4741,7 @@ func _set_zoom(step: int) -> void:
 	if neu == _zoom_step():
 		return
 	GameState.cam_zoom = neu
-	_say("🔍 %s (%.1f m)" % [String(CAM_ZOOM_NAMES[neu]), float(CAM_ZOOM_STEPS[neu])], 1.2)
+	_say("⊙ %s (%.1f m)" % [String(CAM_ZOOM_NAMES[neu]), float(CAM_ZOOM_STEPS[neu])], 1.2)
 
 
 func _zoom_by(delta_steps: int) -> void:
@@ -4960,11 +4961,11 @@ func _make_enemy(type_id: String) -> Dictionary:
 static func status_marken(t: CombatTarget, jetzt_ms: int) -> String:
 	var m: String = ""
 	if t.is_stunned(jetzt_ms):
-		m += "⚡"
+		m += HudGlyph.z("kurzschluss")
 	if t.has_dot():
-		m += "🩸"
+		m += HudGlyph.z("dot")
 	if t.armor <= 0 and t.max_armor > 0:
-		m += "🜁"
+		m += HudGlyph.z("panzer_weg")
 	return m
 
 
@@ -5095,7 +5096,7 @@ func _spawn_chest_at(raw: Vector3) -> void:
 		node.add_child(body)
 	node.position = pos
 	add_child(node)
-	var label: Label3D = _label(pos + Vector3(0.0, 1.3, 0.0), "📦 Truhe", Color(1.0, 0.85, 0.4), LBL_TRUHE, 120.0)
+	var label: Label3D = _label(pos + Vector3(0.0, 1.3, 0.0), "▩ Truhe", Color(1.0, 0.85, 0.4), LBL_TRUHE, 120.0)
 	_chests.append({ "node": node, "label": label, "pos": pos, "looted": false, "cd": 0.0 })
 
 
@@ -5171,7 +5172,7 @@ func _open_chest(c: Dictionary) -> void:
 		EquipManager.equip_item(erste, "weapon")
 		GameState.add_weapon(ERSTE_WAFFE)
 		_sync_weapon()
-		_say("🔫 %s gefunden — angelegt." % String(erste["name"]), 3.2)
+		_say("⚔ %s gefunden — angelegt." % String(erste["name"]), 3.2)
 		# Und er sagt etwas dazu. Der Satz stand seit Langem im Storyblatt und wurde im Spiel
 		# nie gesprochen:
 		#
@@ -5192,7 +5193,7 @@ func _open_chest(c: Dictionary) -> void:
 		var rarity: String = ProgressionManager.roll_rarity(CHEST_RARITY_BIAS)
 		var slot: String = EquipManager.GEAR_SLOTS[randi_range(0, EquipManager.GEAR_SLOTS.size() - 1)]
 		_drop(at, "gear", ProgressionManager.make_gear(slot, rarity))
-	_say("📦 Die Truhe springt auf.", 2.0)
+	_say("▩ Die Truhe springt auf.", 2.0)
 
 
 ## Legt ein Fundstueck auf den Boden. Die Beschriftung IST das Fundstueck: Aus Kamerahoehe
@@ -5206,17 +5207,17 @@ func _drop(at: Vector3, kind: String, data: Dictionary) -> void:
 	var col: Color = Color.WHITE
 	match kind:
 		"gold":
-			text = "💰 %d" % int(data["amount"])
+			text = "¤ %d" % int(data["amount"])
 			col = Color(1.0, 0.84, 0.35)
 		"ammo":
 			var p: Dictionary = AmmoData.POOLS[String(data["pool"])]
 			text = "%s %d" % [String(p["icon"]), int(data["amount"])]
 			col = p["color"]
 		"potion":
-			text = "🧪 Heiltrank"
+			text = "⚗ Heiltrank"
 			col = Color(0.95, 0.35, 0.45)
 		"material":
-			text = "🔩 %s" % String(data["id"])
+			text = "▬ %s" % String(data["id"])
 			col = Color(0.72, 0.68, 0.60)
 		"gear":
 			# Kategorie als Beschriftung, Farbe = Seltenheit. Was es GENAU ist, zeigt erst das
@@ -5299,7 +5300,7 @@ func _pick_up_gear() -> void:
 		return
 	var gear: Dictionary = d["data"]
 	if not BagManager.add(gear):
-		_say("🎒 Der Beutel ist voll.", 2.5)
+		_say("▤ Der Beutel ist voll.", 2.5)
 		return
 	var rarity_name: String = String(ProgressionManager.RARITY[String(gear["rarity"])]["name"])
 	_say("✦ %s %s eingesteckt" % [rarity_name, String(gear["name"])], 2.5)
@@ -5582,19 +5583,19 @@ func _fast_travel(idx: int) -> void:
 		return
 	var here: String = _station_at_player()
 	if here == "":
-		_say("🚉 Nur am Bahnhof. Die Iron Rail hält nicht mitten in der Wüste.", 2.5)
+		_say("⇄ Nur am Bahnhof. Die Iron Rail hält nicht mitten in der Wüste.", 2.5)
 		return
 	var poi_id: String = String(FAST_TRAVEL[idx])
 	var p: Dictionary = WorldManager.POIS[poi_id]
 	if poi_id == here:
-		_say("🚉 Du stehst schon in %s." % String(p["name"]), 2.0)
+		_say("⇄ Du stehst schon in %s." % String(p["name"]), 2.0)
 		return
 	var sec: int = int(p["sector"])
 	if not WorldManager.can_enter_sector(sec):
-		_say("🚫 %s liegt hinter einem verschlossenen Tor (Sektor %d)." % [String(p["name"]), sec], 2.5)
+		_say("✖ %s liegt hinter einem verschlossenen Tor (Sektor %d)." % [String(p["name"]), sec], 2.5)
 		return
 	_player.position = WorldManager.poi_scene_position(poi_id) + Vector3(0.0, 0.0, 25.0)
-	_say("🚂 Iron Rail: %s → %s" % [String(WorldManager.poi(here)["name"]), String(p["name"])], 2.5)
+	_say("⇄ Iron Rail: %s → %s" % [String(WorldManager.poi(here)["name"]), String(p["name"])], 2.5)
 
 
 ## Womit wird geschossen? **Was im Waffen-Slot liegt** ("" = leere Haende).
@@ -5641,9 +5642,9 @@ func _refresh_weapon(gefunden: bool) -> void:
 	var dt: String = String(CombatData.WEAPONS[_weapon_id]["type"])
 	var name: String = String(CombatData.WEAPONS[_weapon_id]["name"])
 	if gefunden:
-		_say("%s %s gefunden!" % [String(WEAPON_ICON.get(_weapon_id, "🔫")), name], 3.0)
+		_say("%s %s gefunden!" % [HudGlyph.z(_weapon_id), name], 3.0)
 	else:
-		_say("%s %s (%s)" % [String(WEAPON_ICON.get(_weapon_id, "🔫")), name, dt], 2.0)
+		_say("%s %s (%s)" % [HudGlyph.z(_weapon_id), name, dt], 2.0)
 
 
 func _move_vector() -> Vector2:
@@ -6240,7 +6241,7 @@ func _process_movement(delta: float) -> void:
 	var to_rel: Vector2 = WorldManager.scene_to_world(next)
 	if not WorldManager.can_cross_blast_line(from_rel.y, to_rel.y):
 		next.z = maxf(next.z, -(float(WorldManager.BORDER_S1_S2_Y) * WorldManager.METERS_PER_UNIT - 1.5))
-		_say("⛔ Die Sprengtore sind zu. Erst der Panzerzug (Kapitel 4) bricht sie auf.", 2.5)
+		_say("✖ Die Sprengtore sind zu. Erst der Panzerzug (Kapitel 4) bricht sie auf.", 2.5)
 		to_rel = WorldManager.scene_to_world(next)
 	# Weltstruktur (GDD §1.4a): draußen ist offene Wüste, drinnen begrenzen BAUTEN. Beides
 	# geht durch denselben Test — nur ist die Blocker-Liste in der Wildnis leer, weshalb sich
@@ -6321,7 +6322,7 @@ func _begin_reload() -> void:
 	if not AmmoData.can_reload(_weapon_id):
 		if _dry_cd <= 0.0:
 			_dry_cd = 1.5
-			_say("🔫 %s aus — im Beutel eine andere anlegen"
+			_say("⚔ %s aus — im Beutel eine andere anlegen"
 				% String(AmmoData.POOLS[AmmoData.pool_for(_weapon_id)]["name"]), 1.5)
 		return
 	_reload_total = PlayerStats.reload_sec(_weapon_id)
@@ -6346,7 +6347,7 @@ func _process_combat(delta: float) -> void:
 			var geladen: int = AmmoData.refill_mag(_weapon_id)
 			_reload_left = 0.0
 			if geladen > 0 and geladen < AmmoData.mag_size(_weapon_id):
-				_say("🔄 Nur %d Schuss geladen — der Vorrat geht zur Neige." % geladen, 2.0)
+				_say("↻ Nur %d Schuss geladen — der Vorrat geht zur Neige." % geladen, 2.0)
 	var e: Dictionary = _nearest_enemy(SHOOT_RANGE_M)
 	var wants: bool = _fire_wanted()
 	# Ohne Waffe wird nicht geschossen. Der Held erwacht mit leeren Haenden auf der Kippe —
@@ -6355,7 +6356,7 @@ func _process_combat(delta: float) -> void:
 		if _fire_btn != null:
 			_fire_btn.set_state(false, false)
 		if wants and _weapon_id == "":
-			_say("🚫 Leere Hände. Such dir etwas.", 1.6)
+			_say("✖ Leere Hände. Such dir etwas.", 1.6)
 		return
 	# Der Knopf zeigt beides an: dass gedrueckt ist UND ob ueberhaupt jemand in Reichweite ist.
 	# Ohne die zweite Anzeige waere „nichts passiert" nicht von „kaputt" zu unterscheiden.
@@ -6806,7 +6807,7 @@ func _build_horse() -> void:
 	_horse.position = wo
 	_horse.rotation.y = atan2(-nach_stadt.x, -nach_stadt.z)
 	add_child(_horse)
-	_label(wo + Vector3(0.0, 2.1, 0.0), "🐎 Pferd", Color(0.95, 0.88, 0.70), LBL_FIGUR, 90.0)
+	_label(wo + Vector3(0.0, 2.1, 0.0), "♞ Pferd", Color(0.95, 0.88, 0.70), LBL_FIGUR, 90.0)
 
 
 ## Platzhalter, solange kein Modell da ist: Rumpf, Hals, Kopf, vier Beine. Bewusst grob — wer
@@ -6840,12 +6841,12 @@ func _toggle_mount() -> void:
 		_mounted = false
 		_horse.position = _player.position + Vector3(1.2, 0.0, 0.6)
 		_horse.position.y = WorldManager.height_at(_horse.position.x, _horse.position.z)
-		_say("🐎 Abgestiegen.", 1.8)
+		_say("♞ Abgestiegen.", 1.8)
 		return
 	if _player.position.distance_to(_horse.position) > MOUNT_RANGE_M:
 		return
 	_mounted = true
-	_say("🐎 Aufgesessen — dreifaches Tempo, aber kein Schuss aus dem Sattel.", 2.6)
+	_say("♞ Aufgesessen — dreifaches Tempo, aber kein Schuss aus dem Sattel.", 2.6)
 
 
 ## Im Sattel laeuft das Pferd mit. Ohne Reit-Animation bleibt es NEBEN der Figur statt unter
@@ -6883,7 +6884,7 @@ func _process_hazards(delta: float) -> void:
 func _respawn() -> void:
 	_hp = float(PlayerStats.max_hp())
 	_player.position = _rustwater_spawn()
-	_say("💀 Ausgeknockt — zurück in Rustwater.", 3.0)
+	_say("☠ Ausgeknockt — zurück in Rustwater.", 3.0)
 
 
 func _say(text: String, secs: float) -> void:
@@ -6899,11 +6900,12 @@ func _update_hud() -> void:
 	var poi_id: String = WorldManager.nearest_poi(rel)
 	var poi_d: int = roundi(_player.position.distance_to(WorldManager.poi_scene_position(poi_id)))
 	var worn_n: int = EquipManager.worn().size()
-	# Waffe kann LEER sein — der Held erwacht ohne alles. Ein Zugriff auf `WEAPON_ICON[""]`
-	# waere hier der Absturz gleich im ersten Bild des Spiels.
-	var waffe: String = "✋ ohne Waffe"
+	# Waffe kann LEER sein — der Held erwacht ohne alles. Ein harter Tabellenzugriff mit dem
+	# leeren Namen waere hier der Absturz gleich im ersten Bild des Spiels; deshalb steht die
+	# leere Hand als eigener Fall davor und `HudGlyph.z()` gibt fuer Unbekanntes ohnehin nach.
+	var waffe: String = "∅ ohne Waffe"
 	if _weapon_id != "":
-		waffe = "%s %s" % [String(WEAPON_ICON.get(_weapon_id, "🔫")),
+		waffe = "%s %s" % [HudGlyph.z(_weapon_id),
 			String(CombatData.WEAPONS[_weapon_id]["name"])]
 	# Leben und Erfahrung stehen als BALKEN daneben — hier bleibt die Zahl, weil „wie viel
 	# genau" im Kampf zaehlt und ein Balken das nicht beantwortet. Was WEG ist: der Hinweis
@@ -6917,7 +6919,7 @@ func _update_hud() -> void:
 		# braucht deshalb nur den Bedarf der laufenden Stufe, keine Summe ueber alle.
 		_xp_bar.max_value = maxf(1.0, float(GameState.xp_to_next(GameState.level)))
 		_xp_bar.value = clampf(float(GameState.xp), 0.0, _xp_bar.max_value)
-	_hud.text = "❤ %d/%d   💰 %d   ⭐ Lv %d   🎽 %d/%d   %s   %s\n➡ %s (%d m)   Sektor %d · %s" % [
+	_hud.text = "❤ %d/%d   ¤ %d   ★ Lv %d   ▣ %d/%d   %s   %s\n➡ %s (%d m)   Sektor %d · %s" % [
 		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold, GameState.level,
 		worn_n, EquipManager.GEAR_SLOTS.size(), waffe,
 		DayCycle.phase_label(GameState.hour),
@@ -6927,14 +6929,14 @@ func _update_hud() -> void:
 	# ist es baulich eng, dazwischen liegt offene Wüste. Die Bahn ist ein Ort, kein Menüpunkt.
 	var zone: String = WorldManager.zone_at(rel)
 	if _station_at_player() != "":
-		_hud.text += "   🚉 [1-5] Iron Rail"
+		_hud.text += "   ⇄ [1-5] Iron Rail"
 	elif zone != "":
-		_hud.text += "   🏛 " + String(WorldManager.poi(zone)["name"])
+		_hud.text += "   ⌂ " + String(WorldManager.poi(zone)["name"])
 	else:
-		_hud.text += "   🏜 offene Wüste"
+		_hud.text += "   ≈ offene Wüste"
 	var q: String = _active_quest_line()
 	if q != "":
-		_hud.text += "\n📜 " + q
+		_hud.text += "\n✦ " + q
 	# Die Trabanten haengen an der LAGE des Schussknopfes, und die steht erst, wenn er selbst
 	# `_ready` durchlaufen hat. Einmal je Bild nachziehen kostet nichts und ist gegen jede
 	# Reihenfolge unempfindlich — auch gegen eine Fenstergroesse, die sich aendert.
@@ -6942,12 +6944,12 @@ func _update_hud() -> void:
 	if _trank_btn != null:
 		# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen —
 		# und man greift dann daneben, weil der Daumen die alte Stelle kennt.
-		_trank_btn.setzen("🧪", GameState.potions,
+		_trank_btn.setzen("trank", GameState.potions,
 			GameState.potions > 0 and _hp < float(PlayerStats.max_hp()) - 0.5)
 	if _ammo_lbl != null and _weapon_id == "":
 		# Leere Haende: Es gibt kein Magazin, also auch keinen Zaehler. Ein „0/0" waere die
 		# Behauptung, hier fehle Munition — es fehlt aber die WAFFE, und das steht schon oben.
-		_ammo_lbl.text = "✋ —"
+		_ammo_lbl.text = "∅ —"
 		_ammo_lbl.add_theme_color_override("font_color", Color(0.62, 0.60, 0.56))
 	elif _ammo_lbl != null:
 		var pool: String = AmmoData.pool_for(_weapon_id)
@@ -6957,7 +6959,7 @@ func _update_hud() -> void:
 			# Waehrend des Nachladens zaehlt die Restzeit — man muss WISSEN, wie lange man
 			# noch wehrlos ist, sonst wirkt der blockierte Abzug wie ein Fehler.
 			var voll: int = int(round((1.0 - _reload_left / maxf(_reload_total, 0.01)) * 8.0))
-			_ammo_lbl.text = "🔄 %s%s  %.1f s" % ["▮".repeat(voll), "▯".repeat(8 - voll), _reload_left]
+			_ammo_lbl.text = "↻ %s%s  %.1f s" % ["▮".repeat(voll), "▯".repeat(8 - voll), _reload_left]
 			col = Color(0.55, 0.78, 1.0)
 		else:
 			_ammo_lbl.text = "%s %d/%d   %d" % [String(AmmoData.POOLS[pool]["icon"]), mag,
@@ -6967,7 +6969,7 @@ func _update_hud() -> void:
 			elif mag <= maxi(1, AmmoData.mag_size(_weapon_id) / 4):
 				col = Color(1.0, 0.82, 0.25)
 		_ammo_lbl.add_theme_color_override("font_color", col)
-	_hud.text += "\n🔩 %d  ⚙ %d  🔆 %d" % [
+	_hud.text += "\n▬ %d  ⚙ %d  ◉ %d" % [
 		GameState.item_count("schrott"), GameState.item_count("zahnrad"), GameState.item_count("dampfkern")]
 	if _minimap != null:
 		var ep: Array = []
@@ -7072,7 +7074,7 @@ func _vorspann_abbrechen(warum: String) -> void:
 	_vorspann_frist = -1.0
 	_set_hud_hidden(false)
 	if warum != "":
-		_say("🎞 " + warum, 3.0)
+		_say("◫ " + warum, 3.0)
 	_erwachen()
 
 
@@ -7522,7 +7524,7 @@ func _erst_beute() -> void:
 	n.queue_free()
 	_enemies.erase(_erst_gegner)
 	_erst_gegner = {}
-	_say("🎒 Aufheben: darüberlaufen.", 3.0)
+	_say("▤ Aufheben: darüberlaufen.", 3.0)
 
 
 ## Die vier Waende am Welthorizont — mit Scheitelfarben statt als Kiste.
@@ -7620,7 +7622,7 @@ func _walze_bergen(ist_boss: bool, erzwingen: bool = false) -> void:
 	var m: Dictionary = MemoryManager.try_recover_memory(ist_boss, 0.0 if erzwingen else -1.0)
 	if m.is_empty():
 		return
-	_say("🎞 Eine Steuerwalze. Sie laeuft noch.", 2.6)
+	_say("◫ Eine Steuerwalze. Sie laeuft noch.", 2.6)
 	_play_speech(HELD_NAME, "held", [
 		"„Da ist eine Walze drin. Sie dreht sich noch.“",
 		"„%s“" % String(m.get("title", "")),
@@ -7721,7 +7723,7 @@ func _build_steg() -> void:
 		# Quer über den Spalt und auf der Seite liegend — er ist hineingestürzt, nicht abgestellt.
 		lok.rotation = Vector3(0.0, 0.0 if nord else PI * 0.5, PI * 0.5)
 		add_child(lok)
-	_label(mitte + Vector3(0.0, 4.0, 0.0), "🚂 Der gestürzte Kessel",
+	_label(mitte + Vector3(0.0, 4.0, 0.0), "⇄ Der gestürzte Kessel",
 		Color(0.80, 0.76, 0.68), LBL_LANDMARKE, 320.0)
 
 

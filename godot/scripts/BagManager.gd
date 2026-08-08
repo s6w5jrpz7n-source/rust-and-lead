@@ -118,7 +118,7 @@ static func unequip_to_bag(slot: String) -> bool:
 	return add(worn)
 
 
-## Verschrotten: Ausrüstung zu Schrott recyceln (GDD §7.4 „Ablegen/Verschrotten", 1–4 🔩 je
+## Verschrotten: Ausrüstung zu Schrott recyceln (GDD §7.4 „Ablegen/Verschrotten", 1–4 ▬ je
 ## Seltenheit). Der Beutel läuft sonst zu, und Beute, die man nicht loswird, ist Ballast.
 static func scrap_at(index: int) -> int:
 	var g: Dictionary = remove_at(index)

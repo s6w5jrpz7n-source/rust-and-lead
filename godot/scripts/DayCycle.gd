@@ -231,7 +231,7 @@ const PHASE_NAME: Dictionary = {
 	NACHT: "Nacht", DAEMMERUNG: "Dämmerung", TAG: "Tag", ABEND: "Abendrot",
 }
 const PHASE_ICON: Dictionary = {
-	NACHT: "🌙", DAEMMERUNG: "🌅", TAG: "☀", ABEND: "🌇",
+	NACHT: "☾", DAEMMERUNG: "◔", TAG: "☀", ABEND: "◑",
 }
 
 static func phase_label(stunde: float) -> String:

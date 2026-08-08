@@ -21,21 +21,21 @@ const ORDER: Array = ["damage", "firerate", "reload", "hp", "speed", "regen", "m
 ## einen Menschen hält, lässt sich keine Hydraulik-Laufbeine einbauen.
 const UPGRADES: Dictionary = {
 	"damage":   { "name": ["Revolver-Kaliber", "Ballistische Kalibrierung"],
-		"icon": "🔫", "desc": "Schaden pro Schuss", "base": 40, "max": 6, "body": false },
+		"icon": "⚔", "desc": "Schaden pro Schuss", "base": 40, "max": 6, "body": false },
 	"firerate": { "name": ["Schneller Hahn", "Kolben-Frequenz"],
 		"icon": "⚡", "desc": "Feuerrate", "base": 50, "max": 5, "body": false },
 	"hp":       { "name": ["—", "T-4 Torso-Panzerung"],
-		"icon": "🛡", "desc": "Panzerung (Leben)", "base": 60, "max": 6, "body": true },
+		"icon": "♜", "desc": "Panzerung (Leben)", "base": 60, "max": 6, "body": true },
 	"speed":    { "name": ["—", "Hydraulik-Laufbeine"],
-		"icon": "🦿", "desc": "Tempo", "base": 60, "max": 5, "body": true },
+		"icon": "»", "desc": "Tempo", "base": 60, "max": 5, "body": true },
 	"regen":    { "name": ["—", "Kühlsystem"],
 		"icon": "❄", "desc": "Regeneration", "base": 50, "max": 5, "body": true },
 	# Nicht aus dem Prototyp uebernommen, sondern neu: Dort gab es kein Nachladen, also auch
 	# nichts zu beschleunigen. Basis und Hoechststufe folgen der Kurve der uebrigen Eintraege.
 	"reload":   { "name": ["Schnellader", "Auswurf-Servo"],
-		"icon": "🔄", "desc": "Nachladedauer (−8 % je Stufe)", "base": 55, "max": 5, "body": false },
+		"icon": "↻", "desc": "Nachladedauer (−8 % je Stufe)", "base": 55, "max": 5, "body": false },
 	"magnet":   { "name": ["—", "Magnet-Spule"],
-		"icon": "🧲", "desc": "Loot-Magnet", "base": 40, "max": 4, "body": false },
+		"icon": "Ω", "desc": "Loot-Magnet", "base": 40, "max": 4, "body": false },
 }
 
 

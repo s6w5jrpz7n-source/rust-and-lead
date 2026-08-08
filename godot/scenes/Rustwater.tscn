@@ -19,12 +19,12 @@
 
 [node name="Saloon" parent="." unique_id=1168707582 instance=ExtResource("1_0mdfh")]
 transform = Transform3D(5.326587, 0, 4.5888615, 0, 7.0306587, 0, -4.5888615, 0, 5.326587, -9.52667, 4.28167, -2.8330593)
-metadata/label = "🍺 Gatling-Saloon"
+metadata/label = "♠ Gatling-Saloon"
 metadata/asset = "saloon"
 
 [node name="Schmiede" parent="." unique_id=1559253342 instance=ExtResource("2_q6y6r")]
 transform = Transform3D(4.4472227, 0, -2.7667177, 0, 5.2376094, 0, 2.7667177, 0, 4.4472227, 16.943102, 3.50811, -7.0289907)
-metadata/label = "🔨 Eiserne Schmiede"
+metadata/label = "⚒ Eiserne Schmiede"
 metadata/asset = "forge"
 
 [node name="Wasserturm" parent="." unique_id=1076767127 instance=ExtResource("3_m1gqn")]

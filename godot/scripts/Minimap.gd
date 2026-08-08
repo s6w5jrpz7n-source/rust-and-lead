@@ -185,7 +185,7 @@ func _draw_fog(rect: Rect2) -> void:
 ## Orte. Was aus dem Ausschnitt fällt, wird auf der Nahansicht als blasse Marke an den Rand
 ## geklemmt: So bleibt die Richtung zum nächsten Ort ablesbar, ohne die Karte zuzukleistern.
 func _draw_pois(rect: Rect2) -> void:
-	var font: Font = ThemeDB.fallback_font
+	var font: Font = get_theme_default_font()
 	for id in WorldManager.POIS.keys():
 		# Unentdeckte Orte gibt es auf der Karte NICHT. Sie blass zu zeichnen waere schlimmer
 		# als sie wegzulassen: Ein grauer Punkt mit Namen ist verraten, ein grauer Punkt ohne
@@ -272,7 +272,7 @@ func _draw_scale_hint() -> void:
 	if not full_world:
 		draw_arc(size * 0.5, LOCAL_RADIUS_M * pixels_per_meter(), 0.0, TAU, 48,
 			Color(0.85, 0.78, 0.60, 0.22), 1.0)
-	var font: Font = ThemeDB.fallback_font
+	var font: Font = get_theme_default_font()
 	if font == null:
 		return
 	var text: String = "5 km" if full_world else "%d m" % int(LOCAL_RADIUS_M)

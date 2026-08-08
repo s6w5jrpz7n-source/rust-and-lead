@@ -99,7 +99,7 @@ func _rows() -> Array:
 			var price: int = WorkshopData.cost(String(id))
 			var reason: String = ""
 			if locked:
-				reason = "🔒 erst nach dem Erwachen"
+				reason = "⊘ erst nach dem Erwachen"
 			elif maxed:
 				reason = "ausgebaut"
 			elif GameState.gold < price:
@@ -114,13 +114,13 @@ func _rows() -> Array:
 			var maxed: bool = TycoonManager.is_maxed(String(id))
 			var price: int = TycoonManager.upgrade_cost(String(id))
 			var per: int = int(b["income_per"])
-			var desc: String = ("+%d 💰/s je Stufe" % per) if per > 0 else "kein Einkommen, aber Rabatte"
+			var desc: String = ("+%d ¤/s je Stufe" % per) if per > 0 else "kein Einkommen, aber Rabatte"
 			var reason: String = ""
 			if maxed:
 				reason = "ausgebaut"
 			elif GameState.gold < price:
 				reason = "zu teuer"
-			out.append([String(id), "🏚 " + String(b["name"]), desc, lvl, int(b["max"]), price,
+			out.append([String(id), "⌂ " + String(b["name"]), desc, lvl, int(b["max"]), price,
 				not maxed and GameState.gold >= price, reason])
 	return out
 
@@ -142,11 +142,11 @@ func refresh() -> void:
 		_list.remove_child(child)
 		child.queue_free()
 	if mode == Mode.WERKSTATT:
-		_title.text = "🔨 Werkstatt — Silas Kupferauge"
-		_purse.text = "💰 %d Gold" % GameState.gold
+		_title.text = "⚒ Werkstatt — Silas Kupferauge"
+		_purse.text = "¤ %d Gold" % GameState.gold
 	else:
-		_title.text = "💰 Geschäfte — Mamma Mabel"
-		_purse.text = "💰 %d Gold      Einkommen: %d 💰/s" % [GameState.gold, TycoonManager.income_per_sec()]
+		_title.text = "¤ Geschäfte — Mamma Mabel"
+		_purse.text = "¤ %d Gold      Einkommen: %d ¤/s" % [GameState.gold, TycoonManager.income_per_sec()]
 	for r in _rows():
 		_list.add_child(_make_row(r))
 
@@ -161,18 +161,18 @@ func _make_row(r: Array) -> Control:
 	# Bei gesperrten Koerper-Eingriffen steht als Bezeichnung nur „—" in der Tabelle: Vor dem
 	# Reveal soll der Held gar nicht wissen, dass es diese Teile gibt.
 	var name: String = String(r[1])
-	if String(r[7]).begins_with("🔒"):
-		name = "🔒 ???"
+	if String(r[7]).begins_with("⊘"):
+		name = "⊘ ???"
 	text.text = "%s\n   %s · Stufe %d/%d" % [name, String(r[2]), int(r[3]), int(r[4])]
 	row.add_child(text)
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(150.0, 40.0)   # Daumengroesse
 	btn.add_theme_font_size_override("font_size", 15)
 	if String(r[7]) != "":
-		btn.text = String(r[7]) if String(r[7]) != "zu teuer" else "💰 %d" % int(r[5])
+		btn.text = String(r[7]) if String(r[7]) != "zu teuer" else "¤ %d" % int(r[5])
 		btn.disabled = true
 	else:
-		btn.text = "Ausbauen  💰 %d" % int(r[5])
+		btn.text = "Ausbauen  ¤ %d" % int(r[5])
 		btn.pressed.connect(_on_buy.bind(String(r[0])))
 	row.add_child(btn)
 	return row

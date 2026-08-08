@@ -51,3 +51,18 @@ renderer/rendering_method.mobile="mobile"
 lights_and_shadows/directional_shadow/size=4096
 lights_and_shadows/directional_shadow/size.mobile=4096
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
+
+[gui]
+
+; Die Schrift liegt IM Projekt, sie wird nicht vom System geliehen.
+;
+; Godots eingebaute Ersatzschrift ist ein schmaler Latin-Ausschnitt: kein ⚡, kein ⚗, kein
+; einziges Symbol. Alle Zeichen der Oberflaeche standen deshalb im Spiel als leere Kaestchen —
+; die Trankzahl neben einem Nichts, ueber den Gegnern ein Loch statt „betaeubt". Gesehen hat
+; man es erst, als `Font.has_char()` bei jedem Symbol einzeln „nein" sagte.
+;
+; DejaVu Sans deckt Umlaute, Typografie und die Symbolbloecke ab (Lizenz: Bitstream Vera,
+; siehe assets/fonts/LIZENZ_DejaVu.txt). Was sie NICHT hat, hat keine normale Schrift: den
+; Emoji-Bereich ab U+1F300. Welche Zeichen erlaubt sind, steht in `scripts/HudGlyph.gd`, und
+; `TestRunner._test_zeichen()` fragt die Schrift bei jedem einzeln nach.
+theme/custom_font="res://assets/fonts/DejaVuSans.ttf"

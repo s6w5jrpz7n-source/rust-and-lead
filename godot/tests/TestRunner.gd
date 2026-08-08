@@ -82,6 +82,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_save_manager": 17,
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
+	"_test_zeichen": 5,
 }
 
 
@@ -1180,7 +1181,7 @@ func _test_titel_und_erster() -> void:
 		GameState.TRANK_ANTEIL > 0.1 and GameState.TRANK_ANTEIL < 0.6)
 	# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen.
 	_check("Der Knopf wird ausgegraut, nicht versteckt",
-		ow_q.contains('_trank_btn.setzen("🧪", GameState.potions,'))
+		ow_q.contains('_trank_btn.setzen("trank", GameState.potions,'))
 
 	# ── Die erste Truhe ───────────────────────────────────────────────────────
 	#
@@ -1306,11 +1307,11 @@ func _test_steg_und_biome() -> void:
 	_check("Kurzschluss wird angezeigt", OW6.status_marken(mt, jetzt).contains("⚡"))
 	mt.stun_until = 0
 	CombatEngine.apply_status(mt, CombatData.FX_BLEED, jetzt)
-	_check("Ein DOT wird angezeigt", OW6.status_marken(mt, jetzt).contains("🩸"))
+	_check("Ein DOT wird angezeigt", OW6.status_marken(mt, jetzt).contains("☣"))
 	mt.dot = {}
 	mt.armor = 0
 	_check("Und zerfressene Panzerung auch",
-		OW6.status_marken(mt, jetzt).contains("🜁") and mt.max_armor > 0)
+		OW6.status_marken(mt, jetzt).contains("‼") and mt.max_armor > 0)
 	# Sie stehen UEBER der Lebensleiste: Der Blick geht beim Zielen nach oben zum Kopf.
 	_check("Die Marken haengen am Gegner", ow_q.contains('"marken": marken'))
 
@@ -3247,8 +3248,8 @@ func _test_dialog() -> void:
 	# Der Fehler aus dem ersten Entwurf: feste Hoehe, und die vierte Zeile fiel unten heraus.
 	var kurz: float = d._needed_height("„Setz dich, Kind.“")
 	var lang: float = d._needed_height("„Setz dich, Kind. Aber vorher…“\n\n"
-		+ "📜 „Kopfgeld: Wegelagerer“ — 8 Gegner erlegen\n"
-		+ "🧭 Das Rattengestrüpp — 559 m. Der Spur folgen.")
+		+ "✦ „Kopfgeld: Wegelagerer“ — 8 Gegner erlegen\n"
+		+ "⊕ Das Rattengestrüpp — 559 m. Der Spur folgen.")
 	_check("Die Tafel waechst mit dem Text (%.0f -> %.0f px)" % [kurz, lang], lang > kurz)
 	_check("Sie waechst aber nicht unbegrenzt",
 		d._needed_height("Wort ".repeat(400)) <= DialogBox.BOX_H_MAX)
@@ -4830,3 +4831,137 @@ func _marsch(von: Vector3, nach: Vector3, basis_m: float, schraeg: bool) -> Arra
 			# selbst eine andere Richtung drueckt — deshalb hier abbrechen.
 			break
 	return [erreicht, stockungen, Vector3(p.x, WorldManager.height_at(p.x, p.y), p.y)]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Zeichen — was im Spiel steht, muss die Schrift auch hergeben
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Der Fehler, den diese Funktion fuer immer zumauert:
+#
+# Quer durch die Oberflaeche standen **Emoji** im Quelltext — ein Reagenzglas im Trankknopf,
+# ein Blutstropfen ueber verletzten Gegnern, ein Geldsack an der Beute, ein Pferd am Pferd.
+# Beim Lesen des Codes sah das aufgeraeumt aus. Im Spiel war **jedes einzelne davon ein leeres
+# Kaestchen**: Godots eingebaute Ersatzschrift ist ein schmaler Latin-Ausschnitt ohne ein
+# einziges Symbol. 54 verschiedene Zeichen, ueber Kopfzeile, Beutel, Werkstatt, Auftraege und
+# Ortsschilder verteilt.
+#
+# Auffallen konnte das beim Lesen nicht — der Quelltext zeigt die Emoji ja korrekt an. Es
+# brauchte die Frage an die Schrift selbst: `Font.has_char()`. Genau die stellt diese Funktion
+# jetzt bei **jedem Zeichen jeder Zeile** — automatisch, fuer immer, auch fuer Zeichen, die es
+# heute noch gar nicht gibt.
+func _test_zeichen() -> void:
+	print("· Zeichen und Schrift (kein leeres Kaestchen im Spiel)")
+
+	# Die Schrift liegt IM Projekt. Eine geliehene Systemschrift gibt es auf einem Telefon
+	# nicht, und Godots eingebaute reicht nicht.
+	var pfad: String = "res://assets/fonts/DejaVuSans.ttf"
+	_check("Die Schrift liegt im Projekt", ResourceLoader.exists(pfad))
+	_check("Und sie ist die Vorgabe des Projekts",
+		String(ProjectSettings.get_setting("gui/theme/custom_font", "")) == pfad)
+
+	var schrift: Font = load(pfad) as Font
+	if schrift == null:
+		_check("Die Schrift laesst sich laden", false, "load() gab null")
+		return
+
+	# Jedes Zeichen der Tabelle einzeln nachfragen. Wer ein neues eintraegt, erfaehrt hier
+	# sofort, ob die Schrift es hergibt — und nicht erst der Spieler.
+	var fehlt_tabelle: Array[String] = []
+	for name in HudGlyph.Z:
+		var zk: String = String(HudGlyph.Z[name])
+		for i in zk.length():
+			if not schrift.has_char(zk.unicode_at(i)):
+				fehlt_tabelle.append("%s (U+%04X)" % [name, zk.unicode_at(i)])
+	_check("Alle %d Zeichen der Tabelle stehen in der Schrift" % HudGlyph.Z.size(),
+		fehlt_tabelle.is_empty(), ", ".join(fehlt_tabelle))
+
+	# Und jetzt der eigentliche Waechter: JEDE Zeile JEDES Skripts und JEDER Szene.
+	#
+	# Kommentare werden vorher weggeworfen — sie erscheinen nie auf dem Bildschirm, und ein
+	# Test, der sie mitpruefen wuerde, verboete genau die Erklaerung, warum ein Zeichen
+	# ausgetauscht wurde („vorher stand hier ein Geldsack").
+	var treffer: Dictionary = {}
+	var dateien: Array[String] = []
+	_dateien_sammeln("res://", dateien)
+	for datei in dateien:
+		var inhalt: String = FileAccess.get_file_as_string(datei)
+		var zeilen: PackedStringArray = inhalt.split("\n")
+		for nr in zeilen.size():
+			var zeile: String = _ohne_kommentar(zeilen[nr], datei.ends_with(".tscn"))
+			for i in zeile.length():
+				var c: int = zeile.unicode_at(i)
+				if c > 127 and not schrift.has_char(c):
+					var schluessel: String = "U+%04X" % c
+					if not treffer.has(schluessel):
+						treffer[schluessel] = "%s:%d" % [datei.get_file(), nr + 1]
+	var liste: Array[String] = []
+	for k in treffer:
+		liste.append("%s in %s" % [k, treffer[k]])
+	_check("Kein unsichtbares Zeichen in %d Dateien" % dateien.size(),
+		treffer.is_empty(), ", ".join(liste))
+
+	# Und niemand zeichnet an der Projektschrift vorbei. `ThemeDB.fallback_font` ist NICHT die
+	# eingestellte Schrift, sondern Godots eingebaute Notloesung — wer sie in `draw_string()`
+	# steckt, holt sich die leeren Kaestchen zurueck, egal was im Projekt steht. Genau so war
+	# es in fuenf Dateien, die ihre Symbole selbst malen.
+	#
+	# Der Suchbegriff wird zur Laufzeit zusammengesetzt: Stuende er als ein Stueck da, faende
+	# die Pruefung zuerst SICH SELBST und meldete die eigene Zeile als Verstoss.
+	# Und wie oben zaehlt nur CODE, kein Kommentar: Die Erklaerung daneben nennt den Namen
+	# zwangslaeufig, und ein Test, der darauf anschlaegt, verbietet seine eigene Begruendung.
+	var nadel: String = "ThemeDB." + "fallback_font"
+	var vorbei: Array[String] = []
+	for datei in dateien:
+		if not datei.ends_with(".gd") or datei.begins_with("res://tools/"):
+			continue
+		for zeile in FileAccess.get_file_as_string(datei).split("\n"):
+			if _ohne_kommentar(zeile, false).contains(nadel):
+				vorbei.append(datei.get_file())
+				break
+	_check("Niemand zeichnet an der Projektschrift vorbei",
+		vorbei.is_empty(), ", ".join(vorbei))
+
+
+## Alle `.gd` und `.tscn` unterhalb von `wo` einsammeln.
+func _dateien_sammeln(wo: String, raus: Array[String]) -> void:
+	var d: DirAccess = DirAccess.open(wo)
+	if d == null:
+		return
+	d.list_dir_begin()
+	var name: String = d.get_next()
+	while name != "":
+		if name.begins_with("."):
+			name = d.get_next()
+			continue
+		var voll: String = wo.path_join(name)
+		if d.current_is_dir():
+			_dateien_sammeln(voll, raus)
+		elif name.ends_with(".gd") or name.ends_with(".tscn"):
+			raus.append(voll)
+		name = d.get_next()
+	d.list_dir_end()
+
+
+## Die Zeile ohne ihren Kommentar.
+##
+## Simpler Zustandslauf: Was in Anfuehrungszeichen steht, bleibt; ein `#` (bzw. `;` in `.tscn`)
+## ausserhalb beendet die Zeile. Das reicht — geprueft wird, was auf dem Bildschirm landen
+## KANN, und ein Zeichen in einer Zeichenkette landet dort.
+func _ohne_kommentar(zeile: String, ist_szene: bool) -> String:
+	var q: String = ""          # welches Anfuehrungszeichen gerade offen ist
+	var i: int = 0
+	while i < zeile.length():
+		var c: String = zeile[i]
+		if q != "":
+			if c == "\\":
+				i += 2       # das maskierte Zeichen mit ueberspringen, sonst schliesst \" hier
+				continue
+			if c == q:
+				q = ""
+		elif c == '"' or c == "'":
+			q = c
+		elif c == "#" or (ist_szene and c == ";"):
+			return zeile.substr(0, i)
+		i += 1
+	return zeile

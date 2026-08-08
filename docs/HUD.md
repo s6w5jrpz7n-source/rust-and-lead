@@ -35,8 +35,8 @@ drei Zeilen Text mit vierzehn Zahlen darin. Im Gefecht liest die niemand. Was ma
 ```
 ┌────────┐
 │ Porträt│  ████████████████░░░░  ❤ 128/128
-│  72 px │  ██████░░░░░░░░░░░░░░  ⭐ Lv 1
-└────────┘  💰 340   🎽 4/6   🌙 Nacht
+│  72 px │  ██████░░░░░░░░░░░░░░  ★ Lv 1
+└────────┘  ¤ 340   ▣ 4/6   ☾ Nacht
 ```
 
 * **Porträt** im Rahmen, klickbar → Rucksack. *(steht)*
@@ -46,7 +46,7 @@ drei Zeilen Text mit vierzehn Zahlen darin. Im Gefecht liest die niemand. Was ma
 * **Statusmarken** — *(steht, aber am Gegner statt am Spieler)*. Das Kampfsystem verteilt seit
   Langem Zustände, und der Spieler konnte **keinen** davon sehen. Wer eine Säureflasche wirft und
   nichts passiert, lernt daraus nur, dass Säureflaschen nichts tun; dass sie gerade die Panzerung
-  aufgelöst hat, stand nirgends. Jetzt steht ⚡ (Kurzschluss), 🩸 (DOT) und 🜁 (zerfressene
+  aufgelöst hat, stand nirgends. Jetzt steht ⚡ (Kurzschluss), ☣ (DOT) und ‼ (zerfressene
   Panzerung) über der Lebensleiste des Gegners — dorthin geht der Blick beim Zielen ohnehin.
   *Noch offen:* dieselben Marken für den **Spieler**, sobald ihn etwas davon treffen kann.
 
@@ -72,7 +72,8 @@ zusammengehören.
   dem Handy gibt es kein Tab.
 * Die **Ortszeile** als Dauertext. Der Ort gehört an die Karte, nicht in eine Textzeile; nur beim
   *Betreten* soll sein Name groß über die Mitte ziehen — das gibt es bereits (`_zone_lbl`).
-* Die **Emoji als Symbole**. ❤ 💰 ⭐ 🎽 🌙 sind Platzhalter und sehen auf jedem Gerät anders aus.
+* Die **Schriftzeichen als Symbole**. ❤ ¤ ★ ▣ ☾ sind Platzhalter — jetzt immerhin *sichtbare*
+  (siehe unten), aber ein gezeichnetes Symbol bleibt schärfer und trägt die Farbe besser.
 
 ---
 
@@ -111,8 +112,11 @@ kennt.
 ### Was ich **nicht** brauche
 
 * Keine Porträts der Spielfigur — das kommt aus dem Film.
-* Keine Schriftart, solange nichts dagegen spricht: Godots Vorgabe ist lesbar, und eine eigene
-  Schrift bringt Lizenzfragen mit, die sich später schwer zurücknehmen lassen.
+* ~~Keine Schriftart, solange nichts dagegen spricht: Godots Vorgabe ist lesbar, und eine
+  eigene Schrift bringt Lizenzfragen mit.~~ **Falsch gewesen** — Godots Vorgabe war eben *nicht*
+  genug: Sie kennt kein einziges Symbol, und das ganze HUD zeigte leere Kästchen. DejaVu Sans
+  liegt jetzt im Projekt, die Lizenzfrage ist mit einer gemeinfreien Schrift beantwortet. Wenn
+  später eine Schrift mit mehr Charakter kommen soll, ist der Platz dafür vorbereitet.
 * Keine Hintergründe für Tafeln. Ein Rahmen plus eine dunkle Fläche reicht; ein gemalter
   Hintergrund macht jede Tafel schwer und altert schnell.
 
@@ -137,3 +141,48 @@ nie den Start verhindern.
    ist das sonst ein Fehlgriff, den niemand rückgängig machen kann.
 3. **Rahmen für Karte und Tafeln.** Macht aus zusammenhanglosen Kästen eine Oberfläche.
 4. **Symbole statt Emoji.** Am sichtbarsten, aber am wenigsten folgenreich — deshalb zuletzt.
+
+---
+
+## Die Schrift — und warum das HUD monatelang leere Kästchen zeigte
+
+Beim Bauen des Trankknopfes fiel eine Frage an, die vorher niemand gestellt hatte: *Kann die
+Schrift das Symbol überhaupt?*
+
+`Font.has_char()` antwortete: **nein**. Und dann bei jedem weiteren Symbol wieder: nein.
+
+Godots eingebaute Ersatzschrift ist ein schmaler Latin-Ausschnitt — Buchstaben, Ziffern,
+Umlaute, sonst nichts. Im Quelltext standen aber **54 verschiedene Emoji**, quer durch das
+ganze Spiel: der Geldsack an der Beute, das Reagenzglas am Trank, das Pferd am Pferd, der
+Kompass an der Auftragsspur, der Rucksack am vollen Beutel, die Lok am Bahnhof. Beim Lesen des
+Codes sahen sie alle richtig aus. **Im Spiel war jedes einzelne ein leeres Kästchen.**
+
+Aufgefallen war es nie, weil man es beim Lesen nicht sehen *kann* — der Editor zeigt die Emoji
+ja an. Nur das laufende Spiel zeigt das Loch, und dort sieht man ein fehlendes Symbol leicht
+als „da ist halt noch keine Grafik".
+
+### Was jetzt gilt
+
+1. **Die Schrift liegt im Projekt** — `godot/assets/fonts/DejaVuSans.ttf`, eingetragen als
+   `gui/theme/custom_font`. Sie deckt Umlaute, Typografie und die Symbolblöcke ab. Was sie
+   *nicht* hat, hat keine gewöhnliche Schrift: den Emoji-Bereich ab U+1F300 — Emoji sind
+   Farbbilder, keine Buchstaben. (Lizenz: Bitstream Vera, `assets/fonts/LIZENZ_DejaVu.txt`.)
+2. **Alle Emoji sind ersetzt** durch Symbole, die die Schrift kennt: ¤ Gold, ⚗ Trank,
+   ▬ Schrott, ⚙ Zahnrad, ◉ Dampfkern, ♞ Pferd, ⇄ Iron Rail, ⊕ Wegweiser, ✦ Auftrag,
+   ⚔ Waffe, ★ Stufe, ☠ Tod, ⌂ Ortschaft, ≈ offene Wüste.
+3. **`ThemeDB.fallback_font` ist verboten.** Das ist *nicht* die eingestellte Schrift, sondern
+   genau die eingebaute Notlösung — fünf Dateien, die ihre Symbole selbst malen, holten sich
+   damit die leeren Kästchen zurück, egal was im Projekt steht. Jetzt überall
+   `get_theme_default_font()`.
+4. **Der Trankknopf malt sein Symbol selbst** (`HudGlyph.zeichne_flakon()`). Er liegt unter dem
+   Daumen und muss im Gefecht auf einen Blick lesbar sein; gemalte Punkte hängen an keiner
+   Schrift und können nie wieder zu einem Kästchen werden.
+
+### Der Wächter
+
+`TestRunner._test_zeichen()` liest **jede Zeile jedes Skripts und jeder Szene** (88 Dateien),
+wirft die Kommentare weg und fragt die Schrift zu jedem übrigen Zeichen einzeln. Ein neues
+Emoji fällt beim nächsten Testlauf auf — nicht erst dem Spieler.
+
+Kommentare bleiben ausgenommen, und das mit Absicht: Sie müssen erklären dürfen, *welches*
+Zeichen früher dort stand.

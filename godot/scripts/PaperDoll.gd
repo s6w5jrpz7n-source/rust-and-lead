@@ -116,7 +116,7 @@ func refresh() -> void:
 
 func _draw() -> void:
 	_draw_figure()
-	var schrift: Font = ThemeDB.fallback_font
+	var schrift: Font = get_theme_default_font()
 	var rects: Dictionary = slot_rects()
 	# Verbindungslinien ZUERST: Sie laufen unter den Fassungen durch, nicht über sie.
 	for s in SLOT_POS:

@@ -29,7 +29,7 @@ const UiAssets = preload("res://scripts/UiAssets.gd")
 ## Maße bei 1280×720 Bezugsauflösung.
 const MARGIN: float = 22.0        # Abstand zum Bildrand
 ## Mindesthöhe. Die Tafel WÄCHST mit dem Text — der erste Entwurf stand fest auf 138 px, und
-## sobald eine Quest ihre Zeile „🧭 Das Rattengestrüpp — 559 m" mitbrachte, wurde die unterste
+## sobald eine Quest ihre Zeile „⊕ Das Rattengestrüpp — 559 m" mitbrachte, wurde die unterste
 ## Zeile abgeschnitten. Ein Kasten, der Text verschluckt, ist schlimmer als ein hoher Kasten.
 const BOX_H: float = 168.0
 const BOX_H_MAX: float = 300.0
@@ -148,7 +148,7 @@ func show_line(name_text: String, body: String, giver: String = "") -> void:
 ## derselben Schrift und derselben Breite, mit der das Label gleich umbricht — jede andere
 ## Schätzung liegt bei einem Text mit Sonderzeichen und langen Ortsnamen daneben.
 func _needed_height(body: String) -> float:
-	var schrift: Font = ThemeDB.fallback_font
+	var schrift: Font = get_theme_default_font()
 	if schrift == null:
 		return BOX_H
 	var breite: float = maxf(_text_width(), 80.0)
@@ -297,7 +297,7 @@ func _draw() -> void:
 	else:
 		_draw_frame(r)   # ohne Grafik zeichnet die Tafel sich selbst
 	_draw_portrait(_portrait_rect())
-	var schrift: Font = ThemeDB.fallback_font
+	var schrift: Font = get_theme_default_font()
 	if schrift == null:
 		return
 	# Name in VERSALIEN und gesperrt. Beides aus der Vorlage, und beides hat einen Grund: Der
@@ -352,7 +352,7 @@ func _draw_portrait(r: Rect2) -> void:
 			draw_texture_rect(_portrait, r, false)
 	else:
 		draw_rect(r, Color(0.17, 0.15, 0.14))
-		var schrift: Font = ThemeDB.fallback_font
+		var schrift: Font = get_theme_default_font()
 		if schrift != null and not speaker.is_empty():
 			var z: String = speaker.substr(0, 1).to_upper()
 			var m: Vector2 = schrift.get_string_size(z, HORIZONTAL_ALIGNMENT_LEFT, -1, 54)

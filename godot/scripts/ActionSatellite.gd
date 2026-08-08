@@ -11,9 +11,10 @@ class_name ActionSatellite extends Control
 ## deshalb hat der Schussknopf die Vorfahrt, und die Trabanten fangen erst außerhalb seines
 ## Randes an.
 ##
-## Gezeichnet statt bemalt: Ein Zeichen, das man sieht, ist besser als eine Grafik, die noch
-## niemand gemalt hat. `docs/HUD.md` listet die Symbole auf, die das später ersetzen sollen —
-## dann wird hier eine Zeile ausgetauscht.
+## Das Symbol wird **gemalt**, nicht gesetzt. Die erste Fassung schrieb ein Reagenzglas-Emoji
+## in den Knopf — und Godots eingebaute Schrift kennt kein einziges Symbol, also stand dort im
+## Spiel ein leeres Kästchen mit einer Zahl daneben. Gemalte Punkte können das nicht: Sie
+## sehen auf jedem Gerät gleich aus und hängen an keiner Schrift. Siehe `HudGlyph`.
 
 ## Radius des Trabanten und wie weit seine Mitte vom Schussknopf entfernt sitzt.
 const RADIUS: float = 26.0
@@ -23,7 +24,7 @@ const RADIUS: float = 26.0
 const SPALT: float = 6.0
 const TOUCH_SLACK: float = 1.22
 
-var zeichen: String = ""          ## was daraufsteht (🧪)
+var zeichen: String = ""          ## Name aus `HudGlyph.Z`, oder "trank" fuer den gemalten Flakon
 var zahl: int = 0                 ## kleine Zahl unten rechts; < 0 = keine
 var aktiv: bool = true            ## ausgegraut, wenn nichts zu holen ist
 var gedrueckt: bool = false
@@ -74,8 +75,16 @@ func _draw() -> void:
 		rim = Color(0.90, 1.0, 0.94, 0.95)
 	draw_circle(c, RADIUS, fill)
 	draw_arc(c, RADIUS, 0.0, TAU, 32, rim, 2.5, true)
-	var schrift: Font = ThemeDB.fallback_font
-	if zeichen != "":
+	var schrift: Font = get_theme_default_font()
+	# `trank` wird GEMALT, nicht gesetzt. Ein Schriftzeichen haengt daran, dass die Schrift es
+	# ueberhaupt kennt — und genau daran ist die erste Fassung gescheitert: Godots eingebaute
+	# Schrift hat kein einziges Symbol, der Knopf zeigte ein leeres Kaestchen. Gemalte Punkte
+	# koennen das nicht. Alles andere darf weiter ein Zeichen sein (`HudGlyph.Z`).
+	if zeichen == "trank":
+		var vorne: Color = rim if aktiv else Color(0.55, 0.55, 0.55, 0.7)
+		var saft: Color = Color(0.86, 0.24, 0.32, 0.85) if aktiv else Color(0.34, 0.30, 0.30, 0.5)
+		HudGlyph.zeichne_flakon(self, c, RADIUS * 0.92, vorne, saft)
+	elif zeichen != "":
 		var gr: Vector2 = schrift.get_string_size(zeichen, HORIZONTAL_ALIGNMENT_LEFT, -1, 22)
 		draw_string(schrift, c - gr * 0.5 + Vector2(0.0, gr.y * 0.36), zeichen,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 22,
