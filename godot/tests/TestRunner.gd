@@ -83,7 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
-	"_test_stollen": 13,
+	"_test_stollen": 25,
 }
 
 
@@ -5142,3 +5142,61 @@ func _test_stollen() -> void:
 	# Ein Feld ist genau ein Wandsegment breit, sonst muesste die Wand gestueckelt werden.
 	_check("Ein Feld ist so breit wie ein Wandstueck (%.1f m)" % DungeonLayout.FELD_M,
 		is_equal_approx(DungeonLayout.FELD_M, 4.0))
+
+	# ── Der Weg hinein und wieder heraus ─────────────────────────────────────
+	#
+	# Ein Stollen ist eine EIGENE Szene, und beim Wechsel verschwindet alles, was die Oberwelt
+	# wusste. Was den Wechsel ueberleben muss, steht deshalb in `GameState` und nirgends sonst.
+	var OWS = load("res://scripts/OverworldView.gd")
+	var dv_q: String = FileAccess.get_file_as_string("res://scripts/DungeonView.gd")
+	var ow_s: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	_check("Es gibt eine Stollenszene", ResourceLoader.exists("res://scenes/Dungeon.tscn"))
+	_check("Und einen Eingang in der Oberwelt", ow_s.contains("func _stollen_betreten"))
+	_check("Der Eingang ist sichtbar gebaut", ow_s.contains("func _build_stollen"))
+	# Er liegt AM WEG zwischen Stadt und Grube — einen Dungeon, den man suchen muss, findet in
+	# einem 5000-m-Krater niemand. Geprueft wird die Lage, nicht die Zahl: Verschiebt jemand
+	# Rustwater, soll der Test die neue Entfernung messen und nicht die alte Konstante.
+	var rw: Vector2 = Vector2(300.0, 300.0)
+	var mine: Vector2 = Vector2(150.0, 450.0)
+	var d_rw: float = OWS.STOLLEN_WELT.distance_to(rw)
+	var d_mine: float = OWS.STOLLEN_WELT.distance_to(mine)
+	_check("Der Stollen liegt zwischen Stadt und Grube (%.0f m / %.0f m)" % [d_rw, d_mine],
+		d_rw < rw.distance_to(mine) and d_mine < rw.distance_to(mine))
+	# Die Rueckkehrstelle wird VORHER gemerkt: Danach ist die Szene weg und mit ihr die Figur,
+	# die man haette fragen koennen.
+	_check("Die Rueckkehrstelle wird vor dem Wechsel gemerkt",
+		ow_s.find("GameState.stollen_rueckkehr = _stollen_position()")
+			< ow_s.find('change_scene_to_file("res://scenes/Dungeon.tscn")'))
+	_check("Und die Oberwelt setzt einen darauf zurueck",
+		ow_s.contains("_player.position = GameState.stollen_rueckkehr"))
+	# Und sie wird wieder GELEERT — sonst springt die Figur bei jedem spaeteren Start des
+	# Spiels an den Stollenmund, auch ohne je drin gewesen zu sein.
+	_check("Die Rueckkehrstelle wird danach geleert",
+		ow_s.contains("GameState.stollen_rueckkehr = Vector3.ZERO"))
+	# Der Startwert bleibt, solange man drin ist: Wer die Treppe nimmt, soll in DEMSELBEN
+	# Stollen eine Etage tiefer stehen und nicht in einem fremden.
+	# (Der erste Anlauf dieses Tests verbot das Wuerfeln ueberhaupt — und schlug deshalb beim
+	# voellig richtigen Code an: Irgendwo muss der erste Startwert ja herkommen. Geprueft
+	# gehoert der WAECHTER davor, nicht das Wuerfeln.)
+	_check("Die Treppe zaehlt nur die Ebene hoch", dv_q.contains("GameState.stollen_ebene += 1"))
+	_check("Und gewuerfelt wird nur, wenn kein Startwert steht",
+		dv_q.contains("if GameState.stollen_startwert == 0:"))
+	_check("Und beim Verlassen wird beides zurueckgesetzt",
+		dv_q.contains("GameState.stollen_ebene = 0")
+		and dv_q.contains("GameState.stollen_startwert = 0"))
+	# Ein neues Spiel darf nicht im Stollen anfangen.
+	GameState.stollen_ebene = 2
+	GameState.stollen_rueckkehr = Vector3(1, 2, 3)
+	GameState.neu_beginnen()
+	_check("Ein neues Spiel faengt nicht im Stollen an",
+		GameState.stollen_ebene == 0 and GameState.stollen_rueckkehr == Vector3.ZERO)
+	# Und drinnen wird an WAENDEN gehalten, nicht an Haengen: Die Bewegung schlaegt das Zielfeld
+	# nach, getrennt fuer x und z. Zusammen geprueft bliebe man an jeder schraegen Ecke kleben,
+	# obwohl eine der beiden Richtungen frei ist.
+	_check("Drinnen bremst die Wand, nicht die Steigung",
+		dv_q.contains("DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(nur_x))")
+		and dv_q.contains("DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(nur_z))"))
+	# Und es ist dunkel. Ein Stollen mit Tageslicht ist ein Zimmer.
+	_check("Es ist dunkel, mit einer Lampe am Guertel",
+		dv_q.contains("OmniLight3D") and dv_q.contains("omni_range = LAMPE_M"))
+

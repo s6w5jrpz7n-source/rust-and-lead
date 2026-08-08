@@ -75,10 +75,38 @@ läuft; groß genug, dass man mit vollem Beutel herauskommt und deshalb ins Inve
 
 ## Reihenfolge, in der ich es baue
 
-1. Szenenwechsel mit Rückweg (ohne Inhalt, nur rein und raus)
-2. Raumgenerator + Wände + Dunkelheit, mit Kisten-Platzhaltern
-3. Gegner und Beute
-4. Deine vier Modelle ersetzen die Platzhalter
+1. ~~Szenenwechsel mit Rückweg (ohne Inhalt, nur rein und raus)~~ **Erledigt.**
+2. ~~Raumgenerator + Wände + Dunkelheit, mit Kisten-Platzhaltern~~ **Erledigt.**
+3. Gegner und Beute — *offen*
+4. Deine vier Modelle ersetzen die Platzhalter — *offen, wartet auf dich*
 
 Nach Schritt 1 kann man schon hineingehen, nach Schritt 3 ist er spielbar. Deine Modelle sind der
 letzte Schritt und blockieren nichts.
+
+---
+
+## Stand nach Schritt 2
+
+**Man kann hineingehen.** Der Stollenmund liegt bei world 210/380 als Einschnitt mit
+Balkenrahmen und Schild; `[E]` bzw. der Knopf in der Aktionsleiste steigt hinab. Drinnen: sechs
+bzw. neun Kammern, Gänge, Gürtellampe mit 9 m, Nebel, Treppe nach unten und der Weg zurück —
+und man kommt **dort** wieder heraus, wo man hineingestiegen ist.
+
+**Der Grundriss ist eine Rechnung** (`DungeonLayout`) und kennt keine Szene. Das ist der Grund,
+warum der Test 200 Grundrisse erzeugen und bei jedem mit einer Flutfüllung nachlaufen kann, ob
+vom Eingang wirklich jedes Feld erreichbar ist. Eine Treppe hinter einer Wand sieht auf jedem
+Bild in Ordnung aus — nur nachlaufen findet sie.
+
+**Was jetzt drinsteht, sind Kisten.** Die Plätze für Truhen und Gegner rechnet der Grundriss
+bereits aus; an ihnen stehen Würfel. Das ist Schritt 3.
+
+### Zwei Dinge, die erst das Kontrollbild gezeigt hat
+
+Die Draufsicht blieb dreimal hintereinander schwarz, und jedes Mal aus einem anderen Grund:
+erst fehlte das Licht, dann fraß der **Nebel** alles (bei 0,035 Dichte bleibt über 108 m
+Kamerahöhe rund ein Fünfzigstel übrig), und schließlich lief `look_at()` ins Leere, weil die
+Kamera beim Ausrichten **noch nicht im Baum hing** — Godot bricht dann mit „Node not inside
+tree" ab und behält die Ausgangslage. Erst das dritte Bild zeigte den Grundriss.
+
+Das ist genau der Grund für Kontrollbilder: Die Erreichbarkeit ist bewiesen, aber ob man in
+einem dunklen Stollen überhaupt etwas *sieht*, beantwortet keine Rechnung.

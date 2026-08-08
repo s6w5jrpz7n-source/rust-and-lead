@@ -138,6 +138,21 @@ var met: Dictionary = {}
 ## aufhoert, faengt abends wieder an.
 var hour: float = DayCycle.START_HOUR
 
+# ── Der Stollen ───────────────────────────────────────────────────────────────
+#
+# Ein Dungeon ist eine EIGENE Szene, und der Weg zurück muss ihn überleben. Diese drei Werte
+# sind alles, was die Oberwelt darüber wissen muss:
+#
+# `stollen_ebene` 0 = draußen, sonst die Ebene, in der man steckt. Sie steht hier und nicht in
+# der Szene, weil die Szene beim Wechsel verschwindet.
+var stollen_ebene: int = 0
+## Aus welchem Startwert der Grundriss gerechnet wird. Er bleibt gleich, solange man drin ist —
+## sonst stünde man nach der Treppe in einem anderen Stollen als dem, den man betreten hat.
+var stollen_startwert: int = 0
+## Wohin die Figur zurückgesetzt wird, wenn sie wieder herauskommt. Ohne das landet man beim
+## Verlassen an der Startposition der Oberwelt — also unter Umständen quer über der Karte.
+var stollen_rueckkehr: Vector3 = Vector3.ZERO
+
 # ── Roter Faden: Erinnerungs-Walzen & Familien-Bogen (Master-GDD §7.5.12a/b, §8.3) ──
 var memories_found: int = 0        ## 0..MemoryManager.chain_length(); geordnete Erinnerungskette
 var memorials_seen: Array = []     ## ids besuchter Erinnerungspunkte in Providence Cut
@@ -208,6 +223,9 @@ func neu_beginnen() -> void:
 	saw_vista = false
 	erst_gegner_done = false
 	hour = 18.6
+	stollen_ebene = 0
+	stollen_startwert = 0
+	stollen_rueckkehr = Vector3.ZERO
 
 
 # ── Erfahrungs-Kurve & abgeleitete Werte ──────────────────────────────────────

@@ -1189,7 +1189,18 @@ func _ready() -> void:
 	_build_chests()
 	_dress_ausguck()
 	_build_vista_marke()
+	_build_stollen()
 	_hp = float(PlayerStats.max_hp())
+	# Wer aus dem Stollen kommt, kommt DORT heraus, wo er hineingestiegen ist — und nicht am
+	# Startpunkt der Oberwelt, also unter Umstaenden quer ueber der Karte. Der Prolog bleibt
+	# dabei aus: Wer schon einmal drin war, hat ihn laengst gesehen.
+	if GameState.stollen_rueckkehr != Vector3.ZERO:
+		_player.position = GameState.stollen_rueckkehr
+		GameState.stollen_rueckkehr = Vector3.ZERO
+		GameState.saw_wake = true
+		_say("▲ Wieder an der Luft. Der Stollen liegt hinter dir.", 3.0)
+		_update_hud()
+		return
 	# Das Erwachen haengt an `saw_wake`, NICHT daran, ob ein Spielstand geladen wurde. Vorher
 	# hing es am Spielstand — und weil das Spiel automatisch speichert, bekam man die Szene nach
 	# dem allerersten Start nie wieder zu sehen, auch nicht nach einem Zuruecksetzen.
@@ -3377,6 +3388,8 @@ func _process_interactions(_delta: float) -> void:
 		ctx = "npc:" + String(npc["giver"])
 	elif station != "":
 		ctx = "station:" + station
+	elif _stollen_greifbar():
+		ctx = "stollen"
 	elif _pferd_greifbar():
 		# Zuletzt in der Rangfolge, aber ueberhaupt drin: Das Pferd hatte GAR KEINEN Eintrag
 		# hier. Es stand mit Namensschild am Kraterrand, und auf dem Handy — wo es keine
@@ -3406,6 +3419,8 @@ func _process_interactions(_delta: float) -> void:
 			_add_action("⚒  Werkstatt", _open_shop.bind(ShopScreen.Mode.WERKSTATT))
 		elif String(npc["giver"]) == "mabel":
 			_add_action("¤  Geschäfte", _open_shop.bind(ShopScreen.Mode.WIRTSCHAFT))
+	elif ctx == "stollen":
+		_add_action("▼  In den Stollen steigen   [E]", _stollen_betreten)
 	elif ctx.begins_with("pferd:"):
 		if _mounted:
 			_add_action("♞  Absteigen   [E]", _toggle_mount)
@@ -6885,6 +6900,70 @@ func _horse_dummy() -> Node3D:
 ## Auf- und absteigen. Im Sattel wird nicht geschossen (GDD §8.1a) — sonst waere das Pferd die
 ## bessere Version von allem.
 ## Ist das Pferd in Reichweite — oder sitzt man schon drauf (dann geht Absteigen immer)?
+# ── Der Stollen ───────────────────────────────────────────────────────────────
+#
+# Er liegt bei world 210/380 — zwischen Rustwater (300/300) und den Schrott-Minen (150/450),
+# also AM WEG, den man in den ersten Minuten ohnehin laeuft. Ein Dungeon, den man suchen muss,
+# findet in einem 5000-m-Krater niemand.
+const STOLLEN_WELT: Vector2 = Vector2(210.0, 380.0)
+const STOLLEN_NAH_M: float = 4.0
+var _stollen_mund: Vector3 = Vector3.ZERO
+
+
+## Wo der Stolleneingang in der Szene liegt — auf dem Gelaende, nicht darueber.
+func _stollen_position() -> Vector3:
+	if _stollen_mund == Vector3.ZERO:
+		var p: Vector3 = WorldManager.world_to_scene(STOLLEN_WELT)
+		_stollen_mund = Vector3(p.x, WorldManager.height_at(p.x, p.z), p.z)
+	return _stollen_mund
+
+
+func _stollen_greifbar() -> bool:
+	if _player == null:
+		return false
+	return _player.position.distance_to(_stollen_position()) <= STOLLEN_NAH_M
+
+
+## Hinein. Die Rueckkehrstelle wird VORHER gemerkt — danach ist die Szene weg und mit ihr die
+## Figur, die man haette fragen koennen.
+func _stollen_betreten() -> void:
+	GameState.stollen_rueckkehr = _stollen_position()
+	GameState.stollen_ebene = 1
+	GameState.stollen_startwert = 0    # 0 = der Stollen wuerfelt sich einen neuen Grundriss
+	get_tree().change_scene_to_file("res://scenes/Dungeon.tscn")
+
+
+## Der Einschnitt im Boden: ein dunkles Loch mit Balkenrahmen, dazu ein Schild.
+##
+## Ohne sichtbares Bauwerk waere der Eingang eine unsichtbare Stelle, an der ploetzlich ein
+## Knopf erscheint — und niemand laeuft dorthin, wo nichts zu sehen ist.
+func _build_stollen() -> void:
+	var wo: Vector3 = _stollen_position()
+	var loch := MeshInstance3D.new()
+	var lb := BoxMesh.new()
+	lb.size = Vector3(5.0, 0.4, 5.0)
+	loch.mesh = lb
+	var lm := StandardMaterial3D.new()
+	lm.albedo_color = Color(0.03, 0.03, 0.04)
+	loch.material_override = lm
+	loch.position = wo + Vector3(0.0, 0.2, 0.0)
+	add_child(loch)
+	# Vier Balken als Rahmen. Roh, aber sie machen aus einem dunklen Fleck ein BAUWERK — und nur
+	# ein Bauwerk sagt „hier hat jemand gegraben".
+	var bm := StandardMaterial3D.new()
+	bm.albedo_color = Color(0.24, 0.17, 0.10)
+	for versatz in [Vector3(-2.6, 0.0, 0.0), Vector3(2.6, 0.0, 0.0),
+			Vector3(0.0, 0.0, -2.6), Vector3(0.0, 0.0, 2.6)]:
+		var balken := MeshInstance3D.new()
+		var bb := BoxMesh.new()
+		bb.size = Vector3(0.6, 1.4, 5.8) if absf(versatz.x) > 0.1 else Vector3(5.8, 1.4, 0.6)
+		balken.mesh = bb
+		balken.material_override = bm
+		balken.position = wo + versatz + Vector3(0.0, 0.7, 0.0)
+		add_child(balken)
+	_label(wo + Vector3(0.0, 2.6, 0.0), "▼ Stollenmund", Color(0.92, 0.80, 0.52), LBL_TRUHE, 160.0)
+
+
 func _pferd_greifbar() -> bool:
 	if _horse == null or _player == null:
 		return false
