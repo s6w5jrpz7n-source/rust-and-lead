@@ -83,6 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
+	"_test_spielstand_vollstaendig": 6,
 	"_test_stollen": 33,
 	"_test_truhen": 29,
 	"_test_anfuehrer": 54,
@@ -5719,3 +5720,94 @@ func _fest_rng() -> RandomNumberGenerator:
 	var r := RandomNumberGenerator.new()
 	r.seed = 7
 	return r
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Der Spielstand — was hier fehlt, merkt niemand
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# `schluessel` stand nicht im Spielstand. Wer drei Anfuehrer erlegt, das Spiel beendet und
+# wiederkommt, stand ohne sie da: Beutekammer wieder zu, und der einzige Hinweis waere ein
+# Spieler gewesen, der sich fragt, ob er sie getraeumt hat. Kein Absturz, keine Meldung, keine
+# rote Zeile — genau die Sorte Fehler, die man erst nach Wochen bemerkt und dann nicht mehr
+# zuordnen kann.
+#
+# Der Grund war schlicht: Ein neues Feld in `GameState` ist erst fertig, wenn es AUCH in
+# `SaveManager` steht, und daran denkt niemand zuverlaessig. Also denkt es diese Pruefung.
+#
+# Sie schreibt in jedes Feld einen Wert, der NICHT die Vorgabe ist, serialisiert, setzt alles
+# zurueck und liest wieder ein. Was danach nicht mehr stimmt, wird beim Speichern vergessen.
+func _test_spielstand_vollstaendig() -> void:
+	print("· Spielstand (jedes Feld ueberlebt Speichern und Laden)")
+
+	# Feld -> Probewert. Wer ein Feld in `GameState` ergaenzt, traegt es hier ein; fehlt es im
+	# `SaveManager`, faellt es beim naechsten Lauf auf.
+	var proben: Dictionary = {
+		"current_chapter": 3, "is_revealed": true, "level": 7, "xp": 42,
+		"perk_points": 4, "ng_plus": 2, "gold": 1234, "potions": 9,
+		"kills": 55, "tracked_quest": "q_stollen", "weapon_id": "gatling",
+		"prolog_done": true, "saw_rustwater": true, "saw_wake": true, "saw_vista": true,
+		"erst_gegner_done": true, "schluessel": 3, "cam_zoom": 2,
+	}
+	GameState.neu_beginnen()
+	for feld in proben:
+		GameState.set(String(feld), proben[feld])
+	# Auch die Sammlungen, denn eine leere Liste ueberlebt jeden Fehler.
+	GameState.inventory = { "schrott": 5, "zahnrad": 3, "dampfkern": 1, "grubenstahl": 17 }
+	GameState.weapons = ["karabiner", "gatling"]
+	GameState.quests = { "q_stollen": "active" }
+
+	var gepackt: Dictionary = SaveManager.serialize()
+	GameState.neu_beginnen()
+	SaveManager.deserialize(gepackt)
+
+	var verloren: Array[String] = []
+	for feld in proben:
+		if GameState.get(String(feld)) != proben[feld]:
+			verloren.append("%s (%s statt %s)" % [feld, str(GameState.get(String(feld))),
+				str(proben[feld])])
+	_check("Jedes einfache Feld ueberlebt den Spielstand", verloren.is_empty(),
+		", ".join(verloren))
+	# Grubenstahl im Besonderen: Er ist der Auftragsfortschritt, und wer ihn verliert, laeuft
+	# den ganzen Stollen noch einmal, ohne zu wissen warum.
+	_check("Grubenstahl ueberlebt (%d)" % GameState.item_count("grubenstahl"),
+		GameState.item_count("grubenstahl") == 17)
+	_check("Und die uebrigen Materialien auch",
+		GameState.item_count("schrott") == 5 and GameState.item_count("zahnrad") == 3)
+	_check("Waffen ueberleben", GameState.weapons.has("gatling"))
+	_check("Auftragszustaende ueberleben",
+		String(GameState.quests.get("q_stollen", "")) == "active")
+
+	# ── Und die eigentliche Zusicherung ──────────────────────────────────────
+	#
+	# Die Liste oben ist von Hand gepflegt, also luecken-anfaellig: Genau das war ja der Fehler.
+	# Deshalb fragt die Pruefung zum Schluss `GameState` SELBST, welche Felder es fuehrt, und
+	# verlangt fuer jedes einen Platz im Spielstand.
+	#
+	# Was absichtlich NICHT gespeichert wird, steht namentlich darunter — mit Grund. Eine
+	# Ausnahme, die man eintragen muss, ist eine Entscheidung; eine Ausnahme, die einfach
+	# passiert, ist ein Fehler.
+	var fluechtig: Dictionary = {
+		# Der Stollen ist eine Sitzung, kein Zustand: Wer drin ist, kann nicht speichern (es gibt
+		# dort keinen Speicherpunkt), und wer heraus ist, braucht die Werte nicht mehr.
+		"stollen_ebene": "Sitzungszustand", "stollen_startwert": "Sitzungszustand",
+		"stollen_rueckkehr": "Sitzungszustand",
+		# Das Tutorial waehlt man beim Start, es gehoert nicht in einen Spielstand.
+		"tutorial": "wird beim Start gewaehlt",
+		# Laeuft gerade eine Einblendung? Das ist die Frage eines Augenblicks. Gespeichert
+		# hiesse: Wer waehrend der Enthuellung schliesst, kommt in einer Enthuellung wieder,
+		# die es nicht mehr gibt.
+		"flags_ui": "Zustand eines Augenblicks",
+	}
+	var vergessen: Array[String] = []
+	for eintrag in GameState.get_property_list():
+		if int(eintrag["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE == 0:
+			continue
+		var name: String = String(eintrag["name"])
+		if name.begins_with("_") or fluechtig.has(name) or gepackt.has(name):
+			continue
+		vergessen.append(name)
+	_check("Jedes Feld von GameState hat einen Platz im Spielstand", vergessen.is_empty(),
+		"nicht gespeichert: " + ", ".join(vergessen))
+
+	GameState.neu_beginnen()

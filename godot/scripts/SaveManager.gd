@@ -43,6 +43,11 @@ static func serialize() -> Dictionary:
 		"saw_wake": GameState.saw_wake,
 		"saw_vista": GameState.saw_vista,
 		"erst_gegner_done": GameState.erst_gegner_done,
+		# Die Schluessel. Sie FEHLTEN hier, und das war still und teuer: Wer drei Anfuehrer
+		# erlegt, das Spiel beendet und wiederkommt, stand ohne sie da — die Beutekammer wieder
+		# zu, und der einzige Hinweis waere ein Spieler gewesen, der sich fragt, ob er sie
+		# geträumt hat. Ein neues Feld in `GameState` ist erst fertig, wenn es hier steht.
+		"schluessel": GameState.schluessel,
 		"met": GameState.met.duplicate(),
 		"hour": GameState.hour,
 		"quest_base": GameState.quest_base.duplicate(true),
@@ -100,6 +105,7 @@ static func deserialize(data: Dictionary) -> void:
 	GameState.saw_wake = bool(data.get("saw_wake", false))
 	GameState.saw_vista = bool(data.get("saw_vista", false))
 	GameState.erst_gegner_done = bool(data.get("erst_gegner_done", false))
+	GameState.schluessel = maxi(0, int(data.get("schluessel", 0)))
 	GameState.met = (data.get("met", {}) as Dictionary).duplicate()
 	GameState.hour = float(data.get("hour", 7.5))
 	GameState.quest_base = _int_dict(data.get("quest_base", {}))
