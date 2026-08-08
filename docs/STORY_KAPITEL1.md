@@ -509,10 +509,10 @@ Der Prolog steht mechanisch. Was ihn zur **Erzählung** macht, fehlt noch:
 |---|---|---|
 | ~~1~~ | ~~**Dialoge als Daten.**~~ **Erledigt** — `DialogData.gd`, sechs Personen, fünf Anlässe, eigene Zeilen nach dem Reveal. |  |
 | ~~3~~ | ~~**Erstbegegnung mit Mabel erzwingen**~~ **Erledigt** — die Fußspur führt in der Stadt zu ihr, bis man mit ihr geredet hat. |  |
-| 1 | **Alte Dialoge als Daten (Rest).** Bisher liefert `OverworldView._npc_line()` je NPC einen Satz aus einer `if`-Kette. Für eine Story braucht es mehrseitige Gespräche mit Zustand („erstes Mal", „Quest läuft", „abgabebereit") — also eine `DialogData`-Tabelle wie `QuestManager.QUESTS`, und die Sprechtafel blättert durch. | mittel |
-| 2 | **Weitere skriptierte Momente.** Der Mechanismus steht (`_play_flight` für die Kamera, `_play_beats` für den Text, beides an Aufwachen und Ankunft schon verdrahtet). Was fehlt, sind die übrigen Auslöser — vor allem die Truhe. | klein |
+| ~~1~~ | ~~**Alte Dialoge als Daten (Rest).**~~ **Erledigt** — `_talk_to()` zieht die Zeilen aus `DialogData.lines()` und blättert durch; `_npc_line()` ist nur noch das Netz darunter, falls jemand eine Person einträgt, ohne sie in die Tabelle zu schreiben. Alt: Bisher liefert `OverworldView._npc_line()` je NPC einen Satz aus einer `if`-Kette. Für eine Story braucht es mehrseitige Gespräche mit Zustand („erstes Mal", „Quest läuft", „abgabebereit") — also eine `DialogData`-Tabelle wie `QuestManager.QUESTS`, und die Sprechtafel blättert durch. | mittel |
+| ~~2~~ | ~~**Weitere skriptierte Momente.**~~ **Erledigt** — die Truhe hat ihre eigene Szene (`_erste_truhe_szene`), dazu kamen die Erstbegegnung mit dem Konstrukt und die Rundsicht am Ausguck. Alt: Der Mechanismus steht (`_play_flight` für die Kamera, `_play_beats` für den Text, beides an Aufwachen und Ankunft schon verdrahtet). Was fehlt, sind die übrigen Auslöser — vor allem die Truhe. | klein |
 | 3 | **Erstbegegnung mit Mabel erzwingen** — Marker über ihrem Kopf, Fußspur zu ihr statt zum Quest-Ort. (`prolog_done` wird inzwischen gesetzt.) | klein |
-| 5 | **Codex/Erinnerung** — die Kinetoskop-Walzen (§8.3) sind im Backend fertig, aber im Prolog noch nicht angefasst. Die erste Walze gehört in die Grube. | klein |
+| ~~5~~ | ~~**Codex/Erinnerung**~~ **Erledigt** — `_walze_bergen()` hebt die Walzen, die erste liegt in der Grube. Alt: — die Kinetoskop-Walzen (§8.3) sind im Backend fertig, aber im Prolog noch nicht angefasst. Die erste Walze gehört in die Grube. | klein |
 
 Reihenfolge-Vorschlag: **1 → 3 → 4 → 2 → 5.** Ohne (1) ist alles andere Text in einer
 Meldungszeile.

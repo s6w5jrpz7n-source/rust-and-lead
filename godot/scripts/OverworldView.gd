@@ -6958,10 +6958,9 @@ func _say(text: String, secs: float) -> void:
 
 
 func _update_hud() -> void:
-	var rel: Vector2 = WorldManager.scene_to_world(_player.position)
-	var biome: Dictionary = WorldManager.biome(WorldManager.biome_at(rel))
-	var poi_id: String = WorldManager.nearest_poi(rel)
-	var poi_d: int = roundi(_player.position.distance_to(WorldManager.poi_scene_position(poi_id)))
+	# Ort, Entfernung, Sektor und Biom wurden hier jedes Bild ausgerechnet — fuer eine Zeile,
+	# die es nicht mehr gibt. Mit ihr faellt die Rechnerei weg: `nearest_poi` laeuft ueber alle
+	# Orte, und das sechzigmal in der Sekunde fuer einen Text, den niemand liest.
 	var worn_n: int = EquipManager.worn().size()
 	# Waffe kann LEER sein — der Held erwacht ohne alles. Ein harter Tabellenzugriff mit dem
 	# leeren Namen waere hier der Absturz gleich im ersten Bild des Spiels; deshalb steht die
@@ -6989,21 +6988,28 @@ func _update_hud() -> void:
 		# dem Augenwinkel, welche der beiden Grenzen man gerade uebertritt.
 		_spieler_marken.add_theme_color_override("font_color",
 			Color(1.0, 0.86, 0.25) if jetzt_s < _marke_sumpf_bis else Color(0.62, 0.95, 0.42))
-	_hud.text = "❤ %d/%d   ¤ %d   ★ Lv %d   ▣ %d/%d   %s   %s\n➡ %s (%d m)   Sektor %d · %s" % [
+	# Die Kopfzeile trägt nur noch, was man WÄHREND des Spielens braucht.
+	#
+	# Vorher standen hier vier dichte Zeilen mit vierzehn Zahlen: Leben, Gold, Stufe, getragene
+	# Teile, Waffe, Uhrzeit, dann der nächste Ort mit Entfernung, dann Sektor und Biom, dann
+	# noch einmal Zone oder „offene Wüste", dann der Auftrag, dann die Materialien. Im Gefecht
+	# liest das niemand — und was niemand liest, verdeckt nur die Welt dahinter.
+	#
+	# Raus ist die ganze ORTSZEILE. Wo ich bin, beantwortet die Karte oben rechts besser als
+	# eine Textzeile, und beim *Betreten* zieht der Name ohnehin groß über die Mitte
+	# (`_zone_lbl`). Sektor und Biom waren reine Verwaltungsangaben: Was der Sektor sperrt,
+	# erfährt man beim Anrennen; was das Biom tut, steht jetzt als Marke an der Lebensleiste
+	# und liegt als Tönung über der Welt.
+	#
+	# Geblieben ist, was eine ENTSCHEIDUNG trägt — und die Iron-Rail-Zeile ist der Grund, warum
+	# hier überhaupt noch eine zweite stehen darf: Sie nennt Tasten, die nur an diesem Fleck
+	# etwas tun. Ohne sie wüsste niemand, dass er gerade fahren kann.
+	_hud.text = "❤ %d/%d   ¤ %d   ★ Lv %d   ▣ %d/%d   %s   %s" % [
 		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold, GameState.level,
 		worn_n, EquipManager.GEAR_SLOTS.size(), waffe,
-		DayCycle.phase_label(GameState.hour),
-		String(WorldManager.POIS[poi_id]["name"]), poi_d,
-		WorldManager.sector_of_pos(rel), String(biome["name"])]
-	# Weltstruktur ablesbar machen (GDD §1.4a): am Bahnsteig fährt man, in der Aktionszone
-	# ist es baulich eng, dazwischen liegt offene Wüste. Die Bahn ist ein Ort, kein Menüpunkt.
-	var zone: String = WorldManager.zone_at(rel)
+		DayCycle.phase_label(GameState.hour)]
 	if _station_at_player() != "":
 		_hud.text += "   ⇄ [1-5] Iron Rail"
-	elif zone != "":
-		_hud.text += "   ⌂ " + String(WorldManager.poi(zone)["name"])
-	else:
-		_hud.text += "   ≈ offene Wüste"
 	var q: String = _active_quest_line()
 	if q != "":
 		_hud.text += "\n✦ " + q

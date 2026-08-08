@@ -76,8 +76,13 @@ zusammengehören.
 
 * Der Hinweis **„[Tab] Inventar"** — schon raus. Ein Bild braucht keine Beschriftung, und auf
   dem Handy gibt es kein Tab.
-* Die **Ortszeile** als Dauertext. Der Ort gehört an die Karte, nicht in eine Textzeile; nur beim
-  *Betreten* soll sein Name groß über die Mitte ziehen — das gibt es bereits (`_zone_lbl`).
+* ~~Die **Ortszeile** als Dauertext.~~ **Erledigt.** Sie ist raus — mitsamt Sektor, Biom und
+  Zone. Wo ich bin, beantwortet die Karte besser als eine Textzeile, und beim *Betreten* zieht
+  der Name ohnehin groß über die Mitte (`_zone_lbl`). Was der Sektor sperrt, erfährt man beim
+  Anrennen; was das Biom tut, steht jetzt als Marke an der Lebensleiste. Geblieben ist nur der
+  Iron-Rail-Hinweis, denn der nennt Tasten, die **nur an diesem Fleck** etwas tun. Nebenbei
+  fällt die Rechnerei weg: `nearest_poi` lief über alle Orte, sechzigmal in der Sekunde, für
+  einen Text, den niemand liest.
 * Die **Schriftzeichen als Symbole**. ❤ ¤ ★ ▣ ☾ sind Platzhalter — jetzt immerhin *sichtbare*
   (siehe unten), aber ein gezeichnetes Symbol bleibt schärfer und trägt die Farbe besser.
 

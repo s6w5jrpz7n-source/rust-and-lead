@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 72,
+	"_test_titel_und_erster": 76,
 	"_test_steg_und_biome": 23,
 	"_test_riss": 15,
 	"_test_terrain": 25,
@@ -1117,6 +1117,26 @@ func _test_titel_und_erster() -> void:
 	# Leben und Erfahrung als Balken. Eine Zahl muss man lesen, einen Balken sieht man.
 	_check("Leben und Erfahrung stehen als Balken da",
 		ow_q.contains("_hp_bar = _hud_balken") and ow_q.contains("_xp_bar = _hud_balken"))
+	# ── Die Kopfzeile traegt nur noch, was eine Entscheidung traegt ───────────
+	#
+	# Vorher standen dort VIER dichte Zeilen mit vierzehn Zahlen — darunter der naechste Ort
+	# samt Entfernung, Sektor, Biom und noch einmal die Zone. Im Gefecht liest das niemand, und
+	# was niemand liest, verdeckt nur die Welt dahinter.
+	#
+	# Wo ich bin, beantwortet die Karte besser als eine Textzeile, und beim Betreten zieht der
+	# Name ohnehin gross ueber die Mitte. Geprueft wird deshalb, dass die Ortszeile WEG ist —
+	# sie war der groesste Brocken und kommt beim naechsten „schnell noch anzeigen" zuerst
+	# zurueck.
+	_check("Die Ortszeile steht nicht mehr dauerhaft im Kopf",
+		not ow_q.contains('\\n➡ %s (%d m)'))
+	_check("Und Sektor und Biom auch nicht", not ow_q.contains("Sektor %d · %s"))
+	# Die Iron-Rail-Zeile bleibt: Sie nennt Tasten, die NUR an diesem Fleck etwas tun. Ohne sie
+	# wuesste niemand, dass er gerade fahren kann.
+	_check("Der Iron-Rail-Hinweis bleibt", ow_q.contains("[1-5] Iron Rail"))
+	# Und mit der Zeile faellt ihre Rechnerei weg — `nearest_poi` laeuft ueber ALLE Orte, und
+	# das lief sechzigmal in der Sekunde fuer einen Text, den niemand liest.
+	_check("Und der Kopf rechnet keine Ortsentfernung mehr",
+		not ow_q.contains("var poi_d: int = roundi"))
 	# Und der Tastaturhinweis ist weg: Auf dem Handy gibt es kein [Tab], und ein Bild braucht
 	# keine Beschriftung.
 	# Geprueft wird die ANZEIGE, nicht die Quelle: „[Tab] Inventar" steht weiterhin im
