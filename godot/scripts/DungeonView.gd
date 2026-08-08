@@ -151,24 +151,22 @@ func _waende_bauen() -> void:
 
 
 ## Truhen an ihre Plätze. Gegner macht `_gegner_bauen()`.
+##
+## Die **letzte** Truhe der Kaverne ist eine Beutekammer — sie liegt im Raum mit der Treppe,
+## also am Ende des Wegs. Der Plan sieht sie genau dort vor: „Eine garantierte Truhe mit
+## angehobener Seltenheit". Wer beide Ebenen durchsteht, soll dafür etwas sehen, sonst ist die
+## zweite Ebene bloß länger als die erste.
 func _kisten_bauen() -> void:
-	for f in (_plan["truhen"] as Array):
-		var mi := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = Vector3(1.1, 0.8, 0.8)
-		mi.mesh = box
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.62, 0.48, 0.22)
-		# Sie glimmt schwach. In einem Stollen, der nur so weit hell ist, wie die Lampe trägt,
-		# findet man eine Truhe sonst nur durch Anstoßen — und eine Belohnung, die man
-		# übersieht, ist keine.
-		mat.emission_enabled = true
-		mat.emission = Color(0.85, 0.62, 0.25)
-		mat.emission_energy_multiplier = 0.35
-		mi.material_override = mat
-		mi.position = DungeonLayout.feld_zu_szene(f as Vector2i) + Vector3(0.0, 0.4, 0.0)
-		add_child(mi)
-		_truhen.append({ "node": mi, "offen": false })
+	var alle: Array = _plan["truhen"] as Array
+	for i in alle.size():
+		var f: Vector2i = alle[i] as Vector2i
+		var art: String = ChestData.STANDARD
+		if GameState.stollen_ebene >= 2 and i == alle.size() - 1:
+			art = ChestData.BOSS
+		var knoten: Node3D = _truhe_bauen(art)
+		knoten.position = DungeonLayout.feld_zu_szene(f) + Vector3(0.0, 0.05, 0.0)
+		add_child(knoten)
+		_truhen.append({ "node": knoten, "offen": false, "art": art })
 
 	# Die Treppe: ein dunkles Loch mit Rahmen. Sie muss sich vom Rest abheben, sonst sucht man
 	# in einem dunklen Stollen nach einem dunklen Kasten.
@@ -563,17 +561,68 @@ func _truhe_oeffnen() -> bool:
 		if n.position.distance_to(_spieler.position) > NAH_M:
 			continue
 		tr["offen"] = true
-		(n.material_override as StandardMaterial3D).emission_energy_multiplier = 0.0
-		(n.material_override as StandardMaterial3D).albedo_color = Color(0.26, 0.21, 0.13)
-		# Beute nach denselben Regeln wie draußen. Die Seltenheit steigt mit der Ebene: Wer
-		# tiefer geht, soll dafuer etwas sehen, sonst ist die zweite Ebene nur laenger.
-		var gold: int = 18 + GameState.stollen_ebene * 22
+		n.visible = false
+		# Beute aus `ChestData` — dieselbe Tabelle wie draussen. Der Stollen rechnete vorher
+		# `18 + Ebene · 22` und die Oberwelt wuerfelte 18–45: zwei Zahlenreihen fuer dieselbe
+		# Sache, die beim ersten „die Truhe gibt zu wenig" niemand mehr auseinanderhaelt.
+		var art: String = String(tr.get("art", ChestData.STANDARD))
+		var gold: int = ChestData.gold(art)
 		GameState.gold += gold
-		var stueck: Dictionary = ProgressionManager.make_gear(
-			String(ProgressionManager.GEAR_SLOTS.keys()[randi() % ProgressionManager.GEAR_SLOTS.size()]),
-			"rare" if GameState.stollen_ebene < 2 else "epic")
-		BagManager.add(stueck)
-		_hinweis.text = "▩ %d ¤ und %s" % [gold, String(stueck.get("name", "ein Fundstueck"))]
+		var namen: Array[String] = []
+		for _k in ChestData.stuecke(art):
+			var stueck: Dictionary = ProgressionManager.make_gear(
+				String(EquipManager.GEAR_SLOTS[randi() % EquipManager.GEAR_SLOTS.size()]),
+				ChestData.seltenheit(art))
+			BagManager.add(stueck)
+			namen.append(String(stueck.get("name", "Fundstueck")))
+		if ChestData.trank(art):
+			GameState.potions += 1
+		_hinweis.text = "▩ %s: %d ¤ und %s" % [String(ChestData.art(art)["name"]), gold,
+			", ".join(namen)]
 		_kopf_setzen()
 		return true
 	return false
+
+
+## Eine Truhe als Knoten — Modell, wenn es eines gibt, sonst gezeichnet.
+##
+## Auch drinnen glimmt sie. In einem Stollen, der nur so weit hell ist, wie die Lampe trägt,
+## findet man eine Truhe sonst bloß durch Anstoßen — und eine Belohnung, die man übersieht, ist
+## im Augenblick des Findens keine.
+func _truhe_bauen(art: String) -> Node3D:
+	var eintrag: Dictionary = ChestData.art(art)
+	var modell_name: String = String(eintrag["modell"])
+	var wurzel: Node3D = AssetRegistry.instantiate(modell_name,
+		AssetRegistry.height_of(modell_name))
+	if wurzel != null:
+		return wurzel
+	wurzel = Node3D.new()
+	var ist_boss: bool = art == ChestData.BOSS
+	# Die Beutekammer ist nicht dieselbe Kiste in Gold: Sie hat Sockel, Kasten und Deckelband,
+	# ist hoeher und glimmt kuehler. Im Daemmerlicht traegt die FORM weiter als die Farbe.
+	var teile: Array = [[Vector3(1.1, 0.8, 0.8), 0.4, Color(0.62, 0.48, 0.22),
+		Color(0.85, 0.62, 0.25), 0.35]]
+	if ist_boss:
+		teile = [
+			[Vector3(1.24, 0.14, 0.92), 0.07, Color(0.22, 0.20, 0.18), Color.BLACK, 0.0],
+			[Vector3(1.06, 0.72, 0.78), 0.50, Color(0.30, 0.24, 0.14), Color.BLACK, 0.0],
+			[Vector3(1.16, 0.14, 0.86), 0.93, Color(0.80, 0.64, 0.28),
+				Color(0.72, 0.90, 1.0), 0.55],
+		]
+	for t in teile:
+		var mi := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = t[0]
+		mi.mesh = box
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = t[2]
+		if float(t[4]) > 0.0:
+			mat.metallic = 0.7
+			mat.roughness = 0.32
+			mat.emission_enabled = true
+			mat.emission = t[3]
+			mat.emission_energy_multiplier = float(t[4])
+		mi.material_override = mat
+		mi.position = Vector3(0.0, float(t[1]), 0.0)
+		wurzel.add_child(mi)
+	return wurzel

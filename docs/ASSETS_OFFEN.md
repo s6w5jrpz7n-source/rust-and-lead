@@ -167,3 +167,54 @@ Dabei ist noch ein zweiter Fehler aufgefallen, der alle Vollbild-Oberflächen be
 Ränder auf 0. Unter einem `CanvasLayer` blieben diese Bildschirme dadurch 0×0 groß — die
 Abdunklung war unsichtbar, und alles mittig Verankerte zentrierte auf den Bildschirm-Nullpunkt
 statt auf die Mitte. Jetzt überall `set_anchors_and_offsets_preset`.
+
+---
+
+## Die Bosstruhe (`items/chest_boss.glb`)
+
+Es gibt jetzt **zwei** Truhenarten, und sie unterscheiden sich nicht nur im Inhalt:
+
+| | gewöhnliche Truhe | Beutekammer |
+|---|---|---|
+| Registry-Name | `chest` ✅ da | `chest_boss` — **fehlt** |
+| Höhe | 0,70 m | **0,95 m** |
+| Gold | 18–45 | 95–170 |
+| Stücke | 1–3 | 2–4 |
+| Seltenheit | darf eine Niete sein | **mindestens `rare`**, nach oben offen |
+| Trank | in der Hälfte der Fälle | **immer** |
+
+Das garantierte Minimum ist der eigentliche Unterschied. Eine gewöhnliche Truhe *darf* leer
+ausgehen — das ist der Grund, warum man sich über eine gute freut. Eine Truhe hinter einem Boss
+darf das nicht: Wer einen Kampf übersteht und dann Hausmüll findet, lernt, dass Bosskämpfe sich
+nicht lohnen.
+
+Solange die Datei fehlt, zeichnet das Spiel einen Platzhalter aus drei Teilen — Sockel, Kasten,
+Deckelband in Messing mit schwachem Glimmen. Er ist bewusst **nicht** dieselbe Kiste in Gold:
+Im Dämmerlicht eines Stollens trägt die *Form* weiter als die Farbe, und man soll auf dreißig
+Meter sehen, dass sich der Weg lohnt.
+
+### Prompt
+
+> *grim-dark steampunk western treasure chest, single connected object, seen from the front at a
+> slight three-quarter angle, plain neutral mid-grey background, no ground plane, no cast
+> shadows, entire object centered with margin, no people, no text, no logos, photorealistic PBR
+> game asset, very low polygon count, high detail.*
+>
+> **Dazu:** *An ornate reinforced strongbox, roughly 1.2 metres wide and 0.95 metres tall on a
+> low iron plinth. Dark oiled hardwood body bound with polished brass straps and corner caps, a
+> heavy brass lid band with an engraved geometric pattern, a large mechanical combination lock
+> with exposed cogs on the front, two riveted carrying handles at the sides. Worn but cared for
+> — this one was built to hold something worth guarding. Closed lid.*
+
+**Wohin:** `godot/assets/models/items/chest_boss.glb` (oder als Ordner
+`items/chest_boss/chest_boss.gltf` — beide Pfade sind eingetragen).
+
+Einfach in den Chat ziehen, ich lege sie ab. Das Spiel läuft auch ohne: Der Registry-Eintrag
+steht schon, `resolve()` liefert `""`, und die Szene nimmt den gezeichneten Ersatz. Eine
+fehlende Datei darf nie den Start verhindern — das prüft `_test_truhen()` mit.
+
+### Wo sie steht
+
+Bisher am **Ende der Kaverne** (Stollen, Ebene 2) — in der Kammer mit der Treppe, also am Ende
+des Wegs. Weitere Plätze sind eine Zeile: `_spawn_chest_at(pos, ChestData.BOSS)`. Sobald es
+richtige Bossgegner gibt, gehört je eine hinter jeden von ihnen.

@@ -5152,24 +5152,64 @@ func _chest_spot(id: String) -> Vector3:
 	return mitte + hin.normalized() * (PUDDLE_R_M + CHEST_RIM_M)
 
 
-func _spawn_chest_at(raw: Vector3) -> void:
+func _spawn_chest_at(raw: Vector3, art: String = ChestData.STANDARD) -> void:
 	var pos: Vector3 = Vector3(raw.x, WorldManager.height_at(raw.x, raw.z), raw.z)
 	var node := Node3D.new()
-	var model: Node3D = AssetRegistry.instantiate("chest", AssetRegistry.height_of("chest"))
+	var eintrag: Dictionary = ChestData.art(art)
+	var modell_name: String = String(eintrag["modell"])
+	var model: Node3D = AssetRegistry.instantiate(modell_name,
+		AssetRegistry.height_of(modell_name))
 	if model != null:
 		node.add_child(model)
 	else:
+		node.add_child(_truhe_platzhalter(art))
+	node.position = pos
+	add_child(node)
+	# Die Beutekammer wird auch in der SCHRIFT anders angesagt. Wer sie am Horizont sieht, soll
+	# nicht erst hinlaufen muessen, um zu wissen, dass sich der Weg lohnt.
+	var farbe: Color = Color(1.0, 0.85, 0.4) if art == ChestData.STANDARD \
+		else Color(0.62, 0.92, 1.0)
+	var label: Label3D = _label(pos + Vector3(0.0, 1.3, 0.0),
+		"▩ %s" % String(eintrag["name"]), farbe, LBL_TRUHE, 120.0)
+	_chests.append({ "node": node, "label": label, "pos": pos, "looted": false, "cd": 0.0,
+		"art": art })
+
+
+## Der gezeichnete Ersatz, solange kein Modell da ist.
+##
+## Er ist NICHT dieselbe Kiste in einer anderen Farbe. Eine Bosstruhe muss sich auf dreissig
+## Meter von einer gewoehnlichen unterscheiden, sonst laeuft man an ihr vorbei — und weil eine
+## Farbe im Daemmerlicht kaum traegt, unterscheidet sich zuerst die FORM: hoeher, mit Sockel
+## und Deckelband, und ein leichtes Glimmen darauf.
+func _truhe_platzhalter(art: String) -> Node3D:
+	var wurzel := Node3D.new()
+	if art == ChestData.STANDARD:
 		var body := MeshInstance3D.new()
 		var bm := BoxMesh.new()
 		bm.size = Vector3(0.6, 0.5, 0.4)
 		body.mesh = bm
 		body.material_override = _mat(Color(0.55, 0.38, 0.16))
 		body.position = Vector3(0.0, 0.25, 0.0)
-		node.add_child(body)
-	node.position = pos
-	add_child(node)
-	var label: Label3D = _label(pos + Vector3(0.0, 1.3, 0.0), "▩ Truhe", Color(1.0, 0.85, 0.4), LBL_TRUHE, 120.0)
-	_chests.append({ "node": node, "label": label, "pos": pos, "looted": false, "cd": 0.0 })
+		wurzel.add_child(body)
+		return wurzel
+	# Beutekammer: Sockel, Kasten, Band — drei Teile statt einem.
+	var messing: StandardMaterial3D = _mat(Color(0.78, 0.62, 0.26))
+	messing.metallic = 0.7
+	messing.roughness = 0.32
+	messing.emission_enabled = true
+	messing.emission = Color(0.95, 0.78, 0.34)
+	messing.emission_energy_multiplier = 0.28
+	for teil in [[Vector3(0.86, 0.12, 0.62), 0.06, _mat(Color(0.22, 0.20, 0.18))],
+			[Vector3(0.74, 0.52, 0.52), 0.38, _mat(Color(0.30, 0.24, 0.14))],
+			[Vector3(0.80, 0.10, 0.58), 0.66, messing]]:
+		var mi := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = teil[0]
+		mi.mesh = box
+		mi.material_override = teil[2]
+		mi.position = Vector3(0.0, float(teil[1]), 0.0)
+		wurzel.add_child(mi)
+	return wurzel
 
 
 ## Ortsschrift. Sperrt den Namen mit Leerzeichen, damit er wie eine Inschrift wirkt und nicht
@@ -5255,17 +5295,23 @@ func _open_chest(c: Dictionary) -> void:
 		# kann — dieselbe Frage, die spaeter beim ersten Gegner wiederkommt und die die ganze
 		# Geschichte traegt. Ohne ihn ist der Fund eine Ausruestungsmeldung.
 		_erste_truhe_szene(at)
-	var gold: int = randi_range(18, 45)
-	_drop(at, "gold", { "amount": gold })
+	# Was drin ist, steht in `ChestData` und nicht hier: Truhen stehen an zwei ganz
+	# verschiedenen Orten (Oberwelt und Stollen), und zwei Zahlenreihen fuer dieselbe Sache
+	# driften auseinander, sobald jemand an einer davon dreht.
+	var art: String = String(c.get("art", ChestData.STANDARD))
+	_drop(at, "gold", { "amount": ChestData.gold(art) })
 	var pool: String = AmmoData.pool_for(_weapon_id if _weapon_id != "" else ERSTE_WAFFE)
-	_drop(at, "ammo", { "pool": pool, "amount": AmmoData.roll_drop(pool) * 3 })
-	if randf() < 0.5:
+	_drop(at, "ammo", { "pool": pool,
+		"amount": AmmoData.roll_drop(pool) * int(ChestData.art(art)["muni_mul"]) })
+	if ChestData.trank(art):
 		_drop(at, "potion", { "amount": 1 })
-	for i in randi_range(CHEST_GEAR_MIN, CHEST_GEAR_MAX):
-		var rarity: String = ProgressionManager.roll_rarity(CHEST_RARITY_BIAS)
+	for i in ChestData.stuecke(art):
 		var slot: String = EquipManager.GEAR_SLOTS[randi_range(0, EquipManager.GEAR_SLOTS.size() - 1)]
-		_drop(at, "gear", ProgressionManager.make_gear(slot, rarity))
-	_say("▩ Die Truhe springt auf.", 2.0)
+		_drop(at, "gear", ProgressionManager.make_gear(slot, ChestData.seltenheit(art)))
+	if art == ChestData.STANDARD:
+		_say("▩ Die Truhe springt auf.", 2.0)
+	else:
+		_say("▩ Die Beutekammer gibt nach. Messing, und darunter etwas Besseres.", 2.6)
 
 
 ## Legt ein Fundstueck auf den Boden. Die Beschriftung IST das Fundstueck: Aus Kamerahoehe

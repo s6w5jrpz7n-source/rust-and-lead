@@ -84,6 +84,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
 	"_test_stollen": 33,
+	"_test_truhen": 15,
 }
 
 
@@ -5242,3 +5243,87 @@ func _test_stollen() -> void:
 	# den man nach dem Sterben mit geleerten Kammern zurueckkehrt, ist kein Risiko mehr.
 	_check("Ohnmacht wirft einen aus dem Stollen", dv_q.contains("func _ohnmacht"))
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Truhen — die gewoehnliche und die, fuer die man gekaempft hat
+# ══════════════════════════════════════════════════════════════════════════════
+func _test_truhen() -> void:
+	print("· Truhen (zwei Arten, eine Tabelle)")
+
+	# EINE Tabelle fuer beide Orte. Vorher fuellte die Oberwelt ihre Truhen mit 18–45 Gold und
+	# der Stollen rechnete `18 + Ebene · 22` — zwei Zahlenreihen fuer dieselbe Sache. Solange es
+	# eine Sorte Truhe gab, fiel das nicht auf; mit zwei Sorten waeren es vier gewesen.
+	var ow_q: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	var dv_q: String = FileAccess.get_file_as_string("res://scripts/DungeonView.gd")
+	_check("Die Oberwelt fuellt Truhen aus der Tabelle", ow_q.contains("ChestData.gold(art)"))
+	_check("Der Stollen auch", dv_q.contains("ChestData.gold(art)"))
+	_check("Und keiner rechnet mehr selbst",
+		not ow_q.contains("randi_range(18, 45)")
+		and not dv_q.contains("18 + GameState.stollen_ebene * 22"))
+
+	# ── Der Unterschied ist kein Multiplikator ───────────────────────────────
+	#
+	# Eine Bosstruhe GARANTIERT ein Mindestmass. Eine gewoehnliche darf leer ausgehen — das ist
+	# der Grund, warum man sich ueber eine gute freut. Eine Truhe hinter einem Boss darf das
+	# nicht: Wer einen Kampf uebersteht und dann Hausmuell findet, lernt, dass Bosskaempfe sich
+	# nicht lohnen.
+	var i_rare: int = ProgressionManager.RARITY_ORDER.find("rare")
+	var zu_schlecht: Array[String] = []
+	var kam_hoeher: bool = false
+	for k in range(200):
+		var wurf: float = float(k) / 200.0
+		var s_boss: String = ChestData.seltenheit(ChestData.BOSS, wurf)
+		if ProgressionManager.RARITY_ORDER.find(s_boss) < i_rare:
+			zu_schlecht.append(s_boss)
+		if ProgressionManager.RARITY_ORDER.find(s_boss) > i_rare:
+			kam_hoeher = true
+	_check("Die Beutekammer gibt nie unter 'rare'", zu_schlecht.is_empty(),
+		", ".join(zu_schlecht.slice(0, 5)))
+	# Und sie ist nach OBEN offen: Ein garantiertes Minimum, das zugleich ein Maximum waere,
+	# machte jede Beutekammer gleich.
+	_check("Sie kann aber besser geben", kam_hoeher)
+	# Die gewoehnliche darf weiterhin eine Niete sein.
+	var kam_common: bool = false
+	for k in range(200):
+		if ChestData.seltenheit(ChestData.STANDARD, float(k) / 200.0) == "common":
+			kam_common = true
+	_check("Die gewoehnliche Truhe darf eine Niete sein", kam_common)
+
+	# Mehr Gold, mehr Stuecke, immer ein Trank — nach dem Kampf ist man angeschlagen.
+	var g_std: Array = ChestData.art(ChestData.STANDARD)["gold"]
+	var g_boss: Array = ChestData.art(ChestData.BOSS)["gold"]
+	_check("Die Beutekammer gibt mehr Gold (%d–%d statt %d–%d)"
+		% [int(g_boss[0]), int(g_boss[1]), int(g_std[0]), int(g_std[1])],
+		int(g_boss[0]) > int(g_std[1]))
+	_check("Und immer einen Trank", ChestData.trank(ChestData.BOSS, 0.999))
+	_check("Die gewoehnliche nicht immer", not ChestData.trank(ChestData.STANDARD, 0.999))
+
+	# ── Sie sieht anders aus, und zwar von weitem ────────────────────────────
+	#
+	# Eine Belohnung, die man erst am Inhalt erkennt, ist im Augenblick des Findens keine. Und
+	# weil eine Farbe im Daemmerlicht kaum traegt, unterscheidet sich zuerst die FORM.
+	_check("Sie ist hoeher als die gewoehnliche (%.2f statt %.2f m)"
+		% [float(ChestData.art(ChestData.BOSS)["hoehe"]),
+			float(ChestData.art(ChestData.STANDARD)["hoehe"])],
+		float(ChestData.art(ChestData.BOSS)["hoehe"])
+			> float(ChestData.art(ChestData.STANDARD)["hoehe"]))
+	_check("Und sie hat ein eigenes Modell in der Registry",
+		AssetRegistry.PATHS.has("chest_boss") and AssetRegistry.TARGET_HEIGHT.has("chest_boss"))
+	# Der Eintrag steht da, BEVOR es die Datei gibt — `first_existing()` liefert dann "" und die
+	# Szene zeichnet ihren Platzhalter. Genau das muss gelten, sonst startet das Spiel nicht,
+	# solange das Modell fehlt.
+	_check("Ein fehlendes Modell bricht nichts",
+		AssetRegistry.resolve("chest_boss") == ""
+		or ResourceLoader.exists(AssetRegistry.resolve("chest_boss")))
+	_check("Und has_model() sagt ehrlich, dass es noch fehlt",
+		not AssetRegistry.has_model("chest_boss") or AssetRegistry.resolve("chest_boss") != "")
+	_check("Der Platzhalter hat mehr als einen Teil (Sockel, Kasten, Band)",
+		dv_q.contains("Sockel, Kasten und Deckelband") or ow_q.contains("Sockel"))
+
+	# ── Wo sie steht ─────────────────────────────────────────────────────────
+	# Am ENDE des Wegs, in der Kammer mit der Treppe — und erst auf Ebene 2.
+	var e1: Dictionary = DungeonLayout.erzeugen(4242, 1)
+	var e2: Dictionary = DungeonLayout.erzeugen(4242, 2)
+	_check("Beide Ebenen haben ueberhaupt Truhen",
+		(e1["truhen"] as Array).size() > 0 and (e2["truhen"] as Array).size() > 0)
+	_check("Die Beutekammer steht erst in der Kaverne",
+		dv_q.contains("GameState.stollen_ebene >= 2 and i == alle.size() - 1"))

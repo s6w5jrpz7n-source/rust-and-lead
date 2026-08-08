@@ -110,6 +110,11 @@ const PATHS: Dictionary = {
 	"bones_b":         ["res://assets/models/props/bones_b.glb"],
 	# ── Props / Items ──
 	"chest":           ["res://assets/models/items/treasure_chest_1k/treasure_chest_1k.gltf"],
+	# Die Bosstruhe. Der Eintrag steht hier, BEVOR es die Datei gibt: `first_existing()` liefert
+	# dann "" und die Szene zeichnet ihren Platzhalter. Sobald das Modell abgelegt wird, greift
+	# es von selbst — ohne eine Zeile Code.
+	"chest_boss":      ["res://assets/models/items/chest_boss.glb",
+		"res://assets/models/items/chest_boss/chest_boss.gltf"],
 	"ammo_box":        ["res://assets/models/props/ammo_box_1k/ammo_box_1k.gltf"],
 	"tool_cart":       ["res://assets/models/props/tool_cart_1k/tool_cart_1k.gltf"],
 	"metal_rack":      ["res://assets/models/props/worn_metal_rack_1k/worn_metal_rack_1k.gltf"],
@@ -131,6 +136,7 @@ const TARGET_HEIGHT: Dictionary = {
 	"enemy_konstrukt": 2.0,      # Konzern-Konstrukt / kleiner Panzer — überragt den Spieler
 	"enemy_goliath": 4.0,        # Schwerer Ernter (Boss)
 	"chest": 0.7,
+	"chest_boss": 0.95,          # groesser als die gewoehnliche, damit man sie von weitem trennt
 	# ── NPCs: Körpergrößen aus der Story-Bibel (§4) ──
 	"npc_mabel": 1.70,           # stämmig, Mitte fünfzig
 	"npc_silas": 1.75,
