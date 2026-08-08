@@ -23,6 +23,10 @@ func _ready() -> void:
 	# Mit Waffe, sonst schiesst niemand und der Feuerknopf meldet dauerhaft „kein Ziel".
 	GameState.weapon_id = "karabiner"
 	GameState.gold = 120
+	# ZWEI Schluessel, nicht drei. Die Beutekammer soll auf dem Bild ZU sein — das ist der
+	# Zustand, in dem man sie zum ersten Mal sieht, und der Sperrsatz ist genau das, was
+	# beurteilt werden muss.
+	GameState.schluessel = 2
 	add_child(load("res://scenes/Dungeon.tscn").instantiate())
 	# Eine EIGENE Kamera, die spaeter uebernimmt. Die Kamera des Stollens wird jeden Frame an
 	# den Spieler gezogen — eine dort gesetzte Position waere im naechsten Bild wieder weg.
@@ -59,8 +63,11 @@ func _process(_dt: float) -> void:
 		# Und dann WARTEN. Der erste Anlauf hat die Figur versetzt und im selben Bild
 		# ausgeloest — die Kamera des Stollens zieht aber erst in ihrem eigenen `_process`
 		# nach, also stand sie noch am alten Fleck und knipste den Eingang.
-		_auf_anfuehrer()
-		_beute_streuen()
+		# KEINE Beute streuen. Der erste Anlauf hat vier Fundstuecke vor die Fuesse gelegt und
+		# dann [E] gedrueckt — und weil Bodenbeute Vorrang vor der Truhe hat (mit gutem Grund),
+		# hob die Figur ein Gewehr auf, statt an der Beutekammer anzustossen. Der Sperrsatz, der
+		# beurteilt werden sollte, kam nie ins Bild. Die Beute ist an anderer Stelle geprueft.
+		_an_die_beutekammer()
 		_i = 1
 		_warte = 12
 		return
@@ -91,15 +98,31 @@ func _nebel_aus() -> void:
 			env.background_color = Color(0.05, 0.05, 0.07)
 
 
-## Kamera und Spieler zum Anfuehrer schieben, damit das Nahbild ihn zeigt.
-func _auf_anfuehrer() -> void:
+## Den Spieler vor die Beutekammer stellen — dorthin, wo alles zusammenkommt.
+##
+## Am Ende der Kaverne stehen Treppe, Endgegner und die verschlossene Truhe beieinander. Das
+## ist die Anordnung, die das Spiel erzaehlt, und genau die muss man einmal gesehen haben:
+## Sieht man, dass die Truhe zu ist? Erkennt man den Endgegner als etwas anderes als einen
+## Anfuehrer? Steht der Sperrsatz da, wo man ihn liest?
+func _an_die_beutekammer() -> void:
 	var d: Node = get_child(0)
-	for e in (d.get("_gegner") as Array):
-		if not (e["target"] as CombatTarget).is_elite:
+	for tr in (d.get("_truhen") as Array):
+		if String(tr.get("art", "")) != ChestData.BOSS:
 			continue
-		var wo: Vector3 = (e["node"] as Node3D).position
-		(d.get("_spieler") as Node3D).position = wo + Vector3(-3.0, 0.0, 7.0)
+		var wo: Vector3 = (tr["node"] as Node3D).position
+		# 2,0 m und nicht 3,0: `NAH_M` ist 2,6 — beim ersten Anlauf stand die Figur GENAU
+		# ausserhalb der Reichweite, druckte ins Leere, und das Bild zeigte nichts.
+		(d.get("_spieler") as Node3D).position = wo + Vector3(0.0, 0.0, 2.0)
+		# Und einmal DARAUF druecken, damit der Sperrsatz wirklich im Bild steht. Ein Satz, den
+		# das Bild nicht zeigt, ist beim Beurteilen kein Satz.
+		d.call("_benutzen")
 		return
+	# Keine Beutekammer da? Dann wenigstens zum Endgegner.
+	for e in (d.get("_gegner") as Array):
+		if (e["target"] as CombatTarget).is_elite:
+			var wo2: Vector3 = (e["node"] as Node3D).position
+			(d.get("_spieler") as Node3D).position = wo2 + Vector3(-3.0, 0.0, 7.0)
+			return
 
 
 ## Ein paar Fundstuecke vor die Fuesse legen — ohne sie zeigt das Bild nur einen leeren Boden,

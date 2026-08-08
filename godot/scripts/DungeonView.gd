@@ -43,6 +43,19 @@ var _stick: VirtualStick
 var _lampe: OmniLight3D
 var _text: Label
 var _hinweis: Label
+## Bis wann eine ANTWORT stehen bleibt (Sekunden, `Time.get_ticks_msec`-Basis).
+##
+## Die Hinweiszeile hat zwei Aufgaben, und die eine hat die andere aufgefressen: Sie sagt
+## einerseits, was in Reichweite ist („Truhe öffnen [E]"), und andererseits, was gerade passiert
+## ist („Verschlossen — 2 von 3 Schlüsseln"). Das Erste wird JEDES BILD neu geschrieben. Damit
+## stand die Antwort auf einen Tastendruck genau ein Bild lang da und war für einen Menschen
+## nicht lesbar — der Sperrsatz der Beutekammer erschien nie, obwohl er richtig gesetzt wurde.
+##
+## Aufgefallen ist das nicht im Code, sondern im Kontrollbild: Dort drückt die Figur auf die
+## verschlossene Truhe, und der Satz fehlt.
+var _antwort_bis: float = 0.0
+## Wie lange eine Antwort stehen bleibt.
+const ANTWORT_SEK: float = 3.0
 var _treppe_pos: Vector3 = Vector3.ZERO
 var _eingang_pos: Vector3 = Vector3.ZERO
 var _truhen: Array = []
@@ -349,13 +362,40 @@ func _kamera_nachziehen() -> void:
 	_kamera.look_at(_spieler.position + Vector3(0.0, 1.0, 0.0), Vector3.UP)
 
 
+## Eine ANTWORT anzeigen — etwas, das gerade passiert ist.
+##
+## Sie hat für `ANTWORT_SEK` Vorrang vor der Reichweiten-Zeile. Ohne diesen Vorrang wischt der
+## nächste Frame sie weg, und der Spieler drückt eine Taste, ohne je zu erfahren, was sie tat.
+func _antworten(text: String) -> void:
+	if _hinweis == null:
+		return
+	_hinweis.text = text
+	_antwort_bis = Time.get_ticks_msec() / 1000.0 + ANTWORT_SEK
+
+
 func _naehe_pruefen() -> void:
 	if _spieler == null or _hinweis == null:
+		return
+	# Eine stehende Antwort nicht überschreiben.
+	if Time.get_ticks_msec() / 1000.0 < _antwort_bis:
 		return
 	var liegt: Dictionary = _gear_in_range()
 	if not liegt.is_empty():
 		_hinweis.text = "✦ %s aufheben   [E]" % String((liegt["data"] as Dictionary).get(
 			"name", "Fundstück"))
+		return
+	# Truhen hatten GAR KEINE Reichweiten-Zeile: Man stand davor, und nichts sagte einem, dass
+	# man druecken kann. Im Dunkeln ist ein Kasten ohne Beschriftung ein Stein.
+	for tr in _truhen:
+		if bool(tr["offen"]):
+			continue
+		if (tr["node"] as Node3D).position.distance_to(_spieler.position) > NAH_M:
+			continue
+		var art_n: String = String(tr.get("art", ChestData.STANDARD))
+		if ChestData.offen_mit(art_n, GameState.schluessel):
+			_hinweis.text = "▩ %s öffnen   [E]" % String(ChestData.art(art_n)["name"])
+		else:
+			_hinweis.text = ChestData.schloss_text(art_n, GameState.schluessel)
 		return
 	var d_treppe: float = _spieler.position.distance_to(_treppe_pos)
 	var d_aus: float = _spieler.position.distance_to(_eingang_pos)
@@ -639,8 +679,8 @@ func _faellt(e: Dictionary) -> void:
 			BeuteData.seltenheit()))
 	if BeuteData.traegt_schluessel(t):
 		GameState.schluessel += 1
-		_hinweis.text = "✦ Ein Schlüssel. %d von %d." % [GameState.schluessel,
-			ChestData.schluessel(ChestData.BOSS)]
+		_antworten("✦ Ein Schlüssel. %d von %d." % [GameState.schluessel,
+			ChestData.schluessel(ChestData.BOSS)])
 	# Auf die Seite kippen statt verschwinden. Wer im Dunkeln kämpft, verliert sonst den
 	# Ueberblick, wen er schon erledigt hat — und laeuft dreimal um dieselbe Kammer.
 	n.rotation.x = PI * 0.5
@@ -670,7 +710,7 @@ func _truhe_oeffnen() -> bool:
 		# Erst das Schloss. Wer davorsteht und nicht aufkriegt, muss ERFAHREN warum — und mit
 		# welcher Zahl. „Verschlossen" allein ist eine Wand, keine Aufgabe.
 		if not ChestData.offen_mit(art_pruef, GameState.schluessel):
-			_hinweis.text = ChestData.schloss_text(art_pruef, GameState.schluessel)
+			_antworten(ChestData.schloss_text(art_pruef, GameState.schluessel))
 			return true
 		tr["offen"] = true
 		n.visible = false
@@ -696,8 +736,8 @@ func _truhe_oeffnen() -> bool:
 		var stahl: int = ChestData.stahl(art)
 		if stahl > 0:
 			GameState.add_item("grubenstahl", stahl)
-		_hinweis.text = "▩ %s: %d ¤, %d ▬ Grubenstahl und %d Stück — sie liegen davor." % [
-			String(ChestData.art(art)["name"]), gold, stahl, wie_viele]
+		_antworten("▩ %s: %d ¤, %d ▬ Grubenstahl und %d Stück — sie liegen davor." % [
+			String(ChestData.art(art)["name"]), gold, stahl, wie_viele])
 		_kopf_setzen()
 		return true
 	return false
@@ -816,11 +856,11 @@ func _gear_aufheben() -> bool:
 		return false
 	var stueck: Dictionary = g["data"]
 	if not BagManager.add(stueck):
-		_hinweis.text = "▤ Der Beutel ist voll."
+		_antworten("▤ Der Beutel ist voll.")
 		return true
-	_hinweis.text = "✦ %s %s eingesteckt" % [
+	_antworten("✦ %s %s eingesteckt" % [
 		String(ProgressionManager.RARITY[String(stueck["rarity"])]["name"]),
-		String(stueck.get("name", "Fundstück"))]
+		String(stueck.get("name", "Fundstück"))])
 	(g["node"] as Node3D).queue_free()
 	(g["schild"] as Node3D).queue_free()
 	_boden.erase(g)

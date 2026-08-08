@@ -21,6 +21,8 @@ extends Node
 ## 3. In den Stollen — lädt die zweite Szene?
 ## 4. Drinnen laufen, die Treppe nehmen, Ebene 2 erreichen.
 ## 5. Wieder heraus — steht die Figur am Stollenmund und nicht am Weltstart?
+## 6. Der Auftragskreis — annehmen, erfüllen, abgeben, Belohnung. Für JEDEN Auftrag des
+##    ersten Kapitels, nicht nur den einen, den ich gerade gebaut habe.
 ##
 ## ## Warum die Probe sich zur Seite stellt
 ##
@@ -174,7 +176,91 @@ func _lauf() -> void:
 		var d: float = raus.position.distance_to(mund)
 		_pruef("Und setzt einen am Stollenmund ab (%.1f m)" % d, d < 6.0,
 				"%.0f m daneben" % d)
+
+	# ── 6. Der Auftragskreis ─────────────────────────────────────────────────
+	_auftraege_pruefen()
 	_ende()
+
+
+## Jeden Auftrag des ersten Kapitels einmal ganz durchspielen.
+##
+## Ein Auftrag, den man nicht abschliessen kann, ist derselbe stille Fehler wie ein Feld, das
+## nicht gespeichert wird: kein Absturz, keine Meldung, nur ein Spieler, der irgendwann aufgibt.
+## Die Suite prueft die Quest-TABELLE; hier laeuft die Kette wirklich ab — annehmen, die
+## Bedingung erfuellen, abgeben, und nachsehen, ob Gold und Belohnung ankommen.
+func _auftraege_pruefen() -> void:
+	var kapitel1: Array[String] = []
+	for id in QuestManager.QUESTS:
+		if int(QuestManager.QUESTS[id].get("chapter", 1)) == 1:
+			kapitel1.append(String(id))
+	_pruef("Kapitel 1 hat Auftraege (%d)" % kapitel1.size(), kapitel1.size() >= 3)
+
+	var haengen: Array[String] = []
+	var ohne_lohn: Array[String] = []
+	for id in kapitel1:
+		var def: Dictionary = QuestManager.QUESTS[id]
+		# Jeder Auftrag einzeln, auf blankem Zustand: Sonst traegt ein frueherer die Bedingung
+		# des naechsten schon mit, und ein kaputter faellt nicht auf.
+		GameState.neu_beginnen()
+		GameState.current_chapter = 1
+		if not QuestManager.accept_quest(id):
+			haengen.append(id + " (nicht annehmbar)")
+			continue
+		# Die Bedingung erfuellen — auf dem Weg, den auch das Spiel geht.
+		match String(def.get("kind", "")):
+			"kill":
+				GameState.kills = int(GameState.quest_base.get(id, 0)) + int(def["count"])
+			"collect":
+				GameState.add_item(String(def["item"]), int(def["count"]))
+			_:
+				pass
+		if not QuestManager.is_quest_complete(id):
+			haengen.append("%s (%s %d nicht erfuellbar)" % [id, String(def.get("kind", "?")),
+				int(def.get("count", 0))])
+			continue
+		var gold_vorher: int = GameState.gold
+		if not QuestManager.complete_quest(id):
+			haengen.append(id + " (nicht abgebbar)")
+			continue
+		if GameState.gold <= gold_vorher:
+			ohne_lohn.append(id)
+		# WIEDERHOLBARE Auftraege gehen auf „verfuegbar" zurueck, nicht auf „erledigt" — der
+		# Auftraggeber bietet sie beim naechsten Gespraech erneut an. Ohne diese Unterscheidung
+		# meldete die Probe drei Fehler, die keine waren: Sie hatte pauschal „erledigt"
+		# erwartet und damit eine Entscheidung des Spiels fuer einen Defekt gehalten.
+		var wiederholbar: bool = bool(def.get("repeatable", false))
+		var soll: String = "available" if wiederholbar else "done"
+		if QuestManager.get_quest_state(id) != soll:
+			haengen.append("%s (%s statt %s)" % [id, QuestManager.get_quest_state(id), soll])
+		# Und was wiederholbar heisst, muss auch stimmen: Er muss sich WIEDER annehmen lassen,
+		# und der Fortschritt muss dabei bei null anfangen — sonst stuende er sofort auf voll.
+		if wiederholbar:
+			if not QuestManager.accept_quest(id):
+				haengen.append(id + " (nicht wieder annehmbar)")
+			elif QuestManager.is_quest_complete(id):
+				haengen.append(id + " (steht sofort wieder auf voll)")
+	_pruef("Jeder Auftrag aus Kapitel 1 laesst sich ganz durchspielen", haengen.is_empty(),
+		", ".join(haengen))
+	_pruef("Und jeder zahlt auch etwas aus", ohne_lohn.is_empty(), ", ".join(ohne_lohn))
+
+	# Und Silas' Stollen-Auftrag im Besonderen: Er ist der einzige, dessen Material man
+	# NIRGENDWO SONST bekommt — also der einzige, bei dem ein Fehler bedeutet, dass jemand
+	# umsonst hinabsteigt.
+	GameState.neu_beginnen()
+	GameState.current_chapter = 1
+	QuestManager.accept_quest("q_stollen")
+	var noetig: int = int(QuestManager.QUESTS["q_stollen"]["count"])
+	GameState.add_item("grubenstahl", noetig - 1)
+	_pruef("Mit einem Stueck zu wenig bleibt der Stollen-Auftrag offen",
+		not QuestManager.is_quest_complete("q_stollen"))
+	GameState.add_item("grubenstahl", 1)
+	_pruef("Mit dem letzten Stueck ist er erfuellt",
+		QuestManager.is_quest_complete("q_stollen"))
+	var vorher_gold: int = GameState.gold
+	QuestManager.complete_quest("q_stollen")
+	_pruef("Und die Abgabe zahlt (%d Gold)" % (GameState.gold - vorher_gold),
+		GameState.gold - vorher_gold >= 100)
+	GameState.neu_beginnen()
 
 
 ## Eine Spielszene laden und sie zur AKTUELLEN machen.

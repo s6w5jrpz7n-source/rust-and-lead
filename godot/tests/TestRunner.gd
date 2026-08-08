@@ -85,7 +85,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_zeichen": 5,
 	"_test_spielstand_vollstaendig": 6,
 	"_test_stollen": 33,
-	"_test_truhen": 29,
+	"_test_truhen": 33,
 	"_test_anfuehrer": 54,
 }
 
@@ -5329,6 +5329,47 @@ func _test_truhen() -> void:
 		(e1["truhen"] as Array).size() > 0 and (e2["truhen"] as Array).size() > 0)
 	_check("Die Beutekammer steht erst in der Kaverne",
 		dv_q.contains("GameState.stollen_ebene >= 2 and i == alle.size() - 1"))
+
+	# ── Antworten muessen STEHEN BLEIBEN ─────────────────────────────────────
+	#
+	# Die Hinweiszeile im Stollen hat zwei Aufgaben, und die eine hat die andere aufgefressen:
+	# Sie sagt, was in Reichweite ist („Truhe oeffnen [E]"), und sie sagt, was gerade passiert
+	# ist („Verschlossen — 2 von 3 Schluesseln"). Das Erste wird JEDES BILD neu geschrieben.
+	# Damit stand die Antwort auf einen Tastendruck genau ein Bild lang da — fuer einen
+	# Menschen unlesbar. Der Sperrsatz der Beutekammer erschien nie, obwohl er richtig gesetzt
+	# wurde.
+	#
+	# Aufgefallen ist das nicht im Code, sondern im Kontrollbild: Dort drueckt die Figur auf die
+	# verschlossene Truhe, und der Satz fehlt.
+	var DVT = load("res://scripts/DungeonView.gd")
+	_check("Antworten haben Vorrang vor der Reichweiten-Zeile",
+		dv_q.contains("func _antworten") and dv_q.contains("_antwort_bis"))
+	_check("Und stehen lange genug zum Lesen (%.1f s)" % DVT.ANTWORT_SEK,
+		float(DVT.ANTWORT_SEK) >= 2.0)
+	# Keine Antwort darf mehr direkt in die Zeile geschrieben werden — sonst wischt sie der
+	# naechste Frame wieder weg, und wir haben denselben Fehler an anderer Stelle.
+	var direkt: Array[String] = []
+	var zeilen_dv: PackedStringArray = dv_q.split("\n")
+	for nr in zeilen_dv.size():
+		var z: String = _ohne_kommentar(zeilen_dv[nr], false)
+		if not z.contains("_hinweis.text ="):
+			continue
+		# Zwei Stellen duerfen es: `_naehe_pruefen` schreibt die Reichweiten-Zeile, und
+		# `_antworten` ist die Schleuse, die den Vorrang ueberhaupt setzt.
+		var erlaubt_hier: bool = false
+		for zurueck in range(nr, maxi(0, nr - 40), -1):
+			if zeilen_dv[zurueck].begins_with("func "):
+				erlaubt_hier = zeilen_dv[zurueck].begins_with("func _naehe_pruefen") \
+					or zeilen_dv[zurueck].begins_with("func _antworten")
+				break
+		if not erlaubt_hier:
+			direkt.append("Zeile %d" % (nr + 1))
+	_check("Keine Antwort wird direkt in die Zeile geschrieben", direkt.is_empty(),
+		", ".join(direkt))
+	# Und eine Truhe in Reichweite sagt ueberhaupt etwas. Vorher gab es dafuer GAR KEINE Zeile:
+	# Man stand davor, und nichts sagte einem, dass man druecken kann — im Dunkeln ist ein
+	# Kasten ohne Beschriftung ein Stein.
+	_check("Eine Truhe in Reichweite meldet sich", dv_q.contains("öffnen   [E]"))
 
 	# ── Grubenstahl: das Material, das es NUR im Stollen gibt ────────────────
 	#
