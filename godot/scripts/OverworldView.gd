@@ -2050,6 +2050,7 @@ func _apply_daytime() -> void:
 	var himmel: Color = DayCycle.sky_color(h)
 	for pm in _puddles:
 		(pm as StandardMaterial3D).emission = himmel
+	_rim_farben_ziehen()
 	if _moon != null:
 		var sicht: float = DayCycle.moon_visibility(h)
 		_moon.visible = sicht > 0.01
@@ -2390,12 +2391,23 @@ func _build_sector_lines_and_rim() -> void:
 	# Gate 2 — Smog-Linie (durchscheinend, giftgrün).
 	_box(Vector3(w, 28.0, 4.0), Vector3(half, 14.0, smog_z), Color(0.35, 0.75, 0.30), 0.45)
 	_label(Vector3(half, 38.0, smog_z), "☣ SMOG-LINIE", Color(0.6, 1.0, 0.5), LBL_LANDMARKE, 600.0)
-	# Kraterrand: 350 m Fels an allen vier Horizonten — die diegetische Außengrenze.
-	var rock := Color(0.28, 0.22, 0.18)
-	_box(Vector3(w + 300.0, 350.0, 150.0), Vector3(half, 175.0, 75.0), rock)            # Süd
-	_box(Vector3(w + 300.0, 350.0, 150.0), Vector3(half, 175.0, -w - 75.0), rock)       # Nord
-	_box(Vector3(150.0, 350.0, w + 300.0), Vector3(-75.0, 175.0, -half), rock)          # West
-	_box(Vector3(150.0, 350.0, w + 300.0), Vector3(w + 75.0, 175.0, -half), rock)       # Ost
+	# Kraterrand: Fels an allen vier Horizonten — die diegetische Aussengrenze.
+	#
+	# Er war eine 350 m hohe Kiste in Felsfarbe, und im Bild war er das Auffaelligste am ganzen
+	# Himmel: ein harter brauner Keil, nachts ein schwarzer Balken. Nachgemessen erklaert sich
+	# das von selbst — von der Schrottgrube aus steht die Suedwand nur **375 m** entfernt und
+	# deckt damit **43 Grad** des Himmels ab. Der Nebel greift auf dieser Strecke zu 45 %, also
+	# gar nicht.
+	#
+	# Zwei Dinge dagegen, und keins davon ist „mehr Nebel":
+	#
+	#  1. **Niedriger.** 210 m statt 350 sind aus derselben Entfernung noch 29° — genug, um den
+	#     Horizont zu decken, und ein Drittel weniger Himmel.
+	#  2. **Oben loest er sich auf.** Die Wand traegt Scheitelfarben: unten Fels, oben die
+	#     HIMMELSFARBE. Damit hat sie keine Oberkante mehr, an der etwas abschneidet — genau so
+	#     sieht ein entfernter Grat aus, und genau das fehlte. Die Farbe wird im Tagesverlauf
+	#     nachgezogen wie bei den Lachen, sonst waere sie nachts blau in einer schwarzen Nacht.
+	_build_rim_walls(w, half)
 	# Rand-Tunnel (§1.7.4): das eine, verriegelte Tor durch die Nordwand.
 	_box(Vector3(60.0, 80.0, 40.0), Vector3(half, 40.0, -w - 20.0), Color(0.08, 0.07, 0.06))
 	_label(Vector3(half, 95.0, -w + 5.0), "🚪 RAND-TUNNEL (verriegelt)", Color(0.95, 0.85, 0.6), LBL_LANDMARKE, 500.0)
@@ -6330,6 +6342,16 @@ func _process_combat(delta: float) -> void:
 		_drop(at, "ammo", { "pool": pool, "amount": AmmoData.roll_drop(pool) })
 		_roll_material_drop(at)
 		_say("☠ %s erlegt" % String(CombatData.ENEMY_TYPES[target.type_id]["name"]), 1.6)
+		# ── Steuerwalzen ──────────────────────────────────────────────────────
+		#
+		# Sechzehn Erinnerungen stehen seit Langem fertig in `MemoryManager` — und nichts im
+		# Spiel hat sie je aufgerufen. Der Kern der Geschichte lag unerreichbar herum.
+		#
+		# Sie kommen aus MECHANISCHEN Gegnern, und das ist keine Willkuer: Was der Held von
+		# sich selbst nicht weiss, steckt in Maschinen derselben Bauart. Wer eine aufschneidet,
+		# findet ein Stueck von sich.
+		if String(CombatData.ENEMY_TYPES[target.type_id]["class"]) == CombatData.MECHANICAL:
+			_walze_bergen(bool(CombatData.ENEMY_TYPES[target.type_id].get("boss", false)))
 		(e["node"] as Node3D).queue_free()
 		_enemies.erase(e)
 
@@ -7416,7 +7438,107 @@ func _erst_beute() -> void:
 	# Der Dampfkern liegt hier GARANTIERT und wird nicht ausgewuerfelt — der Held spricht ihn
 	# aus („ein Kern, der noch warm ist"), und was ausgesprochen wird, muss auch dort liegen.
 	_drop(at + Vector3(0.2, 0.0, -1.0), "material", { "id": "dampfkern", "amount": 1 })
+	# Und die ERSTE Steuerwalze, garantiert. Der Anfang einer Geschichte darf nicht auswuerfeln,
+	# ob sie stattfindet — dieselbe Regel wie beim Karabiner in der Truhe. Danach kommen sie mit
+	# drei Prozent aus jeder Maschine, und der Spieler weiss dann schon, was sie sind.
+	_walze_bergen(false, true)
 	n.queue_free()
 	_enemies.erase(_erst_gegner)
 	_erst_gegner = {}
 	_say("🎒 Aufheben: darüberlaufen.", 3.0)
+
+
+## Die vier Waende am Welthorizont — mit Scheitelfarben statt als Kiste.
+const RIM_H: float = 210.0
+const RIM_DICKE: float = 150.0
+## Ab welcher Hoehe die Wand in den Himmel uebergeht. Darunter Fels, darueber Verlauf.
+const RIM_FELS_ANTEIL: float = 0.34
+var _rim_mats: Array = []
+func _build_rim_walls(w: float, half: float) -> void:
+	var fels := Color(0.28, 0.22, 0.18)
+	# Vier Waende, je als Streifen aus Vierecken. Die Unterteilung in der HOEHE ist das, was den
+	# Verlauf traegt — quer reicht ein Viereck, dort aendert sich nichts.
+	var seiten: Array = [
+		[Vector3(half, 0.0, 75.0), Vector3(w + 300.0, 0.0, 0.0)],            # Sued
+		[Vector3(half, 0.0, -w - 75.0), Vector3(w + 300.0, 0.0, 0.0)],       # Nord
+		[Vector3(-75.0, 0.0, -half), Vector3(0.0, 0.0, w + 300.0)],          # West
+		[Vector3(w + 75.0, 0.0, -half), Vector3(0.0, 0.0, w + 300.0)],       # Ost
+	]
+	for seite in seiten:
+		var mitte: Vector3 = seite[0]
+		var laengs: Vector3 = seite[1] * 0.5
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var stufen: int = 12
+		for i in stufen:
+			var y0: float = RIM_H * float(i) / float(stufen)
+			var y1: float = RIM_H * float(i + 1) / float(stufen)
+			for q in [[-1.0, y0], [1.0, y0], [1.0, y1], [-1.0, y0], [1.0, y1], [-1.0, y1]]:
+				var p: Vector3 = mitte + laengs * float(q[0]) + Vector3(0.0, float(q[1]), 0.0)
+				st.set_color(_rim_farbe(float(q[1])))
+				st.add_vertex(p)
+		st.generate_normals()
+		var mi := MeshInstance3D.new()
+		mi.mesh = st.commit()
+		var m := StandardMaterial3D.new()
+		m.albedo_color = fels
+		m.vertex_color_use_as_albedo = true
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		# UNBELEUCHTET. Eine 210-m-Wand, die von einer festen Sonne angestrahlt wird, ist auf
+		# zwei Seiten hell und auf zwei schwarz — und die schwarzen sind genau die, die als
+		# Balken auffallen. Ein entfernter Grat hat ohnehin keine erkennbare Schattierung mehr.
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mi.material_override = m
+		mi.name = "kraterrand"
+		add_child(mi)
+		_rim_mats.append(m)
+	_rim_farben_ziehen()
+
+
+## Der Verlauf ueber die Hoehe — als DECKKRAFT, nicht als Farbe.
+##
+## Der erste Entwurf blendete die Scheitelfarbe nach oben in die Himmelsfarbe. Das geht nur so
+## lange gut, wie der Himmel gleichmaessig ist: Am Abend steht unten Glut und oben Blau, und die
+## Wand haette gegen genau eine der beiden Farben gepasst und gegen die andere als Streifen
+## gestanden.
+##
+## Deckkraft loest das ohne jede Rechnung: Oben wird die Wand durchsichtig, und was durchscheint,
+## IST der Himmel — welcher auch immer gerade dort steht. Sie hat damit keine Oberkante mehr, an
+## der etwas abschneidet, und braucht keine Anpassung an die Tageszeit.
+func _rim_farbe(y: float) -> Color:
+	return Color(1.0, 1.0, 1.0, 1.0 - smoothstep(RIM_FELS_ANTEIL, 1.0, y / RIM_H))
+
+
+## Die Waende an die Tageszeit anpassen.
+##
+## Nur noch die Grundfarbe: Unbeleuchteter Fels bliebe nachts genauso braun wie mittags und
+## leuchtete dann gegen eine schwarze Nacht. Ein Viertel Himmel daruntergemischt haelt ihn
+## dunkel, wenn es dunkel ist.
+func _rim_farben_ziehen() -> void:
+	var himmel: Color = DayCycle.sky_color(GameState.hour)
+	for m in _rim_mats:
+		var sm: StandardMaterial3D = m
+		sm.albedo_color = Color(0.28, 0.22, 0.18).lerp(himmel, 0.30)
+
+
+# ── Steuerwalzen ──────────────────────────────────────────────────────────────
+## Eine Erinnerung bergen und zeigen.
+##
+## Gezeigt wird sie als Sprechtafel unter dem HELDENNAMEN, nicht als Fundmeldung. Eine
+## Erinnerung ist kein Gegenstand, den man einsteckt — sie faellt jemandem ein. Deshalb steht
+## sie in derselben Tafel, in der er auch sonst mit sich selbst redet.
+##
+## `erzwingen` ist fuer den ersten Fund im Prolog: Der Anfang einer Geschichte darf nicht
+## auswuerfeln, ob sie stattfindet — dieselbe Regel wie beim Karabiner in der Truhe.
+func _walze_bergen(ist_boss: bool, erzwingen: bool = false) -> void:
+	var m: Dictionary = MemoryManager.try_recover_memory(ist_boss, 0.0 if erzwingen else -1.0)
+	if m.is_empty():
+		return
+	_say("🎞 Eine Steuerwalze. Sie laeuft noch.", 2.6)
+	_play_speech(HELD_NAME, "held", [
+		"„Da ist eine Walze drin. Sie dreht sich noch.“",
+		"„%s“" % String(m.get("title", "")),
+		"„%s“" % String(m.get("text", "")),
+		"„…das war nicht meine Erinnerung. Das ist sie aber.“",
+	])

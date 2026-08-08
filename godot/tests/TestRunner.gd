@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 54,
+	"_test_titel_und_erster": 59,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1147,6 +1147,29 @@ func _test_titel_und_erster() -> void:
 	# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen.
 	_check("Der Knopf wird ausgegraut, nicht versteckt",
 		ow_q.contains("_trank_btn.disabled = GameState.potions <= 0"))
+
+	# ── Die Steuerwalzen ──────────────────────────────────────────────────────
+	#
+	# Sechzehn Erinnerungen standen fertig in `MemoryManager` — und NICHTS im Spiel hat sie je
+	# aufgerufen. Der Kern der Geschichte lag unerreichbar herum: `recover_memory()` war eine
+	# Funktion, die es gab und die niemand rief.
+	_check("Die Erinnerungskette wird ueberhaupt aufgerufen",
+		ow_q.contains("MemoryManager.try_recover_memory"))
+	# Und zwar aus MECHANISCHEN Gegnern. Das ist keine Willkuer: Was der Held von sich selbst
+	# nicht weiss, steckt in Maschinen derselben Bauart. Wer eine aufschneidet, findet ein
+	# Stueck von sich.
+	_check("Nur aus Maschinen",
+		ow_q.contains('== CombatData.MECHANICAL:\n\t\t\t_walze_bergen'))
+	# Die erste ist GARANTIERT — der Anfang einer Geschichte darf nicht auswuerfeln, ob sie
+	# stattfindet. Dieselbe Regel wie beim Karabiner in der Truhe.
+	_check("Die erste kommt garantiert", ow_q.contains("_walze_bergen(false, true)"))
+	# Gezeigt wird sie unter dem HELDENNAMEN, nicht als Fundmeldung: Eine Erinnerung ist kein
+	# Gegenstand, den man einsteckt — sie faellt jemandem ein.
+	_check("Und sie faellt ihm ein, statt aufgesammelt zu werden",
+		ow_q.contains('_walze_bergen') and ow_q.contains('_play_speech(HELD_NAME, "held", [\n\t\t"„Da ist eine Walze drin'))
+	# Die Kette ist vollstaendig und endet dort, wo die Geschichte hinwill.
+	_check("Die Kette hat %d Glieder" % MemoryManager.chain_length(),
+		MemoryManager.chain_length() >= 16)
 
 	# ── Der erste Gegner ──────────────────────────────────────────────────────
 	var OW4 = load("res://scripts/OverworldView.gd")
