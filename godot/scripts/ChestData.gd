@@ -44,6 +44,11 @@ const ARTEN: Dictionary = {
 		"muni_mul": 3,
 		"hoehe": 0.7,
 		"schluessel": 0,
+		# Sieben gewoehnliche Kisten stehen im Stollen; bei drei Stueck im schlechtesten Fall sind
+		# das 21 — genug fuer die 20 des Auftrags, OHNE dass man dafuer die Beutekammer aufbekommen
+		# muss. Mit [2,4] traf der schlechteste Fall exakt 20, und damit haette ein einziger
+		# uebersehener Kasten einen zweiten Abstieg erzwungen.
+		"stahl": [3, 5],
 	},
 	BOSS: {
 		"name": "Beutekammer",
@@ -59,6 +64,7 @@ const ARTEN: Dictionary = {
 		# sichtbar da und lässt sich trotzdem nicht einfach einsammeln: Man muss dreimal einen
 		# Kampf suchen, den man umgehen könnte.
 		"schluessel": 3,
+		"stahl": [6, 10],
 	},
 }
 
@@ -127,3 +133,22 @@ static func schloss_text(id: String, im_beutel: int) -> String:
 	if im_beutel >= noetig:
 		return ""
 	return "⊘ Verschlossen — %d von %d Schlüsseln. Anführer tragen sie." % [im_beutel, noetig]
+
+
+## Wie viel Grubenstahl in dieser Kiste liegt.
+##
+## **Nur der Stollen fragt danach.** Die Zahl steht hier, weil sie zum Kisteninhalt gehört wie
+## Gold und Ausrüstung — aber Grubenstahl gibt es ausschließlich unter Tage, und die Truhen der
+## Oberwelt rufen diese Funktion schlicht nicht auf. Der Test hält das fest.
+##
+## Vorher lag der Stahl als Halden über die Kammern gestreut. Das machte den Stollen zu einer
+## Sammelaufgabe, bei der man am Boden klebt statt die Kammer anzusehen — und es war ein
+## zweiter Weg, an Material zu kommen, neben dem, den es ohnehin schon gab. In der Kiste ist er
+## ein **Fund**: derselbe Griff, der auch Gold und Ausrüstung bringt.
+static func stahl(id: String, rng: RandomNumberGenerator = null) -> int:
+	var spanne: Array = art(id).get("stahl", [0, 0])
+	var von: int = int(spanne[0])
+	var bis: int = int(spanne[1])
+	if bis <= 0:
+		return 0
+	return rng.randi_range(von, bis) if rng != null else randi_range(von, bis)

@@ -149,13 +149,19 @@ Oberfläche liegt seit dem Krieg in Sonne und Sandstürmen und ist durchgerostet
 lag im Trockenen und im Dunkeln — es ist noch Stahl. Genau deshalb will Silas es für seine
 Mauer, und genau deshalb ist es unten und nicht oben.
 
-**Zahlen:** zwei bis vier Halden je Kammer, in *jeder* Kammer — auch der ersten, denn wer die
-erste betritt und nichts sieht, hält den Auftrag für kaputt. Gemessen: 19 Halden auf Ebene 1,
-26 auf Ebene 2. Eine einzelne Kammer reicht nie.
+**Er liegt in den Kisten**, bei den gewöhnlichen Sachen mit drin — derselbe Griff, der auch
+Gold und Ausrüstung bringt. Ein kurzer Anlauf hatte ihn als Halden über die Kammern gestreut;
+das machte den Stollen zu einer Sammelaufgabe, bei der man am Boden klebt statt die Kammer
+anzusehen, und es war ein zweiter Weg an Material neben dem, den es ohnehin schon gab.
 
-Aufgesammelt wird beim **Darüberlaufen**, nicht mit `[E]`. Zwanzigmal eine Taste für Rohmaterial
-zu drücken ist Arbeit, keine Entscheidung; die Taste bleibt dem vorbehalten, wo man wirklich
-wählt — Ausrüstung, Truhen, Treppen.
+**Zahlen:** 3–5 je gewöhnlicher Kiste, 6–10 in der Beutekammer. Im Stollen stehen acht Kisten
+(drei auf Ebene 1, fünf auf Ebene 2, davon eine die Beutekammer).
+
+Nachgerechnet mit dem **schlechtesten** Wurf: 27 Stück gegen 20 verlangte — und die sieben
+gewöhnlichen Kisten allein tragen schon 21, man muss die Beutekammer also *nicht* aufbekommen.
+Ein Auftrag, der nur bei Glück aufgeht, schickt jemanden ein zweites Mal hinunter, ohne dass er
+weiß warum. Ebene 1 allein reicht dagegen nie (höchstens 15) — die zweite Ebene ist nicht
+optional.
 
 `GameState.NUR_IM_STOLLEN` hält die Zusicherung fest, und der Test liest die Beutetabellen der
 Oberwelt daraufhin durch: Rutscht Grubenstahl je in eine davon, wäre der Auftrag wieder ohne

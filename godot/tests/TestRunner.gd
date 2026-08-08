@@ -84,7 +84,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
 	"_test_stollen": 33,
-	"_test_truhen": 27,
+	"_test_truhen": 29,
 	"_test_anfuehrer": 54,
 }
 
@@ -5343,12 +5343,18 @@ func _test_truhen() -> void:
 	_check("Das Material hat einen Namen",
 		String(GameState.MATERIAL_NAMEN.get("grubenstahl", "")) == "Grubenstahl")
 
-	# Und jetzt die eigentliche Zusicherung: Es faellt NIRGENDWO SONST an. Der Beweis laeuft
-	# ueber die Quelle, weil eine Beutetabelle der Oberwelt es sonst still hereinreichen koennte
-	# — und dann waere der Auftrag wieder ohne Stollen zu erledigen, ohne dass es jemand merkt.
+	# Und jetzt die eigentliche Zusicherung: Er faellt NIRGENDWO SONST an. Der Beweis laeuft
+	# ueber die Quelle, weil eine Beutetabelle der Oberwelt ihn sonst still hereinreichen
+	# koennte — und dann waere der Auftrag wieder ohne Stollen zu erledigen, ohne dass es
+	# jemand merkt.
+	#
+	# `ChestData` steht NICHT auf der Liste, und das mit Absicht: Dort liegt nur die ZAHL, wie
+	# viel in einer Kiste steckt. Vergeben wird sie ausschliesslich vom Stollen — die Truhen der
+	# Oberwelt rufen `ChestData.stahl()` schlicht nicht auf, und genau das steht als eigene
+	# Pruefung darunter.
 	var draussen: Array[String] = []
 	for datei in ["res://scripts/OverworldView.gd", "res://scripts/BeuteData.gd",
-			"res://scripts/ChestData.gd", "res://scripts/EncounterManager.gd"]:
+			"res://scripts/EncounterManager.gd"]:
 		var zeilen: PackedStringArray = FileAccess.get_file_as_string(datei).split("\n")
 		for nr in zeilen.size():
 			for stoff in GameState.NUR_IM_STOLLEN:
@@ -5356,31 +5362,44 @@ func _test_truhen() -> void:
 					draussen.append("%s:%d" % [datei.get_file(), nr + 1])
 	_check("Grubenstahl faellt draussen nirgends an", draussen.is_empty(),
 		", ".join(draussen))
-	# Drinnen dagegen liegt er in JEDER Kammer — auch in der ersten. Wer die erste Kammer
-	# betritt und nichts sieht, haelt den Auftrag fuer kaputt.
+	_check("Und die Truhen der Oberwelt vergeben ihn nicht",
+		not _ohne_kommentar_datei("res://scripts/OverworldView.gd").contains("ChestData.stahl("))
+
+	# ── Er liegt in den KISTEN, nicht einzeln herum ──────────────────────────
+	#
+	# Ein kurzer Anlauf hat ihn als Halden ueber die Kammern gestreut. Das machte den Stollen zu
+	# einer Sammelaufgabe, bei der man am Boden klebt statt die Kammer anzusehen — und es war
+	# ein zweiter Weg an Material, neben dem, den es ohnehin schon gab. In der Kiste ist er ein
+	# FUND: derselbe Griff, der auch Gold und Ausruestung bringt.
 	var e1s: Dictionary = DungeonLayout.erzeugen(4242, 1)
 	var e2s: Dictionary = DungeonLayout.erzeugen(4242, 2)
-	_check("Im Stollen liegen Halden (%d auf Ebene 1, %d auf Ebene 2)"
-		% [(e1s["stahl"] as Array).size(), (e2s["stahl"] as Array).size()],
-		(e1s["stahl"] as Array).size() > 0 and (e2s["stahl"] as Array).size() > 0)
-	var im_fels_stahl: int = 0
-	for f in (e1s["stahl"] as Array):
-		if not DungeonLayout.begehbar(e1s, f as Vector2i):
-			im_fels_stahl += 1
-	_check("Und keine davon im Fels", im_fels_stahl == 0)
-	# Genug fuer den Auftrag, ohne den Stollen zweimal laufen zu muessen — aber nicht so viel,
-	# dass die erste Kammer schon reicht.
-	var gesamt: int = (e1s["stahl"] as Array).size() + (e2s["stahl"] as Array).size()
-	_check("Beide Ebenen zusammen decken die %d des Auftrags (%d Halden)"
-		% [int(q_stollen["count"]), gesamt], gesamt >= int(q_stollen["count"]))
-	_check("Eine einzelne Kammer reicht aber nicht",
-		DungeonLayout.STAHL_MAX < int(q_stollen["count"]))
-	# Aufgesammelt wird beim DARUEBERLAUFEN. Zwanzigmal eine Taste fuer Rohmaterial zu druecken
-	# ist Arbeit, keine Entscheidung — die Taste bleibt dem vorbehalten, wo man wirklich waehlt.
-	_check("Halden sammeln sich beim Darueberlaufen",
-		dv_q.contains("func _stahl_aufsammeln") and dv_q.contains("STAHL_NAH_M"))
-	_check("Und landen im Inventar, nicht im Beutel",
-		dv_q.contains('GameState.add_item("grubenstahl", 1)'))
+	_check("Grubenstahl kommt aus den Kisten", dv_q.contains("ChestData.stahl(art)"))
+	_check("Und liegt nicht mehr als Halde herum",
+		not dv_q.contains("_halden") and not e1s.has("stahl"))
+	_check("Jede Kistenart fuehrt ihn",
+		ChestData.stahl(ChestData.STANDARD, _fest_rng()) > 0
+		and ChestData.stahl(ChestData.BOSS, _fest_rng()) > 0)
+	# Die Beutekammer gibt spuerbar mehr — sie ist der Abschluss und soll sich so anfuehlen.
+	_check("Die Beutekammer gibt mehr als eine gewoehnliche Kiste",
+		int((ChestData.art(ChestData.BOSS)["stahl"] as Array)[0])
+			> int((ChestData.art(ChestData.STANDARD)["stahl"] as Array)[1]))
+
+	# Reicht das fuer den Auftrag? Gerechnet ueber die Kisten, die wirklich im Stollen stehen —
+	# und zwar mit dem SCHLECHTESTEN Wurf. Ein Auftrag, der nur bei Glueck aufgeht, schickt
+	# jemanden ein zweites Mal hinunter, ohne dass er weiss warum.
+	var kisten_1: int = (e1s["truhen"] as Array).size()
+	var kisten_2: int = (e2s["truhen"] as Array).size()
+	var min_std: int = int((ChestData.art(ChestData.STANDARD)["stahl"] as Array)[0])
+	var min_boss: int = int((ChestData.art(ChestData.BOSS)["stahl"] as Array)[0])
+	# Auf Ebene 2 ist die letzte Kiste die Beutekammer.
+	var schlechtestenfalls: int = (kisten_1 + kisten_2 - 1) * min_std + min_boss
+	_check("Auch im schlechtesten Fall reicht der Stollen fuer die %d (%d Kisten, %d Stahl)"
+		% [int(q_stollen["count"]), kisten_1 + kisten_2, schlechtestenfalls],
+		schlechtestenfalls >= int(q_stollen["count"]))
+	# Aber eine Ebene allein nicht — sonst waere die zweite ueberfluessig.
+	var nur_e1: int = kisten_1 * int((ChestData.art(ChestData.STANDARD)["stahl"] as Array)[1])
+	_check("Ebene 1 allein reicht nicht (hoechstens %d)" % nur_e1,
+		nur_e1 < int(q_stollen["count"]))
 	_check("Ein neues Spiel faengt ohne Grubenstahl an",
 		int(GameState.inventory.get("grubenstahl", -1)) == 0)
 
@@ -5685,3 +5704,18 @@ func _test_anfuehrer() -> void:
 	GameState.schluessel = 3
 	GameState.neu_beginnen()
 	_check("Ein neues Spiel faengt ohne Schluessel an", GameState.schluessel == 0)
+
+
+## Eine Datei ohne ihre Kommentare — fuer Pruefungen, die auf CODE anschlagen sollen.
+func _ohne_kommentar_datei(pfad: String) -> String:
+	var raus: PackedStringArray = PackedStringArray()
+	for z in FileAccess.get_file_as_string(pfad).split("\n"):
+		raus.append(_ohne_kommentar(z, false))
+	return "\n".join(raus)
+
+
+## Ein Wuerfel mit festem Startwert — damit eine Pruefung nicht mal so und mal so ausgeht.
+func _fest_rng() -> RandomNumberGenerator:
+	var r := RandomNumberGenerator.new()
+	r.seed = 7
+	return r
