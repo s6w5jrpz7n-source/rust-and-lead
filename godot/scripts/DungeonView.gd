@@ -427,7 +427,8 @@ func _gegner_bauen() -> void:
 		var art: String = String(arten[rng.randi() % arten.size()])
 		var ist_kopf: bool = i == anfuehrer_nr
 		var ziel: CombatTarget = CombatTarget.from_type(art, { "anfuehrer": ist_kopf })
-		var knoten: Node3D = AssetRegistry.instantiate(art, 1.4 if not ist_kopf else 1.75)
+		var knoten: Node3D = AssetRegistry.instantiate(art,
+			1.4 * (CombatData.ANFUEHRER_GROESSE_MUL if ist_kopf else 1.0))
 		if knoten == null:
 			knoten = MeshInstance3D.new()
 			var box := BoxMesh.new()
@@ -551,6 +552,10 @@ func _faellt(e: Dictionary) -> void:
 	GameState.gold += t.gold
 	GameState.kills += 1
 	GameState.add_xp(CombatData.xp_for_kill(t))
+	# Ausruestung wandert drinnen direkt in den Beutel: Auf einem dunklen Boden ein 30-cm-Ding
+	# zu finden, das man nur sieht, wenn die Lampe daraufhaelt, ist keine Belohnung.
+	for _k in BeuteData.stuecke(t.is_leader):
+		BagManager.add(ProgressionManager.make_gear(BeuteData.slot(), BeuteData.seltenheit()))
 	if t.is_leader:
 		GameState.schluessel += 1
 		_hinweis.text = "✦ Ein Schlüssel. %d von %d." % [GameState.schluessel,

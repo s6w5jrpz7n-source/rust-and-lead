@@ -4942,9 +4942,8 @@ func _make_enemy(type_id: String, anfuehrer: bool = false) -> Dictionary:
 	var node := Node3D.new()
 	# Modell, sobald eines unter assets/models/enemies/<typ>.glb liegt — sonst Primitive.
 	var asset: String = AssetRegistry.enemy_asset(type_id)
-	# Der Anfuehrer ist auch groesser. Der Schimmer allein traegt bei Tageslicht nicht weit
-	# genug — eine Silhouette schon.
-	var hoehe: float = AssetRegistry.height_of(asset) * (1.25 if anfuehrer else 1.0)
+	var hoehe: float = AssetRegistry.height_of(asset) \
+		* (CombatData.ANFUEHRER_GROESSE_MUL if anfuehrer else 1.0)
 	var model: Node3D = AssetRegistry.instantiate(asset, hoehe)
 	if model != null:
 		node.add_child(model)
@@ -6541,6 +6540,13 @@ func _process_combat(delta: float) -> void:
 		var pool: String = AmmoData.pool_for(_weapon_id)
 		_drop(at, "ammo", { "pool": pool, "amount": AmmoData.roll_drop(pool) })
 		_roll_material_drop(at)
+		# Ausruestung faellt SELTEN — und beim Anfuehrer sechsmal so oft. Gold und Munition
+		# liegen weiterhin ueberall; die braucht man laufend. Ausruestung ist der Grund, den
+		# Beutel ueberhaupt zu oeffnen, und wenn sie bei jedem Kadaver liegt, ist sie
+		# Verwaltungsarbeit statt Fund.
+		for _k in BeuteData.stuecke(target.is_leader):
+			_drop(at, "gear", ProgressionManager.make_gear(BeuteData.slot(),
+				BeuteData.seltenheit()))
 		if target.is_leader:
 			GameState.schluessel += 1
 			_say("✦ Anführer erlegt — ein Schlüssel. %d von %d." % [GameState.schluessel,

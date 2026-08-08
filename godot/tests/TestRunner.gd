@@ -85,7 +85,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_zeichen": 5,
 	"_test_stollen": 33,
 	"_test_truhen": 15,
-	"_test_anfuehrer": 24,
+	"_test_anfuehrer": 38,
 }
 
 
@@ -5433,6 +5433,103 @@ func _test_anfuehrer() -> void:
 	_check("Der Schimmer liegt UEBER dem Modell, statt es zu ersetzen",
 		ar_q.contains("kind.material_overlay = glanz")
 		and not ar_q.contains("kind.material_override = glanz"))
+
+	# ── Er ist auch groesser ─────────────────────────────────────────────────
+	# Der Schimmer allein traegt bei Tageslicht nicht weit genug; eine Silhouette schon.
+	_check("Ein Anfuehrer ist 30 %% groesser (%.2f)" % CombatData.ANFUEHRER_GROESSE_MUL,
+		is_equal_approx(CombatData.ANFUEHRER_GROESSE_MUL, 1.30))
+	# Und BEIDE Szenen nehmen denselben Wert. Sonst ist der Anfuehrer drinnen ein anderer als
+	# draussen — vorher stand in der einen 1,25 und in der anderen 1,75/1,4.
+	_check("Drinnen und draussen gleich gross",
+		ow_q.contains("CombatData.ANFUEHRER_GROESSE_MUL if anfuehrer else 1.0")
+		and dv_q.contains("CombatData.ANFUEHRER_GROESSE_MUL if ist_kopf else 1.0"))
+
+	# ── Was faellt ───────────────────────────────────────────────────────────
+	#
+	# Gerechnet statt gewuerfelt: Die Schwellen werden ueber den ganzen Zufallsbereich
+	# abgezaehlt. Ein Test, der tausendmal `randf()` zieht und Anteile schaetzt, schlaegt
+	# irgendwann grundlos an — und schweigt genau dann, wenn er es nicht sollte.
+	var n_kein: int = 0
+	var n_eins: int = 0
+	var n_zwei: int = 0
+	var a_kein: int = 0
+	var a_eins: int = 0
+	var a_zwei: int = 0
+	var schritte: int = 10000
+	for k in schritte:
+		var wurf: float = float(k) / float(schritte)
+		match BeuteData.stuecke(false, wurf):
+			0: n_kein += 1
+			1: n_eins += 1
+			_: n_zwei += 1
+		match BeuteData.stuecke(true, wurf):
+			0: a_kein += 1
+			1: a_eins += 1
+			_: a_zwei += 1
+	var p_normal: float = float(n_eins + n_zwei) / float(schritte)
+	var p_kopf: float = float(a_eins + a_zwei) / float(schritte)
+	var p_kopf_zwei: float = float(a_zwei) / float(schritte)
+	_check("Gewoehnliche Gegner lassen in 5 %% etwas fallen (%.1f %%)" % (p_normal * 100.0),
+		absf(p_normal - 0.05) < 0.005)
+	_check("Und nie zwei Stueck", n_zwei == 0)
+	_check("Anfuehrer in 30 %% (%.1f %%)" % (p_kopf * 100.0), absf(p_kopf - 0.30) < 0.005)
+	_check("Davon in 5 %% zwei Stueck (%.1f %%)" % (p_kopf_zwei * 100.0),
+		absf(p_kopf_zwei - 0.05) < 0.005)
+	# Sechsmal so oft wie ein gewoehnlicher: Der Anfuehrer ist der Gegner, den man SUCHT statt
+	# umgeht, und muss sich dafuer anders anfuehlen als die drei, die neben ihm standen.
+	_check("Der Anfuehrer wirft sechsmal so oft aus", is_equal_approx(p_kopf / p_normal, 6.0))
+	# Die Schwellen liegen aufsteigend uebereinander: Ein kleinerer Wurf darf nie WENIGER
+	# ergeben als ein groesserer, sonst sind die Anteile ueber den Zufallsbereich verschmiert
+	# und nicht mehr nachrechenbar.
+	var monoton: bool = true
+	var letzte: int = 99
+	for k in 1000:
+		var jetzt_st: int = BeuteData.stuecke(true, float(k) / 1000.0)
+		if jetzt_st > letzte:
+			monoton = false
+		letzte = jetzt_st
+	_check("Die Schwellen liegen sauber uebereinander", monoton)
+
+	# ── Art und Guete ────────────────────────────────────────────────────────
+	# Die Art ist GLEICHVERTEILT. Wer Waffen seltener macht als Stiefel, baut eine zweite
+	# Seltenheitsachse neben der eigentlichen ein — dann ist eine gewoehnliche Waffe schwerer zu
+	# bekommen als ein epischer Helm.
+	var je_slot: Dictionary = {}
+	for k in 5000:
+		var sl: String = BeuteData.slot(float(k) / 5000.0)
+		je_slot[sl] = int(je_slot.get(sl, 0)) + 1
+	_check("Jede Art kommt vor (%d von %d)" % [je_slot.size(), EquipManager.GEAR_SLOTS.size()],
+		je_slot.size() == EquipManager.GEAR_SLOTS.size())
+	var schiefste: float = 0.0
+	for sl in je_slot:
+		schiefste = maxf(schiefste, absf(float(je_slot[sl]) / 5000.0
+			- 1.0 / float(EquipManager.GEAR_SLOTS.size())))
+	_check("Und alle gleich haeufig (groesste Abweichung %.2f %%)" % (schiefste * 100.0),
+		schiefste < 0.01)
+	# Die Guete wird nach oben SELTENER — und zwar streng, sonst ist „selten" nur ein Wort.
+	var je_gute: Dictionary = {}
+	for k in 5000:
+		var q: String = BeuteData.seltenheit(float(k) / 5000.0)
+		je_gute[q] = int(je_gute.get(q, 0)) + 1
+	var fallend: bool = true
+	var vorige: int = 999999
+	var reihe: Array[String] = []
+	for q in ProgressionManager.RARITY_ORDER:
+		var n: int = int(je_gute.get(String(q), 0))
+		reihe.append("%s %.1f%%" % [q, float(n) / 50.0])
+		if n > vorige:
+			fallend = false
+		vorige = n
+	_check("Die Guete wird nach oben unwahrscheinlicher (%s)" % ", ".join(reihe), fallend)
+	# Und Gegner werfen SCHLECHTER aus als Truhen. Ein Gegner, der so gut auswirft wie eine
+	# Beutekammer, macht die Beutekammer sinnlos.
+	_check("Gegner werfen schlechter aus als Truhen",
+		BeuteData.SELTENHEIT_BIAS < float(ChestData.art(ChestData.STANDARD)["bias"])
+		and BeuteData.SELTENHEIT_BIAS < float(ChestData.art(ChestData.BOSS)["bias"]))
+	# Beide Szenen benutzen dieselbe Tabelle.
+	_check("Beide Szenen wuerfeln aus derselben Tabelle",
+		ow_q.contains("BeuteData.stuecke(target.is_leader)")
+		and dv_q.contains("BeuteData.stuecke(t.is_leader)"))
 
 	# ── Ein neues Spiel faengt ohne Schluessel an ────────────────────────────
 	GameState.schluessel = 3

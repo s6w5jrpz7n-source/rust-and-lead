@@ -42,6 +42,11 @@ const ANFUEHRER_HP_MUL: float = 3.0
 const ANFUEHRER_SCHADEN_MUL: float = 2.0
 ## Was er zusätzlich an Gold trägt. Er hat länger gelebt als die anderen.
 const ANFUEHRER_GOLD_MUL: float = 2.5
+## Wie viel groesser er ist. Der Schimmer allein traegt bei Tageslicht nicht weit genug — eine
+## Silhouette schon, und die liest man auch dann noch, wenn die Figur halb hinter einem Felsen
+## steht. Beide Szenen nehmen DIESEN Wert, sonst ist der Anfuehrer drinnen ein anderer als
+## draussen.
+const ANFUEHRER_GROESSE_MUL: float = 1.30
 ## Der violette Schimmer. Violett, weil in dieser Welt sonst nichts violett ist: Rost, Sand,
 ## Kupfer und Messing sind warm, die Nacht ist blau. Eine kalte Buntfarbe fällt hier auf, ohne
 ## dass man sie erklären muss — und sie ist auch für Rot-Grün-Blinde von allem anderen trennbar.

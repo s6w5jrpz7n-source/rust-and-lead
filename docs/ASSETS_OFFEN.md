@@ -231,7 +231,7 @@ Leben wie eine Ratte; er ist immer der Stärkste *seiner* Gruppe und nie versehe
 (er bleibt deutlich unter `BOSS_HP`). Genau das ist der Reiz: Man erkennt ihn als das, was man
 schon kennt, und merkt am dritten Schuss, dass diesmal etwas anderes davorsteht.
 
-Erkennbar an einem **violetten Schimmer** und 25 % mehr Höhe. Violett, weil in dieser Welt
+Erkennbar an einem **violetten Schimmer** und **30 % mehr Höhe**. Violett, weil in dieser Welt
 sonst nichts violett ist — Rost, Sand, Kupfer und Messing sind warm, die Nacht ist blau. Eine
 kalte Buntfarbe fällt hier auf, ohne dass man sie erklären muss, und ist auch für
 Rot-Grün-Blinde von allem anderen trennbar. Der Schimmer liegt als `material_overlay` **über**
@@ -239,7 +239,32 @@ dem Modell — ein `material_override` würde die Textur *ersetzen* und den Anf�
 einfarbigen Silhouette machen.
 
 **Für dich heißt das: kein zusätzliches Modell.** Anführer benutzen die Modelle ihrer
-gewöhnlichen Artgenossen.
+gewöhnlichen Artgenossen, nur größer und mit Schimmer.
+
+### Was sie fallen lassen
+
+| | gewöhnlicher Gegner | Anführer |
+|---|---|---|
+| irgendein Ausrüstungsstück | **5 %** | **30 %** |
+| zwei Stücke | — | **5 %** |
+
+Die Prozente sind *absolut*: In 5 von 100 Kämpfen gegen einen Anführer fallen zwei Stücke, in
+25 weiteren eines, in den übrigen 70 nichts.
+
+Fünf Prozent für gewöhnliche Gegner klingt nach fast nie — das ist der Punkt. Vorher war jeder
+Gegner eine kleine Lotterie; bei einem Rudel von zwölf fiel dauernd etwas heraus, und der
+Beutel war nach zehn Minuten voll mit Zeug, das man einzeln durchsehen musste. Beute, die
+ständig kommt, ist Verwaltungsarbeit, kein Fund. Gold und Munition fallen weiterhin überall —
+die braucht man laufend.
+
+**Art** gleichverteilt über die fünf Slots (Helm, Panzerung, Waffe, Gerät, Stiefel). Bewusst
+*nicht* gewichtet: Wer Waffen seltener macht als Stiefel, baut eine zweite Seltenheitsachse
+neben der eigentlichen ein, und dann ist eine gewöhnliche Waffe schwerer zu bekommen als ein
+epischer Helm.
+
+**Güte** nach oben entsprechend unwahrscheinlicher — gemessen: `common 58 % · rare 26 % ·
+epic 12 % · legendary 4 %`. Und durchweg schlechter als aus Truhen; ein Gegner, der so gut
+auswirft wie eine Beutekammer, macht die Beutekammer sinnlos.
 
 Im Stollen steht **einer je Ebene**, aber nur auf den ersten dreien — ab der vierten noch einen
 zu stellen hieße, Schlüssel zu verteilen, für die es kein Schloss gibt. Draußen führt einer
