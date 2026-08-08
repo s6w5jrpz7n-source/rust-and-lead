@@ -51,7 +51,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_reload": 18,
 	"_test_weapons": 13,
 	"_test_titel_und_erster": 63,
-	"_test_steg_und_biome": 14,
+	"_test_steg_und_biome": 16,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1287,6 +1287,19 @@ func _test_steg_und_biome() -> void:
 		OW6.status_marken(mt, jetzt).contains("🜁") and mt.max_armor > 0)
 	# Sie stehen UEBER der Lebensleiste: Der Blick geht beim Zielen nach oben zum Kopf.
 	_check("Die Marken haengen am Gegner", ow_q.contains('"marken": marken'))
+
+	# ── Zwei Reden, die sich ins Wort fielen ──────────────────────────────────
+	#
+	# Im Prolog beginnt der Held nach dem ersten Schuss einen Monolog von acht Zeilen, und mitten
+	# darin wird die Beute freigegeben — samt der ersten Steuerwalze, die ihrerseits reden will.
+	# `_play_speech` ERSETZTE, also brach der Satz ab, und was man las, war der Anfang eines
+	# Gedankens und das Ende eines anderen. Jetzt wird beim selben Sprecher angehaengt.
+	_check("Zwei Reden desselben Sprechers haengen aneinander",
+		ow_q.contains("if not _speech.is_empty() and _speech_giver == giver:\n\t\t_speech.append_array"))
+	# Bei einem WECHSEL des Sprechers wird weiterhin ersetzt: Wenn Mabel etwas sagt, waehrend
+	# der Held noch denkt, hat sie das letzte Wort — sie steht ja vor einem.
+	_check("Bei einem Sprecherwechsel wird ersetzt",
+		ow_q.contains("_speech = zeilen.duplicate()\n\t_speech_name = name_text"))
 
 	# ── Die Biom-Kanten ───────────────────────────────────────────────────────
 	#

@@ -329,8 +329,21 @@ var _speech: Array = []
 var _speech_name: String = ""
 var _speech_giver: String = ""
 var _speech_left: float = 0.0
+## Jemanden sprechen lassen.
+##
+## Laeuft schon eine Rede DESSELBEN Sprechers, werden die Zeilen ANGEHAENGT statt sie zu
+## ersetzen. Das ist kein Komfort, sondern eine Reparatur: Im Prolog beginnt der Held nach dem
+## ersten Schuss einen Monolog von acht Zeilen, und mitten darin wird die Beute freigegeben —
+## samt der ersten Steuerwalze, die ihrerseits reden will. Mit „ersetzen" brach der Satz ab, und
+## was man las, war der Anfang eines Gedankens und das Ende eines anderen.
+##
+## Bei einem WECHSEL des Sprechers wird weiterhin ersetzt: Wenn Mabel etwas sagt, waehrend der
+## Held noch denkt, hat sie das letzte Wort — sie steht ja vor einem.
 func _play_speech(name_text: String, giver: String, zeilen: Array) -> void:
 	if _dialog == null or zeilen.is_empty():
+		return
+	if not _speech.is_empty() and _speech_giver == giver:
+		_speech.append_array(zeilen.duplicate())
 		return
 	_speech = zeilen.duplicate()
 	_speech_name = name_text
@@ -7511,18 +7524,26 @@ func _build_rim_walls(w: float, half: float) -> void:
 	var fels := Color(0.28, 0.22, 0.18)
 	# Vier Waende, je als Streifen aus Vierecken. Die Unterteilung in der HOEHE ist das, was den
 	# Verlauf traegt — quer reicht ein Viereck, dort aendert sich nichts.
+	# Genau `w` lang und nicht `w + 300`.
+	#
+	# Der Ueberstand von 150 m je Seite liess die vier Waende an den Ecken UEBEREINANDER liegen,
+	# und weil sie durchsichtig sind, addiert sich dort die Deckkraft: Im Bild standen an den
+	# Ecken dunklere Rechtecke mit sichtbaren Kanten. Bei durchsichtigen Flaechen ist eine
+	# Ueberlappung kein Sicherheitspuffer, sondern ein Fehler.
 	var seiten: Array = [
-		[Vector3(half, 0.0, 75.0), Vector3(w + 300.0, 0.0, 0.0)],            # Sued
-		[Vector3(half, 0.0, -w - 75.0), Vector3(w + 300.0, 0.0, 0.0)],       # Nord
-		[Vector3(-75.0, 0.0, -half), Vector3(0.0, 0.0, w + 300.0)],          # West
-		[Vector3(w + 75.0, 0.0, -half), Vector3(0.0, 0.0, w + 300.0)],       # Ost
+		[Vector3(half, 0.0, 75.0), Vector3(w, 0.0, 0.0)],                    # Sued
+		[Vector3(half, 0.0, -w - 75.0), Vector3(w, 0.0, 0.0)],               # Nord
+		[Vector3(-75.0, 0.0, -half), Vector3(0.0, 0.0, w)],                  # West
+		[Vector3(w + 75.0, 0.0, -half), Vector3(0.0, 0.0, w)],               # Ost
 	]
 	for seite in seiten:
 		var mitte: Vector3 = seite[0]
 		var laengs: Vector3 = seite[1] * 0.5
 		var st := SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var stufen: int = 12
+		# 28 Stufen und nicht 12: Der Verlauf laeuft ueber zwei Drittel der Hoehe, und mit zwoelf
+		# Stufen waren das acht Sprossen auf 139 m — im Bild als Treppe zu sehen.
+		var stufen: int = 28
 		for i in stufen:
 			var y0: float = RIM_H * float(i) / float(stufen)
 			var y1: float = RIM_H * float(i + 1) / float(stufen)
@@ -7697,8 +7718,6 @@ func _build_steg() -> void:
 func _auf_steg(p: Vector3) -> bool:
 	if _steg.is_empty():
 		return false
-	var d: Vector3 = p - Vector3(_steg["mitte"]).x * Vector3.RIGHT \
-		- Vector3(_steg["mitte"]).z * Vector3.BACK
 	var dx: float = p.x - Vector3(_steg["mitte"]).x
 	var dz: float = p.z - Vector3(_steg["mitte"]).z
 	var quer: float = dx if bool(_steg["nord"]) else dz
