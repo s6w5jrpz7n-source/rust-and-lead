@@ -72,7 +72,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_poi_walkable": 22,
 	"_test_town_walkable": 17,
 	"_test_enemy_attacks": 20,
-	"_test_daycycle": 204,
+	"_test_daycycle": 208,
 	"_test_dialog": 22,
 	"_test_memory_manager": 29,
 	"_test_encounter_manager": 24,
