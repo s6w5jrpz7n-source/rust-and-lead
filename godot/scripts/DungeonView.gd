@@ -15,12 +15,17 @@ extends Node3D
 ## kann man überall langlaufen und wird von Hängen gebremst; drinnen gibt es Wände, und eine
 ## Wand ist eine Entscheidung, kein Widerstand.
 ##
-## ## Was noch fehlt
+## ## Gekämpft wird nach denselben Regeln wie draußen
 ##
-## Schritt 3 aus `docs/PLAN_DUNGEON.md`: Gegner und Beute. Die Plätze dafür rechnet der
-## Grundriss bereits aus (`gegner`, `truhen`), hier stehen an ihnen bisher **Kisten**. Das ist
-## die im Plan vorgesehene Reihenfolge — nach Schritt 2 kann man hineingehen und sich verlaufen,
-## nach Schritt 3 ist es ein Kampf.
+## Der Stollen bringt **keine eigene Kampfrechnung** mit. Schaden, Panzerung, Zustände und Beute
+## kommen aus denselben Klassen wie draußen — `CombatEngine`, `CombatTarget`, `PlayerStats`,
+## `AmmoData`. Was hier steht, ist nur die **Verdrahtung**: wer wen sieht, wer auf wen zuläuft,
+## wann geschossen wird.
+##
+## Das ist die Grenze, an der ich es belasse. Zwei Kampf*rechnungen* würden auseinanderdriften,
+## sobald jemand eine Zahl ändert — zwei Verdrahtungen sind bloß zweimal Arbeit. Und die
+## Verdrahtung *muss* sich unterscheiden: Draußen hält man Abstand über offenes Gelände, drinnen
+## kommt alles durch einen 4 m breiten Gang auf einen zu.
 
 const SPIELER_TEMPO: float = 7.0
 ## Wie weit die Gürtellampe trägt. 9 m laut Plan — weit genug, um den Raum zu ahnen, zu kurz,
@@ -40,6 +45,26 @@ var _text: Label
 var _hinweis: Label
 var _treppe_pos: Vector3 = Vector3.ZERO
 var _eingang_pos: Vector3 = Vector3.ZERO
+var _truhen: Array = []
+var _gegner: Array = []
+var _hp: float = 0.0
+var _feuer: FireButton
+var _feuer_bereit: float = 0.0
+
+## Welche Gegner in welcher Ebene stehen. Ebene 1 ist der Vorschacht — Ratten und Grenzgänger,
+## also das, was man draußen schon kennt. Ebene 2 ist die Kaverne: Kläffer im Schwarm und ein
+## Konstrukt, und beide sind MECHANISCH. Das ist kein Zierrat, sondern eine Aussage über die
+## Waffe: Panzerung frisst Kinetik, und wer nur den Karabiner dabei hat, merkt das hier zuerst.
+const BESATZUNG: Dictionary = {
+	1: ["fauna", "fauna", "outlaw", "revolver"],
+	2: ["klaeffer", "klaeffer", "klaeffer", "konstrukt"],
+}
+## Ab wann ein Gegner den Spieler bemerkt. Kürzer als draußen: Im Gang steht man plötzlich
+## voreinander, und ein Kläffer, der einen quer durch den Berg riecht, nimmt dem Stollen jede
+## Ruhe zwischen den Kammern.
+const SICHT_M: float = 16.0
+const ANGRIFF_M: float = 2.0
+const SCHUSS_M: float = 26.0
 
 
 func _ready() -> void:
@@ -55,8 +80,10 @@ func _ready() -> void:
 	_boden_bauen()
 	_waende_bauen()
 	_kisten_bauen()
+	_gegner_bauen()
 	_spieler_bauen()
 	_oberflaeche_bauen()
+	_hp = float(PlayerStats.max_hp())
 
 
 ## Dunkelheit ist die halbe Miete. Ein Stollen mit Tageslicht ist ein Zimmer.
@@ -123,22 +150,25 @@ func _waende_bauen() -> void:
 	add_child(multi)
 
 
-## Kisten an den Plätzen, an denen später Truhen und Gegner stehen (Schritt 3 des Plans).
-## Sie sind kein Zierrat: Ohne irgendetwas im Raum sieht ein erzeugter Stollen wie ein Flur aus,
-## und man merkt beim Ablaufen nicht, ob der Grundriss taugt.
+## Truhen an ihre Plätze. Gegner macht `_gegner_bauen()`.
 func _kisten_bauen() -> void:
-	for art in [["truhen", Color(0.62, 0.48, 0.22), 1.1], ["gegner", Color(0.35, 0.30, 0.28), 0.8]]:
-		for f in (_plan[String(art[0])] as Array):
-			var mi := MeshInstance3D.new()
-			var box := BoxMesh.new()
-			var s: float = float(art[2])
-			box.size = Vector3(s, s, s)
-			mi.mesh = box
-			var mat := StandardMaterial3D.new()
-			mat.albedo_color = art[1]
-			mi.material_override = mat
-			mi.position = DungeonLayout.feld_zu_szene(f as Vector2i) + Vector3(0.0, s * 0.5, 0.0)
-			add_child(mi)
+	for f in (_plan["truhen"] as Array):
+		var mi := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(1.1, 0.8, 0.8)
+		mi.mesh = box
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.62, 0.48, 0.22)
+		# Sie glimmt schwach. In einem Stollen, der nur so weit hell ist, wie die Lampe trägt,
+		# findet man eine Truhe sonst nur durch Anstoßen — und eine Belohnung, die man
+		# übersieht, ist keine.
+		mat.emission_enabled = true
+		mat.emission = Color(0.85, 0.62, 0.25)
+		mat.emission_energy_multiplier = 0.35
+		mi.material_override = mat
+		mi.position = DungeonLayout.feld_zu_szene(f as Vector2i) + Vector3(0.0, 0.4, 0.0)
+		add_child(mi)
+		_truhen.append({ "node": mi, "offen": false })
 
 	# Die Treppe: ein dunkles Loch mit Rahmen. Sie muss sich vom Rest abheben, sonst sucht man
 	# in einem dunklen Stollen nach einem dunklen Kasten.
@@ -186,8 +216,23 @@ func _spieler_bauen() -> void:
 	_lampe.omni_range = LAMPE_M
 	_lampe.light_energy = 2.1
 	_lampe.light_color = Color(1.0, 0.86, 0.62)
-	_lampe.position = Vector3(0.0, 1.5, 0.0)
+	# Die Lampe haengt UEBER der Figur, nicht in ihr.
+	#
+	# Der erste Anlauf setzte sie auf 1,5 m — also mitten in den Koerper. Im Kontrollbild war
+	# der Held daraufhin eine pechschwarze Silhouette auf hellem Boden: Eine Punktlampe im
+	# Inneren beleuchtet alles ringsum und die Figur selbst gar nicht, weil deren Flaechen von
+	# der Lichtquelle WEGZEIGEN. Von 2,9 m faellt das Licht auf sie herab wie von einer Laterne
+	# am Stollendach, und man sieht, wen man da steuert.
+	_lampe.position = Vector3(0.0, 2.9, 0.0)
 	_spieler.add_child(_lampe)
+	# Und eine zweite, sehr schwache, die NUR die Figur aufhellt: Sie steht dem Spieler am
+	# naechsten und ist das Einzige, was er dauernd ansieht.
+	var vorne := OmniLight3D.new()
+	vorne.omni_range = 3.4
+	vorne.light_energy = 1.1
+	vorne.light_color = Color(0.86, 0.90, 1.0)
+	vorne.position = Vector3(0.0, 1.6, -1.7)
+	_spieler.add_child(vorne)
 
 	_kamera = Camera3D.new()
 	_kamera.current = true
@@ -211,19 +256,29 @@ func _oberflaeche_bauen() -> void:
 	_hinweis.position = Vector2(-190.0, -120.0)
 	_hinweis.add_theme_font_size_override("font_size", 18)
 	layer.add_child(_hinweis)
+	_feuer = FireButton.new()
+	layer.add_child(_feuer)
 	_kopf_setzen()
 
 
 func _kopf_setzen() -> void:
 	var name: String = "Der Vorschacht" if GameState.stollen_ebene == 1 else "Die Kaverne"
-	_text.text = "⌂ %s — Ebene %d   ▩ %d Kammern" % [name, GameState.stollen_ebene,
-		(_plan["raeume"] as Array).size()]
+	var steht: int = 0
+	for e in _gegner:
+		if (e["target"] as CombatTarget).health > 0:
+			steht += 1
+	_text.text = "⌂ %s — Ebene %d   ▩ %d Kammern   ❤ %d/%d   ¤ %d   ☠ %d/%d" % [
+		name, GameState.stollen_ebene, (_plan["raeume"] as Array).size(),
+		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold,
+		_gegner.size() - steht, _gegner.size()]
 
 
 func _process(delta: float) -> void:
 	_gehen(delta)
 	_kamera_nachziehen()
+	_kampf(delta)
 	_naehe_pruefen()
+	_kopf_setzen()
 
 
 ## Bewegung mit Wand statt Hang.
@@ -325,6 +380,10 @@ func _stick_ziehen(at: Vector2) -> void:
 func _benutzen() -> void:
 	if _spieler == null:
 		return
+	# Truhen zuerst: Wer neben einer steht, will sie oeffnen und nicht versehentlich die Ebene
+	# wechseln, wenn beides dicht beieinander liegt.
+	if _truhe_oeffnen():
+		return
 	if _spieler.position.distance_to(_treppe_pos) <= NAH_M:
 		if GameState.stollen_ebene < 2:
 			GameState.stollen_ebene += 1
@@ -343,3 +402,178 @@ func _verlassen() -> void:
 	GameState.stollen_ebene = 0
 	GameState.stollen_startwert = 0
 	get_tree().change_scene_to_file("res://scenes/Overworld.tscn")
+
+## Gegner an ihre Plätze — aus derselben Tabelle wie draußen.
+##
+## `CombatTarget.from_type()` liefert Leben, Panzerung, Tempo und Beute; der Stollen legt nur
+## fest, WER hier steht. Eigene Zahlen hätte er nicht verdient: Ein Kläffer muss drinnen so viel
+## aushalten wie draußen, sonst lernt man beim Spielen zweierlei Widersprüchliches.
+func _gegner_bauen() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("besatzung-%d-%d" % [GameState.stollen_startwert, GameState.stollen_ebene])
+	var arten: Array = BESATZUNG.get(GameState.stollen_ebene, BESATZUNG[1])
+	for f in (_plan["gegner"] as Array):
+		var art: String = String(arten[rng.randi() % arten.size()])
+		var ziel: CombatTarget = CombatTarget.from_type(art)
+		var knoten: Node3D = AssetRegistry.instantiate(art, 1.4)
+		if knoten == null:
+			knoten = MeshInstance3D.new()
+			var box := BoxMesh.new()
+			box.size = Vector3(0.9, 1.4, 0.9)
+			(knoten as MeshInstance3D).mesh = box
+		knoten.position = DungeonLayout.feld_zu_szene(f as Vector2i)
+		add_child(knoten)
+		# Die Lebensleiste über dem Kopf, wie draußen: Ohne sie sieht man nur, DASS man trifft,
+		# nicht wie weit man ist.
+		var leiste := MeshInstance3D.new()
+		var lb := BoxMesh.new()
+		lb.size = Vector3(1.0, 0.09, 0.02)
+		leiste.mesh = lb
+		var lm := StandardMaterial3D.new()
+		lm.albedo_color = Color(0.85, 0.22, 0.18)
+		lm.emission_enabled = true
+		lm.emission = Color(0.85, 0.22, 0.18)
+		lm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		leiste.material_override = lm
+		leiste.position = Vector3(0.0, 1.75, 0.0)
+		knoten.add_child(leiste)
+		_gegner.append({ "node": knoten, "target": ziel, "bar": leiste, "kaltzeit": 0.0 })
+
+
+## Die Runde: Gegner laufen, greifen an, der Spieler schießt zurück.
+func _kampf(delta: float) -> void:
+	if _spieler == null:
+		return
+	var jetzt: int = Time.get_ticks_msec()
+	for e in _gegner:
+		var t: CombatTarget = e["target"]
+		if t.health <= 0:
+			continue
+		var n: Node3D = e["node"]
+		# Schadensbrand tickt weiter, auch wenn niemand schießt — sonst wäre Säure eine
+		# Anzeige ohne Wirkung.
+		CombatEngine.tick_dot(t, jetzt, delta)
+		if t.health <= 0:
+			_faellt(e)
+			continue
+		var d: float = n.position.distance_to(_spieler.position)
+		if d > SICHT_M or t.is_stunned(jetzt):
+			continue
+		if d > ANGRIFF_M:
+			# Zu Fuß auf den Spieler zu, aber NUR über begehbare Felder: Ohne diese Prüfung
+			# laufen sie durch den Fels und stehen plötzlich in der Kammer nebenan.
+			var richtung: Vector3 = (_spieler.position - n.position).normalized()
+			var tempo: float = float(CombatData.ENEMY_TYPES[t.type_id]["speed"]) * 0.03
+			var schritt: Vector3 = richtung * tempo * delta
+			var probe := Vector3(n.position.x + schritt.x, 0.0, n.position.z)
+			if DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(probe)):
+				n.position.x = probe.x
+			probe = Vector3(n.position.x, 0.0, n.position.z + schritt.z)
+			if DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(probe)):
+				n.position.z = probe.z
+			n.rotation.y = atan2(-richtung.x, -richtung.z)
+		else:
+			e["kaltzeit"] = float(e["kaltzeit"]) - delta
+			if float(e["kaltzeit"]) <= 0.0:
+				e["kaltzeit"] = CombatData.MELEE_INTERVAL_SEC
+				_hp -= float(t.contact_dps) * CombatData.MELEE_INTERVAL_SEC \
+					* CombatEngine.player_damage_taken_mul(PlayerStats.player_armor())
+				if _hp <= 0.0:
+					_ohnmacht()
+					return
+	_feuer_bereit -= delta
+	if _feuern_gedrueckt() and _feuer_bereit <= 0.0:
+		_schiessen(jetzt)
+	if _feuer != null:
+		_feuer.set_state(_feuern_gedrueckt(), _naechster() != null)
+
+
+func _feuern_gedrueckt() -> bool:
+	return (_feuer != null and _feuer.pressed) or Input.is_key_pressed(KEY_SPACE)
+
+
+## Der nächste lebende Gegner in Schussweite — gezielt wird automatisch, wie draußen. Auf einem
+## Telefon gibt es keinen zweiten Daumen für einen Zielstick.
+func _naechster() -> Dictionary:
+	var beste: Dictionary = {}
+	var d_min: float = SCHUSS_M
+	for e in _gegner:
+		if (e["target"] as CombatTarget).health <= 0:
+			continue
+		var d: float = (e["node"] as Node3D).position.distance_to(_spieler.position)
+		if d < d_min:
+			d_min = d
+			beste = e
+	return beste
+
+
+func _schiessen(jetzt: int) -> void:
+	var waffe: String = GameState.weapon_id
+	if waffe == "":
+		return
+	var e: Dictionary = _naechster()
+	if e.is_empty():
+		return
+	_feuer_bereit = float(PlayerStats.fire_ms(waffe)) / 1000.0
+	var t: CombatTarget = e["target"]
+	var art: String = String(CombatData.WEAPONS[waffe]["type"])
+	CombatEngine.resolve_hit(art, t, PlayerStats.damage_per_bullet(waffe),
+		PlayerStats.armor_pen(), jetzt)
+	_leiste_setzen(e)
+	if t.health <= 0:
+		_faellt(e)
+
+
+func _leiste_setzen(e: Dictionary) -> void:
+	var t: CombatTarget = e["target"]
+	var bar: MeshInstance3D = e["bar"]
+	bar.scale.x = clampf(float(t.health) / maxf(1.0, float(t.max_health)), 0.0, 1.0)
+
+
+## Ein Gegner faellt: Gold und Munition wie draußen, das Modell bleibt als Leiche liegen.
+func _faellt(e: Dictionary) -> void:
+	var t: CombatTarget = e["target"]
+	var n: Node3D = e["node"]
+	GameState.gold += t.gold
+	GameState.kills += 1
+	GameState.add_xp(CombatData.xp_for_kill(t))
+	# Auf die Seite kippen statt verschwinden. Wer im Dunkeln kämpft, verliert sonst den
+	# Ueberblick, wen er schon erledigt hat — und laeuft dreimal um dieselbe Kammer.
+	n.rotation.x = PI * 0.5
+	(e["bar"] as MeshInstance3D).visible = false
+	_kopf_setzen()
+
+
+## Ohnmacht: zurueck an die Oberflaeche statt Bildschirmtod.
+##
+## Der Stollen behaelt seinen Startwert NICHT — wer hier unten liegen bleibt, faengt beim
+## naechsten Abstieg von vorn an. Ein Dungeon, in den man nach dem Sterben mit geleerten
+## Kammern zurueckkehrt, ist kein Risiko mehr.
+func _ohnmacht() -> void:
+	GameState.gold = maxi(0, GameState.gold - 10)
+	_verlassen()
+
+
+## Truhe oeffnen, wenn eine in Reichweite liegt.
+func _truhe_oeffnen() -> bool:
+	for tr in _truhen:
+		if bool(tr["offen"]):
+			continue
+		var n: MeshInstance3D = tr["node"]
+		if n.position.distance_to(_spieler.position) > NAH_M:
+			continue
+		tr["offen"] = true
+		(n.material_override as StandardMaterial3D).emission_energy_multiplier = 0.0
+		(n.material_override as StandardMaterial3D).albedo_color = Color(0.26, 0.21, 0.13)
+		# Beute nach denselben Regeln wie draußen. Die Seltenheit steigt mit der Ebene: Wer
+		# tiefer geht, soll dafuer etwas sehen, sonst ist die zweite Ebene nur laenger.
+		var gold: int = 18 + GameState.stollen_ebene * 22
+		GameState.gold += gold
+		var stueck: Dictionary = ProgressionManager.make_gear(
+			String(ProgressionManager.GEAR_SLOTS.keys()[randi() % ProgressionManager.GEAR_SLOTS.size()]),
+			"rare" if GameState.stollen_ebene < 2 else "epic")
+		BagManager.add(stueck)
+		_hinweis.text = "▩ %d ¤ und %s" % [gold, String(stueck.get("name", "ein Fundstueck"))]
+		_kopf_setzen()
+		return true
+	return false

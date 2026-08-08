@@ -83,7 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
-	"_test_stollen": 25,
+	"_test_stollen": 33,
 }
 
 
@@ -5199,4 +5199,46 @@ func _test_stollen() -> void:
 	# Und es ist dunkel. Ein Stollen mit Tageslicht ist ein Zimmer.
 	_check("Es ist dunkel, mit einer Lampe am Guertel",
 		dv_q.contains("OmniLight3D") and dv_q.contains("omni_range = LAMPE_M"))
+
+	# ── Gegner und Beute ─────────────────────────────────────────────────────
+	#
+	# Der Stollen bringt KEINE eigene Kampfrechnung mit. Zwei Rechnungen wuerden auseinander
+	# driften, sobald jemand eine Zahl aendert — und dann lernte man beim Spielen zweierlei
+	# Widerspruechliches: Ein Klaeffer muss drinnen so viel aushalten wie draussen.
+	_check("Der Stollen rechnet den Kampf nicht selbst",
+		dv_q.contains("CombatEngine.resolve_hit(") and dv_q.contains("CombatTarget.from_type("))
+	_check("Und die Beute auch nicht", dv_q.contains("ProgressionManager.make_gear(")
+		and dv_q.contains("BagManager.add("))
+	_check("Erfahrung kommt aus derselben Tabelle",
+		dv_q.contains("CombatData.xp_for_kill("))
+	# Jede Besatzungsart muss es wirklich geben — ein Tippfehler waere sonst ein Absturz beim
+	# Betreten, und zwar erst auf Ebene 2.
+	var OWD = load("res://scripts/DungeonView.gd")
+	var unbekannt: Array[String] = []
+	for ebene in (OWD.BESATZUNG as Dictionary):
+		for art in (OWD.BESATZUNG[ebene] as Array):
+			if not CombatData.ENEMY_TYPES.has(String(art)):
+				unbekannt.append(String(art))
+	_check("Jede Besatzungsart steht in der Gegnertabelle", unbekannt.is_empty(),
+		", ".join(unbekannt))
+	# Ebene 2 ist MECHANISCH — das ist eine Aussage ueber die Waffe: Panzerung frisst Kinetik,
+	# und wer nur den Karabiner dabei hat, merkt das hier zuerst.
+	var mech: int = 0
+	for art in (OWD.BESATZUNG[2] as Array):
+		if String(CombatData.ENEMY_TYPES[String(art)]["class"]) == CombatData.MECHANICAL:
+			mech += 1
+	_check("Die Kaverne ist ganz mechanisch (%d von %d)"
+		% [mech, (OWD.BESATZUNG[2] as Array).size()],
+		mech == (OWD.BESATZUNG[2] as Array).size())
+	# Gegner laufen NUR ueber begehbare Felder. Ohne die Pruefung gehen sie durch den Fels und
+	# stehen ploetzlich in der Kammer nebenan — und der Grundriss waere umsonst gerechnet.
+	_check("Gegner laufen nicht durch den Fels",
+		dv_q.count("DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(probe))") == 2)
+	# Truhen gehen VOR der Treppe: Wer neben beidem steht, will die Truhe und nicht
+	# versehentlich die Ebene wechseln.
+	_check("Die Truhe hat Vorrang vor der Treppe",
+		dv_q.find("if _truhe_oeffnen():") < dv_q.find("distance_to(_treppe_pos) <= NAH_M"))
+	# Und wer unten liegen bleibt, faengt beim naechsten Abstieg von vorn an. Ein Dungeon, in
+	# den man nach dem Sterben mit geleerten Kammern zurueckkehrt, ist kein Risiko mehr.
+	_check("Ohnmacht wirft einen aus dem Stollen", dv_q.contains("func _ohnmacht"))
 

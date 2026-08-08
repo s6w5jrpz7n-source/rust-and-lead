@@ -77,7 +77,7 @@ läuft; groß genug, dass man mit vollem Beutel herauskommt und deshalb ins Inve
 
 1. ~~Szenenwechsel mit Rückweg (ohne Inhalt, nur rein und raus)~~ **Erledigt.**
 2. ~~Raumgenerator + Wände + Dunkelheit, mit Kisten-Platzhaltern~~ **Erledigt.**
-3. Gegner und Beute — *offen*
+3. ~~Gegner und Beute~~ **Erledigt.**
 4. Deine vier Modelle ersetzen die Platzhalter — *offen, wartet auf dich*
 
 Nach Schritt 1 kann man schon hineingehen, nach Schritt 3 ist er spielbar. Deine Modelle sind der
@@ -97,8 +97,23 @@ warum der Test 200 Grundrisse erzeugen und bei jedem mit einer Flutfüllung nach
 vom Eingang wirklich jedes Feld erreichbar ist. Eine Treppe hinter einer Wand sieht auf jedem
 Bild in Ordnung aus — nur nachlaufen findet sie.
 
-**Was jetzt drinsteht, sind Kisten.** Die Plätze für Truhen und Gegner rechnet der Grundriss
-bereits aus; an ihnen stehen Würfel. Das ist Schritt 3.
+**Gekämpft wird nach denselben Regeln wie draußen.** Der Stollen bringt *keine eigene
+Kampfrechnung* mit — Schaden, Panzerung, Zustände, Erfahrung und Beute kommen aus
+`CombatEngine`, `CombatTarget`, `PlayerStats`, `ProgressionManager`. Hier steht nur die
+Verdrahtung: wer wen sieht, wer auf wen zuläuft, wann geschossen wird. Zwei Kampf*rechnungen*
+würden auseinanderdriften, sobald jemand eine Zahl ändert; zwei Verdrahtungen sind bloß zweimal
+Arbeit. Und die *muss* sich unterscheiden — draußen hält man Abstand über offenes Gelände,
+drinnen kommt alles durch einen 4 m breiten Gang.
+
+**Ebene 1** stellt Ratten, Grenzgänger und Revolverhelden — das, was man von draußen kennt.
+**Ebene 2** ist vollständig *mechanisch*: Kläffer im Schwarm und ein Konstrukt. Das ist eine
+Aussage über die Waffe — Panzerung frisst Kinetik, und wer nur den Karabiner dabei hat, merkt
+das hier zuerst.
+
+Gegner laufen **nur über begehbare Felder**; ohne diese Prüfung gingen sie durch den Fels und
+der ganze Grundriss wäre umsonst gerechnet. Wer unten liegen bleibt, wird an die Oberfläche
+geworfen und fängt beim nächsten Abstieg von vorn an — ein Dungeon, in den man nach dem Sterben
+mit geleerten Kammern zurückkehrt, ist kein Risiko mehr.
 
 ### Zwei Dinge, die erst das Kontrollbild gezeigt hat
 
@@ -110,3 +125,8 @@ tree" ab und behält die Ausgangslage. Erst das dritte Bild zeigte den Grundriss
 
 Das ist genau der Grund für Kontrollbilder: Die Erreichbarkeit ist bewiesen, aber ob man in
 einem dunklen Stollen überhaupt etwas *sieht*, beantwortet keine Rechnung.
+
+Und dann noch einmal: Der Held stand als **pechschwarze Silhouette** auf hellem Boden. Die
+Gürtellampe saß auf 1,5 m — also mitten im Körper, und eine Punktlampe im Inneren beleuchtet
+alles ringsum und die Figur selbst gar nicht, weil deren Flächen von ihr *wegzeigen*. Jetzt
+hängt sie auf 2,9 m wie eine Laterne am Stollendach, dazu ein schwaches Licht von vorn.

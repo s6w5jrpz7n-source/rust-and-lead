@@ -18,6 +18,9 @@ var _flut: DirectionalLight3D
 func _ready() -> void:
 	GameState.stollen_startwert = 4242
 	GameState.stollen_ebene = 1
+	# Mit Waffe, sonst schiesst niemand und der Feuerknopf meldet dauerhaft „kein Ziel".
+	GameState.weapon_id = "karabiner"
+	GameState.gold = 120
 	add_child(load("res://scenes/Dungeon.tscn").instantiate())
 	# Eine EIGENE Kamera, die spaeter uebernimmt. Die Kamera des Stollens wird jeden Frame an
 	# den Spieler gezogen — eine dort gesetzte Position waere im naechsten Bild wieder weg.
