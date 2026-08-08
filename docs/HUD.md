@@ -49,8 +49,11 @@ zusammengehören.
 * Links der Joystick *(steht, zeichnet nur beim Ziehen)*
 * Rechts der Abzug mit Munition darunter *(steht)*
 * Mitte die Aktionsleiste, die nur erscheint, wenn etwas in Reichweite ist *(steht)*
-* **Neu: eine Gürtelleiste** für Heiltrank und die zwei, drei Dinge, die man im Kampf braucht.
-  Zurzeit gibt es Tränke im Spielstand (`potions`) und keinen Weg, sie zu benutzen.
+* **Die Gürtelleiste** über dem Abzug — Heiltrank. *(steht)* Sie sitzt dort und nicht neben dem
+  Joystick: Wer trinkt, hat gerade Schaden genommen und den Daumen an der Schusshand. Der Knopf
+  wird **ausgegraut**, wenn nichts zu holen ist, statt zu verschwinden — ein Knopf, der
+  verschwindet, lässt die Ecke springen, und man greift daneben, weil der Daumen die alte Stelle
+  kennt. Auf der Tastatur `[F]`.
 
 ### Was verschwinden soll
 
@@ -114,6 +117,9 @@ nie den Start verhindern.
 ## Die Reihenfolge, die ich vorschlagen würde
 
 1. **Statusmarken.** Größte Lücke: Das Kampfsystem verteilt Zustände, die man nicht sehen kann.
-2. **Die Gürtelleiste.** Tränke existieren und sind unbenutzbar.
+2. ~~Die Gürtelleiste. Tränke existieren und sind unbenutzbar.~~ **Erledigt.** Ein Trank heilt
+   **35 % des Höchstwerts** und nicht eine feste Zahl: Eine feste Zahl ist auf Stufe 1 ein halbes
+   Leben und auf Stufe 20 ein Tropfen. Bei vollem Leben wird keiner verbraucht — auf dem Handy
+   ist das sonst ein Fehlgriff, den niemand rückgängig machen kann.
 3. **Rahmen für Karte und Tafeln.** Macht aus zusammenhanglosen Kästen eine Oberfläche.
 4. **Symbole statt Emoji.** Am sichtbarsten, aber am wenigsten folgenreich — deshalb zuletzt.

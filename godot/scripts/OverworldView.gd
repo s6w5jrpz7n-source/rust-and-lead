@@ -4455,10 +4455,33 @@ const HUD_RAND: float = 12.0
 const PORTRAIT_PX: float = 72.0
 const BALKEN_W: float = 210.0
 const BALKEN_H: float = 16.0
+const GURT_PX: float = 54.0
+var _gurt: HBoxContainer = null
+var _trank_btn: Button = null
 var _portrait_btn: TextureButton = null
 var _portrait_rahmen: TextureRect = null
 var _hp_bar: ProgressBar = null
 var _xp_bar: ProgressBar = null
+
+
+## Einen Trank trinken — und sagen, was passiert ist.
+##
+## Die Regel selbst steht in `GameState`, nicht hier: Wie viel ein Trank heilt, ist eine Frage
+## der Spielbalance und keine der Oberflaeche. Die Oberflaeche fragt nur nach und zeigt an.
+func _trank_trinken() -> void:
+	if _in_cine() or _in_flight() or _overlay_open() or _wach_left > 0.0:
+		return
+	var neu_hp: float = GameState.trank_trinken(_hp)
+	if neu_hp < 0.0:
+		if GameState.potions <= 0:
+			_say("🧪 Kein Trank mehr.", 1.6)
+		else:
+			_say("🧪 Nicht noetig — du bist heil.", 1.6)
+		return
+	var geheilt: int = roundi(neu_hp - _hp)
+	_hp = neu_hp
+	_say("🧪 Trank getrunken — %d Leben zurueck (%d uebrig)." % [geheilt, GameState.potions], 2.0)
+	_update_hud()
 
 
 ## Ein Balken im Ton der Welt: dunkle Fassung, warme Fuellung, kein Rahmen.
@@ -4580,6 +4603,27 @@ func _build_hud() -> void:
 	_ammo_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_ammo_lbl.add_theme_font_size_override("font_size", 15)
 	layer.add_child(_ammo_lbl)
+	# ── Die Guertelleiste ─────────────────────────────────────────────────────
+	#
+	# Traenke standen seit jeher im Spielstand (`GameState.potions`, drei zum Start) und es gab
+	# keinen Weg, sie zu benutzen — weder auf dem Handy noch auf der Tastatur. Ein Vorrat, den
+	# man nicht ausgeben kann, ist kein Vorrat, sondern eine Zahl.
+	#
+	# Sie sitzt ueber dem Abzug, nicht neben dem Joystick: Wer trinkt, hat gerade Schaden
+	# genommen und den Daumen an der Schusshand. Und sie ist AUS, wenn nichts zu holen ist —
+	# ausgegraut statt versteckt, damit die Ecke nicht springt.
+	_gurt = HBoxContainer.new()
+	_gurt.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_gurt.position = Vector2(-FireButton.RADIUS * 2.0 - FireButton.MARGIN - 8.0,
+		-FireButton.MARGIN - FireButton.RADIUS * 2.0 - 62.0)
+	_gurt.add_theme_constant_override("separation", 8)
+	layer.add_child(_gurt)
+	_trank_btn = Button.new()
+	_trank_btn.custom_minimum_size = Vector2(GURT_PX, GURT_PX)
+	_trank_btn.add_theme_font_size_override("font_size", 20)
+	_trank_btn.tooltip_text = "Trank trinken  [F]"
+	_trank_btn.pressed.connect(_trank_trinken)
+	_gurt.add_child(_trank_btn)
 	# Aktionsleiste unten Mitte: erscheint nur, wenn etwas in Reichweite ist. Ohne sie gäbe es
 	# auf dem Handy keinen Weg, jemanden anzusprechen oder die Bahn zu nehmen — das ging bisher
 	# nur über die Tastatur, also ausgerechnet nicht auf der Zielplattform.
@@ -5328,6 +5372,8 @@ func _input(event: InputEvent) -> void:
 			_close_world_map()
 		elif event.keycode == KEY_R:
 			_begin_reload()
+		elif event.keycode == KEY_F:
+			_trank_trinken()
 		elif event.keycode == KEY_C:
 			_toggle_character()
 		elif event.keycode == KEY_PLUS or event.keycode == KEY_EQUAL or event.keycode == KEY_KP_ADD:
@@ -6798,6 +6844,11 @@ func _update_hud() -> void:
 	var q: String = _active_quest_line()
 	if q != "":
 		_hud.text += "\n📜 " + q
+	if _trank_btn != null:
+		_trank_btn.text = "🧪%d" % GameState.potions
+		# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen —
+		# und man greift dann daneben, weil der Daumen die alte Stelle kennt.
+		_trank_btn.disabled = GameState.potions <= 0 or _hp >= float(PlayerStats.max_hp()) - 0.5
 	if _ammo_lbl != null and _weapon_id == "":
 		# Leere Haende: Es gibt kein Magazin, also auch keinen Zaehler. Ein „0/0" waere die
 		# Behauptung, hier fehle Munition — es fehlt aber die WAFFE, und das steht schon oben.

@@ -284,6 +284,25 @@ func add_potion(amount: int = 1) -> void:
 	potions += maxi(0, amount)
 
 
+## Wie viel ein Trank heilt — als ANTEIL, nicht als feste Zahl.
+##
+## Eine feste Zahl ist auf Stufe 1 ein halbes Leben und auf Stufe 20 ein Tropfen. Ein Anteil
+## bleibt ueber die ganze Kampagne dasselbe Versprechen: „ungefaehr ein Drittel zurueck".
+const TRANK_ANTEIL: float = 0.35
+
+
+## Einen Trank trinken. `false`, wenn keiner da ist oder es nichts zu heilen gibt.
+##
+## Die zweite Bedingung ist keine Schikane, sondern Schutz: Auf dem Handy sitzt der Knopf dort,
+## wo der Daumen ohnehin liegt, und ein Trank, der bei vollem Leben verschwindet, ist ein
+## Fehlgriff, den niemand rueckgaengig machen kann.
+func trank_trinken(hp: float) -> float:
+	if potions <= 0 or hp >= float(max_hp()) - 0.5:
+		return -1.0
+	potions -= 1
+	return minf(float(max_hp()), hp + float(max_hp()) * TRANK_ANTEIL)
+
+
 # ── Township-Gebäude ──────────────────────────────────────────────────────────
 func building_level(id: String) -> int:
 	return int(economy.get(id, 0))

@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 46,
+	"_test_titel_und_erster": 54,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1115,6 +1115,38 @@ func _test_titel_und_erster() -> void:
 	# anschlaegt, verbietet die Begruendung.
 	_check("Der Tastaturhinweis ist aus dem Kopfbereich raus",
 		not ow_q.contains('· %s   [Tab] Inventar"'))
+
+	# ── Die Guertelleiste ─────────────────────────────────────────────────────
+	#
+	# Traenke standen seit jeher im Spielstand (drei zum Start) und es gab keinen Weg, sie zu
+	# benutzen — weder auf dem Handy noch auf der Tastatur. Ein Vorrat, den man nicht ausgeben
+	# kann, ist kein Vorrat, sondern eine Zahl.
+	_check("Es gibt einen Trankknopf", ow_q.contains("_trank_btn.pressed.connect(_trank_trinken)"))
+	_check("Und eine Taste dafuer", ow_q.contains("event.keycode == KEY_F"))
+	# Die Regel steht in GameState, nicht in der Oberflaeche: Wie viel ein Trank heilt, ist eine
+	# Frage der Balance und keine der Anzeige.
+	var t_hp: int = GameState.potions
+	GameState.potions = 2
+	var voll: float = float(GameState.max_hp())
+	var nach: float = GameState.trank_trinken(voll * 0.4)
+	_check("Ein Trank heilt anteilig (%.0f → %.0f von %.0f)" % [voll * 0.4, nach, voll],
+		nach > voll * 0.4 and nach <= voll)
+	_check("Und wird dabei verbraucht", GameState.potions == 1)
+	# Bei vollem Leben passiert NICHTS. Auf dem Handy sitzt der Knopf dort, wo der Daumen
+	# ohnehin liegt, und ein Trank, der bei vollem Leben verschwindet, ist ein Fehlgriff, den
+	# niemand rueckgaengig machen kann.
+	_check("Bei vollem Leben wird keiner verschwendet",
+		GameState.trank_trinken(voll) < 0.0 and GameState.potions == 1)
+	GameState.potions = 0
+	_check("Und ohne Vorrat passiert gar nichts", GameState.trank_trinken(1.0) < 0.0)
+	GameState.potions = t_hp
+	# Anteil statt fester Zahl: Eine feste Zahl ist auf Stufe 1 ein halbes Leben und auf Stufe
+	# 20 ein Tropfen.
+	_check("Geheilt wird ein Anteil (%.0f %%)" % (GameState.TRANK_ANTEIL * 100.0),
+		GameState.TRANK_ANTEIL > 0.1 and GameState.TRANK_ANTEIL < 0.6)
+	# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen.
+	_check("Der Knopf wird ausgegraut, nicht versteckt",
+		ow_q.contains("_trank_btn.disabled = GameState.potions <= 0"))
 
 	# ── Der erste Gegner ──────────────────────────────────────────────────────
 	var OW4 = load("res://scripts/OverworldView.gd")
