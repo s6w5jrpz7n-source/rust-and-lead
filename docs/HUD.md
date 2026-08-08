@@ -2,6 +2,14 @@
 
 ## Wo es steht
 
+> **Zwei Fehler, die erst das Kontrollbild gezeigt hat.** Der Porträtrahmen stand 470 px groß über
+> dem halben Bildschirm, obwohl ihm 72 zugewiesen waren: Godots Vorgabe für `TextureRect` ist
+> `EXPAND_KEEP_SIZE`, die Textur bestimmt also die Mindestgröße und zieht ein gesetztes `size`
+> beim Eintritt in den Baum wieder hoch. Und die Biom-Tönung zog eine harte Linie quer durch die
+> Wüste — sie war ein Zylinder mit gleichmäßiger Deckkraft. Ein Biom ist aber keine
+> Verwaltungsgrenze: Es hört nicht auf, es wird weniger. Jetzt ein Fächer mit Alpha-Verlauf, die
+> inneren 62 % satt, das äußere Drittel läuft aus.
+
 Gebaut ist bisher der **erste Schritt**: das Porträt oben links, ein Rahmen darum, Leben und
 Erfahrung als Balken daneben. Alles andere ist noch Text auf schwarzem Grund.
 

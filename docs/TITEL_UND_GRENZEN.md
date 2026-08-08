@@ -202,8 +202,17 @@ bis der Boden abfällt —, damit das Band auch dann noch stimmt, wenn jemand de
 > Grund — jeder Schritt dort wäre ein Schritt „in den Riss" gewesen, und das Spiel hätte mit einer
 > bewegungslosen Figur angefangen. Jetzt wird zuerst die Nähe geprüft und erst dann die Höhe.
 
-### Noch offen
+### Und wie man hinüberkommt
 
-Wie man später hinüberkommt. Eine Brücke ist die naheliegende Antwort und die langweiligste.
-Vorschlag: ein **umgekippter Zugwaggon**, der irgendwo als Steg quer darin liegt — dann ist das
-Hinüberkommen ein Ort, den man findet, und keine Freischaltung.
+Ein **gestürzter Kessel** — eine umgekippte Werkslok, die quer im Spalt liegt. Eine Brücke wäre
+die naheliegende Antwort und die langweiligste: Sie sagt *„hier ist der Übergang vorgesehen"*.
+Ein Waggon, der irgendwann irgendwo hineingestürzt ist, sagt etwas anderes — dass hier einmal
+etwas passiert ist, und dass der Weg ein **Fund** ist und keine Freischaltung.
+
+Deshalb liegt er auch **von Anfang an** da. Nichts wird aufgeschlossen; man muss nur die richtige
+Stelle finden. Und die liegt bei **38 % der Risslänge**, nicht in der Mitte: Die Mitte wäre die
+Stelle, an der man zuerst nachsieht, und dann wäre das Suchen keins.
+
+Auf dem Steg ist der Riss kein Riss — sonst wäre er Deko. Die Figur steht dabei **darauf** und
+nicht im Boden darunter: `_boden_hoehe()` liefert die Steghöhe statt der Geländehöhe, überall dort,
+wo sonst `height_at()` stünde.

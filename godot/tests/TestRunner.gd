@@ -51,6 +51,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_reload": 18,
 	"_test_weapons": 13,
 	"_test_titel_und_erster": 63,
+	"_test_steg_und_biome": 9,
 	"_test_riss": 15,
 	"_test_terrain": 25,
 	"_test_winding": 4,
@@ -1236,6 +1237,45 @@ func _test_titel_und_erster() -> void:
 	# Und was der Held ausspricht, liegt auch da: Der Dampfkern wird nicht ausgewuerfelt.
 	_check("Der Kern, den er nennt, liegt garantiert da",
 		ow_q.contains('"id": "dampfkern", "amount": 1'))
+
+
+## Der Steg ueber den Riss und die weichen Biom-Kanten.
+func _test_steg_und_biome() -> void:
+	print("· Steg & Biom-Kanten")
+	var ow_q: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	# ── Der Steg ──────────────────────────────────────────────────────────────
+	#
+	# Eine Bruecke waere die naheliegende Antwort und die langweiligste: Sie sagt „hier ist der
+	# Uebergang vorgesehen". Ein Waggon, der irgendwann irgendwo hineingestuerzt ist, sagt, dass
+	# hier einmal etwas passiert ist — und dass der Weg ein FUND ist und keine Freischaltung.
+	_check("Es gibt einen Steg ueber den Riss", ow_q.contains("func _build_steg"))
+	_check("Und er ist ein gestuerzter Kessel, keine Bruecke",
+		ow_q.contains("Der gestürzte Kessel") and ow_q.contains('instantiate("locomotive"'))
+	# Er liegt von Anfang an da — nichts wird aufgeschlossen.
+	_check("Er wird nicht freigeschaltet, sondern gefunden",
+		not ow_q.contains("steg_frei") and not ow_q.contains("GameState.steg"))
+	# Und nicht in der Mitte: Die Mitte waere die Stelle, an der man zuerst nachsieht, und dann
+	# waere das Suchen keins.
+	var OW5 = load("res://scripts/OverworldView.gd")
+	_check("Und nicht in der Mitte (%.0f %% der Laenge)" % (OW5.STEG_ANTEIL * 100.0),
+		absf(OW5.STEG_ANTEIL - 0.5) > 0.05)
+	# Auf dem Steg ist der Riss kein Riss — sonst waere er Deko.
+	_check("Auf dem Steg sperrt der Riss nicht",
+		ow_q.contains("if _auf_steg(p):\n\t\treturn false"))
+	# Und die Figur steht DARAUF und nicht im Boden darunter.
+	_check("Die Figur steht auf dem Steg, nicht im Spalt",
+		ow_q.contains("next.y = _boden_hoehe(next.x, next.z)"))
+
+	# ── Die Biom-Kanten ───────────────────────────────────────────────────────
+	#
+	# Die Toenung war ein Zylinder mit gleichmaessiger Deckkraft, und im Bild zog sich dadurch
+	# eine harte Linie quer durch die Wueste: hier gruenlich, einen Schritt weiter sandfarben.
+	# Ein Biom ist aber keine Verwaltungsgrenze — es hoert nicht auf, es wird weniger.
+	_check("Die Biom-Toenung blendet am Rand aus", ow_q.contains("func _biom_scheibe"))
+	_check("Und der Zylinder mit harter Kante ist weg",
+		not ow_q.contains("cyl.top_radius = r_m"))
+	_check("Der Kern bleibt satt (%.0f %%)" % (OW5.BIOM_KERN * 100.0),
+		OW5.BIOM_KERN > 0.4 and OW5.BIOM_KERN < 0.85)
 
 
 func _test_riss() -> void:

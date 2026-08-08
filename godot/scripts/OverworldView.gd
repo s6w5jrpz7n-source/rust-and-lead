@@ -1169,6 +1169,7 @@ func _ready() -> void:
 	_build_horse()
 	_build_sfx()
 	_build_riss()
+	_build_steg()
 	_build_moon()
 	_spawn_pack()
 	_build_chests()
@@ -2118,15 +2119,8 @@ func _build_ground_and_biomes() -> void:
 	}
 	for id in WorldManager.BIOME_ZONE_ORDER:
 		var b: Dictionary = WorldManager.BIOMES[id]
-		var disc := MeshInstance3D.new()
-		var cyl := CylinderMesh.new()
 		var r_m: float = float(b["radius"]) * WorldManager.METERS_PER_UNIT
-		cyl.top_radius = r_m
-		cyl.bottom_radius = r_m
-		cyl.height = 0.2
-		disc.mesh = cyl
-		disc.material_override = _mat(tint[id], false, BIOME_TINT_ALPHA)
-		disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var disc: MeshInstance3D = _biom_scheibe(r_m, tint[id])
 		disc.position = WorldManager.world_to_scene(Vector2(float(b["cx"]), float(b["cy"]))) + Vector3(0.0, 0.10, 0.0)
 		add_child(disc)
 	# Smog-Senke: alles nördlich der Smog-Linie liegt unter giftgrünem Schleier.
@@ -6237,7 +6231,7 @@ func _process_movement(delta: float) -> void:
 		step = next - _player.position
 	# Die Figur folgt dem Gelaende. Ohne diese Zeile liefe sie auf y = 0 durch jede Senke
 	# hindurch — die Vertiefung waere blosse Kulisse.
-	next.y = WorldManager.height_at(next.x, next.z)
+	next.y = _boden_hoehe(next.x, next.z)
 	_player.position = next
 	# Drehung weich nachziehen statt hart umzuschnappen: bei einem Joystick wechselt die
 	# Richtung stufenlos, und eine Figur, die pro Frame springt, wirkt wie ein Blechspielzeug.
@@ -7202,6 +7196,10 @@ func _am_riss(p: Vector3) -> bool:
 	var halb: Vector2 = WorldManager.feature_halb(_riss)
 	if absf(p.x - c.x) > halb.x or absf(p.z - c.z) > halb.y:
 		return false
+	# Auf dem Steg ist der Riss kein Riss. Er liegt von Anfang an da — nichts wird
+	# aufgeschlossen, man muss nur die richtige Stelle finden.
+	if _auf_steg(p):
+		return false
 	return WorldManager.height_at(p.x, p.z) < -RISS_SPERRE_M
 
 
@@ -7592,3 +7590,133 @@ func _erste_truhe_szene(at: Vector3) -> void:
 		"„Er passt in meine Hand, als hätte ich das schon tausendmal gemacht.“",
 		"„Woher weiß ich das?“",
 	])
+
+
+# ── Der Steg über den Riss ────────────────────────────────────────────────────
+## Eine umgestürzte Werkslok liegt quer im Spalt. Darüber kommt man hinüber.
+##
+## Eine Brücke wäre die naheliegende Antwort und die langweiligste: Sie sagt „hier ist der
+## Übergang vorgesehen". Ein Waggon, der irgendwann irgendwo hineingestürzt ist, sagt etwas
+## anderes — dass hier einmal etwas passiert ist und dass der Weg ein **Fund** ist und keine
+## Freischaltung. Deshalb liegt er auch von Anfang an da: Nichts wird aufgeschlossen, man muss
+## nur die richtige Stelle finden.
+##
+## Er liegt bei 38 % der Rissläge und nicht in der Mitte. Die Mitte wäre die Stelle, an der man
+## zuerst nachsieht, und dann wäre das Suchen keins.
+const STEG_ANTEIL: float = 0.38
+const STEG_BREITE_M: float = 3.4        # begehbare Breite auf dem Kessel
+const STEG_HOEHE_M: float = -1.6        # so tief liegt er unter der Ebene
+var _steg: Dictionary = {}
+
+
+func _build_steg() -> void:
+	if _riss.is_empty():
+		return
+	var c: Vector3 = WorldManager.feature_center(_riss)
+	var nord: bool = String(_riss.get("achse", "nord")) == "nord"
+	var laengs: float = (STEG_ANTEIL - 0.5) * float(_riss["laenge"])
+	# Die Mittellinie des Risses an dieser Stelle SUCHEN, nicht rechnen: Er schlängelt, und ein
+	# Steg, der die Rechnung nachbaut, liegt beim nächsten Umbau daneben.
+	var mitte := Vector3(c.x, 0.0, c.z)
+	if nord:
+		mitte.z += laengs
+	else:
+		mitte.x += laengs
+	var tiefste: float = 0.0
+	var quer_best: float = 0.0
+	var spanne: float = float(_riss.get("schlenker", 0.0)) + float(_riss["breite"])
+	for i in 241:
+		var q: float = -spanne + float(i) * (spanne * 2.0 / 240.0)
+		var px: float = mitte.x + (q if nord else 0.0)
+		var pz: float = mitte.z + (0.0 if nord else q)
+		var h: float = WorldManager.height_at(px, pz)
+		if h < tiefste:
+			tiefste = h
+			quer_best = q
+	if nord:
+		mitte.x += quer_best
+	else:
+		mitte.z += quer_best
+	mitte.y = STEG_HOEHE_M
+	var quer: Vector3 = Vector3(1.0, 0.0, 0.0) if nord else Vector3(0.0, 0.0, 1.0)
+	_steg = { "mitte": mitte, "quer": quer, "nord": nord,
+		"halb_quer": float(_riss["breite"]) * 0.5 + float(_riss.get("kante_m", 6.0)),
+		"halb_laengs": STEG_BREITE_M * 0.5 }
+	var lok: Node3D = AssetRegistry.instantiate("locomotive", 0.0, false)
+	if lok == null:
+		# Kein Modell: dann eben ein Balken. Sichtbar ein Platzhalter — aber begehbar, und das
+		# ist der Teil, an dem die Welt hängt.
+		lok = _box(Vector3(float(_riss["breite"]) + 12.0, 2.2, STEG_BREITE_M),
+			mitte + Vector3(0.0, 1.1, 0.0), Color(0.20, 0.17, 0.15))
+	else:
+		lok.position = mitte + Vector3(0.0, 0.6, 0.0)
+		# Quer über den Spalt und auf der Seite liegend — er ist hineingestürzt, nicht abgestellt.
+		lok.rotation = Vector3(0.0, 0.0 if nord else PI * 0.5, PI * 0.5)
+		add_child(lok)
+	_label(mitte + Vector3(0.0, 4.0, 0.0), "🚂 Der gestürzte Kessel",
+		Color(0.80, 0.76, 0.68), LBL_LANDMARKE, 320.0)
+
+
+## Steht dieser Punkt auf dem Steg?
+func _auf_steg(p: Vector3) -> bool:
+	if _steg.is_empty():
+		return false
+	var d: Vector3 = p - Vector3(_steg["mitte"]).x * Vector3.RIGHT \
+		- Vector3(_steg["mitte"]).z * Vector3.BACK
+	var dx: float = p.x - Vector3(_steg["mitte"]).x
+	var dz: float = p.z - Vector3(_steg["mitte"]).z
+	var quer: float = dx if bool(_steg["nord"]) else dz
+	var laengs: float = dz if bool(_steg["nord"]) else dx
+	return absf(quer) <= float(_steg["halb_quer"]) \
+		and absf(laengs) <= float(_steg["halb_laengs"])
+
+
+## Die Bodenhöhe, auf der die Figur steht — Gelände, oder der Steg, wenn sie darauf ist.
+func _boden_hoehe(x: float, z: float) -> float:
+	if _auf_steg(Vector3(x, 0.0, z)):
+		return STEG_HOEHE_M + 1.2
+	return WorldManager.height_at(x, z)
+
+
+## Eine Biom-Toenung, die am Rand AUSBLENDET.
+##
+## Sie war ein Zylinder mit gleichmaessiger Deckkraft, und im Bild zog sich dadurch eine harte
+## Linie quer durch die Wueste: hier gruenlich, einen Schritt weiter sandfarben. Ein Biom ist
+## aber keine Verwaltungsgrenze — es hoert nicht auf, es wird weniger.
+##
+## Ein Zylinder kann das nicht: Seine Deckkraft steht im Material und gilt ueberall gleich.
+## Also ein Faecher aus Dreiecken mit Scheitelfarben — in der Mitte volle Deckkraft, zum Rand
+## hin null. Die inneren zwei Drittel bleiben satt, damit die Toenung noch etwas taugt; nur das
+## aeussere Drittel laeuft aus.
+const BIOM_KERN: float = 0.62
+func _biom_scheibe(radius: float, farbe: Color) -> MeshInstance3D:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var seg: int = 72
+	var ringe: int = 6
+	for i in seg:
+		var a0: float = TAU * float(i) / float(seg)
+		var a1: float = TAU * float(i + 1) / float(seg)
+		for k in ringe:
+			var t0: float = float(k) / float(ringe)
+			var t1: float = float(k + 1) / float(ringe)
+			for e in [[a0, t0], [a1, t0], [a1, t1], [a0, t0], [a1, t1], [a0, t1]]:
+				var w: float = float(e[0])
+				var t: float = float(e[1])
+				st.set_color(Color(farbe.r, farbe.g, farbe.b,
+					BIOME_TINT_ALPHA * (1.0 - smoothstep(BIOM_KERN, 1.0, t))))
+				st.add_vertex(Vector3(cos(w) * radius * t, 0.0, sin(w) * radius * t))
+	st.generate_normals()
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color.WHITE
+	m.vertex_color_use_as_albedo = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	# Nicht in den Tiefenpuffer schreiben: Die Toenung liegt UEBER dem Boden und soll ihn
+	# einfaerben, nicht verdecken — dasselbe wie beim Smog- und Sumpfschleier.
+	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mi
