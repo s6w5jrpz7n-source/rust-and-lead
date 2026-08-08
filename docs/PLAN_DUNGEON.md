@@ -130,3 +130,33 @@ Und dann noch einmal: Der Held stand als **pechschwarze Silhouette** auf hellem 
 Gürtellampe saß auf 1,5 m — also mitten im Körper, und eine Punktlampe im Inneren beleuchtet
 alles ringsum und die Figur selbst gar nicht, weil deren Flächen von ihr *wegzeigen*. Jetzt
 hängt sie auf 2,9 m wie eine Laterne am Stollendach, dazu ein schwaches Licht von vorn.
+
+---
+
+## Warum man überhaupt hinuntergeht
+
+Silas gibt den Auftrag **„Grubenstahl aus dem Vorschacht"** — 20 Stück, 160 Gold.
+
+Zuerst verlangte er schlicht `schrott`. Das war falsch, und zwar auf eine Art, die man erst
+sieht, wenn man es ausspricht: Schrott liegt überall herum, also hätte man den Auftrag erledigen
+können, **ohne je hinabzusteigen**. Der Stollen wäre ein Umweg gewesen, den man auslässt.
+
+Ein Auftrag, der einen an einen *Ort* schicken soll, muss nach etwas verlangen, das es **nur
+dort** gibt. Also `grubenstahl`: ein eigenes Material, das ausschließlich in den Kammern liegt.
+
+Die Begründung steckt in der Sache selbst und muss nicht erklärt werden: Schrott von der
+Oberfläche liegt seit dem Krieg in Sonne und Sandstürmen und ist durchgerostet. Was unten liegt,
+lag im Trockenen und im Dunkeln — es ist noch Stahl. Genau deshalb will Silas es für seine
+Mauer, und genau deshalb ist es unten und nicht oben.
+
+**Zahlen:** zwei bis vier Halden je Kammer, in *jeder* Kammer — auch der ersten, denn wer die
+erste betritt und nichts sieht, hält den Auftrag für kaputt. Gemessen: 19 Halden auf Ebene 1,
+26 auf Ebene 2. Eine einzelne Kammer reicht nie.
+
+Aufgesammelt wird beim **Darüberlaufen**, nicht mit `[E]`. Zwanzigmal eine Taste für Rohmaterial
+zu drücken ist Arbeit, keine Entscheidung; die Taste bleibt dem vorbehalten, wo man wirklich
+wählt — Ausrüstung, Truhen, Treppen.
+
+`GameState.NUR_IM_STOLLEN` hält die Zusicherung fest, und der Test liest die Beutetabellen der
+Oberwelt daraufhin durch: Rutscht Grubenstahl je in eine davon, wäre der Auftrag wieder ohne
+Stollen zu erledigen — und niemand würde es merken.

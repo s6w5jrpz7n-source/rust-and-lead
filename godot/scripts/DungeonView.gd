@@ -48,6 +48,8 @@ var _eingang_pos: Vector3 = Vector3.ZERO
 var _truhen: Array = []
 ## Was auf dem Boden liegt und aufgehoben werden will.
 var _boden: Array = []
+## Grubenstahl-Halden, die noch liegen.
+var _halden: Array = []
 var _gegner: Array = []
 var _hp: float = 0.0
 var _feuer: FireButton
@@ -71,6 +73,8 @@ const SCHUSS_M: float = 26.0
 const SCHILD_NAH_M: float = 2.2
 ## Wie weit ein Schild hochrueckt, wenn schon eines darunter steht.
 const SCHILD_ZEILE_M: float = 0.34
+## Ab welcher Naehe eine Grubenstahl-Halde von selbst aufgesammelt wird.
+const STAHL_NAH_M: float = 1.8
 ## Die tiefste Ebene. Dort steht der Endgegner, dort liegt die Beutekammer.
 const LETZTE_EBENE: int = 2
 ## Wer dort steht. Der Plan nennt ihn beim Namen: ein Konzern-Konstrukt als Abschluss.
@@ -104,6 +108,7 @@ func _ready() -> void:
 	_boden_bauen()
 	_waende_bauen()
 	_kisten_bauen()
+	_stahl_bauen()
 	_gegner_bauen()
 	_spieler_bauen()
 	_oberflaeche_bauen()
@@ -294,12 +299,15 @@ func _kopf_setzen() -> void:
 		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold,
 		_gegner.size() - steht, _gegner.size(),
 		GameState.schluessel, ChestData.schluessel(ChestData.BOSS)]
+	if GameState.item_count("grubenstahl") > 0:
+		_text.text += "   ▬ %d" % GameState.item_count("grubenstahl")
 
 
 func _process(delta: float) -> void:
 	_gehen(delta)
 	_kamera_nachziehen()
 	_kampf(delta)
+	_stahl_aufsammeln()
 	_naehe_pruefen()
 	_kopf_setzen()
 
@@ -817,3 +825,52 @@ func _gear_aufheben() -> bool:
 	(g["schild"] as Node3D).queue_free()
 	_boden.erase(g)
 	return true
+
+
+## Grubenstahl-Halden auslegen.
+##
+## Das Material, das es NUR hier gibt. Silas' Auftrag verlangte anfangs gewöhnlichen Schrott —
+## und den findet man überall, also wäre der Stollen ein Umweg gewesen, den man auslässt. Ein
+## Auftrag, der einen an einen Ort schicken soll, muss nach etwas verlangen, das es nur dort
+## gibt.
+##
+## Die Begründung steckt in der Sache: Schrott von der Oberfläche liegt seit dem Krieg in Sonne
+## und Sandstürmen und ist durchgerostet. Was hier unten liegt, lag im Trockenen und im
+## Dunkeln — es ist noch Stahl.
+func _stahl_bauen() -> void:
+	for f in (_plan.get("stahl", []) as Array):
+		var knoten := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(0.62, 0.30, 0.48)
+		knoten.mesh = box
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.55, 0.58, 0.62)
+		mat.metallic = 0.75
+		mat.roughness = 0.42
+		# Ein kalter Schimmer, damit man ihn im Lampenrand noch erkennt — aber schwächer als
+		# Truhe und Beute: Er ist das Handwerk des Stollens, nicht sein Höhepunkt.
+		mat.emission_enabled = true
+		mat.emission = Color(0.58, 0.72, 0.85)
+		mat.emission_energy_multiplier = 0.18
+		knoten.material_override = mat
+		knoten.rotation.y = randf() * TAU
+		knoten.position = DungeonLayout.feld_zu_szene(f as Vector2i) + Vector3(0.0, 0.15, 0.0)
+		add_child(knoten)
+		_halden.append({ "node": knoten, "pos": knoten.position })
+
+
+## Beim Darüberlaufen einsammeln — wie Gold und Munition draußen.
+##
+## Bewusst KEIN `[E]`: Der Auftrag verlangt zwanzig Stück, und zwanzigmal eine Taste für
+## Rohmaterial zu drücken ist Arbeit, keine Entscheidung. Die Taste bleibt dem vorbehalten, wo
+## man wirklich wählt — Ausrüstung, Truhen, Treppen.
+func _stahl_aufsammeln() -> void:
+	if _spieler == null:
+		return
+	for h in _halden.duplicate():
+		if (h["pos"] as Vector3).distance_to(_spieler.position) > STAHL_NAH_M:
+			continue
+		GameState.add_item("grubenstahl", 1)
+		(h["node"] as Node3D).queue_free()
+		_halden.erase(h)
+		_hinweis.text = "▬ Grubenstahl (%d)" % GameState.item_count("grubenstahl")

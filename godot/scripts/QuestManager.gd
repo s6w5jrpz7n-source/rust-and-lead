@@ -67,8 +67,13 @@ const QUESTS: Dictionary = {
 	# `collect` und nicht `kill`: Wer unten aufraeumen soll, entscheidet selbst, ob er kaempft
 	# oder sich vorbeidrueckt — und lernt dabei den Stollen kennen, statt eine Strichliste zu
 	# fuehren.
-	"q_stollen": { "title": "Der Vorschacht", "giver": "silas", "kind": "collect", "item": "schrott",
-		"count": 20, "reward_gold": 160, "reward_item": "potion", "target": "stollen", "chapter": 1, "advance_to": 0 },
+	# `grubenstahl` und NICHT `schrott`: Der Auftrag verlangte anfangs gewoehnlichen Schrott —
+	# und damit haette man ihn mit dem erledigen koennen, was ohnehin ueberall herumliegt. Der
+	# Stollen waere ein Umweg gewesen, den man auslassen kann. Ein Auftrag, der einen an einen
+	# Ort schicken soll, muss nach etwas verlangen, das es NUR DORT gibt.
+	"q_stollen": { "title": "Grubenstahl aus dem Vorschacht", "giver": "silas", "kind": "collect",
+		"item": "grubenstahl", "count": 20, "reward_gold": 160, "reward_item": "potion",
+		"target": "stollen", "chapter": 1, "advance_to": 0 },
 
 	# ── Kapitel 1 geht weiter: je zwei Anschlussaufträge pro Auftraggeber ──
 	#

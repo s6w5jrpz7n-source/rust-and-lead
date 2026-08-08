@@ -45,6 +45,14 @@ const RAEUME: Dictionary = { 1: 6, 2: 9 }
 ## mit einem Raum weniger.
 const VERSUCHE: int = 120
 
+## Wie viele Grubenstahl-Halden je Kammer liegen.
+##
+## Der Auftrag verlangt 20 Stück. Bei sechs bzw. neun Kammern und zwei bis vier Halden je Kammer
+## kommen über beide Ebenen genug zusammen, ohne dass man den Stollen zweimal laufen muss — und
+## trotzdem nicht so viele, dass die erste Kammer schon reicht.
+const STAHL_MIN: int = 2
+const STAHL_MAX: int = 4
+
 
 ## Einen Grundriss rechnen.
 ##
@@ -125,8 +133,17 @@ static func erzeugen(startwert: int, ebene: int) -> Dictionary:
 		for _k in wie_viele:
 			gegner.append(_streu(rng, r))
 
+	# Grubenstahl-Halden. Sie liegen in JEDEM Raum, auch im ersten — anders als Gegner und
+	# Truhen, denn sie sind der Grund, überhaupt herzukommen, und wer die erste Kammer betritt
+	# und nichts sieht, hält den Auftrag für kaputt.
+	var stahl: Array[Vector2i] = []
+	for r in raeume:
+		for _k in rng.randi_range(STAHL_MIN, STAHL_MAX):
+			stahl.append(_streu(rng, r))
+
 	return { "raeume": raeume, "boden": boden, "eingang": eingang, "treppe": treppe,
-		"truhen": truhen, "gegner": gegner, "ebene": ebene, "startwert": startwert }
+		"truhen": truhen, "gegner": gegner, "stahl": stahl,
+		"ebene": ebene, "startwert": startwert }
 
 
 ## Ist dieses Feld begehbar?

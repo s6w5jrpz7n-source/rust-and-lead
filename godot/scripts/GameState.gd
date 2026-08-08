@@ -49,7 +49,29 @@ var ng_plus: int = 0
 # ── Wirtschaft & Beutel ───────────────────────────────────────────────────────
 var gold: int = 0
 var potions: int = 3
-var inventory: Dictionary = { "schrott": 0, "zahnrad": 0, "dampfkern": 0 }
+var inventory: Dictionary = { "schrott": 0, "zahnrad": 0, "dampfkern": 0, "grubenstahl": 0 }
+
+## Wie die Materialien heißen, wenn sie jemand liest.
+##
+## `grubenstahl` ist das jüngste und das einzige, das man **nirgendwo sonst** bekommt. Der
+## Grund steht in der Sache selbst: Schrott von der Oberfläche liegt seit dem Krieg in Sonne
+## und Sandstürmen und ist durchgerostet. Was im Stollen liegt, lag im Trockenen und im
+## Dunkeln — es ist noch Stahl.
+##
+## Das ist nicht nur Beiwerk. Silas' Auftrag verlangte anfangs schlicht `schrott`, und damit
+## hätte man ihn mit dem erledigen können, was ohnehin überall herumliegt — der Stollen wäre
+## ein Umweg gewesen, den man auslassen kann. Ein Auftrag, der einen an einen Ort schicken
+## soll, muss nach etwas verlangen, das es **nur dort** gibt.
+const MATERIAL_NAMEN: Dictionary = {
+	"schrott": "Schrott",
+	"zahnrad": "Zahnrad",
+	"dampfkern": "Dampfkern",
+	"grubenstahl": "Grubenstahl",
+}
+
+## Nur im Stollen zu finden — die Prüfung hält das fest, damit es nicht versehentlich in eine
+## Beutetabelle der Oberwelt rutscht.
+const NUR_IM_STOLLEN: Array[String] = ["grubenstahl"]
 ## Angelegte Ausrüstung: equip_slot (String) -> Gear-Dictionary (leer/fehlend = nichts).
 ## Slots: helmet/armor/weapon/gadget/boots + plate1..plate8 (Platten/Tech). Siehe EquipManager.
 var equip: Dictionary = {}
@@ -208,7 +230,7 @@ func neu_beginnen() -> void:
 	ng_plus = 0
 	gold = 0
 	potions = 3
-	inventory = { "schrott": 0, "zahnrad": 0, "dampfkern": 0 }
+	inventory = { "schrott": 0, "zahnrad": 0, "dampfkern": 0, "grubenstahl": 0 }
 	equip = {}
 	bag = []
 	ammo = { "muni": 90, "kristall": 45 }

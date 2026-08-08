@@ -84,7 +84,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
 	"_test_stollen": 33,
-	"_test_truhen": 15,
+	"_test_truhen": 27,
 	"_test_anfuehrer": 54,
 }
 
@@ -5328,6 +5328,61 @@ func _test_truhen() -> void:
 		(e1["truhen"] as Array).size() > 0 and (e2["truhen"] as Array).size() > 0)
 	_check("Die Beutekammer steht erst in der Kaverne",
 		dv_q.contains("GameState.stollen_ebene >= 2 and i == alle.size() - 1"))
+
+	# ── Grubenstahl: das Material, das es NUR im Stollen gibt ────────────────
+	#
+	# Silas' Auftrag verlangte anfangs schlicht `schrott` — und den findet man ueberall. Damit
+	# haette man ihn erledigen koennen, ohne je hinabzusteigen, und der Stollen waere ein Umweg
+	# gewesen, den man auslaesst. Ein Auftrag, der einen an einen ORT schicken soll, muss nach
+	# etwas verlangen, das es nur dort gibt.
+	var q_stollen: Dictionary = QuestManager.QUESTS["q_stollen"]
+	_check("Silas verlangt Grubenstahl", String(q_stollen["item"]) == "grubenstahl")
+	_check("Und ausdruecklich NICHT gewoehnlichen Schrott",
+		String(q_stollen["item"]) != "schrott")
+	_check("Der Auftrag zeigt auf den Stollen", String(q_stollen["target"]) == "stollen")
+	_check("Das Material hat einen Namen",
+		String(GameState.MATERIAL_NAMEN.get("grubenstahl", "")) == "Grubenstahl")
+
+	# Und jetzt die eigentliche Zusicherung: Es faellt NIRGENDWO SONST an. Der Beweis laeuft
+	# ueber die Quelle, weil eine Beutetabelle der Oberwelt es sonst still hereinreichen koennte
+	# — und dann waere der Auftrag wieder ohne Stollen zu erledigen, ohne dass es jemand merkt.
+	var draussen: Array[String] = []
+	for datei in ["res://scripts/OverworldView.gd", "res://scripts/BeuteData.gd",
+			"res://scripts/ChestData.gd", "res://scripts/EncounterManager.gd"]:
+		var zeilen: PackedStringArray = FileAccess.get_file_as_string(datei).split("\n")
+		for nr in zeilen.size():
+			for stoff in GameState.NUR_IM_STOLLEN:
+				if _ohne_kommentar(zeilen[nr], false).contains(stoff):
+					draussen.append("%s:%d" % [datei.get_file(), nr + 1])
+	_check("Grubenstahl faellt draussen nirgends an", draussen.is_empty(),
+		", ".join(draussen))
+	# Drinnen dagegen liegt er in JEDER Kammer — auch in der ersten. Wer die erste Kammer
+	# betritt und nichts sieht, haelt den Auftrag fuer kaputt.
+	var e1s: Dictionary = DungeonLayout.erzeugen(4242, 1)
+	var e2s: Dictionary = DungeonLayout.erzeugen(4242, 2)
+	_check("Im Stollen liegen Halden (%d auf Ebene 1, %d auf Ebene 2)"
+		% [(e1s["stahl"] as Array).size(), (e2s["stahl"] as Array).size()],
+		(e1s["stahl"] as Array).size() > 0 and (e2s["stahl"] as Array).size() > 0)
+	var im_fels_stahl: int = 0
+	for f in (e1s["stahl"] as Array):
+		if not DungeonLayout.begehbar(e1s, f as Vector2i):
+			im_fels_stahl += 1
+	_check("Und keine davon im Fels", im_fels_stahl == 0)
+	# Genug fuer den Auftrag, ohne den Stollen zweimal laufen zu muessen — aber nicht so viel,
+	# dass die erste Kammer schon reicht.
+	var gesamt: int = (e1s["stahl"] as Array).size() + (e2s["stahl"] as Array).size()
+	_check("Beide Ebenen zusammen decken die %d des Auftrags (%d Halden)"
+		% [int(q_stollen["count"]), gesamt], gesamt >= int(q_stollen["count"]))
+	_check("Eine einzelne Kammer reicht aber nicht",
+		DungeonLayout.STAHL_MAX < int(q_stollen["count"]))
+	# Aufgesammelt wird beim DARUEBERLAUFEN. Zwanzigmal eine Taste fuer Rohmaterial zu druecken
+	# ist Arbeit, keine Entscheidung — die Taste bleibt dem vorbehalten, wo man wirklich waehlt.
+	_check("Halden sammeln sich beim Darueberlaufen",
+		dv_q.contains("func _stahl_aufsammeln") and dv_q.contains("STAHL_NAH_M"))
+	_check("Und landen im Inventar, nicht im Beutel",
+		dv_q.contains('GameState.add_item("grubenstahl", 1)'))
+	_check("Ein neues Spiel faengt ohne Grubenstahl an",
+		int(GameState.inventory.get("grubenstahl", -1)) == 0)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Anfuehrer und Schluessel
