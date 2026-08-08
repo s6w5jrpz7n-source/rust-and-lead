@@ -50,7 +50,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 63,
+	"_test_titel_und_erster": 69,
 	"_test_steg_und_biome": 16,
 	"_test_riss": 15,
 	"_test_terrain": 25,
@@ -1041,6 +1041,7 @@ func _test_titel_und_erster() -> void:
 	# keinen Sonderzustand mehr zu kennen.
 	_check("Der Titel laedt die Welt nicht mehr", not q.contains("OVERWORLD.instantiate()"))
 	var ow_q: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	var OW4 = load("res://scripts/OverworldView.gd")
 	_check("Und die Overworld kennt keinen Titelzustand", not ow_q.contains("im_titel"))
 	# Das Bild fuellt den Rahmen, ohne die Figur zu verzerren: Auf einem Telefon im Hochformat
 	# waere ein gestrecktes Titelbild ein verzerrtes Gesicht.
@@ -1128,8 +1129,34 @@ func _test_titel_und_erster() -> void:
 	# Traenke standen seit jeher im Spielstand (drei zum Start) und es gab keinen Weg, sie zu
 	# benutzen — weder auf dem Handy noch auf der Tastatur. Ein Vorrat, den man nicht ausgeben
 	# kann, ist kein Vorrat, sondern eine Zahl.
-	_check("Es gibt einen Trankknopf", ow_q.contains("_trank_btn.pressed.connect(_trank_trinken)"))
+	# Er liegt als TRABANT am Schussknopf, nicht daneben.
+	#
+	# Der erste Anlauf haengte einen Knopf ueber den Abzug — richtig gedacht und trotzdem
+	# falsch: Er lag NEBEN der Hand, und wer im Gefecht trinken will, muss den Daumen dorthin
+	# bringen, waehrend jemand auf ihn schiesst.
+	_check("Es gibt einen Trankknopf", ow_q.contains("_trank_btn.ausgeloest.connect(_trank_trinken)"))
 	_check("Und eine Taste dafuer", ow_q.contains("event.keycode == KEY_F"))
+	_check("Er sitzt als Trabant am Schussknopf", ow_q.contains("func _trabanten_setzen"))
+	# Und zwar GENAU RECHTS: Dorthin kommt der Daumen am kuerzesten, ohne den Schussknopf zu
+	# ueberstreichen. Alles darueber muesste er umrunden.
+	_check("Und zwar genau rechts (%.0f°)" % float(OW4.TRABANT_WINKEL[0]),
+		is_zero_approx(float(OW4.TRABANT_WINKEL[0])))
+	# Die Trefferflaechen beruehren sich NICHT: Ein Fehlgriff soll den Schuss ausloesen und
+	# nicht den Trank verbrauchen.
+	var d_mitten: float = FireButton.RADIUS + ActionSatellite.RADIUS + ActionSatellite.SPALT
+	var r_summe: float = FireButton.RADIUS * FireButton.TOUCH_SLACK \
+		+ ActionSatellite.RADIUS * ActionSatellite.TOUCH_SLACK
+	_check("Die Trefferflaechen ueberlappen sich kaum (%.0f px Abstand, %.0f px Radien)"
+		% [d_mitten, r_summe], d_mitten >= FireButton.RADIUS + ActionSatellite.RADIUS)
+	# Und der Trabant wird ZUERST geprueft — sonst schluckt ihn der groessere Zuschlag des
+	# Schussknopfes an seinem Rand.
+	_check("Der Trabant wird vor dem Schussknopf geprueft",
+		ow_q.find("_trabant_tap(event.position)") < ow_q.find("_fire_btn.hits(event.position)"))
+	# Die Zahl steht IM Knopf, nicht daneben: Sie gehoert zum Vorrat und nicht zum Bildrand.
+	var sat_q: String = FileAccess.get_file_as_string("res://scripts/ActionSatellite.gd")
+	_check("Die Zahl steht im Knopf", sat_q.contains("if zahl >= 0:"))
+	_check("Und der Knopf ist kleiner als der Schussknopf",
+		ActionSatellite.RADIUS < FireButton.RADIUS * 0.7)
 	# Die Regel steht in GameState, nicht in der Oberflaeche: Wie viel ein Trank heilt, ist eine
 	# Frage der Balance und keine der Anzeige.
 	var t_hp: int = GameState.potions
@@ -1153,7 +1180,7 @@ func _test_titel_und_erster() -> void:
 		GameState.TRANK_ANTEIL > 0.1 and GameState.TRANK_ANTEIL < 0.6)
 	# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen.
 	_check("Der Knopf wird ausgegraut, nicht versteckt",
-		ow_q.contains("_trank_btn.disabled = GameState.potions <= 0"))
+		ow_q.contains('_trank_btn.setzen("🧪", GameState.potions,'))
 
 	# ── Die erste Truhe ───────────────────────────────────────────────────────
 	#
@@ -1192,7 +1219,6 @@ func _test_titel_und_erster() -> void:
 		MemoryManager.chain_length() >= 16)
 
 	# ── Der erste Gegner ──────────────────────────────────────────────────────
-	var OW4 = load("res://scripts/OverworldView.gd")
 	# EINER, nicht das uebliche Rudel: Wer zum ersten Mal etwas sieht, das hier herumlaeuft,
 	# soll es ansehen koennen.
 	_check("Es ist genau einer", ow_q.contains('_erst_gegner = _make_enemy("konstrukt")'))

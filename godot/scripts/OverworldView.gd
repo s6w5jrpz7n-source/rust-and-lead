@@ -4474,9 +4474,13 @@ const HUD_RAND: float = 12.0
 const PORTRAIT_PX: float = 72.0
 const BALKEN_W: float = 210.0
 const BALKEN_H: float = 16.0
-const GURT_PX: float = 54.0
-var _gurt: HBoxContainer = null
-var _trank_btn: Button = null
+## Wo die Trabanten am Schussknopf sitzen — als Winkel, 0° = rechts, gegen den Uhrzeigersinn.
+##
+## Der Trank sitzt bei 0°, also GENAU RECHTS. Das ist die Stelle, an die der Daumen am
+## kuerzesten kommt, ohne den Schussknopf zu ueberstreichen; alles darueber muesste er umrunden.
+const TRABANT_WINKEL: Array = [0.0]
+var _trabanten: Array = []
+var _trank_btn: ActionSatellite = null
 var _portrait_btn: TextureButton = null
 var _portrait_rahmen: TextureRect = null
 var _hp_bar: ProgressBar = null
@@ -4631,27 +4635,21 @@ func _build_hud() -> void:
 	_ammo_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_ammo_lbl.add_theme_font_size_override("font_size", 15)
 	layer.add_child(_ammo_lbl)
-	# ── Die Guertelleiste ─────────────────────────────────────────────────────
+	# ── Die Trabanten am Schussknopf ──────────────────────────────────────────
 	#
-	# Traenke standen seit jeher im Spielstand (`GameState.potions`, drei zum Start) und es gab
-	# keinen Weg, sie zu benutzen — weder auf dem Handy noch auf der Tastatur. Ein Vorrat, den
-	# man nicht ausgeben kann, ist kein Vorrat, sondern eine Zahl.
+	# Traenke standen seit jeher im Spielstand und es gab keinen Weg, sie zu benutzen. Der erste
+	# Anlauf haengte einen Knopf ueber den Abzug — richtig gedacht und trotzdem falsch: Er lag
+	# NEBEN der Hand, und wer im Gefecht trinken will, muss den Daumen dorthin bringen, waehrend
+	# jemand auf ihn schiesst.
 	#
-	# Sie sitzt ueber dem Abzug, nicht neben dem Joystick: Wer trinkt, hat gerade Schaden
-	# genommen und den Daumen an der Schusshand. Und sie ist AUS, wenn nichts zu holen ist —
-	# ausgegraut statt versteckt, damit die Ecke nicht springt.
-	_gurt = HBoxContainer.new()
-	_gurt.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_gurt.position = Vector2(-FireButton.RADIUS * 2.0 - FireButton.MARGIN - 8.0,
-		-FireButton.MARGIN - FireButton.RADIUS * 2.0 - 62.0)
-	_gurt.add_theme_constant_override("separation", 8)
-	layer.add_child(_gurt)
-	_trank_btn = Button.new()
-	_trank_btn.custom_minimum_size = Vector2(GURT_PX, GURT_PX)
-	_trank_btn.add_theme_font_size_override("font_size", 20)
-	_trank_btn.tooltip_text = "Trank trinken  [F]"
-	_trank_btn.pressed.connect(_trank_trinken)
-	_gurt.add_child(_trank_btn)
+	# Jetzt liegen sie als Trabanten AUSSEN am Schussknopf, in derselben Handbewegung. Der
+	# rechteste ist der Trank. Sie sind kleiner und liegen ausserhalb seines Randes, und beides
+	# ist Absicht: Wer blind greift, trifft die Mitte — ein Fehlgriff soll den Schuss ausloesen
+	# und nicht den Trank verbrauchen.
+	_trank_btn = ActionSatellite.new()
+	_trank_btn.ausgeloest.connect(_trank_trinken)
+	layer.add_child(_trank_btn)
+	_trabanten.append(_trank_btn)
 	# Aktionsleiste unten Mitte: erscheint nur, wenn etwas in Reichweite ist. Ohne sie gäbe es
 	# auf dem Handy keinen Weg, jemanden anzusprechen oder die Bahn zu nehmen — das ging bisher
 	# nur über die Tastatur, also ausgerechnet nicht auf der Zielplattform.
@@ -5361,6 +5359,12 @@ func _input(event: InputEvent) -> void:
 			# Der Joystick beansprucht sonst jeden Finger, der irgendwo aufsetzt.
 			if _handle_overlay_tap(event.position):
 				return
+			# Trabanten VOR dem Schussknopf: Ihre Trefferflaechen beruehren sich nicht, aber der
+			# Schussknopf hat den groesseren Zuschlag (`TOUCH_SLACK`), und ohne diese
+			# Reihenfolge schluckte er die Raender der Trabanten.
+			if _trabant_tap(event.position):
+				get_viewport().set_input_as_handled()
+				return
 			if _fire_touch_id == -1 and _fire_btn != null and _fire_btn.hits(event.position):
 				_fire_touch_id = event.index
 				get_viewport().set_input_as_handled()
@@ -5410,6 +5414,9 @@ func _input(event: InputEvent) -> void:
 				return
 			# Auch mit der Maus muss der Knopf anklickbar sein: Was auf dem Handy geht, muss
 			# am Rechner nachstellbar sein, sonst testet man eine andere Steuerung.
+			if _trabant_tap(event.position):
+				get_viewport().set_input_as_handled()
+				return
 			if _fire_btn != null and _fire_btn.hits(event.position):
 				_fire_mouse = true
 				get_viewport().set_input_as_handled()
@@ -6928,11 +6935,15 @@ func _update_hud() -> void:
 	var q: String = _active_quest_line()
 	if q != "":
 		_hud.text += "\n📜 " + q
+	# Die Trabanten haengen an der LAGE des Schussknopfes, und die steht erst, wenn er selbst
+	# `_ready` durchlaufen hat. Einmal je Bild nachziehen kostet nichts und ist gegen jede
+	# Reihenfolge unempfindlich — auch gegen eine Fenstergroesse, die sich aendert.
+	_trabanten_setzen()
 	if _trank_btn != null:
-		_trank_btn.text = "🧪%d" % GameState.potions
 		# Ausgegraut statt versteckt: Ein Knopf, der verschwindet, laesst die Ecke springen —
 		# und man greift dann daneben, weil der Daumen die alte Stelle kennt.
-		_trank_btn.disabled = GameState.potions <= 0 or _hp >= float(PlayerStats.max_hp()) - 0.5
+		_trank_btn.setzen("🧪", GameState.potions,
+			GameState.potions > 0 and _hp < float(PlayerStats.max_hp()) - 0.5)
 	if _ammo_lbl != null and _weapon_id == "":
 		# Leere Haende: Es gibt kein Magazin, also auch keinen Zaehler. Ein „0/0" waere die
 		# Behauptung, hier fehle Munition — es fehlt aber die WAFFE, und das steht schon oben.
@@ -7775,3 +7786,41 @@ func _biom_scheibe(radius: float, farbe: Color) -> MeshInstance3D:
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi
+
+
+## Trifft dieser Tipp einen Trabanten? Loest ihn dann aus.
+##
+## Ein Trabant hat keinen Halte-Zustand wie der Schussknopf: Trinken ist eine Handlung, kein
+## Dauerfeuer. Er blinkt kurz auf und ist wieder aus.
+func _trabant_tap(at: Vector2) -> bool:
+	for t in _trabanten:
+		var s: ActionSatellite = t
+		if not is_instance_valid(s) or not s.hits(at):
+			continue
+		s.druecken(true)
+		s.druecken(false)
+		return true
+	return false
+
+
+## Die Trabanten um den Schussknopf legen.
+##
+## Gerechnet aus SEINER Mitte und nicht aus der Bildschirmecke: Wer den Schussknopf verschiebt
+## oder vergroessert, nimmt sie mit. Und der Abstand ist die Summe beider Radien plus Spalt —
+## so beruehren sich die Trefferflaechen nicht, und ein Fehlgriff landet auf dem Schuss statt
+## auf dem Trank.
+func _trabanten_setzen() -> void:
+	if _fire_btn == null or _trabanten.is_empty():
+		return
+	var mitte: Vector2 = _fire_btn.position + _fire_btn.size * 0.5
+	var abstand: float = FireButton.RADIUS + ActionSatellite.RADIUS + ActionSatellite.SPALT
+	for i in _trabanten.size():
+		var s: ActionSatellite = _trabanten[i]
+		if not is_instance_valid(s):
+			continue
+		var w: float = deg_to_rad(float(TRABANT_WINKEL[i % TRABANT_WINKEL.size()]))
+		# Godots y zeigt nach unten — ein Winkel von 0° ist damit rechts, und positive Winkel
+		# laufen im Bild nach oben, wenn man den Sinus abzieht.
+		s.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		s.position = mitte + Vector2(cos(w), -sin(w)) * abstand \
+			- Vector2(ActionSatellite.RADIUS, ActionSatellite.RADIUS)
