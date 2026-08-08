@@ -83,6 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
+	"_test_stollen": 13,
 }
 
 
@@ -5030,3 +5031,114 @@ func _ohne_kommentar(zeile: String, ist_szene: bool) -> String:
 			return zeile.substr(0, i)
 		i += 1
 	return zeile
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Der Stollen — ein Grundriss, den man nachlaufen kann
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Ein erzeugter Dungeon hat einen Fehler, den man auf keinem Bild sieht: Die Treppe liegt hinter
+# einer Wand. Der Stollen sieht dann voellig in Ordnung aus, ist begehbar, hat Raeume, Truhen,
+# Gegner — und laesst sich nicht durchspielen. Wer das mit dem Auge pruefen will, muesste jeden
+# Startwert einmal selbst ablaufen.
+#
+# Deshalb rechnet `DungeonLayout` nur Zahlen und kennt keine Szene: So kann diese Funktion
+# HUNDERT Grundrisse erzeugen und bei jedem einzelnen mit einer Flutfuellung nachsehen, ob vom
+# Eingang wirklich alles erreichbar ist. Das ist der ganze Grund fuer die Trennung.
+func _test_stollen() -> void:
+	print("· Stollen (Grundriss, Erreichbarkeit, Wiederholbarkeit)")
+
+	# ── Wiederholbar ─────────────────────────────────────────────────────────
+	# Wer den Stollen verlaesst und wieder betritt, soll nicht in einem anderen stehen.
+	var a: Dictionary = DungeonLayout.erzeugen(4242, 1)
+	var b: Dictionary = DungeonLayout.erzeugen(4242, 1)
+	_check("Gleicher Startwert, gleicher Grundriss",
+		(a["raeume"] as Array) == (b["raeume"] as Array)
+		and (a["treppe"] as Vector2i) == (b["treppe"] as Vector2i))
+	var c: Dictionary = DungeonLayout.erzeugen(4243, 1)
+	_check("Anderer Startwert, anderer Grundriss",
+		(a["raeume"] as Array) != (c["raeume"] as Array))
+	# Und die Ebenen unterscheiden sich, sonst waere die Kaverne der Vorschacht noch einmal.
+	_check("Ebene 2 hat mehr Raeume als Ebene 1",
+		int(DungeonLayout.RAEUME[2]) > int(DungeonLayout.RAEUME[1]))
+
+	# ── Und jetzt hundertmal nachlaufen ──────────────────────────────────────
+	var ohne_raum: Array[String] = []
+	var unerreichbar: Array[String] = []
+	var ueberlappt: Array[String] = []
+	var treppe_gleich: Array[String] = []
+	var im_fels: Array[String] = []
+	for s in range(100):
+		for ebene in [1, 2]:
+			var p: Dictionary = DungeonLayout.erzeugen(s, ebene)
+			var raeume: Array = p["raeume"]
+			var kennung: String = "%d/E%d" % [s, ebene]
+			# Ein Stollen ohne Raeume ist kein Stollen. Der Erzeuger gibt nach `VERSUCHE` auf —
+			# er darf weniger liefern als gewuenscht, aber nicht nichts.
+			if raeume.size() < 3:
+				ohne_raum.append(kennung)
+				continue
+			# Raeume duerfen sich nicht ueberlappen, sonst faellt die Wand zwischen ihnen weg.
+			for i in raeume.size():
+				for j in range(i + 1, raeume.size()):
+					if (raeume[i] as Rect2i).intersects(raeume[j] as Rect2i):
+						ueberlappt.append(kennung)
+			# DIE Pruefung: Ist vom Eingang aus alles erreichbar?
+			var erreicht: Dictionary = DungeonLayout.erreichbar(p)
+			var boden: Dictionary = p["boden"]
+			if erreicht.size() < boden.size():
+				unerreichbar.append("%s (%d von %d)" % [kennung, erreicht.size(), boden.size()])
+			# Und die Treppe im Besonderen — sie ist der einzige Weg weiter.
+			if not erreicht.has(p["treppe"] as Vector2i):
+				unerreichbar.append(kennung + " Treppe")
+			if (p["treppe"] as Vector2i) == (p["eingang"] as Vector2i):
+				treppe_gleich.append(kennung)
+			# Truhen und Gegner stehen auf Boden, nicht im Gestein.
+			for t in (p["truhen"] as Array):
+				if not DungeonLayout.begehbar(p, t as Vector2i):
+					im_fels.append(kennung + " Truhe")
+			for g in (p["gegner"] as Array):
+				if not DungeonLayout.begehbar(p, g as Vector2i):
+					im_fels.append(kennung + " Gegner")
+	_check("200 Grundrisse haben genug Raeume", ohne_raum.is_empty(),
+		", ".join(ohne_raum.slice(0, 6)))
+	_check("Kein Raum ueberlappt einen anderen", ueberlappt.is_empty(),
+		", ".join(ueberlappt.slice(0, 6)))
+	_check("In 200 Grundrissen ist JEDES Feld vom Eingang erreichbar", unerreichbar.is_empty(),
+		", ".join(unerreichbar.slice(0, 6)))
+	_check("Treppe und Eingang liegen nie aufeinander", treppe_gleich.is_empty(),
+		", ".join(treppe_gleich.slice(0, 6)))
+	_check("Keine Truhe und kein Gegner steht im Fels", im_fels.is_empty(),
+		", ".join(im_fels.slice(0, 6)))
+
+	# ── Wände ────────────────────────────────────────────────────────────────
+	# Nur die GRENZE wird gemauert, nicht das ganze Gestein — sonst stellt die Szene tausend
+	# Kaesten auf, von denen niemand je einen sieht.
+	var p1: Dictionary = DungeonLayout.erzeugen(7, 1)
+	var w: Array[Vector2i] = DungeonLayout.waende(p1)
+	_check("Es gibt Waende (%d Stueck)" % w.size(), w.size() > 0)
+	var w_auf_boden: int = 0
+	for f in w:
+		if DungeonLayout.begehbar(p1, f):
+			w_auf_boden += 1
+	_check("Keine Wand steht auf dem Weg", w_auf_boden == 0)
+	# Und sie sind sparsam: deutlich weniger als das ganze Gitter.
+	_check("Die Waende sind nur der Rand (%d < %d Felder)"
+		% [w.size(), DungeonLayout.GITTER.x * DungeonLayout.GITTER.y],
+		w.size() < DungeonLayout.GITTER.x * DungeonLayout.GITTER.y)
+
+	# ── Umrechnung Feld <-> Szene ────────────────────────────────────────────
+	# Sie muss hin UND zurueck stimmen: Die Szene setzt Dinge nach Feld, fragt aber nach
+	# Position, auf welchem Feld die Figur steht. Driftet das auseinander, oeffnet die Treppe
+	# ein Feld daneben.
+	var hin_zurueck: Array[String] = []
+	for fx in [0, 1, 7, 13, 25]:
+		for fy in [0, 3, 12, 25]:
+			var feld := Vector2i(fx, fy)
+			if DungeonLayout.szene_zu_feld(DungeonLayout.feld_zu_szene(feld)) != feld:
+				hin_zurueck.append(str(feld))
+	_check("Feld -> Szene -> Feld trifft wieder dasselbe Feld", hin_zurueck.is_empty(),
+		", ".join(hin_zurueck))
+	# Ein Feld ist genau ein Wandsegment breit, sonst muesste die Wand gestueckelt werden.
+	_check("Ein Feld ist so breit wie ein Wandstueck (%.1f m)" % DungeonLayout.FELD_M,
+		is_equal_approx(DungeonLayout.FELD_M, 4.0))
