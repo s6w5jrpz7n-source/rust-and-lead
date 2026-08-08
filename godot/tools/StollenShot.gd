@@ -60,6 +60,7 @@ func _process(_dt: float) -> void:
 		# ausgeloest — die Kamera des Stollens zieht aber erst in ihrem eigenen `_process`
 		# nach, also stand sie noch am alten Fleck und knipste den Eingang.
 		_auf_anfuehrer()
+		_beute_streuen()
 		_i = 1
 		_warte = 12
 		return
@@ -99,3 +100,13 @@ func _auf_anfuehrer() -> void:
 		var wo: Vector3 = (e["node"] as Node3D).position
 		(d.get("_spieler") as Node3D).position = wo + Vector3(-3.0, 0.0, 7.0)
 		return
+
+
+## Ein paar Fundstuecke vor die Fuesse legen — ohne sie zeigt das Bild nur einen leeren Boden,
+## und ob eine leuchtende Beschriftung im Dunkeln traegt, ist genau die offene Frage.
+func _beute_streuen() -> void:
+	var d: Node = get_child(0)
+	var wo: Vector3 = (d.get("_spieler") as Node3D).position
+	for r in ["common", "rare", "epic", "legendary"]:
+		d.call("_gear_ablegen", wo + Vector3(0.0, 0.0, -2.0),
+			ProgressionManager.make_gear("weapon", String(r)))

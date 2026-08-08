@@ -108,7 +108,7 @@ func _draw() -> void:
 		if r.position.x < 0 or i >= GameState.bag.size():
 			continue
 		var g: Dictionary = GameState.bag[i]
-		var col: Color = OverworldView.RARITY_COLOR.get(String(g.get("rarity", "common")),
+		var col: Color = ProgressionManager.RARITY_COLOR.get(String(g.get("rarity", "common")),
 			Color.WHITE)
 		var feld: Rect2 = _rect_of(r)
 		draw_rect(feld, Color(col.r, col.g, col.b, 0.22))

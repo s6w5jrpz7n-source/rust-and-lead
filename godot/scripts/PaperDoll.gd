@@ -144,7 +144,7 @@ func _draw_slot(slot: String, r: Rect2, schrift: Font) -> void:
 	if g.is_empty():
 		_draw_dashed_rect(r, Color(0.34, 0.30, 0.23, 0.85))
 	else:
-		var col: Color = OverworldView.RARITY_COLOR.get(String(g.get("rarity", "common")),
+		var col: Color = ProgressionManager.RARITY_COLOR.get(String(g.get("rarity", "common")),
 			Color.WHITE)
 		draw_rect(r, Color(col.r, col.g, col.b, 0.20))
 		draw_rect(r, col, false, 2.0)
@@ -155,7 +155,7 @@ func _draw_slot(slot: String, r: Rect2, schrift: Font) -> void:
 	if schrift == null:
 		return
 	var tint: Color = Color(0.50, 0.45, 0.36) if g.is_empty() \
-		else OverworldView.RARITY_COLOR.get(String(g.get("rarity", "common")), Color.WHITE)
+		else ProgressionManager.RARITY_COLOR.get(String(g.get("rarity", "common")), Color.WHITE)
 	# Eine LEERE Fassung zeigt ihr Sinnbild gedaempft: Sie sagt damit nicht nur „hier fehlt
 	# etwas", sondern auch „hier gehoert ein Helm hin" — bei dreizehn Fassungen der Unterschied
 	# zwischen einer Puppe und einem Formular.

@@ -20,6 +20,17 @@ const RARITY: Dictionary = {
 	"legendary": { "name": "Legendär", "mult": 4.2, "w": 4, "req": 11 },
 }
 const RARITY_ORDER: Array = ["common", "rare", "epic", "legendary"]
+
+## Die Farbe je Seltenheitsstufe.
+##
+## Sie stand in `OverworldView` — und vier andere Dateien griffen quer dorthin, darunter der
+## Charakterschirm und das Beutelraster. Eine Oberfläche, die die WELTSZENE laden muss, um zu
+## wissen, wie blau „selten" ist, hängt an etwas, mit dem sie nichts zu tun hat. Die Farbe
+## gehört zur Seltenheit, also hierher — neben den Namen und das Gewicht.
+const RARITY_COLOR: Dictionary = {
+	"common": Color(0.80, 0.80, 0.78), "rare": Color(0.36, 0.62, 1.0),
+	"epic": Color(0.74, 0.44, 0.96), "legendary": Color(1.0, 0.78, 0.26),
+}
 const AFFIX_COUNT: Dictionary = { "common": 0, "rare": 1, "epic": 2, "legendary": 3 }
 const GEAR_ADJ: Dictionary = {
 	"common": ["Rostiger", "Abgenutzter", "Einfacher"],

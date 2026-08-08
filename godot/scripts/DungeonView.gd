@@ -46,6 +46,8 @@ var _hinweis: Label
 var _treppe_pos: Vector3 = Vector3.ZERO
 var _eingang_pos: Vector3 = Vector3.ZERO
 var _truhen: Array = []
+## Was auf dem Boden liegt und aufgehoben werden will.
+var _boden: Array = []
 var _gegner: Array = []
 var _hp: float = 0.0
 var _feuer: FireButton
@@ -65,6 +67,10 @@ const BESATZUNG: Dictionary = {
 const SICHT_M: float = 16.0
 const ANGRIFF_M: float = 2.0
 const SCHUSS_M: float = 26.0
+## Ab welchem Abstand zwei Fundstuecke sich beim Beschriften ins Gehege kommen.
+const SCHILD_NAH_M: float = 2.2
+## Wie weit ein Schild hochrueckt, wenn schon eines darunter steht.
+const SCHILD_ZEILE_M: float = 0.34
 ## Die tiefste Ebene. Dort steht der Endgegner, dort liegt die Beutekammer.
 const LETZTE_EBENE: int = 2
 ## Wer dort steht. Der Plan nennt ihn beim Namen: ein Konzern-Konstrukt als Abschluss.
@@ -344,6 +350,11 @@ func _kamera_nachziehen() -> void:
 func _naehe_pruefen() -> void:
 	if _spieler == null or _hinweis == null:
 		return
+	var liegt: Dictionary = _gear_in_range()
+	if not liegt.is_empty():
+		_hinweis.text = "✦ %s aufheben   [E]" % String((liegt["data"] as Dictionary).get(
+			"name", "Fundstück"))
+		return
 	var d_treppe: float = _spieler.position.distance_to(_treppe_pos)
 	var d_aus: float = _spieler.position.distance_to(_eingang_pos)
 	if d_treppe <= NAH_M:
@@ -397,8 +408,12 @@ func _stick_ziehen(at: Vector2) -> void:
 func _benutzen() -> void:
 	if _spieler == null:
 		return
-	# Truhen zuerst: Wer neben einer steht, will sie oeffnen und nicht versehentlich die Ebene
-	# wechseln, wenn beides dicht beieinander liegt.
+	# Reihenfolge = Dringlichkeit. Was auf dem Boden liegt, geht vor der Truhe, und die geht
+	# vor der Treppe: Wer neben allem dreien steht — und genau so steht es am Ende der Kaverne
+	# beieinander —, will sicher nicht als Erstes die Ebene wechseln und seine Beute
+	# zuruecklassen.
+	if _gear_aufheben():
+		return
 	if _truhe_oeffnen():
 		return
 	if _spieler.position.distance_to(_treppe_pos) <= NAH_M:
@@ -609,10 +624,17 @@ func _faellt(e: Dictionary) -> void:
 	GameState.gold += t.gold
 	GameState.kills += 1
 	GameState.add_xp(CombatData.xp_for_kill(t))
-	# Ausruestung wandert drinnen direkt in den Beutel: Auf einem dunklen Boden ein 30-cm-Ding
-	# zu finden, das man nur sieht, wenn die Lampe daraufhaelt, ist keine Belohnung.
+	# Ausruestung faellt auf den BODEN und wandert nicht in den Beutel.
+	#
+	# Kurz lag sie direkt im Beutel, mit dem Argument, man finde auf dunklem Grund ohnehin
+	# nichts. Das war die falsche Antwort auf ein echtes Problem: Beute, die einem zufaellt,
+	# ist etwas, das einem PASSIERT — und der Beutel fuellt sich, ohne dass man je entschieden
+	# haette, etwas mitzunehmen. Richtig ist, das Fundstueck sichtbar zu machen, nicht das
+	# Aufheben abzuschaffen. Deshalb traegt jedes Stueck seinen Namen als leuchtende Schrift
+	# ueber sich.
 	for _k in BeuteData.stuecke(BeuteData.ist_besonders(t)):
-		BagManager.add(ProgressionManager.make_gear(BeuteData.slot(), BeuteData.seltenheit()))
+		_gear_ablegen(n.position, ProgressionManager.make_gear(BeuteData.slot(),
+			BeuteData.seltenheit()))
 	if BeuteData.traegt_schluessel(t):
 		GameState.schluessel += 1
 		_hinweis.text = "✦ Ein Schlüssel. %d von %d." % [GameState.schluessel,
@@ -657,17 +679,17 @@ func _truhe_oeffnen() -> bool:
 		GameState.schluessel -= ChestData.schluessel(art)
 		var gold: int = ChestData.gold(art)
 		GameState.gold += gold
-		var namen: Array[String] = []
-		for _k in ChestData.stuecke(art):
-			var stueck: Dictionary = ProgressionManager.make_gear(
+		var wie_viele: int = ChestData.stuecke(art)
+		for _k in wie_viele:
+			# Auch aus der Truhe: auf den Boden, nicht in den Beutel. Eine Truhe, die ihren
+			# Inhalt einsortiert, ist ein Knopf mit Zahlen dahinter.
+			_gear_ablegen(n.position, ProgressionManager.make_gear(
 				String(EquipManager.GEAR_SLOTS[randi() % EquipManager.GEAR_SLOTS.size()]),
-				ChestData.seltenheit(art))
-			BagManager.add(stueck)
-			namen.append(String(stueck.get("name", "Fundstueck")))
+				ChestData.seltenheit(art)))
 		if ChestData.trank(art):
 			GameState.potions += 1
-		_hinweis.text = "▩ %s: %d ¤ und %s" % [String(ChestData.art(art)["name"]), gold,
-			", ".join(namen)]
+		_hinweis.text = "▩ %s: %d ¤ und %d Stück — sie liegen davor." % [
+			String(ChestData.art(art)["name"]), gold, wie_viele]
 		_kopf_setzen()
 		return true
 	return false
@@ -715,3 +737,83 @@ func _truhe_bauen(art: String) -> Node3D:
 		mi.position = Vector3(0.0, float(t[1]), 0.0)
 		wurzel.add_child(mi)
 	return wurzel
+
+
+## Ein Fundstück auf den Boden legen.
+##
+## Die BESCHRIFTUNG ist das Fundstück — genau wie draußen. Aus Kamerahöhe erkennt man ein
+## 30-cm-Ding im Schutt nicht, den Schriftzug darüber schon, und im Stollen gilt das doppelt:
+## Was außerhalb des Lampenkegels liegt, ist sonst schlicht unsichtbar. Deshalb leuchtet die
+## Schrift aus sich selbst und die Farbe sagt schon von weitem, ob sich das Hinlaufen lohnt.
+func _gear_ablegen(wo: Vector3, stueck: Dictionary) -> void:
+	if stueck.is_empty():
+		return
+	# Gestreut, damit zwei Stücke nicht ineinanderstehen und man beide erwischt.
+	var winkel: float = randf() * TAU
+	var r: float = sqrt(randf()) * 1.6
+	var pos := Vector3(wo.x + cos(winkel) * r, 0.0, wo.z + sin(winkel) * r)
+	# Aber nur auf begehbarem Grund: Ein Fundstück, das im Fels steckt, ist eine Belohnung, die
+	# man sieht und nie bekommt.
+	if not DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(pos)):
+		pos = Vector3(wo.x, 0.0, wo.z)
+	var farbe: Color = ProgressionManager.RARITY_COLOR.get(String(stueck["rarity"]),
+		Color(0.9, 0.9, 0.9))
+	var knoten := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.36, 0.22, 0.36)
+	knoten.mesh = box
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = farbe
+	mat.emission_enabled = true
+	mat.emission = farbe
+	mat.emission_energy_multiplier = 0.6
+	knoten.material_override = mat
+	knoten.position = pos + Vector3(0.0, 0.11, 0.0)
+	add_child(knoten)
+	# Die Beschriftung STAPELT sich, wenn schon etwas danebenliegt.
+	#
+	# Im Kontrollbild lagen vier Stücke dicht beieinander, und ihre Namen standen exakt
+	# übereinander — vier Zeilen ineinandergeschrieben, aus denen sich kein einziges Wort mehr
+	# lesen ließ. Genau der Fall tritt im Spiel ein, wenn ein Anführer zwei Stücke fallen lässt
+	# oder eine Beutekammer vier. Also: Für jedes Stück in der Nähe rückt das Schild eine Zeile
+	# höher.
+	var drueber: int = 0
+	for anderes in _boden:
+		if (anderes["pos"] as Vector3).distance_to(pos) < SCHILD_NAH_M:
+			drueber += 1
+	var schild := Label3D.new()
+	schild.text = String(stueck.get("name", "Fundstück"))
+	schild.font_size = 48
+	schild.pixel_size = 0.006
+	schild.modulate = farbe
+	schild.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	schild.no_depth_test = true
+	schild.position = pos + Vector3(0.0, 0.95 + float(drueber) * SCHILD_ZEILE_M, 0.0)
+	add_child(schild)
+	_boden.append({ "node": knoten, "schild": schild, "data": stueck, "pos": pos })
+
+
+## Das nächste Fundstück in Reichweite ({} = keins).
+func _gear_in_range() -> Dictionary:
+	for g in _boden:
+		if _spieler.position.distance_to(g["pos"] as Vector3) <= NAH_M:
+			return g
+	return {}
+
+
+## Aufheben — dieselbe Entscheidung wie draußen, mit derselben Taste.
+func _gear_aufheben() -> bool:
+	var g: Dictionary = _gear_in_range()
+	if g.is_empty():
+		return false
+	var stueck: Dictionary = g["data"]
+	if not BagManager.add(stueck):
+		_hinweis.text = "▤ Der Beutel ist voll."
+		return true
+	_hinweis.text = "✦ %s %s eingesteckt" % [
+		String(ProgressionManager.RARITY[String(stueck["rarity"])]["name"]),
+		String(stueck.get("name", "Fundstück"))]
+	(g["node"] as Node3D).queue_free()
+	(g["schild"] as Node3D).queue_free()
+	_boden.erase(g)
+	return true

@@ -71,11 +71,6 @@ const LOOT_SCATTER_M: float = 1.7
 const PICKUP_AUTO_BASE_M: float = 1.9
 const PICKUP_HAND_M: float = 2.6       # Ausrüstung: Reichweite für das Hand-Symbol
 ## Farbe der Bodenbeschriftung = Seltenheit (GDD §7.4). Grau/Blau/Violett/Gold.
-const RARITY_COLOR: Dictionary = {
-	"common": Color(0.80, 0.80, 0.78), "rare": Color(0.36, 0.62, 1.0),
-	"epic": Color(0.74, 0.44, 0.96), "legendary": Color(1.0, 0.78, 0.26),
-}
-
 # ── Persistenz (SaveManager, seit Phase 2 fertig — hier zum ersten Mal an eine Szene
 # angeschlossen): Slot 0 als laufender Spielstand dieser Sandbox. ──────────────
 const SAVE_SLOT: int = 0
@@ -5355,7 +5350,7 @@ func _drop(at: Vector3, kind: String, data: Dictionary) -> void:
 			# Kategorie als Beschriftung, Farbe = Seltenheit. Was es GENAU ist, zeigt erst das
 			# naechstgelegene Stueck (`_process_ground`) — sonst steht der Boden voller Romane.
 			text = String(ProgressionManager.GEAR_SLOTS[String(data["slot"])]["name"])
-			col = RARITY_COLOR.get(String(data["rarity"]), Color.WHITE)
+			col = ProgressionManager.RARITY_COLOR.get(String(data["rarity"]), Color.WHITE)
 	var node := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(0.28, 0.16, 0.28)

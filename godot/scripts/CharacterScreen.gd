@@ -409,7 +409,7 @@ func _describe(g: Dictionary) -> String:
 
 
 func _rarity_color(g: Dictionary) -> Color:
-	return OverworldView.RARITY_COLOR.get(String(g.get("rarity", "common")), Color.WHITE)
+	return ProgressionManager.RARITY_COLOR.get(String(g.get("rarity", "common")), Color.WHITE)
 
 
 # ── Reiter „Fähigkeiten" ──────────────────────────────────────────────────────

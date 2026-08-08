@@ -85,7 +85,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_zeichen": 5,
 	"_test_stollen": 33,
 	"_test_truhen": 15,
-	"_test_anfuehrer": 46,
+	"_test_anfuehrer": 54,
 }
 
 
@@ -5566,6 +5566,61 @@ func _test_anfuehrer() -> void:
 	_check("Gegner werfen schlechter aus als Truhen",
 		BeuteData.SELTENHEIT_BIAS < float(ChestData.art(ChestData.STANDARD)["bias"])
 		and BeuteData.SELTENHEIT_BIAS < float(ChestData.art(ChestData.BOSS)["bias"]))
+	# ── Ausruestung kommt NIE von selbst in den Beutel ───────────────────────
+	#
+	# Kurz lag die Stollenbeute direkt im Beutel, mit dem Argument, man finde auf dunklem Grund
+	# ohnehin nichts. Das war die falsche Antwort auf ein echtes Problem: Beute, die einem
+	# zufaellt, ist etwas, das einem PASSIERT — der Beutel fuellt sich, ohne dass man je
+	# entschieden haette, etwas mitzunehmen. Richtig ist, das Fundstueck SICHTBAR zu machen,
+	# nicht das Aufheben abzuschaffen.
+	#
+	# Geprueft wird die Regel selbst und nicht ihre heutige Umsetzung: `BagManager.add()` darf
+	# ausschliesslich in einer Aufhebe-Funktion stehen. Wer morgen eine dritte Szene baut, faellt
+	# hier auf.
+	var erlaubt: Array[String] = ["func _pick_up_gear", "func _gear_aufheben"]
+	var schmuggler: Array[String] = []
+	for datei in ["res://scripts/OverworldView.gd", "res://scripts/DungeonView.gd"]:
+		var zeilen: PackedStringArray = FileAccess.get_file_as_string(datei).split("\n")
+		var funktion: String = ""
+		for nr in zeilen.size():
+			var z: String = zeilen[nr]
+			if z.begins_with("func "):
+				funktion = z
+			if not _ohne_kommentar(z, false).contains("BagManager.add("):
+				continue
+			var ok: bool = false
+			for e in erlaubt:
+				if funktion.begins_with(e):
+					ok = true
+			if not ok:
+				schmuggler.append("%s:%d in %s" % [datei.get_file(), nr + 1, funktion.strip_edges()])
+	_check("Nichts wandert am Aufheben vorbei in den Beutel", schmuggler.is_empty(),
+		", ".join(schmuggler))
+	# Und im Stollen liegt sie wirklich auf dem BODEN, mit Namen darueber: Was ausserhalb des
+	# Lampenkegels liegt, ist sonst schlicht unsichtbar — DAS war das echte Problem.
+	_check("Der Stollen legt Fundstuecke ab", dv_q.contains("func _gear_ablegen"))
+	_check("Und beschriftet sie", dv_q.contains("schild.text = String(stueck.get(\"name\""))
+	# Und die Schilder STAPELN sich. Im Kontrollbild lagen vier Stuecke dicht beieinander und
+	# ihre Namen standen exakt uebereinander — vier Zeilen ineinandergeschrieben, aus denen sich
+	# kein Wort mehr lesen liess. Genau der Fall tritt ein, wenn ein Anfuehrer zwei Stuecke
+	# fallen laesst oder eine Beutekammer vier.
+	_check("Die Beschriftungen stapeln sich statt sich zu ueberschreiben",
+		dv_q.contains("float(drueber) * SCHILD_ZEILE_M"))
+	# Eine Zeile muss hoeher sein als die Schrift selbst, sonst kleben sie trotzdem.
+	_check("Und der Zeilenabstand traegt (%.2f m)" % DV.SCHILD_ZEILE_M,
+		float(DV.SCHILD_ZEILE_M) > 0.25)
+	_check("Aufgehoben wird mit derselben Taste wie draussen",
+		dv_q.contains("aufheben   [E]") and ow_q.contains("aufheben   [E]"))
+	# Beute geht VOR Truhe und Treppe: Am Ende der Kaverne steht alles dreies beieinander, und
+	# wer dort die Ebene wechselt, laesst seine Beute liegen.
+	_check("Aufheben geht vor Truhe und Treppe",
+		dv_q.find("if _gear_aufheben():") < dv_q.find("if _truhe_oeffnen():")
+		and dv_q.find("if _truhe_oeffnen():") < dv_q.find("distance_to(_treppe_pos) <= NAH_M"))
+	# Und nichts landet im Fels: ein Fundstueck, das man sieht und nie bekommt, ist schlimmer
+	# als keines.
+	_check("Abgelegt wird nur auf begehbarem Grund",
+		dv_q.contains("if not DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(pos)):"))
+
 	# Beide Szenen benutzen dieselbe Tabelle.
 	_check("Beide Szenen wuerfeln aus derselben Tabelle",
 		ow_q.contains("BeuteData.stuecke(BeuteData.ist_besonders(target))")
