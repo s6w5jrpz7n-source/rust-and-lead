@@ -88,7 +88,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_kraterrand_kamm": 6,
 	"_test_stimmen": 13,
 	"_test_stufenanforderung": 13,
-	"_test_haendler": 13,
+	"_test_haendler": 14,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -2948,49 +2948,75 @@ func _test_orbit() -> void:
 	var start: Vector3 = um + Vector3(27.0, 15.0, 0.0)
 	var bogen: float = 220.0
 	var punkte: Array = OW.orbit_punkte(um, start, bogen, 15.0, 22.0, 9.0, 4.8)
-	_check("Die Umrundung hat Stuetzpunkte (%d)" % punkte.size(), punkte.size() == 16)
+
+	# EINE Etappe, nicht sechzehn.
+	#
+	# Vorher war der Bogen in sechzehn Sehnen zerlegt, und das hat sich im Spiel angefuehlt,
+	# als warte die Kamera an jedem Winkel kurz. Das war kein Gefuehl, sondern eine Rechnung:
+	# Die Stuetzpunkte wurden mit `smoothstep` ueber den Bogen VERTEILT — aussen dicht, in der
+	# Mitte weit — bekamen aber alle DIESELBE Zeit. Die Kamera kroch durch die engen
+	# Abschnitte und raste durch die weiten, mit einem Sprung an jeder Naht. Die
+	# Beschleunigung, die die Verteilung erzeugen sollte, hob die gleiche Zeit je Abschnitt
+	# genau wieder auf.
+	_check("Die Umrundung ist EINE Etappe (%d)" % punkte.size(), punkte.size() == 1)
 	if punkte.is_empty():
 		return
-	# 1. Der Abstand zum Turm bleibt der Radius — auch MITTEN in einem Abschnitt, denn dort
-	#    schneidet die Gerade den Bogen ab. Genau dieser Fehler war vorher 17 %.
+	var b: Dictionary = punkte[0]
+	_check("Und wird als Bogen gerechnet, nicht angesteuert", bool(b.get("bogen", false)))
+
+	# 1. Der Abstand zur Mitte IST der Radius — jetzt exakt, an jeder Stelle. Vorher schnitt
+	#    jede Sehne den Bogen ab; der Fehler lag bei den ersten zwei Stuetzpunkten bei 17 %.
 	var kleinster: float = 1e9
 	var groesster: float = 0.0
-	var vorher: Vector3 = start
-	for p in punkte:
-		for k in 9:
-			var q: Vector3 = vorher.lerp(p["pos"], float(k) / 8.0)
-			var d: float = Vector2(q.x - um.x, q.z - um.z).length()
-			kleinster = minf(kleinster, d)
-			groesster = maxf(groesster, d)
-		vorher = p["pos"]
-	var fehler: float = 1.0 - kleinster / 27.0
-	_check("Der Abstand bleibt rund (%.2f–%.2f m, Fehler %.1f %%)"
-		% [kleinster, groesster, fehler * 100.0], fehler < 0.02)
-	# 2. Der Bogen wird auch wirklich abgefahren.
-	var letzte: Vector3 = punkte[-1]["pos"]
+	for i in 201:
+		var q: Vector3 = OW.bogen_punkt(b, float(i) / 200.0)
+		var d: float = Vector2(q.x - um.x, q.z - um.z).length()
+		kleinster = minf(kleinster, d)
+		groesster = maxf(groesster, d)
+	_check("Der Abstand bleibt exakt rund (%.3f–%.3f m)" % [kleinster, groesster],
+		groesster - kleinster < 0.01)
+
+	# 2. Der Bogen wird auch wirklich abgefahren, und dabei gestiegen.
+	var letzte: Vector3 = OW.bogen_punkt(b, 1.0)
 	var grad: float = rad_to_deg(fposmod(atan2(letzte.z - um.z, letzte.x - um.x)
 		- atan2(start.z - um.z, start.x - um.x), TAU))
 	_check("Es werden %.0f° umrundet" % grad, absf(grad - bogen) < 1.0)
 	_check("Und dabei gestiegen (%.1f m)" % (letzte.y - start.y),
 		absf(letzte.y - start.y - 7.0) < 0.1)
-	# 3. Kein Ruckeln: Die Abschnitte sind linear (sonst bremste jeder einzeln ab), und die
-	#    Beschleunigung steckt in den Winkelschritten — aussen kurz, in der Mitte lang.
-	var weich: bool = false
-	for p in punkte:
-		if bool(p.get("weich", true)):
-			weich = true
-	_check("Die Abschnitte bremsen nicht einzeln ab", not weich)
-	var erster_schritt: float = start.distance_to(punkte[0]["pos"])
-	var mittlerer: float = Vector3(punkte[7]["pos"]).distance_to(punkte[8]["pos"])
-	_check("Die Umrundung faehrt sanft an (%.1f m vs. %.1f m in der Mitte)"
-		% [erster_schritt, mittlerer], mittlerer > erster_schritt * 2.0)
-	# 4. Der Blick haengt am Turm, sonst dreht sich die Kamera um sich selbst statt um ihn.
-	var immer_turm: bool = true
-	for p in punkte:
-		if Vector3(p["ziel"]).distance_to(um + Vector3(0.0, 9.0, 0.0)) > 0.01:
-			immer_turm = false
-	_check("Der Blick bleibt am Turm", immer_turm)
-	# 5. Ein Kreis mit Radius null ist keiner — lieber gar keine Punkte als eine Division.
+	_check("Sie faengt genau dort an, wo der Anflug endet (%.2f m)"
+		% OW.bogen_punkt(b, 0.0).distance_to(start),
+		OW.bogen_punkt(b, 0.0).distance_to(start) < 0.01)
+
+	# 3. DAS ist der Punkt der ganzen Aenderung: Die Geschwindigkeit springt nicht.
+	#
+	#    Gemessen wird die Strecke je Zeitschritt entlang der ECHTEN Fahrt — also mit dem
+	#    `smoothstep` ueber die Zeit, das `_flight_frame` anwendet. Bei der alten Sehnen-Kette
+	#    sprang sie an jeder Naht; hier darf sie sich von Schritt zu Schritt nur sanft aendern.
+	var wege: Array = []
+	var vorher: Vector3 = OW.bogen_punkt(b, 0.0)
+	for i in range(1, 201):
+		var k: float = smoothstep(0.0, 1.0, float(i) / 200.0)
+		var q2: Vector3 = OW.bogen_punkt(b, k)
+		wege.append(vorher.distance_to(q2))
+		vorher = q2
+	var groesster_sprung: float = 0.0
+	var schnellste: float = 0.0
+	for i in range(1, wege.size()):
+		groesster_sprung = maxf(groesster_sprung, absf(float(wege[i]) - float(wege[i - 1])))
+		schnellste = maxf(schnellste, float(wege[i]))
+	_check("Die Geschwindigkeit springt nicht (groesster Sprung %.1f %% der Hoechstfahrt)"
+		% (groesster_sprung / maxf(schnellste, 0.001) * 100.0),
+		groesster_sprung < schnellste * 0.06)
+	# Und sie faehrt an und wieder aus, statt mit einem Ruck loszulegen.
+	_check("Sie faehrt sanft an und aus (%.3f / %.3f gegen %.3f in der Mitte)"
+		% [float(wege[0]), float(wege[-1]), float(wege[wege.size() / 2])],
+		float(wege[0]) < float(wege[wege.size() / 2]) * 0.25
+		and float(wege[-1]) < float(wege[wege.size() / 2]) * 0.25)
+
+	# 4. Der Blick haengt an der Mitte, sonst dreht sich die Kamera um sich selbst statt um sie.
+	_check("Der Blick bleibt in der Mitte",
+		Vector3(b["ziel"]).distance_to(um + Vector3(0.0, 9.0, 0.0)) < 0.01)
+	# 5. Ein Kreis mit Radius null ist keiner — lieber gar keine Fahrt als eine Division.
 	_check("Ohne Radius gibt es keine Umrundung",
 		OW.orbit_punkte(um, um + Vector3(0.0, 5.0, 0.0), 220.0, 5.0, 5.0, 2.0, 3.0).is_empty())
 	# 6. Umrundet wird die PALISADE mit Blick nach innen, nicht der Wasserturm.
@@ -6812,25 +6838,36 @@ func _test_haendler() -> void:
 			anders = true
 	_check("Am naechsten Tag liegt anderes da", anders)
 
-	# Nichts Gewoehnliches: Das findet man im ersten Fass, dafuer geht niemand zum Haendler.
-	var nur_gut: bool = true
-	for t in [1, 2, 3, 7, 12, 30]:
+	# Gewoehnlich bis selten, NIE darueber. Episches und Legendaeres kauft man nicht -- das
+	# findet man, und davon lebt der Anreiz hinauszugehen. Ein Haendler, der es fuehrt, macht
+	# das Suchen ueberfluessig: Wer genug Gold hat, holt sich die beste Waffe im Spiel, ohne je
+	# einen Stollen betreten zu haben.
+	var passt: bool = true
+	var gesehen_c: bool = false
+	var gesehen_r: bool = false
+	for t in range(1, 60):
 		GameState.tag = t
 		for g in HaendlerData.bestand():
-			if String(g["rarity"]) == "common":
-				nur_gut = false
+			var r2: String = String(g["rarity"])
+			if r2 == "common":
+				gesehen_c = true
+			elif r2 == "rare":
+				gesehen_r = true
+			else:
+				passt = false
 			if String(g["slot"]) != "weapon":
-				nur_gut = false
-	_check("Sie fuehrt nur Waffen, und nichts Gewoehnliches", nur_gut)
+				passt = false
+	_check("Sie fuehrt nur Waffen, gewoehnlich bis selten", passt)
+	_check("Und beide Sorten kommen vor", gesehen_c and gesehen_r)
 
 	# Der Preis haengt an der ANFORDERUNG, nicht an der Farbe allein — seit die Anforderung die
 	# Staerke abbildet, waere ein Preis nach Farbe fuer die schwache Waffe Wucher und fuer die
 	# starke geschenkt.
-	var schwach: Dictionary = ProgressionManager.make_gear("weapon", "epic")
+	var schwach: Dictionary = ProgressionManager.make_gear("weapon", "rare")
 	schwach["req"] = 1
 	var stark: Dictionary = schwach.duplicate(true)
-	stark["req"] = 12
-	_check("Die starke epische Waffe kostet mehr (%d gegen %d)"
+	stark["req"] = 7
+	_check("Die starke seltene Waffe kostet mehr (%d gegen %d)"
 		% [HaendlerData.preis(stark), HaendlerData.preis(schwach)],
 		HaendlerData.preis(stark) > HaendlerData.preis(schwach))
 

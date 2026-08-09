@@ -6238,6 +6238,18 @@ func _flight_frame() -> Array:
 	var von_fov: float = CAM_FOV
 	for p in _flight:
 		var sek: float = maxf(float(p["sek"]), 0.05)
+		# Ein Bogen wird nicht angesteuert, sondern AUSGERECHNET — eine einzige weiche Fahrt
+		# ueber die ganze Runde statt sechzehn Sehnen mit Nahtstellen.
+		if bool(p.get("bogen", false)):
+			var b_fov: float = float(p.get("fov", von_fov))
+			if t <= sek:
+				var bk: float = smoothstep(0.0, 1.0, t / sek)
+				return [bogen_punkt(p, bk), p["ziel"], lerpf(von_fov, b_fov, bk)]
+			t -= sek
+			von_pos = bogen_punkt(p, 1.0)
+			von_ziel = p["ziel"]
+			von_fov = b_fov
+			continue
 		var aufgeloest: Array = _flight_punkt(p)
 		if t <= sek:
 			var roh: float = t / sek
@@ -6265,7 +6277,19 @@ func _flight_frame() -> Array:
 ## um den Wasserturm waren das 26 m an den Enden und 21,6 m in der Mitte — sichtbar keine
 ## Umrundung.
 ##
-## Also wird der Bogen in `stufen` Sehnen zerlegt. Bei sechzehn Stufen ueber 220° bleibt der
+## Und genau so war es gebaut — bis es sich anfuehlte, als warte die Kamera an jedem Winkel
+## kurz. Das war kein Gefuehl, sondern eine Rechnung: Die Stuetzpunkte wurden mit `smoothstep`
+## ueber den Bogen VERTEILT (aussen dicht, in der Mitte weit), bekamen aber alle DIESELBE Zeit.
+## Die Kamera kroch also durch die engen Abschnitte und raste durch die weiten, mit einem
+## Geschwindigkeitssprung an jeder Naht. Die Beschleunigung, die die Verteilung erzeugen
+## sollte, hob die gleiche Zeit je Abschnitt genau wieder auf — und uebrig blieb das Ruckeln.
+##
+## Jetzt gibt es keine Sehnen mehr. Der Bogen ist EINE Etappe, und `_flight_frame` rechnet die
+## Position daraus zur Laufzeit aus: ein einziger weicher Verlauf ueber die ganze Runde, ohne
+## Naht und ohne Stuetzpunkt. Was unten steht, ist die Begruendung, warum es die Sehnen
+## ueberhaupt gab — sie gilt weiter fuer jede GERADE Kette.
+##
+## (Historisch: Also wurde der Bogen in `stufen` Sehnen zerlegt.) Bei sechzehn Stufen ueber 220° bleibt der
 ## groesste Abstandsfehler bei 0,43 m auf 27 m — 1,6 %, und das an der Stelle, an der die
 ## Kamera am schnellsten ist. Das sieht kein Mensch. (Zwoelf waeren 2,8 %, zwanzig 1,0 % — die
 ## Stuetzpunkte kosten nichts, aber irgendwo ist Schluss.)
@@ -6332,25 +6356,32 @@ static func spirale_punkte(um: Vector3, start: Vector3, bogen_grad: float,
 
 static func orbit_punkte(um: Vector3, start: Vector3, bogen_grad: float,
 		hoehe_von: float, hoehe_bis: float, ziel_hoehe: float,
-		sek: float, stufen: int = 16) -> Array:
+		sek: float, _stufen: int = 16) -> Array:
 	var speiche := Vector3(start.x - um.x, 0.0, start.z - um.z)
 	var radius: float = speiche.length()
-	if radius < 0.5 or stufen < 1:
+	if radius < 0.5 or sek <= 0.0:
 		return []
-	var a0: float = atan2(speiche.z, speiche.x)
-	var bogen: float = deg_to_rad(bogen_grad)
-	var ziel: Vector3 = um + Vector3(0.0, ziel_hoehe, 0.0)
-	var out: Array = []
-	for i in range(1, stufen + 1):
-		var k: float = smoothstep(0.0, 1.0, float(i) / float(stufen))
-		var a: float = a0 + bogen * k
-		out.append({
-			"pos": um + Vector3(cos(a) * radius, lerpf(hoehe_von, hoehe_bis, k), sin(a) * radius),
-			"ziel": ziel,
-			"sek": sek / float(stufen),
-			"weich": false,
-		})
-	return out
+	# EINE Etappe, keine sechzehn. Der Bogen wird nicht mehr in Sehnen zerlegt, sondern zur
+	# Laufzeit ausgerechnet — `_flight_frame` erkennt ihn am Feld `bogen`.
+	return [{
+		"bogen": true,
+		"um": um,
+		"radius": radius,
+		"a0": atan2(speiche.z, speiche.x),
+		"spanne": deg_to_rad(bogen_grad),
+		"h0": hoehe_von,
+		"h1": hoehe_bis,
+		"ziel": um + Vector3(0.0, ziel_hoehe, 0.0),
+		"sek": sek,
+	}]
+
+
+## Ein Punkt auf dem Bogen, `k` von 0 bis 1.
+static func bogen_punkt(p: Dictionary, k: float) -> Vector3:
+	var a: float = float(p["a0"]) + float(p["spanne"]) * k
+	var um: Vector3 = p["um"]
+	return um + Vector3(cos(a) * float(p["radius"]),
+		lerpf(float(p["h0"]), float(p["h1"]), k), sin(a) * float(p["radius"]))
 
 
 func _flight_total() -> float:

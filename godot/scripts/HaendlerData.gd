@@ -17,10 +17,11 @@ class_name HaendlerData
 ##
 ## ## Was sie fuehrt
 ##
-## Waffen, und zwar BESSERE als das, was frueh herumliegt. Ihr Zweck ist, dass Gold einen
-## zweiten Zweck bekommt: Bei Silas baut man den Helden aus, bei ihr kauft man das Werkzeug.
-## Deshalb faengt sie bei `rare` an und nicht bei `common` — Gewoehnliches findet man ohnehin
-## im ersten Fass.
+## Waffen, gewoehnlich bis selten. Ihr Zweck ist, dass Gold einen zweiten Zweck bekommt: Bei
+## Silas baut man den Helden aus, bei ihr kauft man das Werkzeug.
+##
+## NICHT darueber. Episches und Legendaeres kauft man nicht — das findet man, und davon lebt
+## der Anreiz hinauszugehen. Ein Haendler, der es fuehrt, macht das Suchen ueberfluessig.
 ##
 ## Sie verkauft auch, was man noch nicht tragen darf. Das ist Absicht: Ein Regal, in dem nur
 ## steht, was man ohnehin anlegen kann, gibt einem nichts zum Hinarbeiten. Die Zeile sagt es
@@ -30,11 +31,15 @@ class_name HaendlerData
 ## Wie viele Stuecke gleichzeitig ausliegen.
 const PLAETZE: int = 4
 
-## Woraus gewuerfelt wird, mit Gewichten. Kein `common`: Das findet man im ersten Fass.
+## Woraus gewuerfelt wird, mit Gewichten. GEWOEHNLICH BIS SELTEN, nie darueber.
+##
+## Sie ist die verlaessliche Grundversorgung, nicht die Abkuerzung. Episches und Legendaeres
+## kauft man nicht — das findet man, in Truhen und bei Anfuehrern, und genau davon lebt der
+## Anreiz hinauszugehen. Ein Haendler, der es fuehrt, macht das Suchen ueberfluessig: Wer genug
+## Gold hat, holt sich die beste Waffe im Spiel, ohne je einen Stollen betreten zu haben.
 const ANGEBOT: Array = [
+	["common", 42],
 	["rare", 58],
-	["epic", 34],
-	["legendary", 8],
 ]
 
 ## Preis je Seltenheit — Grundpreis und Aufschlag je Stufe, die das Teil verlangt.
@@ -45,10 +50,10 @@ const ANGEBOT: Array = [
 ## ist viel wert. Ein Preis nach Farbe allein waere fuer die eine Wucher und fuer die andere
 ## geschenkt.
 const PREIS_GRUND: Dictionary = {
-	"rare": 180, "epic": 420, "legendary": 1100,
+	"common": 60, "rare": 180,
 }
 const PREIS_JE_STUFE: Dictionary = {
-	"rare": 45, "epic": 95, "legendary": 180,
+	"common": 0, "rare": 45,
 }
 
 
