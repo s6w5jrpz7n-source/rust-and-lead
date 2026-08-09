@@ -8,32 +8,32 @@
    "hint": "trocken, nie theatralisch"
   },
   "mabel": {
-   "azure": "de-DE-KatjaNeural",
+   "azure": "de-DE-Mia:MAI-Voice-2",
    "name": "Mamma „Rusty“ Mabel",
    "hint": "Frau ~50, rau, warm, Whiskey-tief"
   },
   "silas": {
-   "azure": "de-DE-BerndNeural",
+   "azure": "de-DE-KlausNeural",
    "name": "Silas „Kupferauge“ Finch",
    "hint": "alter Schmied, bedächtig"
   },
   "gideon": {
-   "azure": "de-DE-KillianNeural",
+   "azure": "de-DE-KasperNeural",
    "name": "Gideon Cross",
    "hint": "hart, direkt, keine Höflichkeit"
   },
   "doc": {
-   "azure": "de-DE-RalfNeural",
+   "azure": "de-DE-BerndNeural",
    "name": "Doc Aris",
    "hint": "hager, präzise, nervös wenn er lügt"
   },
   "quentin": {
-   "azure": "de-DE-ConradNeural",
+   "azure": "de-DE-RalfNeural",
    "name": "Quentin",
    "hint": "gemessen, trocken"
   },
   "slick": {
-   "azure": "de-DE-KasperNeural",
+   "azure": "de-DE-ConradNeural",
    "name": "Slick",
    "hint": "glatt, zu freundlich"
   }

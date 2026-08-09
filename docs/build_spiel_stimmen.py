@@ -49,8 +49,16 @@ WURZEL = HERE.parent
 SCRIPTS = WURZEL / "godot" / "scripts"
 OUT = HERE / "spiel_stimmen.json"
 
-# Rolle -> Azure-Stimme. Vier davon kommen aus dem Hoerspiel-Mapping und
-# bleiben dieselben, damit eine Figur in beiden Fassungen gleich klingt.
+# Rolle -> Azure-Stimme. NACH GEHOER ausgesucht: `azure_tts.py --faecher`
+# rendert denselben Satz mit jeder deutschen Stimme, danach wurde geklickt.
+# Vorher standen hier Zuordnungen aus dem Hoerspiel, die nie jemand gehoert
+# hatte -- eine Stimmbeschreibung im Katalog und die Stimme selbst sind zwei
+# verschiedene Dinge.
+#
+# Mabel ist die einzige mit Sprechstilen (MAI-Voice-2 gibt es nur als Klaus und
+# Mia). Bei allen anderen bleibt die Regie im Quelltext vorerst wirkungslos --
+# sie steht trotzdem da, weil sie beschreibt, was gemeint ist, und weil ein
+# Wechsel des Dienstes sie sofort brauchbar macht.
 STIMMEN = {
     # Ausgesucht nach Gehoer aus `--faecher`, nicht nach Beschreibung. Christoph
     # kann keine Sprechstile — das kostet weniger, als es klingt: Von den 40
@@ -60,23 +68,22 @@ STIMMEN = {
     "held":    {"azure": "de-DE-ChristophNeural",
                 "name": "Der Namenlose",
                 "hint": "trocken, nie theatralisch"},
-    "mabel":   {"azure": "de-DE-KatjaNeural",
+    "mabel":   {"azure": "de-DE-Mia:MAI-Voice-2",
                 "name": "Mamma „Rusty“ Mabel",
                 "hint": "Frau ~50, rau, warm, Whiskey-tief"},
-    "silas":   {"azure": "de-DE-BerndNeural",
+    "silas":   {"azure": "de-DE-KlausNeural",
                 "name": "Silas „Kupferauge“ Finch",
                 "hint": "alter Schmied, bedächtig"},
-    "gideon":  {"azure": "de-DE-KillianNeural",
+    "gideon":  {"azure": "de-DE-KasperNeural",
                 "name": "Gideon Cross",
                 "hint": "hart, direkt, keine Höflichkeit"},
-    # Christoph ist an den Helden gegangen; der Doc bekommt Ralf.
-    "doc":     {"azure": "de-DE-RalfNeural",
+    "doc":     {"azure": "de-DE-BerndNeural",
                 "name": "Doc Aris",
                 "hint": "hager, präzise, nervös wenn er lügt"},
-    "quentin": {"azure": "de-DE-ConradNeural",
+    "quentin": {"azure": "de-DE-RalfNeural",
                 "name": "Quentin",
                 "hint": "gemessen, trocken"},
-    "slick":   {"azure": "de-DE-KasperNeural",
+    "slick":   {"azure": "de-DE-ConradNeural",
                 "name": "Slick",
                 "hint": "glatt, zu freundlich"},
 }
