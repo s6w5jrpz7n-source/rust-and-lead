@@ -441,9 +441,11 @@ def faecher(text):
         for stil in alle[stimme][:4]:
             fassungen.append((f"{kurz}_{dateiname(stil)}", stimme, stil, 0))
     print(f"{len(fassungen)} Fassungen · „{text}“ · {PROBE_DIR}")
+    geschrieben = uebersprungen = kaputt = 0
     for name, stimme, stil, _ in fassungen:
         ziel = PROBE_DIR / (name + ".mp3")
-        if ziel.exists():
+        if ziel.exists() and ziel.stat().st_size > 0:
+            uebersprungen += 1
             continue
         inhalt = html.escape(sprechbar(text))
         if stil:
@@ -452,14 +454,38 @@ def faecher(text):
                 'xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="de-DE">'
                 f'<voice name="{stimme}">{inhalt}</voice></speak>')
         try:
-            ziel.write_bytes(sprich(ssml, FORMATE["mp3"][0]))
-            print(f"  ✓ {ziel.name}")
+            ton = sprich(ssml, FORMATE["mp3"][0])
+            ziel.write_bytes(ton)
+            # NACHSEHEN, ob wirklich etwas dasteht. Genau das hat gefehlt: Die
+            # Fassungen mit Doppelpunkt im Namen landeten unter Windows in einem
+            # alternativen Datenstrom, ueberschrieben sich gegenseitig — und das
+            # Skript meldete 41-mal Erfolg, waehrend 19 Dateien entstanden.
+            #
+            # Ein "✓", das nur bedeutet "die Anfrage kam durch", ist keine
+            # Erfolgsmeldung. Erfolg ist eine Datei, die da ist und Inhalt hat.
+            da = ziel.stat().st_size if ziel.exists() else 0
+            if da <= 0:
+                print(f"  ✗ {ziel.name}: geschrieben, aber nicht da "
+                      f"({len(ton)} Byte gesendet). Dateiname vom System abgelehnt?")
+                kaputt += 1
+            else:
+                print(f"  ✓ {ziel.name}  ({da // 1024} KB)")
+                geschrieben += 1
         except urllib.error.HTTPError as ex:
             print(f"  ✗ {name}: {_deuten(ex)}")
+            kaputt += 1
             if ex.code in (401, 403, 404):
                 return 1
         time.sleep(PAUSE_SEK)
-    return 0
+    # Und am Ende die Gegenrechnung. Ohne sie faellt nicht auf, dass von 41
+    # geplanten Fassungen nur 19 auf der Platte liegen.
+    echt = len([f for f in PROBE_DIR.glob("*.mp3") if f.stat().st_size > 0])
+    print(f"\nGeplant {len(fassungen)} · neu {geschrieben} · schon da "
+          f"{uebersprungen} · fehlgeschlagen {kaputt}")
+    print(f"Im Ordner liegen {echt} brauchbare Dateien.")
+    if echt < len(fassungen):
+        print(f"⚠  Es fehlen {len(fassungen) - echt}. Nochmal starten holt sie nach.")
+    return 1 if kaputt else 0
 
 
 def main():
