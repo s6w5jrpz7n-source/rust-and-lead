@@ -7939,57 +7939,208 @@ func _erst_beute() -> void:
 
 ## Die vier Waende am Welthorizont — mit Scheitelfarben statt als Kiste.
 const RIM_H: float = 210.0
+## So weit DRAUSSEN vor der Weltgrenze steht der Ring. Er ist damit nicht erreichbar und
+## verdeckt auch dann noch den Horizont, wenn man ganz am Rand steht.
+##
+## 220 m und nicht mehr 75: Die runden Ecken brauchen Platz. Eine Rundung schneidet die Ecke
+## IMMER an — der Bogen liegt an seiner engsten Stelle 0,41 x Radius hinter der Rechteckecke —,
+## und bei 75 m Abstand lagen die vier Weltecken damit ausserhalb des Rings. Man waere dort aus
+## der Welt herausgelaufen. Der Test hat es gefangen (4 von 8 Eckpunkten drinnen).
+##
+## Was der groessere Abstand kostet, ist wenig: Am Rand steht die 210-m-Wand jetzt 220 m statt
+## 75 m entfernt und deckt 44° statt 70° des Himmels. Sie ist dort immer noch eine Wand.
+const RIM_ABSTAND: float = 220.0
 const RIM_DICKE: float = 150.0
 ## Ab welcher Hoehe die Wand in den Himmel uebergeht. Darunter Fels, darueber Verlauf.
 const RIM_FELS_ANTEIL: float = 0.34
 var _rim_mats: Array = []
-func _build_rim_walls(w: float, half: float) -> void:
-	var fels := Color(0.28, 0.22, 0.18)
-	# Vier Waende, je als Streifen aus Vierecken. Die Unterteilung in der HOEHE ist das, was den
-	# Verlauf traegt — quer reicht ein Viereck, dort aendert sich nichts.
-	# Genau `w` lang und nicht `w + 300`.
+## Der Kraterrand als geschlossener RING mit runden Ecken — je `[Name, Mitte, Laengsvektor]`.
+##
+## ## Warum kein Rechteck mehr
+##
+## Weil ein Rechteck von innen IMMER eine Kante zeigt, und zwar unabhaengig davon, wie sauber
+## die Ecken gebaut sind. Auf den Aussenaufnahmen stand rechts oben ein Absatz, an dem der Grat
+## von einer Hoehe auf eine andere sprang. Ein Strahl durch genau diesen Bildpunkt hat es
+## beantwortet: links die Westwand aus 2048 m, rechts die Nordwand aus 4752 m. Zwei Waende, die
+## sich luecklos in einer Ecke treffen, stehen fuer den Betrachter trotzdem verschieden weit weg
+## — und ein 210-m-Grat ist aus 2 km doppelt so hoch wie aus 4,8 km. Die Stufe IST die Ecke.
+##
+## Vorher waren an derselben Stelle zwei andere Erklaerungen naheliegend und beide falsch (ein
+## Loch an der Ecke, eine fehlende Querblende). Beide sind repariert worden, und beide Male blieb
+## der Absatz stehen. Erst der Strahl hat die Frage entschieden.
+##
+## ## Was stattdessen
+##
+## Ein Ring mit abgerundeten Ecken. An den Seiten liegt er weiter dort, wo er lag —
+## `RIM_ABSTAND` vor der Weltgrenze, also nah und hoch —, und in den Ecken laeuft er auf einem
+## Bogen herum. Damit aendert sich der Abstand zum Betrachter stetig, und mit ihm die Hoehe des
+## Grats: kein Sprung mehr, weil es keine Ecke mehr gibt.
+##
+## Und weil der Ring GESCHLOSSEN ist, hat er keine Enden. Die Querblende, die die Enden weich
+## machen sollte, ist damit ersatzlos weg — die beste Art, ein Problem zu loesen.
+##
+## `RIM_ECK_R` ist der Radius der Rundung, `RIM_ECK_STUFEN` ihre Aufloesung.
+## Der Radius der Rundung. Er ist nach oben gebunden, und die Schranke ist keine Vorsicht,
+## sondern Geometrie: Ein Bogen vom Radius `r`, der zwei rechtwinklige Kanten verbindet, liegt
+## an seiner engsten Stelle `0,414 x r` hinter der Ecke, die er ersetzt. Damit die Weltecke
+## (`RIM_ABSTAND x sqrt(2)` von der Rechteckecke entfernt) INNERHALB bleibt, muss gelten
+## `0,414 x r <= 1,414 x RIM_ABSTAND`, also `r <= 3,41 x RIM_ABSTAND`. Mit Luft: 2,8.
+const RIM_ECK_R: float = 600.0
+const RIM_ECK_STUFEN: int = 10
+
+static func rim_ring(w: float) -> PackedVector2Array:
+	# Die Aussenkontur: das Weltquadrat, um RIM_ABSTAND aufgeblasen.
+	var x0: float = -RIM_ABSTAND
+	var x1: float = w + RIM_ABSTAND
+	var z0: float = RIM_ABSTAND          # Sued (groesseres z)
+	var z1: float = -w - RIM_ABSTAND     # Nord
+	# Nach oben gebunden (siehe RIM_ECK_R): Sonst schneidet die Rundung die Weltecken ab.
+	var r: float = minf(RIM_ECK_R, minf((x1 - x0) * 0.5 - 1.0, RIM_ABSTAND * 2.8))
+	var punkte := PackedVector2Array()
+	# Vier Ecken, je als Bogen um ihren Mittelpunkt. Reihenfolge im Uhrzeigersinn in der
+	# x/z-Ebene; sie ist gleichgueltig, solange sie RUNDHERUM geht.
 	#
-	# Der Ueberstand von 150 m je Seite liess die vier Waende an den Ecken UEBEREINANDER liegen,
-	# und weil sie durchsichtig sind, addiert sich dort die Deckkraft: Im Bild standen an den
-	# Ecken dunklere Rechtecke mit sichtbaren Kanten. Bei durchsichtigen Flaechen ist eine
-	# Ueberlappung kein Sicherheitspuffer, sondern ein Fehler.
-	var seiten: Array = [
-		[Vector3(half, 0.0, 75.0), Vector3(w, 0.0, 0.0)],                    # Sued
-		[Vector3(half, 0.0, -w - 75.0), Vector3(w, 0.0, 0.0)],               # Nord
-		[Vector3(-75.0, 0.0, -half), Vector3(0.0, 0.0, w)],                  # West
-		[Vector3(w + 75.0, 0.0, -half), Vector3(0.0, 0.0, w)],               # Ost
+	# Die Winkel sind in der Ebene (x nach rechts, NORDEN nach oben) gemeint, also 0° = Osten,
+	# 90° = Norden. Der erste Versuch startete jeden Bogen 90° zu frueh; der Ring lief dann durch
+	# die Welt statt um sie herum, und der groesste Knick betrug 95° statt der 90°, die er
+	# ersetzen sollte. Der Test hat es gefangen — die Zeichnung im Kopf nicht.
+	var ecken: Array = [
+		[Vector2(x1 - r, z0 - r), 270.0],      # Suedost: von Sueden nach Osten
+		[Vector2(x1 - r, z1 + r), 0.0],        # Nordost: von Osten nach Norden
+		[Vector2(x0 + r, z1 + r), 90.0],       # Nordwest: von Norden nach Westen
+		[Vector2(x0 + r, z0 - r), 180.0],      # Suedwest: von Westen nach Sueden
 	]
-	for seite in seiten:
-		var mitte: Vector3 = seite[0]
-		var laengs: Vector3 = seite[1] * 0.5
-		var st := SurfaceTool.new()
-		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		# 28 Stufen und nicht 12: Der Verlauf laeuft ueber zwei Drittel der Hoehe, und mit zwoelf
-		# Stufen waren das acht Sprossen auf 139 m — im Bild als Treppe zu sehen.
-		var stufen: int = 28
-		for i in stufen:
-			var y0: float = RIM_H * float(i) / float(stufen)
-			var y1: float = RIM_H * float(i + 1) / float(stufen)
-			for q in [[-1.0, y0], [1.0, y0], [1.0, y1], [-1.0, y0], [1.0, y1], [-1.0, y1]]:
-				var p: Vector3 = mitte + laengs * float(q[0]) + Vector3(0.0, float(q[1]), 0.0)
-				st.set_color(_rim_farbe(float(q[1])))
-				st.add_vertex(p)
-		st.generate_normals()
-		var mi := MeshInstance3D.new()
-		mi.mesh = st.commit()
-		var m := StandardMaterial3D.new()
-		m.albedo_color = fels
-		m.vertex_color_use_as_albedo = true
-		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		# UNBELEUCHTET. Eine 210-m-Wand, die von einer festen Sonne angestrahlt wird, ist auf
-		# zwei Seiten hell und auf zwei schwarz — und die schwarzen sind genau die, die als
-		# Balken auffallen. Ein entfernter Grat hat ohnehin keine erkennbare Schattierung mehr.
-		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		m.cull_mode = BaseMaterial3D.CULL_DISABLED
-		mi.material_override = m
-		mi.name = "kraterrand"
-		add_child(mi)
-		_rim_mats.append(m)
+	for e in ecken:
+		var m: Vector2 = e[0]
+		var a0: float = float(e[1])
+		for i in range(RIM_ECK_STUFEN + 1):
+			var a: float = deg_to_rad(a0 + 90.0 * float(i) / float(RIM_ECK_STUFEN))
+			# +x bei 0°, dann nach −z (Norden) drehend.
+			punkte.append(m + Vector2(cos(a), -sin(a)) * r)
+	return punkte
+
+
+## Dieselbe Kontur als Wandstuecke — jedes Stueck eine Sehne des Rings.
+static func rim_seiten(w: float) -> Array:
+	var ring: PackedVector2Array = rim_ring(w)
+	var raus: Array = []
+	for i in ring.size():
+		var a: Vector2 = ring[i]
+		var b: Vector2 = ring[(i + 1) % ring.size()]
+		var m: Vector2 = (a + b) * 0.5
+		var d: Vector2 = b - a
+		raus.append(["seg%d" % i, Vector3(m.x, 0.0, m.y), Vector3(d.x, 0.0, d.y)])
+	return raus
+
+
+## Wie hoch der Kamm an dieser Stelle steht — als Faktor auf `RIM_H`, `s` ist die Bogenlaenge.
+##
+## ## Warum der Rand ein PROFIL braucht
+##
+## Weil eine schnurgerade, flache Kammlinie jede Aenderung an ihr wie einen Fehler aussehen
+## laesst. Genau das war das eigentliche Problem am Horizont, und es hat drei Anlaeufe gebraucht,
+## um dort anzukommen: Erst wurden die Ecken geschlossen, dann die Enden ausgeblendet, dann das
+## Rechteck durch einen runden Ring ersetzt — und der Absatz im Bild blieb jedes Mal stehen.
+##
+## Nachgemessen hat die Kammlinie bei x = 700 auf y = 249 gelegen und bei x = 720 auf y = 278.
+## Neunundzwanzig Bildpunkte auf zwanzig. Der Grund ist Perspektive und nicht Geometrie: Der
+## Rand steht links 2317 m weit weg und rechts 4897 m, und ein 210-m-Grat ist aus 2,3 km doppelt
+## so hoch wie aus 4,9 km. Die Rundung verteilt diesen Sprung zwar auf 942 m Bogen — nur liegt
+## dieser Bogen fast in der Blickrichtung und wird auf wenige Bildpunkte zusammengedrueckt.
+##
+## Dagegen hilft keine Form. Was hilft, ist, dass die Linie ueberhaupt keine Gerade mehr ist:
+## Ein Gebirgskamm springt staendig um dreissig Meter, und wer ihn ansieht, liest einen Sprung
+## als Fels und nicht als Kante. Drei Sinus mit teilerfremden Wellenlaengen genuegen dafuer.
+##
+## Die Wellenlaengen stehen als WELLENLAENGEN da und nicht als Teiler im Sinus. Der erste
+## Entwurf schrieb `sin(s / 71.0)` und der Kommentar daneben behauptete „71 m fuer die Zacken" —
+## tatsaechlich sind es 2*pi*71 = 446 m. Der Test hat den Widerspruch gefunden, nicht das Auge:
+## Ein Teiler im Sinus ist keine Wellenlaenge, und wer das einmal verwechselt, rechnet danach
+## jede Aufloesung falsch.
+const RIM_WELLEN: Array = [
+	[2700.0, 0.20],   # die Bergzuege — was man aus fuenf Kilometern als Silhouette liest
+	[1070.0, 0.13],   # Kuppen und Saettel
+	[450.0, 0.07],    # die Kanten daran
+]
+
+static func rim_kamm(s: float) -> float:
+	var h: float = 1.0
+	var phase: float = 0.0
+	for wl in RIM_WELLEN:
+		h += float(wl[1]) * sin(s / float(wl[0]) * TAU + phase)
+		# Fester Versatz je Welle, damit die drei nicht alle im selben Punkt ihren Scheitel
+		# haben — sonst stuende dort ein einzelner Gipfel von 40 % ueber allem anderen.
+		phase += 1.7
+	return h
+
+
+## Die kuerzeste Welle im Kamm — daran misst sich, wie fein er aufgeloest werden muss.
+static func rim_welle_kurz() -> float:
+	var k: float = INF
+	for wl in RIM_WELLEN:
+		k = minf(k, float(wl[0]))
+	return k
+
+
+## Wie fein der Kamm laengs aufgeloest wird (Meter). Rund ein Zehntel der kuerzesten Welle:
+## Darunter kostet es Ecken ohne sichtbaren Gewinn, darueber faellt der Kamm zwischen die
+## Stuetzpunkte und wird wieder die Gerade, die er nicht sein soll.
+const RIM_LAENGS_M: float = 45.0
+
+
+func _build_rim_walls(w: float, _half: float) -> void:
+	# EIN Netz fuer den ganzen Ring, nicht 44 einzelne. Durchsichtige Flaechen werden je Objekt
+	# sortiert; 44 Nachbarn, die sich an den Kanten beruehren, geben dem Sortierer 44 Gelegenheiten,
+	# sich zu vertun. Und die Kammlinie laeuft ohnehin ueber alle Stuecke hinweg — sie braucht
+	# eine durchgehende Bogenlaenge, keine, die an jeder Naht wieder bei null anfaengt.
+	var ring: PackedVector2Array = rim_ring(w)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# 24 Stufen in der Hoehe: Der Verlauf laeuft ueber zwei Drittel davon, und mit zwoelf waren
+	# es acht Sprossen auf 139 m — im Bild als Treppe zu sehen.
+	var stufen: int = 24
+	var s_lauf: float = 0.0
+	for k in ring.size():
+		var a: Vector2 = ring[k]
+		var b: Vector2 = ring[(k + 1) % ring.size()]
+		var laenge: float = a.distance_to(b)
+		var n: int = maxi(1, int(ceil(laenge / RIM_LAENGS_M)))
+		for u in n:
+			var t0: float = float(u) / float(n)
+			var t1: float = float(u + 1) / float(n)
+			var p0: Vector2 = a.lerp(b, t0)
+			var p1: Vector2 = a.lerp(b, t1)
+			var h0: float = RIM_H * rim_kamm(s_lauf + laenge * t0)
+			var h1: float = RIM_H * rim_kamm(s_lauf + laenge * t1)
+			for i in stufen:
+				var f0: float = float(i) / float(stufen)
+				var f1: float = float(i + 1) / float(stufen)
+				# Die Blende rechnet in ANTEILEN der oertlichen Hoehe, nicht in Metern: Sonst
+				# stuende ein hoher Gipfel oben noch voll da, waehrend die Senke daneben schon
+				# ausgeblendet ist — und die Kante waere zurueck, nur waagerecht.
+				for q in [[p0, f0, h0], [p1, f0, h1], [p1, f1, h1],
+						[p0, f0, h0], [p1, f1, h1], [p0, f1, h0]]:
+					var pk: Vector2 = q[0]
+					var f: float = float(q[1])
+					st.set_color(_rim_farbe(f))
+					st.add_vertex(Vector3(pk.x, f * float(q[2]), pk.y))
+		s_lauf += laenge
+	st.generate_normals()
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.28, 0.22, 0.18)
+	m.vertex_color_use_as_albedo = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	# UNBELEUCHTET. Eine 210-m-Wand, die von einer festen Sonne angestrahlt wird, ist auf
+	# zwei Seiten hell und auf zwei schwarz — und die schwarzen sind genau die, die als
+	# Balken auffallen. Ein entfernter Grat hat ohnehin keine erkennbare Schattierung mehr.
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mi.material_override = m
+	mi.name = "kraterrand"
+	add_child(mi)
+	_rim_mats.append(m)
 	_rim_farben_ziehen()
 
 
@@ -8003,8 +8154,11 @@ func _build_rim_walls(w: float, half: float) -> void:
 ## Deckkraft loest das ohne jede Rechnung: Oben wird die Wand durchsichtig, und was durchscheint,
 ## IST der Himmel — welcher auch immer gerade dort steht. Sie hat damit keine Oberkante mehr, an
 ## der etwas abschneidet, und braucht keine Anpassung an die Tageszeit.
-func _rim_farbe(y: float) -> Color:
-	return Color(1.0, 1.0, 1.0, 1.0 - smoothstep(RIM_FELS_ANTEIL, 1.0, y / RIM_H))
+## `anteil` ist die Hoehe als Bruchteil der OERTLICHEN Kammhoehe, nicht in Metern — siehe
+## `rim_kamm`: Der Kamm schwankt um ein Fuenftel, und eine Blende in festen Metern haette an
+## jeder Kuppe anders gegriffen als in der Senke daneben.
+func _rim_farbe(anteil: float) -> Color:
+	return Color(1.0, 1.0, 1.0, 1.0 - smoothstep(RIM_FELS_ANTEIL, 1.0, anteil))
 
 
 ## Die Waende an die Tageszeit anpassen.

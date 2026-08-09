@@ -76,6 +76,18 @@ func _ready() -> void:
 	# Aus Spielerhoehe an der Bahnquerung: Dort stehen die Baeume am dichtesten.
 	var quer: Vector3 = WorldManager.world_to_scene(Vector2(407.0, float(WorldManager.SWAMP_CENTER_Y)))
 	_views.append(["sumpf_nah", quer + Vector3(26.0, 7.0, 26.0), quer + Vector3(0.0, 2.0, 0.0)])
+	# Schraeg auf eine ECKE des Kraterrands, aus Spielerhoehe. Genau dort klaffte ein Loch von
+	# 75 x 75 m: Die vier Waende standen nur `w` lang, endeten also 75 m vor der naechsten, und
+	# jedes Ende stand als harte senkrechte Kante im Himmel. Auf einer Aufnahme, die geradeaus
+	# auf eine Wand sieht, faellt das NIE auf — man muss auf die Ecke halten.
+	#
+	# Als Bildschirm-Ansicht und nicht als blosser Kamerastandpunkt, aus einem Grund, den die
+	# erste Aufnahme geliefert hat: Sie kam bei 21:53 heraus und war schwarz. Die Uhr laeuft
+	# waehrend des Durchlaufs weiter, ein Bild ohne eigene Uhrzeit zeigt also die Tageszeit des
+	# Zufalls — und eine Kante im Himmel sieht man nur bei Licht.
+	_views.append(["kraterrand_ecke", null, "rand_ecke"])
+	# Und die Gegenprobe an der anderen Diagonale, damit es nicht an einer einzelnen Ecke haengt.
+	_views.append(["kraterrand_ecke2", null, "rand_ecke2"])
 	# Oberflaechen-Bilder. Ein Eintrag mit `null` als Position ist kein Kamerastandpunkt,
 	# sondern ein Bildschirm — `_process` erkennt das am Typ und ruft `_setup_ui` auf.
 	_views.append(["ui_charakter", null, "charakter"])
@@ -362,6 +374,36 @@ func _setup_ui(art: String) -> void:
 			# und Kleidung, nicht die Silhouette am Horizont.
 			_cam.position = _buehne + Vector3(x * 0.5, 1.5, 4.2)
 			_cam.look_at(_buehne + Vector3(x * 0.5, 1.0, 0.0), Vector3.UP)
+		_cam.current = true
+	elif art.begins_with("rand_ecke"):
+		# Schraeg auf eine ECKE des Kraterrands, aus Spielerhoehe. Genau dort klaffte ein Loch
+		# von 75 x 75 m: Die vier Waende standen nur `w` lang, endeten also 75 m vor der
+		# naechsten, und jedes Ende stand als harte senkrechte Kante im Himmel. Eine Aufnahme,
+		# die geradeaus auf eine Wand sieht, zeigt das NIE — man muss auf die Ecke halten.
+		ow._end_cine()
+		ow._close_character()
+		# Morgen und nicht Mittag: Bei 12:30 steht der Dunst so hell, dass 600 m entfernter Fels
+		# vollstaendig in der Himmelsfarbe verschwindet — die erste Aufnahme zeigte einen leeren
+		# Horizont, und das war der Nebel, nicht die Wand.
+		GameState.hour = DayCycle.START_HOUR
+		ow._apply_daytime()
+		ow._apply_night_lights()
+		var wm: float = WorldManager.WORLD_METERS
+		var rd: float = OverworldView.RIM_ABSTAND
+		# 175 m von der Ecke weg, nicht 435: Bei 0,0016 Nebeldichte liegen auf 615 m zwei Drittel
+		# Dunst. Was man auf so einem Bild NICHT sieht, hat nichts zu bedeuten.
+		var ecke: Vector3 = Vector3(-rd, 55.0, rd)
+		var steh2: Vector3 = Vector3(100.0, 0.0, -100.0)
+		if art == "rand_ecke2":
+			ecke = Vector3(wm + rd, 55.0, -wm - rd)
+			steh2 = Vector3(wm - 100.0, 0.0, -wm + 100.0)
+		# Die Figur mitnehmen: Sonst laeuft sie waehrend der Aufnahme irgendwo weit weg herum
+		# und zieht das Gelaende-Nachladen mit sich.
+		ow._player.position = Vector3(steh2.x,
+			WorldManager.height_at(steh2.x, steh2.z), steh2.z)
+		_cam.position = ow._player.position + Vector3(0.0, 6.0, 0.0)
+		_cam.look_at(ecke, Vector3.UP)
+		_cam.fov = 55.0
 		_cam.current = true
 	elif art.begins_with("uhr_"):
 		# Dieselbe Einstellung zu vier Tageszeiten. Nur so sieht man, ob die Beleuchtung eine
@@ -756,6 +798,7 @@ func _setup_ui(art: String) -> void:
 		if ef.size() > 2:
 			_cam.fov = float(ef[2])
 		_cam.current = true
+		_was_steht_da(ow)
 	elif art == "nahaufnahme":
 		# Zur Auftraggeberin laufen und ansprechen — die Nahaufnahme startet dabei von selbst.
 		# Danach uebernimmt die SPIELKAMERA; die Shot-Kamera muss also aus dem Weg.
@@ -810,3 +853,57 @@ func _process(_dt: float) -> void:
 	_cam.look_at(_views[_i][2], Vector3.UP)
 	_cam.current = true
 	_wait = 12
+
+
+## Was steht da eigentlich? — die Notbremse gegen das Raten.
+##
+## Auf den Aufnahmen der Erstbegegnung stand rechts oben ein brauner Block mit harter Kante, und
+## zwei Erklaerungen dafuer waren plausibel und beide falsch. Statt einer dritten Vermutung:
+## alle grossen Netze der Welt auflisten, mit Groesse und Winkel von der Kamera aus. Was
+## 2 Grad breit und braun ist, findet man damit in einem Durchlauf statt in dreien.
+func _was_steht_da(ow: Node) -> void:
+	print("── Was im Bild stehen KOENNTE (grosse Netze, nach Bildwinkel) ──")
+	var liste: Array = []
+	for c in ow.get_children():
+		var mi := c as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var ab: AABB = mi.global_transform * mi.mesh.get_aabb()
+		if ab.size.length() < 40.0:
+			continue
+		var mitte: Vector3 = ab.position + ab.size * 0.5
+		var d: float = _cam.global_position.distance_to(mitte)
+		# Steht es ueberhaupt vor der Kamera?
+		var lok: Vector3 = _cam.global_transform.affine_inverse() * mitte
+		if lok.z > 0.0:
+			continue
+		liste.append([rad_to_deg(atan(ab.size.y / maxf(d, 1.0))), String(mi.name),
+			ab.size, d, mitte])
+	liste.sort_custom(func(a, b): return float(a[0]) > float(b[0]))
+	for e in liste.slice(0, 12):
+		print("  %5.1f° hoch  %-16s  Groesse %s  Abstand %6.0f m  Mitte %s"
+			% [float(e[0]), String(e[1]), str(e[2]), float(e[3]), str(e[4])])
+	# Und die eigentliche Frage: Was liegt HINTER einem bestimmten Bildpunkt? Der Umweg ueber
+	# Groessenlisten hat zweimal die falsche Antwort nahegelegt. Ein Strahl durch den Punkt
+	# beantwortet sie direkt.
+	for px in [Vector2(500, 200), Vector2(900, 200), Vector2(500, 275), Vector2(900, 275)]:
+		var von: Vector3 = _cam.project_ray_origin(px)
+		var richtung: Vector3 = _cam.project_ray_normal(px)
+		var treffer: Array = []
+		for c in ow.get_children():
+			var mi2 := c as MeshInstance3D
+			if mi2 == null or mi2.mesh == null:
+				continue
+			var ab2: AABB = mi2.global_transform * mi2.mesh.get_aabb()
+			# Etwas aufblasen: Eine Wand ohne Dicke hat einen Huellquader ohne Dicke, und ein
+			# Strahl trifft eine Flaeche von null Volumen nur durch Zufall.
+			ab2 = ab2.grow(0.5)
+			var t2: Variant = ab2.intersects_ray(von, richtung)
+			if t2 == null:
+				continue
+			treffer.append([von.distance_to(t2), String(mi2.name), ab2.size])
+		treffer.sort_custom(func(a, b): return float(a[0]) < float(b[0]))
+		var text: String = ""
+		for t3 in treffer.slice(0, 3):
+			text += "  %s (%.0f m, %s)" % [String(t3[1]), float(t3[0]), str(t3[2])]
+		print("  Bildpunkt %s →%s" % [str(px), text if text != "" else "  nichts (Himmel)"])

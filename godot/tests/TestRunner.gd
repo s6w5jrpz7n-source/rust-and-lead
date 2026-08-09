@@ -84,6 +84,8 @@ const TEST_UMFANG: Dictionary = {
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
 	"_test_stille_grube": 26,
+	"_test_kraterrand": 8,
+	"_test_kraterrand_kamm": 6,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -6312,3 +6314,154 @@ func _test_stille_grube() -> void:
 		_check("Die Fahrt raeumt %s weg" % teil, rein.contains(teil))
 	_check("Und die Lebensleisten der Gegner", rein.contains("_enemies")
 		and rein.contains('e.get("bar")'))
+
+
+## Der Kraterrand — der Ring am Horizont.
+##
+## Die Weltgrenze ist keine unsichtbare Wand, sondern Fels an allen vier Himmelsrichtungen. Das
+## traegt aber nur, solange es aussieht wie ein GRAT und nicht wie vier Bretter.
+##
+## Die Form war dreimal falsch, und jedes Mal sah der Code richtig aus. Erst `w + 300`: Die
+## Waende kreuzten sich an den Ecken, und weil sie durchsichtig sind, addierte sich dort die
+## Deckkraft. Dann `w`: An jeder Ecke klaffte ein Loch von 75 x 75 m. Und schliesslich das
+## Rechteck selbst — von innen zeigt es immer einen Absatz, weil zwei Waende, die sich in einer
+## Ecke treffen, verschieden weit weg stehen und ein Grat aus 2 km doppelt so hoch ist wie aus
+## 4,8 km.
+##
+## Also ein geschlossener Ring mit runden Ecken. Der Test prueft, was ihn traegt: dass er
+## wirklich geschlossen ist, dass er die Welt umschliesst, und dass die Rundung keine Stufen
+## enthaelt — denn genau dafuer ist sie da.
+func _test_kraterrand() -> void:
+	print("· Der Kraterrand ist ein geschlossener Ring")
+
+	var OWS = load("res://scripts/OverworldView.gd")
+	var w: float = WorldManager.WORLD_METERS
+	var d: float = float(OWS.RIM_ABSTAND)
+
+	# Die ECHTE Kontur, nicht eine nachgebaute. Ein frueherer Entwurf dieses Tests rechnete sich
+	# die Wandlaenge selbst aus und pruefte damit seine eigene Annahme statt den Code.
+	var ring: PackedVector2Array = OWS.rim_ring(w)
+	_check("Der Ring hat %d Stuetzpunkte" % ring.size(), ring.size() >= 16)
+
+	# GESCHLOSSEN: Jedes Wandstueck muss dort anfangen, wo das vorige aufhoert. Ein Loch von
+	# wenigen Metern reicht, um in der Wand einen Lichtspalt bis zum Horizont zu erzeugen.
+	var seiten: Array = OWS.rim_seiten(w)
+	_check("Es gibt so viele Wandstuecke wie Kanten (%d)" % seiten.size(),
+		seiten.size() == ring.size())
+	var groesste_luecke: float = 0.0
+	for i in seiten.size():
+		var m: Vector3 = seiten[i][1]
+		var halb: Vector3 = (seiten[i][2] as Vector3) * 0.5
+		var ende: Vector2 = Vector2(m.x + halb.x, m.z + halb.z)
+		var n: Array = seiten[(i + 1) % seiten.size()]
+		var mn: Vector3 = n[1]
+		var hn: Vector3 = (n[2] as Vector3) * 0.5
+		var anfang: Vector2 = Vector2(mn.x - hn.x, mn.z - hn.z)
+		groesste_luecke = maxf(groesste_luecke, ende.distance_to(anfang))
+	_check("Kein Stueck laesst eine Luecke (groesste %.3f m)" % groesste_luecke,
+		groesste_luecke < 0.01)
+
+	# Und er UMSCHLIESST die Welt: Kein Punkt der Karte darf ausserhalb liegen, sonst laeuft man
+	# an einer Stelle einfach hinaus. Geprueft an den vier Weltecken und den vier Kantenmitten.
+	var drin: int = 0
+	for p in [Vector2(0.0, 0.0), Vector2(w, 0.0), Vector2(0.0, -w), Vector2(w, -w),
+			Vector2(w * 0.5, 0.0), Vector2(w * 0.5, -w), Vector2(0.0, -w * 0.5),
+			Vector2(w, -w * 0.5)]:
+		if Geometry2D.is_point_in_polygon(p, ring):
+			drin += 1
+	_check("Die ganze Welt liegt innerhalb des Rings (%d von 8 Eckpunkten)" % drin, drin == 8)
+	# Und zwar mit Luft: An den Kantenmitten soll er weiter `RIM_ABSTAND` draussen stehen, damit
+	# er dort so nah und so hoch bleibt wie vorher.
+	var mitte_sued: Vector2 = Vector2(w * 0.5, 0.0)
+	var naechster: float = INF
+	for i in ring.size():
+		var a: Vector2 = ring[i]
+		var b: Vector2 = ring[(i + 1) % ring.size()]
+		var ab: Vector2 = b - a
+		var t: float = clampf((mitte_sued - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
+		naechster = minf(naechster, a.lerp(b, t).distance_to(mitte_sued))
+	_check("An der Kantenmitte steht er %.0f m draussen" % naechster,
+		absf(naechster - d) < 1.0)
+	# Und die Schranke, aus der das folgt, als eigene Pruefung — damit ein groesserer Radius
+	# nicht erst ueber die Eckpunkte auffaellt. Ein Bogen vom Radius r liegt 0,414 x r hinter
+	# der Ecke, die er ersetzt; die Weltecke liegt 1,414 x RIM_ABSTAND davor.
+	var tiefe: float = 0.4142 * float(OWS.RIM_ECK_R)
+	var platz: float = 1.4142 * d
+	_check("Die Rundung frisst %.0f m, es sind %.0f m Platz" % [tiefe, platz], tiefe < platz)
+
+	# Die RUNDUNG selbst: Der Knick zwischen zwei benachbarten Stuecken muss klein sein. Genau
+	# das war beim Rechteck der Fehler — dort betrug er 90°, und ein 90°-Knick ist die Stufe, die
+	# man im Bild sieht.
+	var groesster_knick: float = 0.0
+	for i in seiten.size():
+		var a: Vector3 = seiten[i][2]
+		var b: Vector3 = seiten[(i + 1) % seiten.size()][2]
+		var va := Vector2(a.x, a.z).normalized()
+		var vb := Vector2(b.x, b.z).normalized()
+		groesster_knick = maxf(groesster_knick, rad_to_deg(absf(va.angle_to(vb))))
+	_check("Der groesste Knick betraegt %.0f° (Rechteck: 90°)" % groesster_knick,
+		groesster_knick <= 15.0)
+
+	# Hoch genug, um den Horizont zu decken, und niedrig genug, um nicht der halbe Himmel zu
+	# sein: Von der Schrottgrube aus steht die Suedwand rund 375 m entfernt.
+	var winkel: float = rad_to_deg(atan(float(OWS.RIM_H) / 375.0))
+	_check("Und deckt von der Grube aus %.0f° des Himmels" % winkel,
+		winkel > 20.0 and winkel < 35.0)
+
+
+
+## Die Kammlinie des Kraterrands.
+##
+## Sie ist die Antwort auf einen Fehler, den drei andere Reparaturen NICHT behoben haben, und
+## deshalb hat sie einen eigenen Test: Ecken schliessen, Enden ausblenden, Rechteck durch einen
+## runden Ring ersetzen — der Absatz im Bild blieb jedes Mal stehen, weil er von der Perspektive
+## kommt und nicht von der Form. Was ihn aufloest, ist, dass die Linie keine Gerade mehr ist.
+func _test_kraterrand_kamm() -> void:
+	print("· Der Kraterrand hat ein Profil statt einer Kante")
+
+	var OWS = load("res://scripts/OverworldView.gd")
+
+	# Er schwankt ueberhaupt — eine Kammlinie, die konstant 1,0 liefert, ist die alte Gerade.
+	var tief: float = INF
+	var hoch: float = -INF
+	for i in range(4000):
+		var v: float = OWS.rim_kamm(float(i) * 5.0)
+		tief = minf(tief, v)
+		hoch = maxf(hoch, v)
+	_check("Der Kamm schwankt zwischen %.2f und %.2f" % [tief, hoch], hoch - tief > 0.35)
+	# Aber er bleibt eine WAND: Wer ihn auf die Haelfte einbrechen laesst, macht ein Fenster in
+	# die Weltgrenze, durch das man den Himmel dahinter sieht.
+	_check("Und faellt nie unter %.0f %% der Hoehe" % (tief * 100.0), tief > 0.5)
+	_check("Und schiesst nie ueber %.0f %%" % (hoch * 100.0), hoch < 1.6)
+
+	# Die kuerzeste Welle muss von den Stuetzpunkten noch AUFGELOEST werden. Bei zu grossem
+	# Abstand fallen die Zacken zwischen die Punkte, und heraus kommt wieder eine glatte Linie —
+	# nur mit dem Rechenaufwand einer zerklueften.
+	var schritt: float = float(OWS.RIM_LAENGS_M)
+	var kurz: float = OWS.rim_welle_kurz()
+	_check("Der Laengsschritt (%.0f m) loest die kuerzeste Welle (%.0f m) auf: %.0f Punkte"
+		% [schritt, kurz, kurz / schritt], schritt <= kurz / 6.0)
+
+	# Und er ist STETIG: Ein Sprung in der Kammhoehe waere genau die Kante, die hier verschwinden
+	# soll — nur an einer anderen Stelle. Gemessen als groesster Schritt zwischen zwei
+	# benachbarten Stuetzpunkten.
+	var groesster: float = 0.0
+	var vorher: float = OWS.rim_kamm(0.0)
+	for i in range(1, 2000):
+		var v2: float = OWS.rim_kamm(float(i) * schritt)
+		groesster = maxf(groesster, absf(v2 - vorher))
+		vorher = v2
+	# Der Grenzwert ist kein Geschmack, sondern eine Steigung: 45 m Laenge und hoechstens 45 m
+	# Hoehe sind 45 Grad. Steiler waere kein Hang mehr, sondern eine Stufe — also genau das,
+	# wogegen der Kamm ueberhaupt gebaut ist.
+	var steigung: float = rad_to_deg(atan(groesster * float(OWS.RIM_H) / schritt))
+	_check("Der steilste Hang ist %.0f° (%.0f m auf %.0f m)"
+		% [steigung, groesster * float(OWS.RIM_H), schritt], steigung < 45.0)
+
+	# Und die Blende rechnet in ANTEILEN, nicht in Metern. Stuende dort eine feste Hoehe, waere
+	# die Kante zurueck — nur waagerecht: Die Kuppe stuende oben noch voll da, die Senke daneben
+	# waere schon durchsichtig.
+	var quelle: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	_check("Die Hoehenblende rechnet in Anteilen",
+		quelle.contains("func _rim_farbe(anteil: float) -> Color:")
+		and quelle.contains("smoothstep(RIM_FELS_ANTEIL, 1.0, anteil)"))
