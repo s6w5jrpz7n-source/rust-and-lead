@@ -82,6 +82,27 @@ const GEAR_SLOTS: Dictionary = {
 }
 const SUB_BASE: Dictionary = { "damage": 5, "firerate": 10, "hp": 12, "armor": 3, "speed": 14,
 	"crit": 5, "accuracy": 8, "reload": 8 }   ## `accuracy` verengt den Streukegel (PlayerStats.spread_deg)
+
+## Wie ein Wert heisst, wenn ihn jemand LIEST.
+##
+## Die Schluessel oben sind Programmiernamen und muessen englisch bleiben — sie stehen in
+## Spielstaenden, in Beutetabellen und in `PlayerStats`. Nur haben sie genau so auch auf dem
+## Bildschirm gestanden: „+10 damage" im Beutel, im Regal und in der Beschreibung, mitten in
+## einem Spiel, dessen Text sonst durchgehend deutsch ist. Aufgefallen ist es auf dem ersten
+## Bild von Wandas Regal — gelesen hatte diese Zeile vorher niemand.
+##
+## Unbekannte Schluessel fallen auf sich selbst zurueck (`wert_name`), damit ein neuer Wert
+## sichtbar durchrutscht statt einen leeren Platz zu hinterlassen.
+const WERT_NAMEN: Dictionary = {
+	"damage": "Schaden", "firerate": "Feuerrate", "hp": "Leben", "armor": "Rüstung",
+	"speed": "Tempo", "crit": "Kritisch", "accuracy": "Präzision", "reload": "Nachladen",
+}
+
+
+static func wert_name(key: String) -> String:
+	return String(WERT_NAMEN.get(key, key))
+
+
 ## Zusatz-Affixe je Slot (Haupt-Stat ergibt sich aus GEAR_SLOTS).
 const AFFIX_POOL: Dictionary = {
 	"weapon": ["firerate", "crit", "damage", "accuracy", "reload"],

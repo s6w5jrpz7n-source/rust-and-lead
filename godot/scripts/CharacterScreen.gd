@@ -417,7 +417,8 @@ func _stat_sheet() -> String:
 
 
 func _describe(g: Dictionary) -> String:
-	var out: String = "%s  (+%d %s)" % [String(g["name"]), int(g["stat"]["val"]), String(g["stat"]["key"])]
+	var out: String = "%s  (+%d %s)" % [String(g["name"]), int(g["stat"]["val"]),
+		ProgressionManager.wert_name(String(g["stat"]["key"]))]
 	# Die Stufenanforderung — und zwar NUR, wenn sie eine ist.
 	#
 	# Bei jedem gewoehnlichen Teil steht dort 1, und "ab Stufe 1" auf der Haelfte aller Zeilen
@@ -433,7 +434,7 @@ func _describe(g: Dictionary) -> String:
 	if not extra.is_empty():
 		var parts: Array = []
 		for a in extra:
-			parts.append("+%d %s" % [int(a["val"]), String(a["key"])])
+			parts.append("+%d %s" % [int(a["val"]), ProgressionManager.wert_name(String(a["key"]))])
 		out += "  " + ", ".join(parts)
 	return out
 

@@ -4989,6 +4989,11 @@ func _set_hud_hidden(hidden: bool) -> void:
 		_ammo_lbl.visible = not hidden
 	if _zoom_btns != null:
 		_zoom_btns.visible = not hidden
+	# Die Karte gehoert auch dazu. Sie lag bisher UEBER der Abdunklung des Ladens und leuchtete
+	# als heller Fleck in der Ecke — auf dem ersten Bild von Wandas Regal sass sie genau hinter
+	# dem Schliessknopf.
+	if _minimap != null:
+		_minimap.visible = not hidden
 
 
 ## Oeffnet Werkstatt oder Geschaefte.

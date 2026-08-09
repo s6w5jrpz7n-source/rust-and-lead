@@ -141,12 +141,16 @@ func _rows() -> Array:
 			var weg: bool = HaendlerData.verkauft(i)
 			var farbe: String = String(ProgressionManager.RARITY[String(g["rarity"])]["name"])
 			var desc: String = "%s · +%d %s" % [farbe, int(g["stat"]["val"]),
-				String(g["stat"]["key"])]
+				ProgressionManager.wert_name(String(g["stat"]["key"]))]
 			# Sie verkauft auch, was man noch nicht tragen darf — ein Regal, in dem nur steht,
 			# was man ohnehin anlegen kann, gibt einem nichts zum Hinarbeiten. Die Zeile sagt
 			# es dazu; gekauft werden darf es trotzdem, es wartet dann im Beutel.
 			if not EquipManager.darf_tragen(g):
 				desc += "   ⊘ tragbar ab Stufe %d" % noetig
+			elif noetig > 1:
+				# Tragbar, aber nicht ab eins: dieselbe Unterscheidung wie im Beutel
+				# (`CharacterScreen._describe`) — die Sperre mit ⊘, die blosse Angabe ohne.
+				desc += "   ab Stufe %d" % noetig
 			var grund: String = ""
 			if weg:
 				grund = "verkauft"
@@ -219,7 +223,14 @@ func _make_row(r: Array) -> Control:
 	var name: String = String(r[1])
 	if String(r[7]).begins_with("⊘"):
 		name = "⊘ ???"
-	text.text = "%s\n   %s · Stufe %d/%d" % [name, String(r[2]), int(r[3]), int(r[4])]
+	# „Stufe 3/8" ist die Sprache eines AUSBAUS: Ich stehe auf drei, oben sind acht. Eine Waffe
+	# im Regal hat keine Ausbaustufe — dort stand deshalb „Stufe 1/0", und die Null war schlicht
+	# das leere Feld. Also: Hoechststufe 0 heisst „kein Ausbau", und die Zeile schweigt darueber.
+	# Die Stufenanforderung der Waffe steht ohnehin schon in der Beschreibung.
+	if int(r[4]) > 0:
+		text.text = "%s\n   %s · Stufe %d/%d" % [name, String(r[2]), int(r[3]), int(r[4])]
+	else:
+		text.text = "%s\n   %s" % [name, String(r[2])]
 	row.add_child(text)
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(150.0, 40.0)   # Daumengroesse
@@ -228,7 +239,10 @@ func _make_row(r: Array) -> Control:
 		btn.text = String(r[7]) if String(r[7]) != "zu teuer" else "¤ %d" % int(r[5])
 		btn.disabled = true
 	else:
-		btn.text = "Ausbauen  ¤ %d" % int(r[5])
+		# „Ausbauen" ist das Verb der Werkstatt. Im Waffenlager KAUFT man, und auf dem ersten
+		# Bild des Regals stand unter jedem Stueck „Ausbauen ¤ 60" — ein Wort, das dort nichts
+		# bedeutet.
+		btn.text = ("Kaufen  ¤ %d" if mode == Mode.WAFFEN else "Ausbauen  ¤ %d") % int(r[5])
 		btn.pressed.connect(_on_buy.bind(String(r[0])))
 	row.add_child(btn)
 	return row

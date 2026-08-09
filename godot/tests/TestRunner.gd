@@ -98,6 +98,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_faehigkeitspunkte": 9,
 	"_test_sichtweite": 12,
 	"_test_nachschub": 9,
+	"_test_deutsche_werte": 8,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -7324,3 +7325,55 @@ func _test_nachschub() -> void:
 	_check("Von leer auf voll dauert es %.0f Sekunden" % sek, sek > 120.0)
 	# Gegenprobe gegen den alten Zustand: zwoelf mal vier Sekunden waren 48.
 	_check("Vorher waren es 48", 12 * 4 == 48)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Auf dem Bildschirm steht Deutsch
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Das Spiel ist durchgehend deutsch — und in jeder Gegenstandszeile stand „+10 damage". Die
+# Werteschluessel sind Programmiernamen (sie stehen in Spielstaenden und in `PlayerStats` und
+# muessen englisch bleiben), sie waren nur nie uebersetzt worden, bevor sie jemand liest.
+#
+# Gefunden hat es kein Test, sondern das erste Bild von Wandas Regal. Deshalb steht die Pruefung
+# jetzt hier: Was einmal im Bild aufgefallen ist, soll beim naechsten Mal vorher auffallen.
+func _test_deutsche_werte() -> void:
+	print("· Deutsche Wertenamen und Ladenverben")
+
+	# Jeder Schluessel, den ein Fundstueck tragen kann, hat einen deutschen Namen.
+	var ohne: Array[String] = []
+	for key in ProgressionManager.SUB_BASE:
+		if not ProgressionManager.WERT_NAMEN.has(key):
+			ohne.append(String(key))
+	for slot in ProgressionManager.GEAR_SLOTS:
+		var k: String = String(ProgressionManager.GEAR_SLOTS[slot]["stat"])
+		if not ProgressionManager.WERT_NAMEN.has(k):
+			ohne.append(k)
+	_check("Jeder Wert hat einen deutschen Namen", ohne.is_empty(), ", ".join(ohne))
+	_check("Der Schluessel damage heisst Schaden",
+		ProgressionManager.wert_name("damage") == "Schaden")
+	# Ein unbekannter Schluessel faellt auf sich selbst zurueck statt zu verschwinden: Ein neuer
+	# Wert soll sichtbar durchrutschen und nicht eine leere Stelle hinterlassen.
+	_check("Ein unbekannter Schluessel bleibt sichtbar",
+		ProgressionManager.wert_name("dampfdruck") == "dampfdruck")
+
+	# Und die Bildschirme benutzen ihn auch.
+	var cs: String = FileAccess.get_file_as_string("res://scripts/CharacterScreen.gd")
+	var sh: String = FileAccess.get_file_as_string("res://scripts/ShopScreen.gd")
+	_check("Der Beutel uebersetzt den Hauptwert",
+		cs.contains("ProgressionManager.wert_name(String(g[\"stat\"][\"key\"]))"))
+	_check("Und die Zusatzwerte auch",
+		cs.contains("ProgressionManager.wert_name(String(a[\"key\"]))"))
+	_check("Das Regal uebersetzt ebenfalls",
+		sh.contains("ProgressionManager.wert_name(String(g[\"stat\"][\"key\"]))"))
+
+	# ── Das Verb ────────────────────────────────────────────────────────────
+	#
+	# „Ausbauen" gehoert der Werkstatt: Ich habe etwas und hebe es eine Stufe. Im Waffenlager
+	# kauft man ein Stueck, das man noch nicht hat — und unter jedem Regalstueck stand
+	# „Ausbauen ¤ 60".
+	_check("Im Waffenlager wird gekauft, nicht ausgebaut",
+		sh.contains("\"Kaufen  ¤ %d\" if mode == Mode.WAFFEN"))
+	# Und die Stufenzeile schweigt, wo es keine Ausbaustufe gibt: „Stufe 1/0" war die
+	# Hoechststufe null, die als leeres Feld durchschlug.
+	_check("Ohne Ausbaustufe steht keine Stufenzeile", sh.contains("if int(r[4]) > 0:"))

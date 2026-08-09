@@ -115,6 +115,9 @@ func _ready() -> void:
 		_views.append(["erst_" + anteil, null, "erst_" + anteil])
 	_views.append(["quest_umweg", null, "umweg"])
 	_views.append(["ui_charakter2", null, "charakter"])   # jetzt mit Sinnbildern und Puppe
+	# Wandas Regal. Es gab davon nie ein Bild, und ein Laden ist genau die Sorte Bildschirm, bei
+	# der eine falsche Zeilenbreite oder ein fehlender Preis nur im Bild auffaellt.
+	_views.append(["ui_waffenlager", null, "waffenlager"])
 	# Das SPIEL-HUD selbst: Kopfzeile, Abzug, Trank-Trabant. Es gab lange kein Bild davon, und
 	# genau deshalb ist niemandem aufgefallen, dass die halbe Kopfzeile aus leeren Kaestchen
 	# bestand — die Schrift kannte kein einziges der Symbole. Was man nicht knipst, prueft man
@@ -263,6 +266,14 @@ func _setup_ui(art: String) -> void:
 		for s2 in ["weapon", "armor", "gadget", "helmet", "boots", "armor"]:
 			BagManager.add(ProgressionManager.make_gear(String(s2), "epic"))
 		ow._toggle_character(CharacterScreen.Tab.AUSRUESTUNG)
+	elif art == "waffenlager":
+		ow._close_character()
+		# Fester Handelstag, damit zwei Laeufe dasselbe Regal zeigen — der Bestand ist eine
+		# Funktion von `GameState.tag` (siehe `HaendlerData`).
+		GameState.tag = 3
+		GameState.gekauft_heute = {}
+		GameState.gold = 900
+		ow._open_shop(ShopScreen.Mode.WAFFEN)
 	elif art == "quest":
 		# Auftrag annehmen, damit Marke und Fussspur ueberhaupt etwas zu zeigen haben, und die
 		# Kamera hinter die Figur setzen — die Spur laeuft NACH VORN, von hinten sieht man sie.
