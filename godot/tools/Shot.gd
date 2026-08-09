@@ -81,6 +81,16 @@ func _ready() -> void:
 	_views.append(["ui_charakter", null, "charakter"])
 	_views.append(["quest_spur", null, "quest"])
 	_views.append(["nahaufnahme", null, "nahaufnahme"])
+	# Die Erstbegegnung, an drei Stellen: beide im Bild, der ZOOM auf das Ding, und der Schuss.
+	# Der mittlere ist der, um den es geht — ob man den Gegner darauf wirklich ANSIEHT.
+	# 0,85 und nicht 0,92: Der Schuss faellt bei 5,68 s von 6,4 s, und damit endet die Fahrt in
+	# diesem Augenblick — `_erst_abdruecken` startet sofort die naechste. Alles jenseits von
+	# 0,888 ist eine Kameraposition, die im Spiel NIE auf dem Schirm steht.
+	# 0,28 und nicht 0,20 fuer die erste Etappe: Bis 1,8 s blendet sie noch von der Spielkamera
+	# herueber, bei 0,20 (1,28 s) ist die Ueberblendung erst zu 61 % durch. Was man dort sieht,
+	# ist eine Mischung aus zwei Einstellungen und keine von beiden.
+	for anteil in ["0.28", "0.55", "0.85"]:
+		_views.append(["erst_" + anteil, null, "erst_" + anteil])
 	_views.append(["quest_umweg", null, "umweg"])
 	_views.append(["ui_charakter2", null, "charakter"])   # jetzt mit Sinnbildern und Puppe
 	# Das SPIEL-HUD selbst: Kopfzeile, Abzug, Trank-Trabant. Es gab lange kein Bild davon, und
@@ -674,6 +684,78 @@ func _setup_ui(art: String) -> void:
 		_cam.current = true
 		print("UMWEG: Ziel der Spur bei %s (Welt %s)"
 			% [ziel2, WorldManager.scene_to_world(ziel2)])
+	elif art.begins_with("erst_"):
+		# Die Szene ueber ihre eigene Funktion ausloesen und dann bis zum gewuenschten Anteil
+		# der Gesamtdauer vorspulen — nicht die Kamerapunkte nachbauen. Ein Bild, das eine
+		# nachgebaute Fahrt zeigt, beurteilt die falsche Fahrt.
+		ow._end_cine()
+		ow._close_character()
+		GameState.prolog_done = false
+		GameState.erst_gegner_done = false
+		# Die Figur AN DIE STELLE setzen, an der die Szene im Spiel anspringt. Das erste Bild
+		# zeigte Rustwater bei Nacht: Das vorige Bild hatte die Figur vor Mabel abgestellt, und
+		# `_erst_starten` baut den Gegner immer VOR den Spieler — wo der gerade steht. Ein
+		# Werkzeug, das den Zustand des Vorgaengers erbt, prueft die falsche Szene.
+		var halde: Dictionary = ow._feature("schrotthalde")
+		var kmitte: Vector3 = WorldManager.feature_center(halde)
+		var raus: Vector3 = WorldManager.poi_scene_position("rustwater") - kmitte
+		raus.y = 0.0
+		raus = raus.normalized()
+		var steh: Vector3 = kmitte + raus * (WorldManager.feature_reach(halde)
+			+ OverworldView.ERST_AUSLOESER_M + 6.0)
+		ow._player.position = Vector3(steh.x, WorldManager.height_at(steh.x, steh.z), steh.z)
+		# Blickrichtung ist hier keine Kosmetik: Der Gegner erscheint seitlich VOR ihm, und
+		# „vorn" liest `_erst_starten` aus der Drehung der Figur.
+		ow._player.rotation.y = atan2(-raus.x, -raus.z)
+		# Der Morgen nach dem Erwachen — dieselbe Uhrzeit wie im Spiel. Bei Nacht sieht man von
+		# dem Ding im Zoom nichts als eine Silhouette, und genau das soll das Bild ja beurteilen.
+		GameState.hour = DayCycle.START_HOUR
+		ow._apply_daytime()
+		ow._apply_night_lights()
+		ow._enemies.clear()
+		# Die SPIELKAMERA in ihre normale Haltung bringen, bevor die Fahrt startet. Sie ist der
+		# Anfangspunkt: `_play_flight` merkt sie sich als `_flight_von` und blendet von dort
+		# herueber. Im Werkzeug stand sie noch dort, wo das vorige Bild sie abgestellt hatte —
+		# das erste Bild der Fahrt zeigte deshalb eine Ueberblendung aus einer Kameraposition,
+		# die es im Spiel nicht gibt, und darauf war weder Held noch Gegner zu sehen.
+		ow._cam.position = ow._player.position + ow._cam_offset(ow._cam_dist)
+		ow._cam.look_at(ow._player.position + Vector3(0.0, 1.0, 0.0), Vector3.UP)
+		ow._sync_weapon()
+		if ow._weapon_id == "":
+			EquipManager.equip_item(ProgressionManager.make_gear("weapon", "common", "",
+				null, "karabiner"), "weapon")
+			ow._sync_weapon()
+		# Die Rede des VORIGEN Bildes wegraeumen. `_play_speech` haengt an, wenn derselbe
+		# Sprecher noch redet — und der Held redet in allen drei Bildern. Ohne das hier stand
+		# beim dritten Bild wieder der erste Satz auf der Tafel, weil die Warteschlange aus drei
+		# Durchlaeufen uebereinander lag.
+		ow._speech.clear()
+		ow._erst_starten()
+		# Dieselbe Mechanik wie bei den Anflug-Bildern: die Uhr der Fahrt vorstellen, das Bild
+		# abgreifen, und die Welt dabei ANHALTEN. Lässt man sie weiterlaufen, erreicht die Fahrt
+		# ihr Ende und räumt die Bedienoberfläche wieder ein — das Bild zeigte dann die richtige
+		# Kameraposition mit dem falschen Bildschirm darüber.
+		var bis: float = ow._flight_total() * float(art.substr(5))
+		ow._flight_t = bis
+		# Die REDE mitziehen. Sie hat ihre eigene Uhr, und die laeuft ueber `_process` — das
+		# hier gleich stillsteht. Ohne diesen Vorlauf zeigt jedes der drei Bilder denselben
+		# ersten Satz, und die Tafel behauptet etwas anderes als die Kamera.
+		var rest: float = bis
+		while rest > 0.0:
+			var d: float = minf(0.05, rest)
+			ow._process_speech(d)
+			rest -= d
+		ow.set_process(false)
+		var ef: Array = ow._flight_frame()
+		_cam.position = ef[0]
+		if ef[0].distance_to(ef[1]) > 0.05:
+			_cam.look_at(ef[1], Vector3.UP)
+		# Auch den Bildwinkel uebernehmen — er IST hier die halbe Aussage: Der Zoom wirkt ueber
+		# das 26°-Objektiv, nicht ueber die Position allein. Ein Bild mit 55° zeigte die richtige
+		# Stelle und den falschen Eindruck.
+		if ef.size() > 2:
+			_cam.fov = float(ef[2])
+		_cam.current = true
 	elif art == "nahaufnahme":
 		# Zur Auftraggeberin laufen und ansprechen — die Nahaufnahme startet dabei von selbst.
 		# Danach uebernimmt die SPIELKAMERA; die Shot-Kamera muss also aus dem Weg.

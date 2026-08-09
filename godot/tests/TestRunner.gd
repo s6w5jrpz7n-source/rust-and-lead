@@ -83,7 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
-	"_test_stille_grube": 6,
+	"_test_stille_grube": 26,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -6206,3 +6206,109 @@ func _test_stille_grube() -> void:
 	# Der Gegner der Szene selbst bleibt natuerlich — er IST die Erstbegegnung.
 	_check("Der erste Gegner selbst kommt trotzdem",
 		ow_s.contains('_erst_gegner = _make_enemy("konstrukt")'))
+
+	# ── Und man sieht ihn sich AN ────────────────────────────────────────────
+	#
+	# Die Kamera blieb die ganze Szene ueber der Schulter, und der Gegner war ein kleiner Umriss
+	# in 22 m Entfernung. Der Prolog verlangt aber genau das Gegenteil: Der Held soll das Ding
+	# ansehen koennen und sich wundern, was das ist — und das kann er nicht, wenn man es kaum
+	# erkennt. Jetzt faehrt die Kamera dazwischen auf ihn zu.
+	_check("Es gibt einen Zoom auf den Gegner",
+		ow_s.contains('{ "pos": nah, "ziel": ziel_brust, "sek": ERST_SEK_ZOOM, "fov": 26.0 }'))
+	# Enger Bildwinkel, nicht nur naeher: Ein 26°-Objektiv drueckt den Hintergrund flach und
+	# holt das Ding heran, ohne dass die Kamera in ihm steht.
+	_check("Und zwar mit engerem Bildwinkel als die Schulterkamera (26° gegen %.0f°)"
+		% float(OWS.ERST_FOV_SEHEN),
+		ow_s.contains('"fov": 26.0') and float(OWS.ERST_FOV_SEHEN) >= 40.0)
+	# Lang genug zum Hinsehen. Bei zwei Sekunden ist der Schwenk gerade angekommen, wenn er
+	# schon wieder wegfaehrt.
+	_check("Er dauert lange genug (%.1f s)" % OWS.ERST_SEK_ZOOM,
+		float(OWS.ERST_SEK_ZOOM) >= 2.5)
+	# Und er steht auf der Linie zwischen Held und Ding: Man sieht es aus SEINER Richtung, also
+	# bleibt es sein Blick und wird keine Regieaufnahme.
+	_check("Die Kamera steht auf der Linie zum Gegner",
+		ow_s.contains("var nah: Vector3 = wo - hin * 5.2"))
+	# DER Punkt, an dem sich ein Fehler versteckt haette: Der Schuss faellt NACH dem Zoom. Wer
+	# die neue Etappe einschiebt und den Ausloeser vergisst, laesst den Helden mitten in die
+	# Nahaufnahme schiessen — und das Ding faellt um, bevor man es angesehen hat.
+	_check("Der Schuss faellt erst nach dem Zoom",
+		ow_s.contains("_erst_schuss_t = ERST_SEK_SEHEN + ERST_SEK_ZOOM + ERST_SEK_SCHNITT"))
+	# Nachgerechnet statt geglaubt: Der Ausloeser muss hinter dem Ende des Zooms liegen.
+	var t_schuss: float = float(OWS.ERST_SEK_SEHEN) + float(OWS.ERST_SEK_ZOOM) \
+		+ float(OWS.ERST_SEK_SCHNITT) + float(OWS.ERST_SEK_SCHUSS) * 0.55
+	var t_zoom_ende: float = float(OWS.ERST_SEK_SEHEN) + float(OWS.ERST_SEK_ZOOM)
+	_check("Und zwar nachweislich (%.2f s nach Zoomende bei %.2f s)"
+		% [t_schuss - t_zoom_ende, t_zoom_ende], t_schuss > t_zoom_ende)
+	# Und er faellt in eine STEHENDE Kamera. Vorher fuhr sie aus der Nahaufnahme ueber
+	# anderthalb Sekunden zurueck auf die Halbtotale, und der Schuss fiel mittendrin — der Held
+	# war noch gar nicht im Bild, als er abdrueckte. Jetzt schneidet sie in 0,06 s zurueck und
+	# steht dann still.
+	_check("Der Schnitt zurueck ist ein Schnitt (%.2f s)" % float(OWS.ERST_SEK_SCHNITT),
+		float(OWS.ERST_SEK_SCHNITT) <= 0.12)
+	_check("Und die Etappe danach steht still",
+		ow_s.contains('{ "pos": schnitt, "ziel": zwischen, "sek": ERST_SEK_SCHUSS'))
+	# Und sie steht auf DERSELBEN Halbtotale wie die erste Etappe. Das ist der Grund, warum die
+	# Rechnung weiter unten auch fuer den Schuss gilt: Wer hier einen eigenen Standpunkt
+	# erfindet, erfindet eine Einstellung, die niemand nachgemessen hat — und beim ersten
+	# Versuch stand der Held darauf halb hinter der Sprechtafel.
+	_check("Der Schnitt geht auf die geprueffte Halbtotale zurueck",
+		ow_s.contains("var schnitt: Vector3 = schulter\n"))
+	# Der Schuss liegt IN dieser stehenden Etappe, nicht davor und nicht danach.
+	var t_still_ab: float = t_zoom_ende + float(OWS.ERST_SEK_SCHNITT)
+	_check("Der Schuss faellt in die stehende Kamera (%.2f s in [%.2f, %.2f])"
+		% [t_schuss, t_still_ab, t_still_ab + float(OWS.ERST_SEK_SCHUSS)],
+		t_schuss > t_still_ab and t_schuss < t_still_ab + float(OWS.ERST_SEK_SCHUSS))
+	# Der dritte Satz gehoert in den Zoom: Er sagt, was man in dem Moment sieht.
+	_check("Ein Satz begleitet den Zoom",
+		ow_s.contains("„Und es hat mich noch nicht gesehen.“"))
+
+	# ── Und die erste Etappe zeigt WIRKLICH beide ────────────────────────────
+	#
+	# Das stand vorher nur als Behauptung im Kommentar, und die Behauptung war falsch: Die
+	# Kamera sass hinter der BLICKRICHTUNG des Helden, der Gegner erscheint aber 17,6° daneben.
+	# Auf dem Bild, das „beide im Bild" heissen sollte, war Sand und sonst nichts — und gemerkt
+	# hat es erst eine Aufnahme.
+	#
+	# Also nachgerechnet statt nachgelesen: Kamera bauen, beide Punkte in ihren Raum drehen und
+	# gegen den Rahmen halten. Ein Test auf `contains("var schulter")` haette den Fehler in
+	# beiden Fassungen bestanden.
+	var p0 := Vector3.ZERO
+	var blick0 := Vector3(0.0, 0.0, -1.0)
+	var quer0 := Vector3(1.0, 0.0, 0.0)
+	var wo0: Vector3 = p0 + blick0 * float(OWS.ERST_ABSTAND_M) \
+		+ quer0 * float(OWS.ERST_ABSTAND_QUER_M)
+	var kam: Array = OWS.erst_schulter(p0, wo0)
+	var stand: Vector3 = kam[0]
+	var kt: Transform3D = Transform3D(Basis(), stand).looking_at(kam[1], Vector3.UP)
+	var inv: Transform3D = kt.affine_inverse()
+	# Godots `fov` ist der SENKRECHTE Bildwinkel; waagerecht ist er um das Seitenverhaeltnis
+	# weiter. 1280x720, also 16:9.
+	var tan_v: float = tan(deg_to_rad(float(OWS.ERST_FOV_SEHEN)) * 0.5)
+	var tan_h: float = tan_v * (1280.0 / 720.0)
+	# Brusthoehe, nicht Fusspunkt: Ein Fusspunkt am unteren Rand heisst noch nicht, dass die
+	# Figur im Bild steht.
+	for fall in [["Der Held", p0 + Vector3(0.0, 1.0, 0.0)],
+			["Das Konstrukt", wo0 + Vector3(0.0, 1.2, 0.0)]]:
+		var lok: Vector3 = inv * (fall[1] as Vector3)
+		var tiefe: float = -lok.z
+		var drin: bool = tiefe > 0.5 \
+			and absf(lok.x) <= tan_h * tiefe and absf(lok.y) <= tan_v * tiefe
+		_check("%s steht in der ersten Etappe im Bild (%.0f %% quer, %.0f %% hoch)"
+			% [String(fall[0]), 100.0 * absf(lok.x) / maxf(tan_h * tiefe, 0.001),
+				100.0 * absf(lok.y) / maxf(tan_v * tiefe, 0.001)], drin)
+	# Und das Ding ist gross genug, um es ueberhaupt als etwas zu erkennen: 28 m auf einem
+	# 44°-Objektiv sind rund 80 Bildpunkte — ein Umriss, kein Staubkorn.
+	var weg: float = stand.distance_to(wo0 + Vector3(0.0, 1.2, 0.0))
+	var px: float = 720.0 * (2.5 / weg) / (2.0 * tan_v)
+	_check("Und ist dort %.0f Bildpunkte hoch" % px, px >= 55.0)
+
+	# Die Kopfzeile verschwindet in der Fahrt. Sie tat es nicht: `_set_cine_clean` kannte nur
+	# die Textzeile, waehrend Portraet, Lebens- und Erfahrungsbalken weiter dastanden — hinter
+	# einem schwarzen Balken, der sie zu 92 % abdunkelt. Und die gruene Lebensleiste ueber dem
+	# Konstrukt beantwortete die Frage „was ist das" schon, bevor sie gestellt war.
+	var rein: String = ow_s.substr(ow_s.find("func _set_cine_clean"))
+	rein = rein.substr(0, rein.find("\n\n\n"))
+	for teil in ["_portrait_btn", "_portrait_rahmen", "_hp_bar", "_xp_bar", "_spieler_marken"]:
+		_check("Die Fahrt raeumt %s weg" % teil, rein.contains(teil))
+	_check("Und die Lebensleisten der Gegner", rein.contains("_enemies")
+		and rein.contains('e.get("bar")'))

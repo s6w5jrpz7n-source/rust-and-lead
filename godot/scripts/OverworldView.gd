@@ -5920,6 +5920,25 @@ func _set_cine_clean(an: bool) -> void:
 		_hud.visible = not an
 	if _minimap != null:
 		_minimap.visible = not an
+	# Die KOPFZEILE gehoert dazu — und stand bis hierher weiter da. `_hud` ist nur die
+	# Textzeile; Portraet, Rahmen, Lebens- und Erfahrungsbalken und die Zustandsmarken sind
+	# eigene Knoten und wurden von niemandem angefasst. Sichtbar wurde das erst auf einem Bild
+	# der Erstbegegnung: Sie lagen hinter dem schwarzen Balken, der sie zu 92 % abdunkelt, und
+	# das ergibt genau das schlechteste Ergebnis — eine Bedienoberflaeche, die man gerade noch
+	# erkennt, in einem Augenblick, aus dem sie verschwinden sollte.
+	for c in [_portrait_btn, _portrait_rahmen, _hp_bar, _xp_bar, _spieler_marken]:
+		if c != null and is_instance_valid(c):
+			(c as CanvasItem).visible = not an
+	# Und die Lebensleisten ueber den Gegnern. In der Erstbegegnung ist das keine Kosmetik: Die
+	# Szene lebt davon, dass man nicht weiss, was da aus dem Blech kommt — ein gruener Balken
+	# darueber beantwortet die Frage, bevor sie gestellt ist.
+	for e in _enemies:
+		var b: Variant = e.get("bar")
+		if b == null or not is_instance_valid(b):
+			continue
+		var traeger: Node = (b as Node).get_parent()
+		if traeger is Node3D:
+			(traeger as Node3D).visible = not an
 	for c in get_children():
 		if c is Label3D:
 			(c as Label3D).visible = not an
@@ -7680,8 +7699,36 @@ func _process_riss(delta: float) -> void:
 ## ausserdem selbsterklaerend — Schrauben, ein Zahnrad, ein Dampfkern. Aus einem Menschen waere
 ## sie eine Erklaerung gewesen, die man haette liefern muessen.
 const ERST_ABSTAND_M: float = 22.0     # so weit vor ihm taucht der eine Gegner auf
+const ERST_ABSTAND_QUER_M: float = 7.0 # und so weit seitlich daneben
 const ERST_AUSLOESER_M: float = 34.0   # so weit vom Kraterrand weg springt die Szene an
-const ERST_SEK_SEHEN: float = 3.2      # sehen, bevor geschossen wird
+const ERST_SEK_SEHEN: float = 1.8      # erst beide im Bild — „da ist etwas"
+## Die Schulterkamera der ersten Etappe: zurueck, zur Seite, hoch — und wohin sie blickt.
+const ERST_SCHULTER_ZURUECK: float = 4.6
+const ERST_SCHULTER_QUER: float = 2.4
+const ERST_SCHULTER_HOCH: float = 2.3
+const ERST_BLICK_ANTEIL: float = 0.35
+const ERST_FOV_SEHEN: float = 44.0
+## Und dann der ZOOM auf das Ding selbst.
+##
+## Vorher blieb die Kamera die ganze Zeit ueber der Schulter, und der Gegner war ein kleiner
+## Umriss in 22 m Entfernung. Der Prolog verlangt aber genau das Gegenteil: Der Held soll es
+## ANSEHEN koennen und sich wundern, was das ist — und das kann er nicht, wenn man es kaum
+## erkennt. Ein Weitwinkel beantwortet „wo bin ich"; hier ist die Frage „was ist das".
+##
+## Lang genug zum Hinsehen: Bei zwei Sekunden ist der Schwenk gerade angekommen, wenn er schon
+## wieder wegfaehrt.
+const ERST_SEK_ZOOM: float = 3.0
+## Der SCHNITT zurueck auf die Halbtotale. Kein Rueckflug — ein Schnitt.
+##
+## Auch das hat erst ein Bild gezeigt: Nach dem Zoom stand als naechste Etappe wieder die
+## Schulterkamera, und `_flight_frame` faehrt zwischen zwei Etappen weich hinueber. Die Kamera
+## kroch also aus fuenf Metern Entfernung ueber anderthalb Sekunden zurueck — und als der Schuss
+## fiel, war sie erst zur Haelfte da. Der Held stand nicht im Bild, als er abdrueckte.
+##
+## 0,06 s sind rund vier Bilder: schnell genug, dass es als Schnitt liest, und die eine Etappe,
+## die danach folgt, hat Anfang und Ende am selben Punkt — sie steht also STILL. Genau das
+## braucht der Augenblick, in dem etwas passiert.
+const ERST_SEK_SCHNITT: float = 0.06
 const ERST_SEK_SCHUSS: float = 1.6
 const ERST_SEK_HIN: float = 3.4        # hinuebergehen und sich buecken
 const ERST_SEK_LEICHE: float = 4.6     # die Kamera auf den Toten
@@ -7708,6 +7755,34 @@ func _maybe_erst_gegner() -> void:
 	_erst_starten()
 
 
+## Die Schulterkamera der ersten Etappe — als Rechnung, damit sie pruefbar ist.
+##
+## Zurueck kommen `[Standpunkt, Blickziel, Richtung zum Gegner]`.
+##
+## Sie steht hier und nicht in `_erst_starten`, weil sie einmal falsch war und niemand es
+## gemerkt hat: Die erste Fassung setzte die Kamera hinter die BLICKRICHTUNG des Helden statt
+## hinter die Linie zu dem Ding. Beides klingt gleich und ist es nicht — der Gegner erscheint
+## seitlich vor ihm, die Richtungen liegen 17,6° auseinander. Damit lag der Held 36,2° neben
+## der Bildachse, der Rahmen reicht bei 44° und 16:9 aber nur 35,7° weit, und auf der Aufnahme,
+## die „beide im Bild" heissen sollte, war weder der eine noch der andere zu sehen: nur Sand.
+##
+## Als Rechnung kann der Test nachmessen, ob beide wirklich im Rahmen stehen. Als Zeile mitten
+## in einer Szenenfunktion konnte er nur nachlesen, dass dort eine Kamera gesetzt wird.
+static func erst_schulter(spieler: Vector3, gegner: Vector3) -> Array:
+	var hin: Vector3 = Vector3(gegner.x - spieler.x, 0.0, gegner.z - spieler.z)
+	hin = hin.normalized() if hin.length() > 0.001 else Vector3(0.0, 0.0, -1.0)
+	var quer_hin := Vector3(-hin.z, 0.0, hin.x)
+	# SEITLICH HINTER seiner Schulter, auf dieser Achse: der Held vorn, das Ding dahinter in
+	# der Tiefe.
+	var schulter: Vector3 = spieler - hin * ERST_SCHULTER_ZURUECK \
+		+ quer_hin * ERST_SCHULTER_QUER + Vector3(0.0, ERST_SCHULTER_HOCH, 0.0)
+	# Der Blick liegt bei gut einem Drittel zwischen beiden und nicht in der Mitte: Der Held ist
+	# fuenf Meter weg, das Ding achtundzwanzig. Die Mitte haette ihn an den Rand gedraengt.
+	var brust: Vector3 = spieler + Vector3(0.0, 1.3, 0.0)
+	var ziel_brust: Vector3 = gegner + Vector3(0.0, 1.2, 0.0)
+	return [schulter, brust.lerp(ziel_brust, ERST_BLICK_ANTEIL), hin]
+
+
 func _erst_starten() -> void:
 	_erst_phase = 1
 	GameState.erst_gegner_done = true
@@ -7723,7 +7798,7 @@ func _erst_starten() -> void:
 	var quer := Vector3(-blick.z, 0.0, blick.x)
 	# SEITLICH vor ihm, nicht frontal: Er kommt aus dem Blech heraus und hat den Helden noch
 	# nicht gesehen. Frontal waere es ein Duell; so ist es eine Begegnung.
-	var wo: Vector3 = _player.position + blick * ERST_ABSTAND_M + quer * 7.0
+	var wo: Vector3 = _player.position + blick * ERST_ABSTAND_M + quer * ERST_ABSTAND_QUER_M
 	wo.y = WorldManager.height_at(wo.x, wo.z)
 	_erst_gegner = _make_enemy("konstrukt")
 	var n: Node3D = _erst_gegner["node"] as Node3D
@@ -7733,21 +7808,41 @@ func _erst_starten() -> void:
 	_enemies.append(_erst_gegner)
 	var brust: Vector3 = _player.position + Vector3(0.0, 1.3, 0.0)
 	var ziel_brust: Vector3 = wo + Vector3(0.0, 1.2, 0.0)
-	# Die Kamera setzt sich SEITLICH HINTER seine Schulter — beide im Bild, der Gegner klein und
-	# deutlich. Kein Weitwinkel: Hier ist die Frage nicht „wo bin ich", sondern „was ist das".
-	var schulter: Vector3 = _player.position - blick * 4.2 + quer * 2.6 + Vector3(0.0, 2.1, 0.0)
+	var kamera: Array = erst_schulter(_player.position, wo)
+	var schulter: Vector3 = kamera[0]
+	var zwischen: Vector3 = kamera[1]
+	var hin: Vector3 = kamera[2]
+	# Die Kamera faehrt AUF DEN GEGNER ZU, dicht heran und mit engem Bildwinkel. Sie bleibt auf
+	# derselben Achse — man sieht es aus SEINER Richtung und nicht von irgendwo, also bleibt es
+	# sein Blick und wird keine Regieaufnahme.
+	var nah: Vector3 = wo - hin * 5.2 + Vector3(0.0, 1.9, 0.0)
+	# Zurueck auf GENAU die Einstellung der ersten Etappe — derselbe Standpunkt, dasselbe
+	# Blickziel, derselbe Bildwinkel. Der erste Versuch nahm einen Meter naeher und zielte auf
+	# die Brust des Gegners; das Bild zeigte, was davon uebrigbleibt: Der Held rutschte in die
+	# untere linke Ecke und verschwand halb hinter der Sprechtafel — ausgerechnet in dem
+	# Augenblick, in dem er abdrueckt. Die Halbtotale ist nachgemessen (der Test rechnet sie
+	# nach), also wird sie wiederverwendet statt neu erfunden.
+	var schnitt: Vector3 = schulter
 	var punkte: Array = [
-		{ "pos": schulter, "ziel": brust.lerp(ziel_brust, 0.55), "sek": ERST_SEK_SEHEN,
-			"fov": 44.0 },
-		{ "pos": schulter + blick * 1.2, "ziel": ziel_brust, "sek": ERST_SEK_SCHUSS,
-			"fov": 38.0 },
+		{ "pos": schulter, "ziel": zwischen, "sek": ERST_SEK_SEHEN, "fov": ERST_FOV_SEHEN },
+		# Der Zoom. Enger Bildwinkel statt naeher Position allein: Ein 26°-Objektiv druckt den
+		# Hintergrund flach und holt das Ding heran, ohne dass die Kamera in ihm steht.
+		{ "pos": nah, "ziel": ziel_brust, "sek": ERST_SEK_ZOOM, "fov": 26.0 },
+		# Und zurueck auf die Halbtotale — als SCHNITT, nicht als Fahrt (siehe
+		# ERST_SEK_SCHNITT). Danach steht die Kamera still, und in dieser Ruhe faellt der Schuss.
+		{ "pos": schnitt, "ziel": zwischen, "sek": ERST_SEK_SCHNITT, "fov": ERST_FOV_SEHEN,
+			"weich": false },
+		{ "pos": schnitt, "ziel": zwischen, "sek": ERST_SEK_SCHUSS, "fov": ERST_FOV_SEHEN },
 	]
 	_play_flight(punkte)
+	# Der zweite Satz faellt jetzt IN den Zoom: Er sagt, was man in dem Moment sieht.
 	_play_speech(HELD_NAME, "held", [
 		"„…was zum.“",
 		"„Das läuft. Das ist Blech, und es läuft.“",
+		"„Und es hat mich noch nicht gesehen.“",
 	])
-	_erst_schuss_t = ERST_SEK_SEHEN + ERST_SEK_SCHUSS * 0.55
+	_erst_schuss_t = ERST_SEK_SEHEN + ERST_SEK_ZOOM + ERST_SEK_SCHNITT \
+		+ ERST_SEK_SCHUSS * 0.55
 
 
 var _erst_schuss_t: float = -1.0
