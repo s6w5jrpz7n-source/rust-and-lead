@@ -578,22 +578,22 @@ static func wach_blick(anteil: float, ziel_grad: float) -> float:
 ## noch gar nichts.
 static func _wach_zeilen() -> Array:
 	return [
-		"„…hh. Steh. Bleib stehen.“",
-		"„Mein Schädel. Als hätte mir jemand einen Kessel drübergezogen und draufgeschlagen.“",
-		"„Öl im Mund. Rost in der Nase. Und irgendwas Klebriges im Haar.“",
-		"„…das ist Blut. Meins, nehm ich an.“",
-		"„Wo bin ich hier? Blech. Fässer. Ein halber Zug.“",
-		"„Eine Kippe. Ich steh auf einer Müllkippe, knöcheltief in irgendwas.“",
-		"„Wie komm ich hierher? Denk nach. Irgendwas.“",
-		"„Nichts. Kein Weg, kein Gesicht, kein gestern.“",
-		"„Wer bringt einen Mann auf eine Halde und lässt ihn liegen? Und wofür?“",
-		"„Wie heiße ich eigentlich.“",
-		"„…“",
-		"„Auch das noch nicht. Gut. Später.“",
-		"„Wasser. Ich brauch Wasser, und was zu essen, und was zum Festhalten.“",
-		"„Aber zuerst muss ich mich orientieren. Ich weiß ja nicht mal, wo ich hier bin.“",
-		"„Da drüben ragt was aus dem Sand. Ein Fels, hoch genug.“",
-		"„Von da oben sehe ich vielleicht mehr als Blech und Dreck.“",
+		"„…hh. Steh. Bleib stehen.“",   # keuchend, leise
+		"„Mein Schädel. Als hätte mir jemand einen Kessel drübergezogen und draufgeschlagen.“",   # müde, langsam
+		"„Öl im Mund. Rost in der Nase. Und irgendwas Klebriges im Haar.“",   # müde
+		"„…das ist Blut. Meins, nehm ich an.“",   # trocken
+		"„Wo bin ich hier? Blech. Fässer. Ein halber Zug.“",   # langsam
+		"„Eine Kippe. Ich steh auf einer Müllkippe, knöcheltief in irgendwas.“",   # trocken
+		"„Wie komm ich hierher? Denk nach. Irgendwas.“",   # schnell
+		"„Nichts. Kein Weg, kein Gesicht, kein gestern.“",   # leise
+		"„Wer bringt einen Mann auf eine Halde und lässt ihn liegen? Und wofür?“",   # hart
+		"„Wie heiße ich eigentlich.“",   # langsam, leise
+		"„…“",   # stumm — die Pause IST die Zeile
+		"„Auch das noch nicht. Gut. Später.“",   # trocken, hart
+		"„Wasser. Ich brauch Wasser, und was zu essen, und was zum Festhalten.“",   # ruhig
+		"„Aber zuerst muss ich mich orientieren. Ich weiß ja nicht mal, wo ich hier bin.“",   # ruhig
+		"„Da drüben ragt was aus dem Sand. Ein Fels, hoch genug.“",   # ruhig
+		"„Von da oben sehe ich vielleicht mehr als Blech und Dreck.“",   # ruhig, trocken
 	]
 
 
@@ -958,11 +958,11 @@ func _maybe_vista() -> void:
 		"sek": VISTA_SEK_HEIM, "fov": CAM_FOV })
 	_play_flight(punkte)
 	_play_speech(HELD_NAME, "held", [
-		"„Von hier oben sieht man wenigstens etwas.“",
-		"„Wüste. Wüste. Und noch mal Wüste.“",
-		"„…da. Ganz hinten im Tal.“",
-		"„Dächer. Ein Turm. Und Licht — da lebt jemand.“",
-		"„Ein Fußmarsch. Aber der erste Weg, der irgendwohin führt.“",
+		"„Von hier oben sieht man wenigstens etwas.“",   # ruhig
+		"„Wüste. Wüste. Und noch mal Wüste.“",   # trocken
+		"„…da. Ganz hinten im Tal.“",   # leise
+		"„Dächer. Ein Turm. Und Licht — da lebt jemand.“",   # leise
+		"„Ein Fußmarsch. Aber der erste Weg, der irgendwohin führt.“",   # ruhig
 	])
 
 
@@ -1182,10 +1182,10 @@ func _check_prolog_done() -> void:
 		return
 	GameState.prolog_done = true
 	_play_speech(HELD_NAME, "held", [
-		"„Rustwater. Es gibt sie also wirklich.“",
-		"„Kupfer unter den Stiefeln. Fackeln am Tor. Hier wohnt jemand, der etwas zu verlieren hat.“",
-		"„Im Saloon brennt Licht. Um die Zeit ist da noch wer wach.“",
-		"„Ich hab keinen Namen, kein Geld und Blut im Haar. Mal sehen, wie weit ich damit komme.“",
+		"„Rustwater. Es gibt sie also wirklich.“",   # leise
+		"„Kupfer unter den Stiefeln. Fackeln am Tor. Hier wohnt jemand, der etwas zu verlieren hat.“",   # ruhig
+		"„Im Saloon brennt Licht. Um die Zeit ist da noch wer wach.“",   # ruhig
+		"„Ich hab keinen Namen, kein Geld und Blut im Haar. Mal sehen, wie weit ich damit komme.“",   # trocken
 	])
 
 var _player: Node3D
@@ -3665,28 +3665,28 @@ func _npc_line(giver: String, kind: String) -> String:
 	match giver:
 		"mabel":
 			if kind == "offer":
-				return "„Setz dich, Kind. Aber vorher…“" if not revealed else "„Für dich hab ich Schmieröl statt Schnaps.“"
+				return "„Setz dich, Kind. Aber vorher…“" if not revealed else "„Für dich hab ich Schmieröl statt Schnaps.“"   # trocken
 			if kind == "done":
-				return "„Du bist zäher, als du aussiehst.“"
+				return "„Du bist zäher, als du aussiehst.“"   # ruhig
 			if kind == "wait":
-				return "„Die Wüste frisst Leute wie dich zum Frühstück.“"
-			return "„Trink was, Fremder. Geht aufs Haus.“"
+				return "„Die Wüste frisst Leute wie dich zum Frühstück.“"   # trocken
+			return "„Trink was, Fremder. Geht aufs Haus.“"   # ruhig
 		"silas":
 			if kind == "offer":
-				return "„Diese Stadt frisst Material.“"
+				return "„Diese Stadt frisst Material.“"   # müde
 			if kind == "done":
-				return "„Gute Arbeit. Das hält.“"
+				return "„Gute Arbeit. Das hält.“"   # ruhig
 			if kind == "wait":
-				return "„Ohne Schrott keine Mauer.“"
-			return "„Mein Auge sieht mehr als deins, Fremder.“" if not revealed else "„Chassis-Platten? Für dich zum Selbstkostenpreis.“"
+				return "„Ohne Schrott keine Mauer.“"   # trocken
+			return "„Mein Auge sieht mehr als deins, Fremder.“" if not revealed else "„Chassis-Platten? Für dich zum Selbstkostenpreis.“"   # langsam
 		"doc":
 			if kind == "offer":
-				return "„Die Viecher kommen aus den Rohren.“"
+				return "„Die Viecher kommen aus den Rohren.“"   # trocken
 			if kind == "done":
-				return "„Eine Plage weniger.“"
+				return "„Eine Plage weniger.“"   # ruhig
 			if kind == "wait":
-				return "„Zähl die Kadaver, nicht die Stunden.“"
-			return "„Halt dich von den Ratten fern.“" if not revealed else "„Bei dir spar ich mir das Verarzten.“"
+				return "„Zähl die Kadaver, nicht die Stunden.“"   # trocken
+			return "„Halt dich von den Ratten fern.“" if not revealed else "„Bei dir spar ich mir das Verarzten.“"   # hart
 	return "„…“"
 
 
@@ -7932,9 +7932,9 @@ func _erst_starten() -> void:
 	_play_flight(punkte)
 	# Der zweite Satz faellt jetzt IN den Zoom: Er sagt, was man in dem Moment sieht.
 	_play_speech(HELD_NAME, "held", [
-		"„…was zum.“",
-		"„Das läuft. Das ist Blech, und es läuft.“",
-		"„Und es hat mich noch nicht gesehen.“",
+		"„…was zum.“",   # leise
+		"„Das läuft. Das ist Blech, und es läuft.“",   # leise, langsam
+		"„Und es hat mich noch nicht gesehen.“",   # flüstert
 	])
 	_erst_schuss_t = ERST_SEK_SEHEN + ERST_SEK_ZOOM + ERST_SEK_SCHNITT \
 		+ ERST_SEK_SCHUSS * 0.55
@@ -7994,14 +7994,14 @@ func _erst_abdruecken() -> void:
 			"sek": ERST_SEK_HEIM, "fov": CAM_FOV },
 	])
 	_play_speech(HELD_NAME, "held", [
-		"„Das ging schnell. Zu schnell.“",
-		"„Ich hab nicht nachgedacht. Meine Hände schon.“",
-		"„…und woher weiß ich, wo man so ein Ding trifft?“",
-		"„Der war halb hin. Rost bis zum Kessel. Ein heiler hätte gestanden.“",
-		"„Es zischt noch. Ein Ding, das zischt, wenn es liegt.“",
-		"„Da drin klappert was. Schrauben. Ein Zahnrad. Und ein Kern, der noch warm ist.“",
-		"„Das hat jemand gebaut. Jemand baut so was und lässt es hier laufen.“",
-		"„Also nehm ich, was drin ist. Es braucht das nicht mehr, und ich schon.“",
+		"„Das ging schnell. Zu schnell.“",   # leise, keuchend
+		"„Ich hab nicht nachgedacht. Meine Hände schon.“",   # langsam
+		"„…und woher weiß ich, wo man so ein Ding trifft?“",   # leise
+		"„Der war halb hin. Rost bis zum Kessel. Ein heiler hätte gestanden.“",   # trocken
+		"„Es zischt noch. Ein Ding, das zischt, wenn es liegt.“",   # leise, langsam
+		"„Da drin klappert was. Schrauben. Ein Zahnrad. Und ein Kern, der noch warm ist.“",   # ruhig
+		"„Das hat jemand gebaut. Jemand baut so was und lässt es hier laufen.“",   # hart
+		"„Also nehm ich, was drin ist. Es braucht das nicht mehr, und ich schon.“",   # trocken, hart
 	])
 	_erst_leiche_t = ERST_SEK_HIN + ERST_SEK_LEICHE
 
@@ -8283,10 +8283,10 @@ func _walze_bergen(ist_boss: bool, erzwingen: bool = false) -> void:
 		return
 	_say("◫ Eine Steuerwalze. Sie laeuft noch.", 2.6)
 	_play_speech(HELD_NAME, "held", [
-		"„Da ist eine Walze drin. Sie dreht sich noch.“",
+		"„Da ist eine Walze drin. Sie dreht sich noch.“",   # leise
 		"„%s“" % String(m.get("title", "")),
 		"„%s“" % String(m.get("text", "")),
-		"„…das war nicht meine Erinnerung. Das ist sie aber.“",
+		"„…das war nicht meine Erinnerung. Das ist sie aber.“",   # leise, langsam
 	])
 
 
@@ -8315,9 +8315,9 @@ func _erste_truhe_szene(at: Vector3) -> void:
 			"sek": TRUHE_SEK_HEIM, "fov": CAM_FOV },
 	])
 	_play_speech(HELD_NAME, "held", [
-		"„Ein Karabiner. Lauf voller Sand.“",
-		"„Er passt in meine Hand, als hätte ich das schon tausendmal gemacht.“",
-		"„Woher weiß ich das?“",
+		"„Ein Karabiner. Lauf voller Sand.“",   # trocken
+		"„Er passt in meine Hand, als hätte ich das schon tausendmal gemacht.“",   # langsam
+		"„Woher weiß ich das?“",   # leise
 	])
 
 

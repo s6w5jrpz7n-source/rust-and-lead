@@ -44,32 +44,32 @@ const LINES: Dictionary = {
 	# wie ein Mensch. Genau das macht den Reveal in Kapitel 4 zur Ohrfeige.
 	"mabel": {
 		"erst": [
-			"„Du siehst aus wie durchgekaut und wieder ausgespuckt. Setz dich, bevor du umfällst.“",
-			"„Von der Kippe rauf, ja? Da liegen normalerweise nur Blech und Knochen. Du bist mir ein hübsches drittes.“",
-			"„Namen brauch ich keinen. Wer aus dem Schrott kommt, hat meistens keinen mehr.“",
-			"„Trink das hier. Und dann hör mir zu.“",
+			"„Du siehst aus wie durchgekaut und wieder ausgespuckt. Setz dich, bevor du umfällst.“",   # trocken
+			"„Von der Kippe rauf, ja? Da liegen normalerweise nur Blech und Knochen. Du bist mir ein hübsches drittes.“",   # trocken
+			"„Namen brauch ich keinen. Wer aus dem Schrott kommt, hat meistens keinen mehr.“",   # ruhig
+			"„Trink das hier. Und dann hör mir zu.“",   # hart
 		],
 		"offer": [
-			"„Draußen sitzen Wegelagerer auf der Piste und nehmen sich, was durchkommt.“",
-			"„Acht Stück, sagt der Aushang. Bring mir den Beweis, dann bring ich dir was Ordentliches zu essen.“",
+			"„Draußen sitzen Wegelagerer auf der Piste und nehmen sich, was durchkommt.“",   # hart
+			"„Acht Stück, sagt der Aushang. Bring mir den Beweis, dann bring ich dir was Ordentliches zu essen.“",   # ruhig
 		],
 		"wait": [
-			"„Die Wüste frisst Leute wie dich zum Frühstück.“",
-			"„Aber du bist ja noch da. Also weiter.“",
+			"„Die Wüste frisst Leute wie dich zum Frühstück.“",   # trocken
+			"„Aber du bist ja noch da. Also weiter.“",   # trocken
 		],
 		"done": [
-			"„Du bist zäher, als du aussiehst.“",
-			"„Setz dich. Heute zahlst du nichts.“",
+			"„Du bist zäher, als du aussiehst.“",   # ruhig
+			"„Setz dich. Heute zahlst du nichts.“",   # ruhig
 		],
 		"idle": [
-			"„Trink was, Fremder. Geht aufs Haus.“",
+			"„Trink was, Fremder. Geht aufs Haus.“",   # ruhig
 		],
 		"idle_enthuellt": [
-			"„Für dich hab ich Schmieröl statt Schnaps.“",
-			"„Wundert dich das? Mich wundert gar nichts mehr.“",
+			"„Für dich hab ich Schmieröl statt Schnaps.“",   # trocken
+			"„Wundert dich das? Mich wundert gar nichts mehr.“",   # müde
 		],
 		"offer_enthuellt": [
-			"„Setz dich, Kind. Aber vorher…“",
+			"„Setz dich, Kind. Aber vorher…“",   # leise
 		],
 	},
 	# ── Silas „Kupferauge" Finch, Werkstatt ───────────────────────────────────
@@ -78,25 +78,25 @@ const LINES: Dictionary = {
 	# vor dem Reveal ist das eine Angeberei, danach eine Feststellung.
 	"silas": {
 		"erst": [
-			"„Neu hier. Und schon kaputt.“",
-			"„Ich richte alles, was aus Metall ist. Für den Rest gibt's den Doc.“",
+			"„Neu hier. Und schon kaputt.“",   # trocken
+			"„Ich richte alles, was aus Metall ist. Für den Rest gibt's den Doc.“",   # ruhig
 		],
 		"offer": [
-			"„Diese Stadt frisst Material.“",
-			"„Bring mir Schrott, ich mach dir was daraus, das hält.“",
+			"„Diese Stadt frisst Material.“",   # müde
+			"„Bring mir Schrott, ich mach dir was daraus, das hält.“",   # ruhig
 		],
 		"wait": [
-			"„Ohne Schrott keine Mauer.“",
+			"„Ohne Schrott keine Mauer.“",   # trocken
 		],
 		"done": [
-			"„Gute Arbeit. Das hält.“",
+			"„Gute Arbeit. Das hält.“",   # ruhig
 		],
 		"idle": [
-			"„Mein Auge sieht mehr als deins, Fremder.“",
+			"„Mein Auge sieht mehr als deins, Fremder.“",   # langsam
 		],
 		"idle_enthuellt": [
-			"„Chassis-Platten? Für dich zum Selbstkostenpreis.“",
-			"„Reg dich nicht auf. Ich hab's vom ersten Tag an gesehen.“",
+			"„Chassis-Platten? Für dich zum Selbstkostenpreis.“",   # trocken
+			"„Reg dich nicht auf. Ich hab's vom ersten Tag an gesehen.“",   # ruhig
 		],
 	},
 	# ── Gideon Cross, Fort Freedom (Rebellengilde) ────────────────────────────
@@ -106,23 +106,23 @@ const LINES: Dictionary = {
 	# Skandal, sondern ein Werkzeug, das der Konzern gebaut hat und das jetzt gegen ihn laeuft.
 	"gideon": {
 		"erst": [
-			"„Fort Freedom. Wer hier reinkommt, hat sich entschieden — oder wird es gleich.“",
-			"„Der Konzern besitzt die Schienen, das Wasser und die Zeit. Wir nehmen ihm eins nach dem anderen ab.“",
-			"„Ich frag dich nicht, woher du kommst. Ich frag dich, wozu du taugst.“",
+			"„Fort Freedom. Wer hier reinkommt, hat sich entschieden — oder wird es gleich.“",   # hart
+			"„Der Konzern besitzt die Schienen, das Wasser und die Zeit. Wir nehmen ihm eins nach dem anderen ab.“",   # hart, langsam
+			"„Ich frag dich nicht, woher du kommst. Ich frag dich, wozu du taugst.“",   # hart
 		],
 		"offer": [
-			"„Es gibt Arbeit, und sie ist nicht sauber.“",
-			"„Wer sauber bleiben will, geht zurück nach Rustwater und trinkt bei Mabel.“",
+			"„Es gibt Arbeit, und sie ist nicht sauber.“",   # trocken
+			"„Wer sauber bleiben will, geht zurück nach Rustwater und trinkt bei Mabel.“",   # trocken
 		],
-		"wait": ["„Noch nicht fertig. Dann red ich auch noch nicht.“"],
+		"wait": ["„Noch nicht fertig. Dann red ich auch noch nicht.“"],   # hart
 		"done": [
-			"„Ordentlich.“",
-			"„Ein Monopol bricht man nicht mit einer Rede. Man bricht es mit Leuten wie dir.“",
+			"„Ordentlich.“",   # trocken
+			"„Ein Monopol bricht man nicht mit einer Rede. Man bricht es mit Leuten wie dir.“",   # langsam
 		],
-		"idle": ["„Wir brechen das Monopol des Konzerns — oder sterben beim Versuch.“"],
+		"idle": ["„Wir brechen das Monopol des Konzerns — oder sterben beim Versuch.“"],   # laut
 		"idle_enthuellt": [
-			"„Sie haben dich gebaut, und jetzt stehst du hier.“",
-			"„Das ist die beste Nachricht seit zehn Jahren.“",
+			"„Sie haben dich gebaut, und jetzt stehst du hier.“",   # langsam
+			"„Das ist die beste Nachricht seit zehn Jahren.“",   # hart
 		],
 	},
 	# ── Aufseher Quentin, Sektor 01 (Eiserne Gilde) ───────────────────────────
@@ -132,23 +132,23 @@ const LINES: Dictionary = {
 	# Person — ein Posten in der Bilanz, kein Gegenueber.
 	"quentin": {
 		"erst": [
-			"„Sektor 01. Sie betreten Konzerngebiet. Das ist kein Vorwurf, das ist eine Feststellung.“",
-			"„Ordnung ist Profit. Profit ist Ordnung.“",
-			"„Sie werden feststellen, dass wir besser zahlen als Ideale.“",
+			"„Sektor 01. Sie betreten Konzerngebiet. Das ist kein Vorwurf, das ist eine Feststellung.“",   # kalt
+			"„Ordnung ist Profit. Profit ist Ordnung.“",   # kalt, langsam
+			"„Sie werden feststellen, dass wir besser zahlen als Ideale.“",   # kalt
 		],
 		"offer": [
-			"„Ein Vorgang wartet auf Bearbeitung.“",
-			"„Der Unterschied zwischen Raub und Requirierung ist ein Stempel. Wir haben den Stempel.“",
+			"„Ein Vorgang wartet auf Bearbeitung.“",   # kalt
+			"„Der Unterschied zwischen Raub und Requirierung ist ein Stempel. Wir haben den Stempel.“",   # kalt, langsam
 		],
-		"wait": ["„Der Vorgang ist offen. Offene Vorgänge kosten.“"],
+		"wait": ["„Der Vorgang ist offen. Offene Vorgänge kosten.“"],   # kalt
 		"done": [
-			"„Erledigt. Vermerkt.“",
-			"„Sie sind teuer, aber Sie rechnen sich.“",
+			"„Erledigt. Vermerkt.“",   # kalt
+			"„Sie sind teuer, aber Sie rechnen sich.“",   # kalt
 		],
-		"idle": ["„Halten Sie sich an die Markierungen.“"],
+		"idle": ["„Halten Sie sich an die Markierungen.“"],   # kalt
 		"idle_enthuellt": [
-			"„Inventarnummer unbekannt. Das ist ein Verwaltungsfehler, kein Wunder.“",
-			"„Man wird das nachtragen.“",
+			"„Inventarnummer unbekannt. Das ist ein Verwaltungsfehler, kein Wunder.“",   # kalt
+			"„Man wird das nachtragen.“",   # kalt, leise
 		],
 	},
 	# ── „Slick" Sterling, Rogue's Landing (Schmugglergilde) ───────────────────
@@ -157,47 +157,47 @@ const LINES: Dictionary = {
 	# gerade uebervorteilt — und laesst einen das wissen, weil es dazugehoert.
 	"slick": {
 		"erst": [
-			"„Ah. Ein neues Gesicht, und noch dazu eins mit Blut drauf.“",
-			"„Rogue's Landing, Freund. Hier fragt keiner, hier bezahlt man.“",
-			"„Alles hat seinen Preis. Auch Schweigen.“",
+			"„Ah. Ein neues Gesicht, und noch dazu eins mit Blut drauf.“",   # schnell
+			"„Rogue's Landing, Freund. Hier fragt keiner, hier bezahlt man.“",   # schnell
+			"„Alles hat seinen Preis. Auch Schweigen.“",   # leise
 		],
 		"offer": [
-			"„Ich hätte da eine Ware, die den Weg nicht allein findet.“",
-			"„Kein Anschlag. Ein Missverständnis, sagen wir. Missverständnisse sind billiger.“",
+			"„Ich hätte da eine Ware, die den Weg nicht allein findet.“",   # leise
+			"„Kein Anschlag. Ein Missverständnis, sagen wir. Missverständnisse sind billiger.“",   # leise, schnell
 		],
-		"wait": ["„Immer mit der Ruhe. Ware, die hetzt, wird gefunden.“"],
+		"wait": ["„Immer mit der Ruhe. Ware, die hetzt, wird gefunden.“"],   # langsam
 		"done": [
-			"„Sieh an. Du lieferst.“",
-			"„Ich mag Leute, die liefern. Sie leben länger.“",
+			"„Sieh an. Du lieferst.“",   # schnell
+			"„Ich mag Leute, die liefern. Sie leben länger.“",   # leise
 		],
-		"idle": ["„Reichtum kennt keine Fahnen, Freund.“"],
+		"idle": ["„Reichtum kennt keine Fahnen, Freund.“"],   # ruhig
 		"idle_enthuellt": [
-			"„Du bist also gar kein Mensch. Und ich hab dir Schnaps verkauft.“",
-			"„Rückerstattung gibt's trotzdem keine.“",
+			"„Du bist also gar kein Mensch. Und ich hab dir Schnaps verkauft.“",   # schnell
+			"„Rückerstattung gibt's trotzdem keine.“",   # trocken
 		],
 	},
 	# ── Doc, Feldscher ────────────────────────────────────────────────────────
 	"doc": {
 		"erst": [
-			"„Blut im Haar. Setz dich, das seh ich mir an.“",
-			"„…und du zuckst nicht mal. Interessant.“",
+			"„Blut im Haar. Setz dich, das seh ich mir an.“",   # schnell
+			"„…und du zuckst nicht mal. Interessant.“",   # leise, langsam
 		],
 		"offer": [
-			"„Die Viecher kommen aus den Rohren.“",
-			"„Solange die da unten sind, verarzte ich hier oben Bisse statt Wunden.“",
+			"„Die Viecher kommen aus den Rohren.“",   # trocken
+			"„Solange die da unten sind, verarzte ich hier oben Bisse statt Wunden.“",   # müde
 		],
 		"wait": [
-			"„Zähl die Kadaver, nicht die Stunden.“",
+			"„Zähl die Kadaver, nicht die Stunden.“",   # trocken
 		],
 		"done": [
-			"„Eine Plage weniger.“",
+			"„Eine Plage weniger.“",   # ruhig
 		],
 		"idle": [
-			"„Halt dich von den Ratten fern.“",
+			"„Halt dich von den Ratten fern.“",   # hart
 		],
 		"idle_enthuellt": [
-			"„Bei dir spar ich mir das Verarzten.“",
-			"„Ein Jammer. Du wärst ein guter Patient gewesen.“",
+			"„Bei dir spar ich mir das Verarzten.“",   # kalt
+			"„Ein Jammer. Du wärst ein guter Patient gewesen.“",   # leise
 		],
 	},
 }

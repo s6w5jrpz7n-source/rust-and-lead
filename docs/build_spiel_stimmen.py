@@ -93,13 +93,47 @@ def kennung(text: str) -> str:
 
 
 def _strings_aus(block: str) -> list:
-    """Alle GDScript-Stringliterale eines Blocks, in der Reihenfolge.
+    """Alle Sprechzeilen eines Blocks, je als `(text, regie)`.
 
-    Nur solche mit einem typografischen Anfuehrungszeichen — das ist die
-    Konvention des Projekts fuer GESPROCHENEN Text und trennt ihn zuverlaessig
-    von Schluesselnamen, Pfaden und Meldungen daneben.
+    Nur Literale mit typografischem Anfuehrungszeichen — das ist die Konvention
+    des Projekts fuer GESPROCHENEN Text und trennt ihn zuverlaessig von
+    Schluesselnamen, Pfaden und Meldungen daneben.
+
+    ## Die Regie steht als Kommentar hinter der Zeile
+
+        "„Und es hat mich noch nicht gesehen.“",   # fluestert
+
+    Das ist der einzige Platz, an dem sie richtig steht, und zwar aus einem
+    zwingenden Grund: Sie darf NICHT in den Text. Die Kennung wird ueber den
+    Text gerechnet — eine Regieanweisung darin wuerde die Kennung aendern, also
+    jede bereits gerenderte Datei unauffindbar machen, und obendrein
+    mitgesprochen werden.
+
+    Ein Kommentar dahinter aendert am Text nichts, steht aber im Blick dessen,
+    der die Zeile schreibt. Eine Tabelle in einer anderen Datei waere nach dem
+    zweiten Umschreiben nicht mehr synchron, und niemand haette es gemerkt: Ein
+    Satz, der mit der falschen Haltung gesprochen wird, klingt nicht kaputt.
+    Er klingt bloss nach nichts.
+
+    `# stumm` heisst: nicht rendern. Gebraucht fuer Zeilen, die gar keine Rede
+    sind — die Pause nach "Wie heisse ich eigentlich" etwa. Ein Sprachdienst
+    macht daraus eine halbe Sekunde Nichts, und die Tafel stuende dann kuerzer
+    als die Stille, die gemeint war.
     """
-    return [m.group(1) for m in re.finditer(r'"(„[^"]*)"', block)]
+    raus = []
+    for zeile in block.split("\n"):
+        texte = re.findall(r'"(„[^"]*)"', zeile)
+        if not texte:
+            continue
+        # Der Kommentar gilt fuer die Zeile. Gesucht wird er hinter dem LETZTEN
+        # Anfuehrungszeichen — ein `#` im Text selbst ist damit keins.
+        regie = ""
+        schluss = zeile.rfind('"')
+        if schluss >= 0 and "#" in zeile[schluss:]:
+            regie = zeile[schluss:].split("#", 1)[1].strip()
+        for t in texte:
+            raus.append((t, regie))
+    return raus
 
 
 def _block_nach(src: str, start: int) -> str:
@@ -123,8 +157,8 @@ def aus_overworld(zeilen: list) -> None:
     i = src.find("static func _wach_zeilen")
     if i >= 0:
         block = _block_nach(src, src.index("[", i))
-        for t in _strings_aus(block):
-            zeilen.append(("held", t, "_wach_zeilen"))
+        for t, regie in _strings_aus(block):
+            zeilen.append(("held", t, "_wach_zeilen", regie))
 
     # 2. Alle uebrigen `_play_speech(HELD_NAME, "held", [ ... ])`.
     for m in re.finditer(r'_play_speech\(HELD_NAME, "held", \[', src):
@@ -133,8 +167,8 @@ def aus_overworld(zeilen: list) -> None:
         vorher = src[:m.start()]
         f = re.findall(r"\nfunc (\w+)\(", vorher)
         quelle = f[-1] if f else "?"
-        for t in _strings_aus(block):
-            zeilen.append(("held", t, quelle))
+        for t, regie in _strings_aus(block):
+            zeilen.append(("held", t, quelle, regie))
 
 
 def aus_dialogdata(zeilen: list) -> None:
@@ -151,9 +185,9 @@ def aus_dialogdata(zeilen: list) -> None:
         m = re.match(r'^\t\t"([a-z_]+)": \[', zeile)
         if m:
             anlass = m.group(1)
-        for t in _strings_aus(zeile):
+        for t, regie in _strings_aus(zeile):
             if sprecher:
-                zeilen.append((sprecher, t, f"DialogData.{sprecher}.{anlass or '?'}"))
+                zeilen.append((sprecher, t, f"DialogData.{sprecher}.{anlass or '?'}", regie))
 
 
 def main() -> int:
@@ -166,20 +200,65 @@ def main() -> int:
     # keine zweite Datei dafuer.)
     gesehen = {}
     raus = []
-    for rolle, text, quelle in zeilen:
+    stumm = 0
+    format_zeilen = 0
+    for rolle, text, quelle, regie in zeilen:
+        # `# stumm` heisst: gar nicht rendern (siehe `_strings_aus`).
+        # Formatzeichenketten koennen nicht vorab gesprochen werden: Was in
+        # `„%s“` steht, entsteht erst zur Laufzeit (eine geborgene Erinnerung
+        # etwa). Vorab gerendert waere das eine Aufnahme des Wortes
+        # "Prozent s" — und gefunden wuerde sie ohnehin nie, weil das Spiel die
+        # Kennung ueber den EINGESETZTEN Text rechnet.
+        if re.search(r"%[sdfx]", text):
+            format_zeilen += 1
+            continue
+        # `startswith` und nicht `==`: Eine Anweisung darf sich begruenden
+        # duerfen ("stumm — die Pause IST die Zeile"), sonst schreibt sie
+        # niemand hin. Der genaue Vergleich hat den ersten Fall stillschweigend
+        # durchgelassen, und aufgefallen ist es nur an einer Zahl, die sich
+        # nicht bewegt hat.
+        if regie.strip().lower().startswith("stumm"):
+            stumm += 1
+            continue
         k = kennung(text)
         if k in gesehen:
             gesehen[k]["quellen"].append(quelle)
+            # Die genauere Regie gewinnt: Steht derselbe Satz einmal mit und
+            # einmal ohne Anweisung da, ist die MIT gemeint.
+            if regie and not gesehen[k]["regie"]:
+                gesehen[k]["regie"] = regie
             continue
         eintrag = {
             "id": k,
             "rolle": rolle,
             "text": text,
             "quellen": [quelle],
-            "regie": REGIE_JE_QUELLE.get(quelle, ""),
+            # Die Zeile schlaegt die Szene: Ein Kommentar hinter der Zeile ist
+            # eine Aussage ueber SIE, der Vorgabewert nur ueber ihre Umgebung.
+            "regie": regie or REGIE_JE_QUELLE.get(quelle, ""),
         }
         gesehen[k] = eintrag
         raus.append(eintrag)
+
+    # Regie, die keine Regel trifft, wirkt NICHT — und das sieht man ihr nicht
+    # an. Wer `# verzweifelt` hinschreibt, bekommt dieselbe Ausgabe wie ohne
+    # jede Anweisung und haelt die Vertonung fuer flach, statt das Wort zu
+    # suchen. Also beim Bauen nachsehen, solange es noch billig ist.
+    try:
+        import azure_tts
+        bekannt = set()
+        for keys, _ in azure_tts.REGIE_RULES:
+            bekannt |= set(keys)
+        unbekannt = set()
+        for e in raus:
+            for wort in e["regie"].replace(",", " ").split():
+                if wort and wort not in bekannt:
+                    unbekannt.add(wort)
+        if unbekannt:
+            print("⚠  Regie ohne Wirkung (kein Eintrag in REGIE_RULES): "
+                  + ", ".join(sorted(unbekannt)))
+    except ImportError:
+        pass
 
     ohne_stimme = sorted({e["rolle"] for e in raus} - set(STIMMEN))
     if ohne_stimme:
@@ -195,7 +274,11 @@ def main() -> int:
     OUT.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
 
     zeichen = sum(len(e["text"]) for e in raus)
+    mit_regie = sum(1 for e in raus if e["regie"])
     print(f"{len(raus)} Zeilen · {zeichen:,} Zeichen · {OUT}")
+    print(f"   davon mit Regie: {mit_regie} · ohne: {len(raus) - mit_regie}"
+          + (f" · stumm: {stumm}" if stumm else "")
+          + (f" · Formatzeichenketten: {format_zeilen}" if format_zeilen else ""))
     je_rolle = {}
     for e in raus:
         je_rolle.setdefault(e["rolle"], [0, 0])

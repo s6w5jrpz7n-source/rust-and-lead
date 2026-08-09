@@ -46,7 +46,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "keuchend, leise"
   },
   {
    "id": "cfb9a6104a39",
@@ -55,7 +55,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "müde, langsam"
   },
   {
    "id": "564253ec7a4a",
@@ -64,7 +64,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "müde"
   },
   {
    "id": "2d602cd72562",
@@ -73,7 +73,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "trocken"
   },
   {
    "id": "956594a946e3",
@@ -82,7 +82,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "langsam"
   },
   {
    "id": "c99d914b9cd2",
@@ -91,7 +91,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "trocken"
   },
   {
    "id": "f100974c7fb8",
@@ -100,7 +100,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "schnell"
   },
   {
    "id": "f65e8fed33dd",
@@ -109,7 +109,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "leise"
   },
   {
    "id": "00af1084c99a",
@@ -118,7 +118,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "hart"
   },
   {
    "id": "43106d0de5ef",
@@ -127,16 +127,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
-  },
-  {
-   "id": "adbe591567b6",
-   "rolle": "held",
-   "text": "„…“",
-   "quellen": [
-    "_wach_zeilen"
-   ],
-   "regie": "müde, heiser, leise"
+   "regie": "langsam, leise"
   },
   {
    "id": "47b8bdc7b0f7",
@@ -145,7 +136,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "trocken, hart"
   },
   {
    "id": "a547e860caab",
@@ -154,7 +145,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "ruhig"
   },
   {
    "id": "8269d51c2344",
@@ -163,7 +154,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "ruhig"
   },
   {
    "id": "c664a3cac5a3",
@@ -172,7 +163,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "ruhig"
   },
   {
    "id": "0cf215fe2446",
@@ -181,7 +172,7 @@
    "quellen": [
     "_wach_zeilen"
    ],
-   "regie": "müde, heiser, leise"
+   "regie": "ruhig, trocken"
   },
   {
    "id": "fb1bbb81e5dc",
@@ -190,7 +181,7 @@
    "quellen": [
     "_maybe_vista"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "a05caa446a89",
@@ -199,7 +190,7 @@
    "quellen": [
     "_maybe_vista"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "14f358ce92cb",
@@ -208,7 +199,7 @@
    "quellen": [
     "_maybe_vista"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "d226e1ff696b",
@@ -217,7 +208,7 @@
    "quellen": [
     "_maybe_vista"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "32e31f6cc448",
@@ -226,7 +217,7 @@
    "quellen": [
     "_maybe_vista"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "b51e69b4910f",
@@ -235,7 +226,7 @@
    "quellen": [
     "_check_prolog_done"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "17a0d2a4d1f4",
@@ -244,7 +235,7 @@
    "quellen": [
     "_check_prolog_done"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "ea620dfd37ce",
@@ -253,7 +244,7 @@
    "quellen": [
     "_check_prolog_done"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "77e868d23b9c",
@@ -262,7 +253,7 @@
    "quellen": [
     "_check_prolog_done"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "ec12561b4415",
@@ -271,7 +262,7 @@
    "quellen": [
     "_erst_starten"
    ],
-   "regie": "leise, angespannt"
+   "regie": "leise"
   },
   {
    "id": "a45408cb84c2",
@@ -280,7 +271,7 @@
    "quellen": [
     "_erst_starten"
    ],
-   "regie": "leise, angespannt"
+   "regie": "leise, langsam"
   },
   {
    "id": "26b44d6c780a",
@@ -289,7 +280,7 @@
    "quellen": [
     "_erst_starten"
    ],
-   "regie": "leise, angespannt"
+   "regie": "flüstert"
   },
   {
    "id": "89f9a62345cf",
@@ -298,7 +289,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "leise, keuchend"
   },
   {
    "id": "1d7ad92088cd",
@@ -307,7 +298,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "langsam"
   },
   {
    "id": "f6aec8926129",
@@ -316,7 +307,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "leise"
   },
   {
    "id": "1ed3d5a39bce",
@@ -325,7 +316,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "trocken"
   },
   {
    "id": "e7e40c42a9fe",
@@ -334,7 +325,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "leise, langsam"
   },
   {
    "id": "29aba0cba927",
@@ -343,7 +334,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "ruhig"
   },
   {
    "id": "5607189d81ed",
@@ -352,7 +343,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "hart"
   },
   {
    "id": "64455dc2cd6a",
@@ -361,7 +352,7 @@
    "quellen": [
     "_erst_abdruecken"
    ],
-   "regie": "ruhig, trocken"
+   "regie": "trocken, hart"
   },
   {
    "id": "20f905aa77a7",
@@ -370,17 +361,7 @@
    "quellen": [
     "_walze_bergen"
    ],
-   "regie": ""
-  },
-  {
-   "id": "d671eb36820d",
-   "rolle": "held",
-   "text": "„%s“",
-   "quellen": [
-    "_walze_bergen",
-    "_walze_bergen"
-   ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "8124c93462b5",
@@ -389,7 +370,7 @@
    "quellen": [
     "_walze_bergen"
    ],
-   "regie": ""
+   "regie": "leise, langsam"
   },
   {
    "id": "4973d2693600",
@@ -398,7 +379,7 @@
    "quellen": [
     "_erste_truhe_szene"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "41e42f5b4fe4",
@@ -407,7 +388,7 @@
    "quellen": [
     "_erste_truhe_szene"
    ],
-   "regie": ""
+   "regie": "langsam"
   },
   {
    "id": "5e7b68b9831b",
@@ -416,7 +397,7 @@
    "quellen": [
     "_erste_truhe_szene"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "5a600f80f8f4",
@@ -425,7 +406,7 @@
    "quellen": [
     "DialogData.mabel.erst"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "79fd416a2882",
@@ -434,7 +415,7 @@
    "quellen": [
     "DialogData.mabel.erst"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "c62a2df53382",
@@ -443,7 +424,7 @@
    "quellen": [
     "DialogData.mabel.erst"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "465ad6a09055",
@@ -452,7 +433,7 @@
    "quellen": [
     "DialogData.mabel.erst"
    ],
-   "regie": ""
+   "regie": "hart"
   },
   {
    "id": "aaeea87a5383",
@@ -461,7 +442,7 @@
    "quellen": [
     "DialogData.mabel.offer"
    ],
-   "regie": ""
+   "regie": "hart"
   },
   {
    "id": "0e418233b1c5",
@@ -470,7 +451,7 @@
    "quellen": [
     "DialogData.mabel.offer"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "50f5075b671a",
@@ -479,7 +460,7 @@
    "quellen": [
     "DialogData.mabel.wait"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "0971c041a45a",
@@ -488,7 +469,7 @@
    "quellen": [
     "DialogData.mabel.wait"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "a53d63671360",
@@ -497,7 +478,7 @@
    "quellen": [
     "DialogData.mabel.done"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "81f148c523a6",
@@ -506,7 +487,7 @@
    "quellen": [
     "DialogData.mabel.done"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "830a1e4e96b6",
@@ -515,7 +496,7 @@
    "quellen": [
     "DialogData.mabel.idle"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "8b511f0014f6",
@@ -524,7 +505,7 @@
    "quellen": [
     "DialogData.mabel.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "9c0b91c235a4",
@@ -533,7 +514,7 @@
    "quellen": [
     "DialogData.mabel.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "müde"
   },
   {
    "id": "cf284613cbbf",
@@ -542,7 +523,7 @@
    "quellen": [
     "DialogData.mabel.offer_enthuellt"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "41a8d4a6b6f8",
@@ -551,7 +532,7 @@
    "quellen": [
     "DialogData.silas.erst"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "903abbbbf167",
@@ -560,7 +541,7 @@
    "quellen": [
     "DialogData.silas.erst"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "6cc1cb6246ae",
@@ -569,7 +550,7 @@
    "quellen": [
     "DialogData.silas.offer"
    ],
-   "regie": ""
+   "regie": "müde"
   },
   {
    "id": "f4ae0fe5afff",
@@ -578,7 +559,7 @@
    "quellen": [
     "DialogData.silas.offer"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "9f22931c2980",
@@ -587,7 +568,7 @@
    "quellen": [
     "DialogData.silas.wait"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "8cf91555cf35",
@@ -596,7 +577,7 @@
    "quellen": [
     "DialogData.silas.done"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "e017b2ad11a0",
@@ -605,7 +586,7 @@
    "quellen": [
     "DialogData.silas.idle"
    ],
-   "regie": ""
+   "regie": "langsam"
   },
   {
    "id": "e87898889af6",
@@ -614,7 +595,7 @@
    "quellen": [
     "DialogData.silas.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "ac6490ef86fa",
@@ -623,7 +604,7 @@
    "quellen": [
     "DialogData.silas.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "56dc6095623e",
@@ -632,7 +613,7 @@
    "quellen": [
     "DialogData.gideon.erst"
    ],
-   "regie": ""
+   "regie": "hart"
   },
   {
    "id": "e9a8875c5dd7",
@@ -641,7 +622,7 @@
    "quellen": [
     "DialogData.gideon.erst"
    ],
-   "regie": ""
+   "regie": "hart, langsam"
   },
   {
    "id": "d4deb8922ec1",
@@ -650,7 +631,7 @@
    "quellen": [
     "DialogData.gideon.erst"
    ],
-   "regie": ""
+   "regie": "hart"
   },
   {
    "id": "81c877242c17",
@@ -659,7 +640,7 @@
    "quellen": [
     "DialogData.gideon.offer"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "3d8cdcca73b2",
@@ -668,7 +649,7 @@
    "quellen": [
     "DialogData.gideon.offer"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "a766343aea04",
@@ -677,7 +658,7 @@
    "quellen": [
     "DialogData.gideon.wait"
    ],
-   "regie": ""
+   "regie": "hart"
   },
   {
    "id": "d14768283d57",
@@ -686,7 +667,7 @@
    "quellen": [
     "DialogData.gideon.done"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "2d4633a93a1f",
@@ -695,7 +676,7 @@
    "quellen": [
     "DialogData.gideon.done"
    ],
-   "regie": ""
+   "regie": "langsam"
   },
   {
    "id": "4b28a17597ca",
@@ -704,7 +685,7 @@
    "quellen": [
     "DialogData.gideon.idle"
    ],
-   "regie": ""
+   "regie": "laut"
   },
   {
    "id": "53f143b9c877",
@@ -713,7 +694,7 @@
    "quellen": [
     "DialogData.gideon.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "langsam"
   },
   {
    "id": "a88ab08c3f54",
@@ -722,7 +703,7 @@
    "quellen": [
     "DialogData.gideon.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "hart"
   },
   {
    "id": "65c5f8b051d1",
@@ -731,7 +712,7 @@
    "quellen": [
     "DialogData.quentin.erst"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "6ffcaeae7722",
@@ -740,7 +721,7 @@
    "quellen": [
     "DialogData.quentin.erst"
    ],
-   "regie": ""
+   "regie": "kalt, langsam"
   },
   {
    "id": "61719348dd9c",
@@ -749,7 +730,7 @@
    "quellen": [
     "DialogData.quentin.erst"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "ac72fd7d2bf3",
@@ -758,7 +739,7 @@
    "quellen": [
     "DialogData.quentin.offer"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "8d513c82a3a8",
@@ -767,7 +748,7 @@
    "quellen": [
     "DialogData.quentin.offer"
    ],
-   "regie": ""
+   "regie": "kalt, langsam"
   },
   {
    "id": "035e344c6b45",
@@ -776,7 +757,7 @@
    "quellen": [
     "DialogData.quentin.wait"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "60de3ae70e4d",
@@ -785,7 +766,7 @@
    "quellen": [
     "DialogData.quentin.done"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "6ea9454b7cfe",
@@ -794,7 +775,7 @@
    "quellen": [
     "DialogData.quentin.done"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "7cd3bd9580de",
@@ -803,7 +784,7 @@
    "quellen": [
     "DialogData.quentin.idle"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "11fedb5348eb",
@@ -812,7 +793,7 @@
    "quellen": [
     "DialogData.quentin.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "bb896ccc8572",
@@ -821,7 +802,7 @@
    "quellen": [
     "DialogData.quentin.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "kalt, leise"
   },
   {
    "id": "a4aec49fee3a",
@@ -830,7 +811,7 @@
    "quellen": [
     "DialogData.slick.erst"
    ],
-   "regie": ""
+   "regie": "schnell"
   },
   {
    "id": "d3fd80c971da",
@@ -839,7 +820,7 @@
    "quellen": [
     "DialogData.slick.erst"
    ],
-   "regie": ""
+   "regie": "schnell"
   },
   {
    "id": "96dac5c59cc5",
@@ -848,7 +829,7 @@
    "quellen": [
     "DialogData.slick.erst"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "52040aee6d8b",
@@ -857,7 +838,7 @@
    "quellen": [
     "DialogData.slick.offer"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "82e2959d4ffe",
@@ -866,7 +847,7 @@
    "quellen": [
     "DialogData.slick.offer"
    ],
-   "regie": ""
+   "regie": "leise, schnell"
   },
   {
    "id": "8bc037625db7",
@@ -875,7 +856,7 @@
    "quellen": [
     "DialogData.slick.wait"
    ],
-   "regie": ""
+   "regie": "langsam"
   },
   {
    "id": "fc6c311f303f",
@@ -884,7 +865,7 @@
    "quellen": [
     "DialogData.slick.done"
    ],
-   "regie": ""
+   "regie": "schnell"
   },
   {
    "id": "d124e34b9679",
@@ -893,7 +874,7 @@
    "quellen": [
     "DialogData.slick.done"
    ],
-   "regie": ""
+   "regie": "leise"
   },
   {
    "id": "d04f1bf44854",
@@ -902,7 +883,7 @@
    "quellen": [
     "DialogData.slick.idle"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "f31e3adcaec5",
@@ -911,7 +892,7 @@
    "quellen": [
     "DialogData.slick.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "schnell"
   },
   {
    "id": "fbf93f647b9f",
@@ -920,7 +901,7 @@
    "quellen": [
     "DialogData.slick.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "89636394f959",
@@ -929,7 +910,7 @@
    "quellen": [
     "DialogData.doc.erst"
    ],
-   "regie": ""
+   "regie": "schnell"
   },
   {
    "id": "1bfeacd3d26e",
@@ -938,7 +919,7 @@
    "quellen": [
     "DialogData.doc.erst"
    ],
-   "regie": ""
+   "regie": "leise, langsam"
   },
   {
    "id": "49ecf223ab6e",
@@ -947,7 +928,7 @@
    "quellen": [
     "DialogData.doc.offer"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "7fb4c9a7d8ee",
@@ -956,7 +937,7 @@
    "quellen": [
     "DialogData.doc.offer"
    ],
-   "regie": ""
+   "regie": "müde"
   },
   {
    "id": "65d310e334ba",
@@ -965,7 +946,7 @@
    "quellen": [
     "DialogData.doc.wait"
    ],
-   "regie": ""
+   "regie": "trocken"
   },
   {
    "id": "e2717a04c224",
@@ -974,7 +955,7 @@
    "quellen": [
     "DialogData.doc.done"
    ],
-   "regie": ""
+   "regie": "ruhig"
   },
   {
    "id": "499fdaa5c817",
@@ -983,7 +964,7 @@
    "quellen": [
     "DialogData.doc.idle"
    ],
-   "regie": ""
+   "regie": "hart"
   },
   {
    "id": "51986d12dbaa",
@@ -992,7 +973,7 @@
    "quellen": [
     "DialogData.doc.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "kalt"
   },
   {
    "id": "50f2da0bb045",
@@ -1001,7 +982,7 @@
    "quellen": [
     "DialogData.doc.idle_enthuellt"
    ],
-   "regie": ""
+   "regie": "leise"
   }
  ]
 }
