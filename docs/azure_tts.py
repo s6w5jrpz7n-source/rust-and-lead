@@ -202,9 +202,43 @@ def sprechbar(text):
 # verbogene.
 MIT_PROSODIE = False
 
+# Regie -> Sprechstil. DAS ist der Ersatz fuer die gestreckte Prosodie:
+# `<mstts:express-as>` ist antrainiert und klingt wie gesprochen, waehrend
+# `<prosody rate>` das fertige Signal verzieht.
+#
+# Nur wenige Stimmen koennen Stile — welche, sagt `--stile`. Kann eine Stimme
+# den zugeordneten Stil nicht, bleibt die Zeile schlicht ohne. Das ist besser
+# als ein Notbehelf: Eine neutrale Stimme klingt neutral, eine verbogene klingt
+# kaputt.
+REGIE_STIL = {
+    "flüstert": "whispering",
+    "leise": "softvoice",
+    "laut": "shouting",
+    "brüllt": "shouting",
+    "schreit": "shouting",
+    "hart": "determined",
+    "kalt": "determined",
+    "müde": "regretful",
+    "keuchend": "fearful",
+    "heiser": "regretful",
+}
+# Welche Stimme welchen Stil kann — einmal bei Azure erfragt, nicht geraten.
+STIL_KANN: dict = {}
+
+
+def stil_fuer(voice, regie):
+    for wort in (regie or "").replace(",", " ").split():
+        stil = REGIE_STIL.get(wort.strip().lower())
+        if stil and stil in STIL_KANN.get(voice, ()):
+            return stil
+    return ""
+
 
 def build_ssml(voice, text, role, regie, delivery="gesprochen"):
     inhalt = html.escape(sprechbar(text))
+    stil = stil_fuer(voice, regie)
+    if stil:
+        inhalt = f'<mstts:express-as style="{stil}">{inhalt}</mstts:express-as>'
     if MIT_PROSODIE:
         r, p, v = prosody_for(role, regie, delivery)
         def fmt(n):
@@ -438,7 +472,11 @@ def faecher(text):
         kurz = dateiname(stimme.replace("de-DE-", "").replace("Neural", ""))
         # 1. NACKT — ohne jede Prosodie. Der wichtigste Vergleich.
         fassungen.append((f"{kurz}_nackt", stimme, "", 0))
-        for stil in alle[stimme][:4]:
+        # ALLE Stile, nicht die ersten vier. Die Liste kommt alphabetisch, und
+        # "die ersten vier" hiess damit angry, confused, determined, disgusted
+        # — waehrend whispering, softvoice und regretful hinten wegfielen. Also
+        # genau die, um die es geht.
+        for stil in alle[stimme]:
             fassungen.append((f"{kurz}_{dateiname(stil)}", stimme, stil, 0))
     print(f"{len(fassungen)} Fassungen · „{text}“ · {PROBE_DIR}")
     geschrieben = uebersprungen = kaputt = 0
@@ -540,6 +578,16 @@ def main():
     if not lines:
         print("Keine Zeilen ausgewaehlt. --rolle / --folge pruefen.")
         return 1
+
+    # Einmal fragen, welche Stimme welche Stile kann. Eine Anfrage, kein
+    # Kontingent — und ohne sie wuerde `stil_fuer` fuer jede Stimme leer
+    # liefern, also stillschweigend die halbe Regie schlucken.
+    if not dry and AZURE_KEY:
+        try:
+            for v in stimmen_liste():
+                STIL_KANN[v["ShortName"]] = set(v.get("StyleList") or [])
+        except Exception:
+            pass
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     zeichen = sum(len(e["text"]) for e in lines)
