@@ -377,6 +377,23 @@ def spiel_laden():
     return doc
 
 
+def dateiname(roh):
+    """Einen Namen, den jedes Dateisystem annimmt.
+
+    Azures neue HD-Stimmen heissen `de-DE-Florian:DragonHDLatestNeural` — mit
+    DOPPELPUNKT. Unter Windows ist der im Dateinamen verboten, und NTFS
+    schluckt ihn nicht etwa mit einem Fehler: Es legt einen alternativen
+    Datenstrom an. Im Explorer steht dann eine 0-Byte-Datei "Florian" mit
+    leerem Symbol, das Audio ist darin vergraben, und das Skript meldet
+    fröhlich Erfolg.
+
+    Genau so sind vier Stimmen verlorengegangen — ausgerechnet die vier
+    neuesten, die am besten klingen.
+    """
+    raus = "".join(z if (z.isalnum() or z in "._-") else "-" for z in roh)
+    return raus.strip("-") or "namenlos"
+
+
 PROBE_DIR = HERE / "stimmprobe"
 # Die Zeile, an der man es hoert: kurz, mit Punkt, Pause und Atem drin.
 PROBE_TEXT = "Das läuft. Das ist Blech, und es läuft."
@@ -418,11 +435,11 @@ def faecher(text):
     PROBE_DIR.mkdir(parents=True, exist_ok=True)
     fassungen = []
     for stimme in sorted(n for n in alle if n.startswith("de-DE-")):
-        kurz = stimme.replace("de-DE-", "").replace("Neural", "")
+        kurz = dateiname(stimme.replace("de-DE-", "").replace("Neural", ""))
         # 1. NACKT — ohne jede Prosodie. Der wichtigste Vergleich.
         fassungen.append((f"{kurz}_nackt", stimme, "", 0))
         for stil in alle[stimme][:4]:
-            fassungen.append((f"{kurz}_{stil}", stimme, stil, 0))
+            fassungen.append((f"{kurz}_{dateiname(stil)}", stimme, stil, 0))
     print(f"{len(fassungen)} Fassungen · „{text}“ · {PROBE_DIR}")
     for name, stimme, stil, _ in fassungen:
         ziel = PROBE_DIR / (name + ".mp3")
@@ -523,7 +540,7 @@ def main():
         if e.get("datei"):
             base = e["datei"]
         else:
-            base = f"f{e['folge']}_{e['seq']:03d}_{role.replace(' ', '')}"
+            base = dateiname(f"f{e['folge']}_{e['seq']:03d}_{role.replace(' ', '')}")
             if delivery == "gedanke":
                 base += "_GEDANKE"
         ssml = build_ssml(voice, e["text"], role, e.get("regie", ""), delivery)
