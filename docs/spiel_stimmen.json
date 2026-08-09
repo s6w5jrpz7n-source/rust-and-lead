@@ -1,0 +1,1007 @@
+{
+ "titel": "Rust & Lead — Sprechzeilen des Spiels",
+ "hinweis": "Erzeugt von docs/build_spiel_stimmen.py. Nicht von Hand aendern — die Wahrheit steht im Quelltext.",
+ "voices": {
+  "held": {
+   "azure": "de-DE-FlorianMultilingualNeural",
+   "name": "Der Namenlose",
+   "hint": "Bariton, heiser, nie theatralisch"
+  },
+  "mabel": {
+   "azure": "de-DE-KatjaNeural",
+   "name": "Mamma „Rusty“ Mabel",
+   "hint": "Frau ~50, rau, warm, Whiskey-tief"
+  },
+  "silas": {
+   "azure": "de-DE-BerndNeural",
+   "name": "Silas „Kupferauge“ Finch",
+   "hint": "alter Schmied, bedächtig"
+  },
+  "gideon": {
+   "azure": "de-DE-KillianNeural",
+   "name": "Gideon Cross",
+   "hint": "hart, direkt, keine Höflichkeit"
+  },
+  "doc": {
+   "azure": "de-DE-ChristophNeural",
+   "name": "Doc Aris",
+   "hint": "hager, präzise, nervös wenn er lügt"
+  },
+  "quentin": {
+   "azure": "de-DE-ConradNeural",
+   "name": "Quentin",
+   "hint": "gemessen, trocken"
+  },
+  "slick": {
+   "azure": "de-DE-KasperNeural",
+   "name": "Slick",
+   "hint": "glatt, zu freundlich"
+  }
+ },
+ "lines": [
+  {
+   "id": "4028f366f6ea",
+   "rolle": "held",
+   "text": "„…hh. Steh. Bleib stehen.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "cfb9a6104a39",
+   "rolle": "held",
+   "text": "„Mein Schädel. Als hätte mir jemand einen Kessel drübergezogen und draufgeschlagen.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "564253ec7a4a",
+   "rolle": "held",
+   "text": "„Öl im Mund. Rost in der Nase. Und irgendwas Klebriges im Haar.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "2d602cd72562",
+   "rolle": "held",
+   "text": "„…das ist Blut. Meins, nehm ich an.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "956594a946e3",
+   "rolle": "held",
+   "text": "„Wo bin ich hier? Blech. Fässer. Ein halber Zug.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "c99d914b9cd2",
+   "rolle": "held",
+   "text": "„Eine Kippe. Ich steh auf einer Müllkippe, knöcheltief in irgendwas.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "f100974c7fb8",
+   "rolle": "held",
+   "text": "„Wie komm ich hierher? Denk nach. Irgendwas.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "f65e8fed33dd",
+   "rolle": "held",
+   "text": "„Nichts. Kein Weg, kein Gesicht, kein gestern.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "00af1084c99a",
+   "rolle": "held",
+   "text": "„Wer bringt einen Mann auf eine Halde und lässt ihn liegen? Und wofür?“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "43106d0de5ef",
+   "rolle": "held",
+   "text": "„Wie heiße ich eigentlich.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "adbe591567b6",
+   "rolle": "held",
+   "text": "„…“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "47b8bdc7b0f7",
+   "rolle": "held",
+   "text": "„Auch das noch nicht. Gut. Später.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "a547e860caab",
+   "rolle": "held",
+   "text": "„Wasser. Ich brauch Wasser, und was zu essen, und was zum Festhalten.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "8269d51c2344",
+   "rolle": "held",
+   "text": "„Aber zuerst muss ich mich orientieren. Ich weiß ja nicht mal, wo ich hier bin.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "c664a3cac5a3",
+   "rolle": "held",
+   "text": "„Da drüben ragt was aus dem Sand. Ein Fels, hoch genug.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "0cf215fe2446",
+   "rolle": "held",
+   "text": "„Von da oben sehe ich vielleicht mehr als Blech und Dreck.“",
+   "quellen": [
+    "_wach_zeilen"
+   ],
+   "regie": "müde, heiser, leise"
+  },
+  {
+   "id": "fb1bbb81e5dc",
+   "rolle": "held",
+   "text": "„Von hier oben sieht man wenigstens etwas.“",
+   "quellen": [
+    "_maybe_vista"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "a05caa446a89",
+   "rolle": "held",
+   "text": "„Wüste. Wüste. Und noch mal Wüste.“",
+   "quellen": [
+    "_maybe_vista"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "14f358ce92cb",
+   "rolle": "held",
+   "text": "„…da. Ganz hinten im Tal.“",
+   "quellen": [
+    "_maybe_vista"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "d226e1ff696b",
+   "rolle": "held",
+   "text": "„Dächer. Ein Turm. Und Licht — da lebt jemand.“",
+   "quellen": [
+    "_maybe_vista"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "32e31f6cc448",
+   "rolle": "held",
+   "text": "„Ein Fußmarsch. Aber der erste Weg, der irgendwohin führt.“",
+   "quellen": [
+    "_maybe_vista"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "b51e69b4910f",
+   "rolle": "held",
+   "text": "„Rustwater. Es gibt sie also wirklich.“",
+   "quellen": [
+    "_check_prolog_done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "17a0d2a4d1f4",
+   "rolle": "held",
+   "text": "„Kupfer unter den Stiefeln. Fackeln am Tor. Hier wohnt jemand, der etwas zu verlieren hat.“",
+   "quellen": [
+    "_check_prolog_done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "ea620dfd37ce",
+   "rolle": "held",
+   "text": "„Im Saloon brennt Licht. Um die Zeit ist da noch wer wach.“",
+   "quellen": [
+    "_check_prolog_done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "77e868d23b9c",
+   "rolle": "held",
+   "text": "„Ich hab keinen Namen, kein Geld und Blut im Haar. Mal sehen, wie weit ich damit komme.“",
+   "quellen": [
+    "_check_prolog_done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "ec12561b4415",
+   "rolle": "held",
+   "text": "„…was zum.“",
+   "quellen": [
+    "_erst_starten"
+   ],
+   "regie": "leise, angespannt"
+  },
+  {
+   "id": "a45408cb84c2",
+   "rolle": "held",
+   "text": "„Das läuft. Das ist Blech, und es läuft.“",
+   "quellen": [
+    "_erst_starten"
+   ],
+   "regie": "leise, angespannt"
+  },
+  {
+   "id": "26b44d6c780a",
+   "rolle": "held",
+   "text": "„Und es hat mich noch nicht gesehen.“",
+   "quellen": [
+    "_erst_starten"
+   ],
+   "regie": "leise, angespannt"
+  },
+  {
+   "id": "89f9a62345cf",
+   "rolle": "held",
+   "text": "„Das ging schnell. Zu schnell.“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "1d7ad92088cd",
+   "rolle": "held",
+   "text": "„Ich hab nicht nachgedacht. Meine Hände schon.“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "f6aec8926129",
+   "rolle": "held",
+   "text": "„…und woher weiß ich, wo man so ein Ding trifft?“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "1ed3d5a39bce",
+   "rolle": "held",
+   "text": "„Der war halb hin. Rost bis zum Kessel. Ein heiler hätte gestanden.“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "e7e40c42a9fe",
+   "rolle": "held",
+   "text": "„Es zischt noch. Ein Ding, das zischt, wenn es liegt.“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "29aba0cba927",
+   "rolle": "held",
+   "text": "„Da drin klappert was. Schrauben. Ein Zahnrad. Und ein Kern, der noch warm ist.“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "5607189d81ed",
+   "rolle": "held",
+   "text": "„Das hat jemand gebaut. Jemand baut so was und lässt es hier laufen.“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "64455dc2cd6a",
+   "rolle": "held",
+   "text": "„Also nehm ich, was drin ist. Es braucht das nicht mehr, und ich schon.“",
+   "quellen": [
+    "_erst_abdruecken"
+   ],
+   "regie": "ruhig, trocken"
+  },
+  {
+   "id": "20f905aa77a7",
+   "rolle": "held",
+   "text": "„Da ist eine Walze drin. Sie dreht sich noch.“",
+   "quellen": [
+    "_walze_bergen"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "d671eb36820d",
+   "rolle": "held",
+   "text": "„%s“",
+   "quellen": [
+    "_walze_bergen",
+    "_walze_bergen"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "8124c93462b5",
+   "rolle": "held",
+   "text": "„…das war nicht meine Erinnerung. Das ist sie aber.“",
+   "quellen": [
+    "_walze_bergen"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "4973d2693600",
+   "rolle": "held",
+   "text": "„Ein Karabiner. Lauf voller Sand.“",
+   "quellen": [
+    "_erste_truhe_szene"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "41e42f5b4fe4",
+   "rolle": "held",
+   "text": "„Er passt in meine Hand, als hätte ich das schon tausendmal gemacht.“",
+   "quellen": [
+    "_erste_truhe_szene"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "5e7b68b9831b",
+   "rolle": "held",
+   "text": "„Woher weiß ich das?“",
+   "quellen": [
+    "_erste_truhe_szene"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "5a600f80f8f4",
+   "rolle": "mabel",
+   "text": "„Du siehst aus wie durchgekaut und wieder ausgespuckt. Setz dich, bevor du umfällst.“",
+   "quellen": [
+    "DialogData.mabel.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "79fd416a2882",
+   "rolle": "mabel",
+   "text": "„Von der Kippe rauf, ja? Da liegen normalerweise nur Blech und Knochen. Du bist mir ein hübsches drittes.“",
+   "quellen": [
+    "DialogData.mabel.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "c62a2df53382",
+   "rolle": "mabel",
+   "text": "„Namen brauch ich keinen. Wer aus dem Schrott kommt, hat meistens keinen mehr.“",
+   "quellen": [
+    "DialogData.mabel.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "465ad6a09055",
+   "rolle": "mabel",
+   "text": "„Trink das hier. Und dann hör mir zu.“",
+   "quellen": [
+    "DialogData.mabel.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "aaeea87a5383",
+   "rolle": "mabel",
+   "text": "„Draußen sitzen Wegelagerer auf der Piste und nehmen sich, was durchkommt.“",
+   "quellen": [
+    "DialogData.mabel.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "0e418233b1c5",
+   "rolle": "mabel",
+   "text": "„Acht Stück, sagt der Aushang. Bring mir den Beweis, dann bring ich dir was Ordentliches zu essen.“",
+   "quellen": [
+    "DialogData.mabel.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "50f5075b671a",
+   "rolle": "mabel",
+   "text": "„Die Wüste frisst Leute wie dich zum Frühstück.“",
+   "quellen": [
+    "DialogData.mabel.wait"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "0971c041a45a",
+   "rolle": "mabel",
+   "text": "„Aber du bist ja noch da. Also weiter.“",
+   "quellen": [
+    "DialogData.mabel.wait"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "a53d63671360",
+   "rolle": "mabel",
+   "text": "„Du bist zäher, als du aussiehst.“",
+   "quellen": [
+    "DialogData.mabel.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "81f148c523a6",
+   "rolle": "mabel",
+   "text": "„Setz dich. Heute zahlst du nichts.“",
+   "quellen": [
+    "DialogData.mabel.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "830a1e4e96b6",
+   "rolle": "mabel",
+   "text": "„Trink was, Fremder. Geht aufs Haus.“",
+   "quellen": [
+    "DialogData.mabel.idle"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "8b511f0014f6",
+   "rolle": "mabel",
+   "text": "„Für dich hab ich Schmieröl statt Schnaps.“",
+   "quellen": [
+    "DialogData.mabel.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "9c0b91c235a4",
+   "rolle": "mabel",
+   "text": "„Wundert dich das? Mich wundert gar nichts mehr.“",
+   "quellen": [
+    "DialogData.mabel.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "cf284613cbbf",
+   "rolle": "mabel",
+   "text": "„Setz dich, Kind. Aber vorher…“",
+   "quellen": [
+    "DialogData.mabel.offer_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "41a8d4a6b6f8",
+   "rolle": "silas",
+   "text": "„Neu hier. Und schon kaputt.“",
+   "quellen": [
+    "DialogData.silas.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "903abbbbf167",
+   "rolle": "silas",
+   "text": "„Ich richte alles, was aus Metall ist. Für den Rest gibt's den Doc.“",
+   "quellen": [
+    "DialogData.silas.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "6cc1cb6246ae",
+   "rolle": "silas",
+   "text": "„Diese Stadt frisst Material.“",
+   "quellen": [
+    "DialogData.silas.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "f4ae0fe5afff",
+   "rolle": "silas",
+   "text": "„Bring mir Schrott, ich mach dir was daraus, das hält.“",
+   "quellen": [
+    "DialogData.silas.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "9f22931c2980",
+   "rolle": "silas",
+   "text": "„Ohne Schrott keine Mauer.“",
+   "quellen": [
+    "DialogData.silas.wait"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "8cf91555cf35",
+   "rolle": "silas",
+   "text": "„Gute Arbeit. Das hält.“",
+   "quellen": [
+    "DialogData.silas.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "e017b2ad11a0",
+   "rolle": "silas",
+   "text": "„Mein Auge sieht mehr als deins, Fremder.“",
+   "quellen": [
+    "DialogData.silas.idle"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "e87898889af6",
+   "rolle": "silas",
+   "text": "„Chassis-Platten? Für dich zum Selbstkostenpreis.“",
+   "quellen": [
+    "DialogData.silas.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "ac6490ef86fa",
+   "rolle": "silas",
+   "text": "„Reg dich nicht auf. Ich hab's vom ersten Tag an gesehen.“",
+   "quellen": [
+    "DialogData.silas.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "56dc6095623e",
+   "rolle": "gideon",
+   "text": "„Fort Freedom. Wer hier reinkommt, hat sich entschieden — oder wird es gleich.“",
+   "quellen": [
+    "DialogData.gideon.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "e9a8875c5dd7",
+   "rolle": "gideon",
+   "text": "„Der Konzern besitzt die Schienen, das Wasser und die Zeit. Wir nehmen ihm eins nach dem anderen ab.“",
+   "quellen": [
+    "DialogData.gideon.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "d4deb8922ec1",
+   "rolle": "gideon",
+   "text": "„Ich frag dich nicht, woher du kommst. Ich frag dich, wozu du taugst.“",
+   "quellen": [
+    "DialogData.gideon.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "81c877242c17",
+   "rolle": "gideon",
+   "text": "„Es gibt Arbeit, und sie ist nicht sauber.“",
+   "quellen": [
+    "DialogData.gideon.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "3d8cdcca73b2",
+   "rolle": "gideon",
+   "text": "„Wer sauber bleiben will, geht zurück nach Rustwater und trinkt bei Mabel.“",
+   "quellen": [
+    "DialogData.gideon.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "a766343aea04",
+   "rolle": "gideon",
+   "text": "„Noch nicht fertig. Dann red ich auch noch nicht.“",
+   "quellen": [
+    "DialogData.gideon.wait"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "d14768283d57",
+   "rolle": "gideon",
+   "text": "„Ordentlich.“",
+   "quellen": [
+    "DialogData.gideon.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "2d4633a93a1f",
+   "rolle": "gideon",
+   "text": "„Ein Monopol bricht man nicht mit einer Rede. Man bricht es mit Leuten wie dir.“",
+   "quellen": [
+    "DialogData.gideon.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "4b28a17597ca",
+   "rolle": "gideon",
+   "text": "„Wir brechen das Monopol des Konzerns — oder sterben beim Versuch.“",
+   "quellen": [
+    "DialogData.gideon.idle"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "53f143b9c877",
+   "rolle": "gideon",
+   "text": "„Sie haben dich gebaut, und jetzt stehst du hier.“",
+   "quellen": [
+    "DialogData.gideon.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "a88ab08c3f54",
+   "rolle": "gideon",
+   "text": "„Das ist die beste Nachricht seit zehn Jahren.“",
+   "quellen": [
+    "DialogData.gideon.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "65c5f8b051d1",
+   "rolle": "quentin",
+   "text": "„Sektor 01. Sie betreten Konzerngebiet. Das ist kein Vorwurf, das ist eine Feststellung.“",
+   "quellen": [
+    "DialogData.quentin.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "6ffcaeae7722",
+   "rolle": "quentin",
+   "text": "„Ordnung ist Profit. Profit ist Ordnung.“",
+   "quellen": [
+    "DialogData.quentin.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "61719348dd9c",
+   "rolle": "quentin",
+   "text": "„Sie werden feststellen, dass wir besser zahlen als Ideale.“",
+   "quellen": [
+    "DialogData.quentin.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "ac72fd7d2bf3",
+   "rolle": "quentin",
+   "text": "„Ein Vorgang wartet auf Bearbeitung.“",
+   "quellen": [
+    "DialogData.quentin.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "8d513c82a3a8",
+   "rolle": "quentin",
+   "text": "„Der Unterschied zwischen Raub und Requirierung ist ein Stempel. Wir haben den Stempel.“",
+   "quellen": [
+    "DialogData.quentin.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "035e344c6b45",
+   "rolle": "quentin",
+   "text": "„Der Vorgang ist offen. Offene Vorgänge kosten.“",
+   "quellen": [
+    "DialogData.quentin.wait"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "60de3ae70e4d",
+   "rolle": "quentin",
+   "text": "„Erledigt. Vermerkt.“",
+   "quellen": [
+    "DialogData.quentin.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "6ea9454b7cfe",
+   "rolle": "quentin",
+   "text": "„Sie sind teuer, aber Sie rechnen sich.“",
+   "quellen": [
+    "DialogData.quentin.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "7cd3bd9580de",
+   "rolle": "quentin",
+   "text": "„Halten Sie sich an die Markierungen.“",
+   "quellen": [
+    "DialogData.quentin.idle"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "11fedb5348eb",
+   "rolle": "quentin",
+   "text": "„Inventarnummer unbekannt. Das ist ein Verwaltungsfehler, kein Wunder.“",
+   "quellen": [
+    "DialogData.quentin.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "bb896ccc8572",
+   "rolle": "quentin",
+   "text": "„Man wird das nachtragen.“",
+   "quellen": [
+    "DialogData.quentin.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "a4aec49fee3a",
+   "rolle": "slick",
+   "text": "„Ah. Ein neues Gesicht, und noch dazu eins mit Blut drauf.“",
+   "quellen": [
+    "DialogData.slick.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "d3fd80c971da",
+   "rolle": "slick",
+   "text": "„Rogue's Landing, Freund. Hier fragt keiner, hier bezahlt man.“",
+   "quellen": [
+    "DialogData.slick.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "96dac5c59cc5",
+   "rolle": "slick",
+   "text": "„Alles hat seinen Preis. Auch Schweigen.“",
+   "quellen": [
+    "DialogData.slick.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "52040aee6d8b",
+   "rolle": "slick",
+   "text": "„Ich hätte da eine Ware, die den Weg nicht allein findet.“",
+   "quellen": [
+    "DialogData.slick.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "82e2959d4ffe",
+   "rolle": "slick",
+   "text": "„Kein Anschlag. Ein Missverständnis, sagen wir. Missverständnisse sind billiger.“",
+   "quellen": [
+    "DialogData.slick.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "8bc037625db7",
+   "rolle": "slick",
+   "text": "„Immer mit der Ruhe. Ware, die hetzt, wird gefunden.“",
+   "quellen": [
+    "DialogData.slick.wait"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "fc6c311f303f",
+   "rolle": "slick",
+   "text": "„Sieh an. Du lieferst.“",
+   "quellen": [
+    "DialogData.slick.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "d124e34b9679",
+   "rolle": "slick",
+   "text": "„Ich mag Leute, die liefern. Sie leben länger.“",
+   "quellen": [
+    "DialogData.slick.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "d04f1bf44854",
+   "rolle": "slick",
+   "text": "„Reichtum kennt keine Fahnen, Freund.“",
+   "quellen": [
+    "DialogData.slick.idle"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "f31e3adcaec5",
+   "rolle": "slick",
+   "text": "„Du bist also gar kein Mensch. Und ich hab dir Schnaps verkauft.“",
+   "quellen": [
+    "DialogData.slick.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "fbf93f647b9f",
+   "rolle": "slick",
+   "text": "„Rückerstattung gibt's trotzdem keine.“",
+   "quellen": [
+    "DialogData.slick.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "89636394f959",
+   "rolle": "doc",
+   "text": "„Blut im Haar. Setz dich, das seh ich mir an.“",
+   "quellen": [
+    "DialogData.doc.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "1bfeacd3d26e",
+   "rolle": "doc",
+   "text": "„…und du zuckst nicht mal. Interessant.“",
+   "quellen": [
+    "DialogData.doc.erst"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "49ecf223ab6e",
+   "rolle": "doc",
+   "text": "„Die Viecher kommen aus den Rohren.“",
+   "quellen": [
+    "DialogData.doc.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "7fb4c9a7d8ee",
+   "rolle": "doc",
+   "text": "„Solange die da unten sind, verarzte ich hier oben Bisse statt Wunden.“",
+   "quellen": [
+    "DialogData.doc.offer"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "65d310e334ba",
+   "rolle": "doc",
+   "text": "„Zähl die Kadaver, nicht die Stunden.“",
+   "quellen": [
+    "DialogData.doc.wait"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "e2717a04c224",
+   "rolle": "doc",
+   "text": "„Eine Plage weniger.“",
+   "quellen": [
+    "DialogData.doc.done"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "499fdaa5c817",
+   "rolle": "doc",
+   "text": "„Halt dich von den Ratten fern.“",
+   "quellen": [
+    "DialogData.doc.idle"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "51986d12dbaa",
+   "rolle": "doc",
+   "text": "„Bei dir spar ich mir das Verarzten.“",
+   "quellen": [
+    "DialogData.doc.idle_enthuellt"
+   ],
+   "regie": ""
+  },
+  {
+   "id": "50f2da0bb045",
+   "rolle": "doc",
+   "text": "„Ein Jammer. Du wärst ein guter Patient gewesen.“",
+   "quellen": [
+    "DialogData.doc.idle_enthuellt"
+   ],
+   "regie": ""
+  }
+ ]
+}

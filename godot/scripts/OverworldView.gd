@@ -357,10 +357,52 @@ func _naechste_zeile() -> void:
 	if _speech.is_empty():
 		_dialog.visible = false
 		_speech_left = 0.0
+		_stimme_anhalten()
 		return
 	var zeile: String = String(_speech.pop_front())
 	_dialog.show_line(_speech_name, zeile, _speech_giver)
-	_speech_left = speech_dauer(zeile)
+	_speech_left = _stimme_spielen(zeile)
+
+
+## Die Stimme zur Zeile — und die Standzeit der Tafel.
+##
+## Sie richtet sich nach der AUFNAHME, wenn es eine gibt, und nur sonst nach `speech_dauer`.
+## Das ist der Punkt, an dem eine Vertonung sonst auseinanderfaellt: `speech_dauer` schaetzt aus
+## der Zeichenzahl, ein Sprecher braucht aber, was er braucht. Bliebe die Schaetzung stehen,
+## wechselte die Tafel mitten im Satz weiter oder stuende Sekunden stumm herum — und zwar bei
+## jeder einzelnen Zeile ein bisschen anders.
+##
+## Der Zuschlag ist Absicht: Ein Satz, dessen Tafel im selben Augenblick verschwindet, in dem
+## das letzte Wort verklingt, wirkt abgeschnitten.
+const STIMME_NACHLAUF_SEK: float = 0.45
+
+func _stimme_spielen(zeile: String) -> float:
+	# ZUERST die laufende Stimme anhalten, und zwar auch dann, wenn es zur neuen Zeile gar keine
+	# Aufnahme gibt. Wer die Tafel wegtippt, waehrend gesprochen wird, hoerte sonst den alten
+	# Satz zu Ende, waehrend der neue dasteht — und bei einer unvertonten Zeile redete eine
+	# Figur, deren Text schon weg ist.
+	_stimme_anhalten()
+	var strom: AudioStream = Stimme.laden(zeile)
+	if strom == null:
+		return speech_dauer(zeile)
+	if _stimme == null or not is_instance_valid(_stimme):
+		_stimme = AudioStreamPlayer.new()
+		# Vorerst auf dem Hauptweg. Sprache haette einen eigenen Regler verdient — sie ist das
+		# Einzige, was man VERSTEHEN muss, und wird als Erstes zugedeckt, wenn Schuesse und
+		# Musik zusammen laut werden. Einen Bus anzulegen, den kein Menue bedienen kann, waere
+		# aber nur eine Zeile, die so tut. Kommt mit den Einstellungen.
+		add_child(_stimme)
+	_stimme.stream = strom
+	_stimme.play()
+	return maxf(strom.get_length() + STIMME_NACHLAUF_SEK, 0.6)
+
+
+func _stimme_anhalten() -> void:
+	if _stimme != null and is_instance_valid(_stimme) and _stimme.playing:
+		_stimme.stop()
+
+
+var _stimme: AudioStreamPlayer = null
 
 
 ## Die Tafel blaettert von selbst weiter.

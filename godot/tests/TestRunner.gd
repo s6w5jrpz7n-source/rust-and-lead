@@ -86,6 +86,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_stille_grube": 26,
 	"_test_kraterrand": 8,
 	"_test_kraterrand_kamm": 6,
+	"_test_stimmen": 12,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -6522,3 +6523,82 @@ func _test_kraterrand_kamm() -> void:
 	_check("Die Hoehenblende rechnet in Anteilen",
 		quelle.contains("func _rim_farbe(anteil: float) -> Color:")
 		and quelle.contains("smoothstep(RIM_FELS_ANTEIL, 1.0, anteil)"))
+
+
+## Die Vertonung des Spiels.
+##
+## ## Die eine Naht, an der alles haengt
+##
+## Es gibt keine Zuordnungstabelle zwischen Sprechzeile und Tondatei: Die Kennung IST der
+## SHA-256 des Textes, in Python beim Rendern und in GDScript beim Abspielen. Zwei
+## Umsetzungen derselben Rechnung, in zwei Sprachen, ohne gemeinsamen Code.
+##
+## Laufen sie auseinander, faellt nichts aus und niemand merkt es: Das Spiel sucht Dateien, die
+## es nicht gibt, findet keine, zeigt den Text und schweigt — also genau das, was es auch ohne
+## Vertonung tut. Ein Fehler, der sich als "noch nicht vertont" tarnt, wird nie gefunden.
+##
+## Deshalb stehen hier feste Werte aus dem Python-Lauf. Sie sind der Beweis, dass beide Seiten
+## dasselbe rechnen.
+func _test_stimmen() -> void:
+	print("· Die Vertonung findet ihre Dateien")
+
+	# Aus  python3 docs/build_spiel_stimmen.py  abgeschrieben. Wenn Godot hier etwas anderes
+	# ausrechnet, findet es im Spiel keine einzige Aufnahme.
+	var proben: Array = [
+		["„…hh. Steh. Bleib stehen.“", "4028f366f6ea"],
+		["„Wüste. Wüste. Und noch mal Wüste.“", "a05caa446a89"],
+		["„Ein Jammer. Du wärst ein guter Patient gewesen.“", "50f2da0bb045"],
+	]
+	for p in proben:
+		var text: String = String(p[0])
+		var soll: String = String(p[1])
+		_check("Kennung stimmt mit Python ueberein: %s → %s" % [text.substr(0, 24), soll],
+			Stimme.kennung(text) == soll, "Godot rechnet: " + Stimme.kennung(text))
+
+	# Umlaute sind hier kein Sonderfall, sondern DER Fall: Der Text ist durchgehend deutsch, mit
+	# typografischen Anfuehrungszeichen. Haette eine der beiden Seiten die Zeichen anders
+	# kodiert (Latin-1 gegen UTF-8), waere ausgerechnet jede Zeile ohne Umlaut richtig — und
+	# der Fehler waere sporadisch statt total.
+	_check("Umlaute aendern die Kennung",
+		Stimme.kennung("„Wüste.“") != Stimme.kennung("„Wuste.“"))
+	_check("Und die Kennung ist zwoelf Stellen lang (%d)"
+		% Stimme.kennung("egal").length(), Stimme.kennung("egal").length() == 12)
+
+	# Der Pfad, den das Spiel daraus baut.
+	var pfad: String = Stimme.pfad("„…hh. Steh. Bleib stehen.“")
+	_check("Der Pfad zeigt in den Stimmenordner (%s)" % pfad,
+		pfad == "res://assets/voice/4028f366f6ea.mp3")
+	# MP3 und nicht Ogg: Godot spielt Ogg VORBIS, Azure liefert Ogg OPUS. Zwei Formate im
+	# selben Behaeltnis, und das eine kann Godot nicht.
+	_check("Und zwar auf eine MP3", Stimme.ENDUNG == ".mp3")
+
+	# Ohne Aufnahme faellt nichts aus. Das ist die Zusicherung, unter der ueberhaupt vertont
+	# werden darf: Das Spiel ist zu keinem Zeitpunkt darauf angewiesen: Es ist immer nur eine
+	# Zeile weiter vertont als vorher.
+	_check("Eine unvertonte Zeile meldet sich als solche",
+		not Stimme.hat("„Diesen Satz sagt niemand.“"))
+	_check("Und laden liefert dann null",
+		Stimme.laden("„Diesen Satz sagt niemand.“") == null)
+
+	# Die Standzeit der Tafel richtet sich nach der AUFNAHME, wenn es eine gibt. Bliebe die
+	# Schaetzung aus der Zeichenzahl stehen, wechselte die Tafel mitten im Satz weiter oder
+	# stuende Sekunden stumm herum — bei jeder Zeile ein bisschen anders.
+	var quelle: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	_check("Die Tafel richtet sich nach der Aufnahme",
+		quelle.contains("_speech_left = _stimme_spielen(zeile)")
+		and quelle.contains("strom.get_length() + STIMME_NACHLAUF_SEK"))
+	# Und die laufende Stimme wird angehalten, bevor die naechste anfaengt — auch wenn die
+	# naechste Zeile gar keine Aufnahme hat.
+	var block: String = quelle.substr(quelle.find("func _stimme_spielen"))
+	block = block.substr(0, block.find("\n\n\n"))
+	_check("Die laufende Stimme wird zuerst angehalten",
+		block.find("_stimme_anhalten()") < block.find("Stimme.laden"))
+
+	# Und der Textbestand selbst: Die Liste, aus der gerendert wird, muss die Zeilen des Spiels
+	# WIRKLICH enthalten. Ein Extraktor, der die Haelfte uebersieht, faellt sonst nicht auf.
+	var OWS = load("res://scripts/OverworldView.gd")
+	var fehlt: Array[String] = []
+	for z in OWS._wach_zeilen():
+		if Stimme.kennung(String(z)).length() != 12:
+			fehlt.append(String(z))
+	_check("Jede Erwachen-Zeile bekommt eine Kennung", fehlt.is_empty())

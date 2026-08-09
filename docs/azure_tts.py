@@ -50,6 +50,10 @@
 #   --rolle HELD    Nur diese eine Rolle rendern.
 #   --mp3           MP3 statt WAV (kleiner, gut zum Durchhoeren).
 #   --folge 1       Nur diese Folge.
+#   --spiel         Nicht das Hoerspiel, sondern die Sprechzeilen DES SPIELS
+#                   (docs/spiel_stimmen.json) -> godot/assets/voice/<kennung>.mp3.
+#                   Das Spiel findet sie zur Laufzeit ueber den Text selbst,
+#                   ohne Zuordnungstabelle (siehe godot/scripts/Stimme.gd).
 #
 #  ── DER STOLPERSTEIN, DEN MAN NICHT KOMMEN SIEHT ───────────────────────────
 #
@@ -110,6 +114,22 @@ ROLE_PROSODY = {
 }
 DEFAULT_PROSODY = (0, 0, 0)
 
+# Dieselben Haltungen noch einmal unter den Schluesseln, die das SPIEL benutzt
+# ("giver"). Nicht per Uebersetzungstabelle: Mabel im Saloon ist dieselbe Figur
+# wie MABEL im Hoerspiel, aber quentin und slick kommen dort gar nicht vor —
+# eine Tabelle haette fuer sie auf DEFAULT_PROSODY zurueckfallen muessen, und
+# das waere ausgerechnet bei dem Haendler, dessen Glattheit die halbe Figur
+# ist, die Standardstimme gewesen.
+ROLE_PROSODY.update({
+    "held":    ROLE_PROSODY["HELD"],
+    "mabel":   ROLE_PROSODY["MABEL"],
+    "silas":   ROLE_PROSODY["SILAS"],
+    "gideon":  ROLE_PROSODY["GIDEON"],
+    "doc":     ROLE_PROSODY["DOC ARIS"],
+    "quentin": (-4,  -2,   0),   # gemessen, trocken
+    "slick":   (+6,  +4,  -2),   # schnell, hell, zu freundlich
+})
+
 # --- Regie-Keywords -> Prosodie-Zuschlag (rate, pitch, volume) ---------------
 REGIE_RULES = [
     (("leise", "flüstert", "flüsternd", "still", "kaum hörbar"), (-4,  0, -14)),
@@ -144,6 +164,22 @@ def prosody_for(role, regie, delivery="gesprochen"):
     return clamp(r), clamp(p), clamp(v)
 
 
+def sprechbar(text):
+    """Den Text so herrichten, wie er GESPROCHEN werden soll.
+
+    Die Sprechtafel im Spiel setzt jede Zeile in typografische
+    Anfuehrungszeichen — das ist ihre Schreibweise fuer "das sagt jemand". Ein
+    Sprachdienst macht daraus eine winzige Pause am Anfang und am Ende, und bei
+    einer kurzen Zeile hoert man das.
+
+    Sie fliegen deshalb NUR hier raus, nicht im Quelltext und nicht in der
+    Kennung: Die Kennung wird ueber den Text gerechnet, wie er dasteht, und das
+    Spiel rechnet sie genauso. Wer hier auch die Kennung aendert, macht jede
+    bereits gerenderte Datei unauffindbar.
+    """
+    return text.strip().strip("„“\"").strip()
+
+
 def build_ssml(voice, text, role, regie, delivery="gesprochen"):
     r, p, v = prosody_for(role, regie, delivery)
     def fmt(n):
@@ -153,7 +189,7 @@ def build_ssml(voice, text, role, regie, delivery="gesprochen"):
         'xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="de-DE">'
         f'<voice name="{voice}">'
         f'<prosody rate="{fmt(r)}" pitch="{fmt(p)}" volume="{fmt(v)}">'
-        f'{html.escape(text)}'
+        f'{html.escape(sprechbar(text))}'
         '</prosody></voice></speak>'
     )
 
@@ -281,6 +317,42 @@ def pruefen(doc):
     return 0
 
 
+SPIEL_JSON = HERE / "spiel_stimmen.json"
+SPIEL_OUT = WURZEL_VOICE = HERE.parent / "godot" / "assets" / "voice"
+
+
+def spiel_laden():
+    """Der Textbestand DES SPIELS statt des Hoerspiels.
+
+    Zwei Unterschiede zum Hoerspiel, und beide sind wesentlich:
+
+     * Der Dateiname ist die KENNUNG der Zeile, nicht eine laufende Nummer. Das
+       Spiel rechnet sie zur Laufzeit selbst aus dem Text aus und braucht
+       deshalb keine Zuordnungstabelle (siehe scripts/Stimme.gd).
+     * Ausgabe ist immer MP3 und liegt in godot/assets/voice/. Godot spielt Ogg
+       VORBIS, Azure liefert Ogg OPUS — dasselbe Behaeltnis, anderes Format.
+    """
+    if not SPIEL_JSON.exists():
+        print(f"✗ {SPIEL_JSON} fehlt. Erst  python3 docs/build_spiel_stimmen.py  laufen lassen.")
+        return None
+    doc = json.loads(SPIEL_JSON.read_text(encoding="utf-8"))
+    # In dieselbe Form bringen, die der Rest des Skripts erwartet.
+    doc["events"] = [
+        {
+            "seq": i,
+            "folge": 0,
+            "rolle": e["rolle"],
+            "text": e["text"],
+            "regie": e.get("regie", ""),
+            "delivery": "gesprochen",
+            "spoken": True,
+            "datei": e["id"],
+        }
+        for i, e in enumerate(doc["lines"])
+    ]
+    return doc
+
+
 def main():
     argv = sys.argv[1:]
     dry = "--dry-run" in argv
@@ -298,10 +370,19 @@ def main():
     nur_rolle = opt("--rolle")
     nur_folge = opt("--folge", int)
 
-    if not JSON_IN.exists():
-        print(f"✗ {JSON_IN} fehlt. Erst  python3 docs/build_hoerspiel_tts.py  laufen lassen.")
-        return 1
-    doc = json.loads(JSON_IN.read_text(encoding="utf-8"))
+    spiel = "--spiel" in argv
+    global OUT_DIR
+    if spiel:
+        doc = spiel_laden()
+        if doc is None:
+            return 1
+        OUT_DIR = SPIEL_OUT
+        endung, (format_id, suffix) = "mp3", FORMATE["mp3"]
+    else:
+        if not JSON_IN.exists():
+            print(f"✗ {JSON_IN} fehlt. Erst  python3 docs/build_hoerspiel_tts.py  laufen lassen.")
+            return 1
+        doc = json.loads(JSON_IN.read_text(encoding="utf-8"))
 
     if "--pruefen" in argv:
         return pruefen(doc)
@@ -341,9 +422,12 @@ def main():
             print(f"  · seq {e['seq']}: keine Stimme für Rolle '{role}' — übersprungen")
             continue
         delivery = e.get("delivery", "gesprochen")
-        base = f"f{e['folge']}_{e['seq']:03d}_{role.replace(' ', '')}"
-        if delivery == "gedanke":
-            base += "_GEDANKE"
+        if e.get("datei"):
+            base = e["datei"]
+        else:
+            base = f"f{e['folge']}_{e['seq']:03d}_{role.replace(' ', '')}"
+            if delivery == "gedanke":
+                base += "_GEDANKE"
         ssml = build_ssml(voice, e["text"], role, e.get("regie", ""), delivery)
 
         if dry:
