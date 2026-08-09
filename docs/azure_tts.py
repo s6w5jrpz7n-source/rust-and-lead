@@ -50,6 +50,15 @@
 #   --rolle HELD    Nur diese eine Rolle rendern.
 #   --mp3           MP3 statt WAV (kleiner, gut zum Durchhoeren).
 #   --folge 1       Nur diese Folge.
+#   --prosodie      Tempo/Tonhoehe/Lautstaerke aus der Regie anwenden. AUS per
+#                   Vorgabe — bei neuronalen Stimmen ist das eine Streckung des
+#                   fertigen Signals und klingt nach falschem Tempo.
+#   --stile         Welche Sprechstile deine Region kennt (fragt Azure, kein
+#                   Raten). Kostet nichts.
+#   --faecher       EINE Zeile in vielen Fassungen rendern: jede Stimme, mit
+#                   und ohne Prosodie, mit jedem Stil. Zum Anhoeren und
+#                   Aussuchen -> docs/stimmprobe/
+#
 #   --spiel         Nicht das Hoerspiel, sondern die Sprechzeilen DES SPIELS
 #                   (docs/spiel_stimmen.json) -> godot/assets/voice/<kennung>.mp3.
 #                   Das Spiel findet sie zur Laufzeit ueber den Text selbst,
@@ -180,17 +189,32 @@ def sprechbar(text):
     return text.strip().strip("„“\"").strip()
 
 
+# Prosodie ist AUS, solange sie nicht ausdruecklich verlangt wird.
+#
+# `<prosody rate>` und `<prosody pitch>` sind bei neuronalen Stimmen keine
+# Sprechanweisung, sondern eine Nachbearbeitung: Azure streckt und verschiebt
+# das fertige Signal. Bei zehn Prozent hoert man das als falsches Tempo und
+# blechernen Klang — genau die Beschwerde, die diese Zeile ausgeloest hat.
+#
+# Der richtige Hebel waeren `<mstts:express-as>`-Stile: antrainiert statt
+# gerechnet. Welche Stimme welche kann, sagt `--stile` (gefragt, nicht
+# geraten). Bis das feststeht, ist die nackte Stimme besser als eine
+# verbogene.
+MIT_PROSODIE = False
+
+
 def build_ssml(voice, text, role, regie, delivery="gesprochen"):
-    r, p, v = prosody_for(role, regie, delivery)
-    def fmt(n):
-        return f"+{n}%" if n >= 0 else f"{n}%"
+    inhalt = html.escape(sprechbar(text))
+    if MIT_PROSODIE:
+        r, p, v = prosody_for(role, regie, delivery)
+        def fmt(n):
+            return f"+{n}%" if n >= 0 else f"{n}%"
+        inhalt = (f'<prosody rate="{fmt(r)}" pitch="{fmt(p)}" volume="{fmt(v)}">'
+                  f'{inhalt}</prosody>')
     return (
         '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
         'xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="de-DE">'
-        f'<voice name="{voice}">'
-        f'<prosody rate="{fmt(r)}" pitch="{fmt(p)}" volume="{fmt(v)}">'
-        f'{html.escape(sprechbar(text))}'
-        '</prosody></voice></speak>'
+        f'<voice name="{voice}">{inhalt}</voice></speak>'
     )
 
 
@@ -353,8 +377,78 @@ def spiel_laden():
     return doc
 
 
+PROBE_DIR = HERE / "stimmprobe"
+# Die Zeile, an der man es hoert: kurz, mit Punkt, Pause und Atem drin.
+PROBE_TEXT = "Das läuft. Das ist Blech, und es läuft."
+
+
+def stile_zeigen():
+    """Welche Sprechstile kann welche Stimme? GEFRAGT, nicht geraten.
+
+    `<prosody rate>` streckt das fertige Signal — das hoert man als falsches
+    Tempo. `<mstts:express-as style>` ist dagegen antrainiert und klingt wie
+    gesprochen. Nur: Welche Stimme welchen Stil kann, steht in keiner
+    Dokumentation verlaesslich. Die Stimmenliste weiss es.
+    """
+    try:
+        alle = stimmen_liste()
+    except Exception as e:
+        print("✗ " + _deuten(e))
+        return 1
+    for v in alle:
+        if not v["ShortName"].startswith("de-DE-"):
+            continue
+        stile = v.get("StyleList") or []
+        print(f"  {v['ShortName']:<38} {', '.join(stile) if stile else '— keine Stile'}")
+    return 0
+
+
+def faecher(text):
+    """Dieselbe Zeile in allen Fassungen — zum Anhoeren und Aussuchen.
+
+    Ich kann nicht hoeren, was herauskommt. Raten hilft hier niemandem: Statt
+    an Zahlen zu drehen und zu fragen "besser?", kommen alle Moeglichkeiten
+    einmal nebeneinander auf die Platte, mit sprechenden Dateinamen.
+    """
+    try:
+        alle = {v["ShortName"]: (v.get("StyleList") or []) for v in stimmen_liste()}
+    except Exception as e:
+        print("✗ " + _deuten(e))
+        return 1
+    PROBE_DIR.mkdir(parents=True, exist_ok=True)
+    fassungen = []
+    for stimme in sorted(n for n in alle if n.startswith("de-DE-")):
+        kurz = stimme.replace("de-DE-", "").replace("Neural", "")
+        # 1. NACKT — ohne jede Prosodie. Der wichtigste Vergleich.
+        fassungen.append((f"{kurz}_nackt", stimme, "", 0))
+        for stil in alle[stimme][:4]:
+            fassungen.append((f"{kurz}_{stil}", stimme, stil, 0))
+    print(f"{len(fassungen)} Fassungen · „{text}“ · {PROBE_DIR}")
+    for name, stimme, stil, _ in fassungen:
+        ziel = PROBE_DIR / (name + ".mp3")
+        if ziel.exists():
+            continue
+        inhalt = html.escape(sprechbar(text))
+        if stil:
+            inhalt = (f'<mstts:express-as style="{stil}">{inhalt}</mstts:express-as>')
+        ssml = ('<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
+                'xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="de-DE">'
+                f'<voice name="{stimme}">{inhalt}</voice></speak>')
+        try:
+            ziel.write_bytes(sprich(ssml, FORMATE["mp3"][0]))
+            print(f"  ✓ {ziel.name}")
+        except urllib.error.HTTPError as ex:
+            print(f"  ✗ {name}: {_deuten(ex)}")
+            if ex.code in (401, 403, 404):
+                return 1
+        time.sleep(PAUSE_SEK)
+    return 0
+
+
 def main():
+    global MIT_PROSODIE
     argv = sys.argv[1:]
+    MIT_PROSODIE = "--prosodie" in argv
     dry = "--dry-run" in argv
     neu = "--neu" in argv
     endung = "mp3" if "--mp3" in argv else "wav"
@@ -386,6 +480,10 @@ def main():
 
     if "--pruefen" in argv:
         return pruefen(doc)
+    if "--stile" in argv:
+        return stile_zeigen()
+    if "--faecher" in argv:
+        return faecher(opt("--faecher") or PROBE_TEXT)
 
     role_voice = {role: v.get("azure") for role, v in doc["voices"].items()}
     lines = [e for e in doc["events"] if e.get("spoken")]
