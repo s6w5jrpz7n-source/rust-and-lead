@@ -4705,10 +4705,28 @@ func _test_overworld_quest_flow() -> void:
 		if not found:
 			all_have_quests = false
 	_check("Alle drei Stadt-NPCs haben Quests", all_have_quests)
-	# Sammel-Quest braucht Material-Drops: die Drop-Tabelle muss die Quest-Items abdecken.
+	# Silas' Sammel-Quest muss nach etwas verlangen, das es NUR im Stollen gibt.
+	#
+	# Sie forderte gewoehnlichen `schrott` — und den hat man ohnehin: Er faellt bei jedem Kill
+	# und liegt ueberall herum. Die zwoelf Stueck waren beisammen, bevor man Silas zugehoert
+	# hatte, und der Stollen war ein Umweg, den man auslassen kann. Ein Auftrag, den man
+	# versehentlich erfuellt, ist keiner.
 	var scrap_quest: Dictionary = QuestManager.QUESTS["q_scrap"]
-	_check("Sammel-Quest fordert 'schrott' (von der Drop-Tabelle gedeckt)",
-		String(scrap_quest["item"]) == "schrott")
+	_check("Silas verlangt Material, das es nur im Stollen gibt (%s)"
+		% String(scrap_quest["item"]),
+		String(scrap_quest["item"]) in GameState.NUR_IM_STOLLEN)
+	_check("Und schickt einen auch dorthin", String(scrap_quest["target"]) == "stollen")
+	# Kein zweiter Sammelauftrag desselben Gebers auf dasselbe Material: Das war die Dopplung,
+	# die entstand, als der kaputte Auftrag nicht repariert, sondern ein neuer danebengesetzt
+	# wurde — und der kaputte blieb der, den man zuerst trifft.
+	var sammel_silas: Array[String] = []
+	for sq in QuestManager.QUESTS:
+		var q2: Dictionary = QuestManager.QUESTS[sq]
+		if String(q2.get("giver", "")) == "silas" and String(q2.get("kind", "")) == "collect" \
+				and String(q2.get("item", "")) == String(scrap_quest["item"]):
+			sammel_silas.append(String(sq))
+	_check("Silas sammelt Grubenstahl nur EINMAL (%s)" % ", ".join(sammel_silas),
+		sammel_silas.size() == 1)
 
 
 # ── Weltstruktur (GDD §1.4a: offene Wildnis + bauliche Aktionszonen + Eisenbahn) ──
@@ -5461,7 +5479,7 @@ func _test_truhen() -> void:
 	# haette man ihn erledigen koennen, ohne je hinabzusteigen, und der Stollen waere ein Umweg
 	# gewesen, den man auslaesst. Ein Auftrag, der einen an einen ORT schicken soll, muss nach
 	# etwas verlangen, das es nur dort gibt.
-	var q_stollen: Dictionary = QuestManager.QUESTS["q_stollen"]
+	var q_stollen: Dictionary = QuestManager.QUESTS["q_scrap"]
 	_check("Silas verlangt Grubenstahl", String(q_stollen["item"]) == "grubenstahl")
 	_check("Und ausdruecklich NICHT gewoehnlichen Schrott",
 		String(q_stollen["item"]) != "schrott")
@@ -5870,7 +5888,7 @@ func _test_spielstand_vollstaendig() -> void:
 	var proben: Dictionary = {
 		"current_chapter": 3, "is_revealed": true, "level": 7, "xp": 42,
 		"perk_points": 4, "ng_plus": 2, "gold": 1234, "potions": 9,
-		"kills": 55, "tracked_quest": "q_stollen", "weapon_id": "gatling",
+		"kills": 55, "tracked_quest": "q_scrap", "weapon_id": "gatling",
 		"prolog_done": true, "saw_rustwater": true, "saw_wake": true, "saw_vista": true,
 		"erst_gegner_done": true, "schluessel": 3, "cam_zoom": 2,
 	}
@@ -5880,7 +5898,7 @@ func _test_spielstand_vollstaendig() -> void:
 	# Auch die Sammlungen, denn eine leere Liste ueberlebt jeden Fehler.
 	GameState.inventory = { "schrott": 5, "zahnrad": 3, "dampfkern": 1, "grubenstahl": 17 }
 	GameState.weapons = ["karabiner", "gatling"]
-	GameState.quests = { "q_stollen": "active" }
+	GameState.quests = { "q_scrap": "active" }
 
 	var gepackt: Dictionary = SaveManager.serialize()
 	GameState.neu_beginnen()
@@ -5901,7 +5919,7 @@ func _test_spielstand_vollstaendig() -> void:
 		GameState.item_count("schrott") == 5 and GameState.item_count("zahnrad") == 3)
 	_check("Waffen ueberleben", GameState.weapons.has("gatling"))
 	_check("Auftragszustaende ueberleben",
-		String(GameState.quests.get("q_stollen", "")) == "active")
+		String(GameState.quests.get("q_scrap", "")) == "active")
 
 	# ── Und die eigentliche Zusicherung ──────────────────────────────────────
 	#

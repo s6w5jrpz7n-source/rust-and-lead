@@ -52,28 +52,23 @@ const QUESTS: Dictionary = {
 	# ── Hub-Einführungs-Kopfgelder (ab Kapitel 1 verfügbar) ──
 	"q_bounty": { "title": "Kopfgeld: Wegelagerer", "giver": "mabel", "kind": "kill",
 		"count": 8, "reward_gold": 120, "reward_item": "zahnrad", "target": "rattengestruepp", "chapter": 1, "advance_to": 0 },
-	"q_scrap":  { "title": "Baumaterial: Schrott", "giver": "silas", "kind": "collect", "item": "schrott",
-		"count": 12, "reward_gold": 90, "reward_item": "", "target": "schrott_minen", "chapter": 1, "advance_to": 0 },
-	"q_rats":   { "title": "Plage: Schrott-Ratten", "giver": "doc", "kind": "kill",
-		"count": 5, "reward_gold": 70, "reward_item": "potion", "target": "schrott_minen", "chapter": 1, "advance_to": 0 },
-	# Der Auftrag, der den Stollen ueberhaupt erst zu etwas macht.
+	# `grubenstahl` und NICHT `schrott` -- der Unterschied ist der ganze Auftrag.
 	#
-	# Er war ein Loch im Boden ohne Grund hineinzugehen — man lief daran vorbei, und wenn man
-	# doch hinabstieg, wusste man nicht warum. Ein Dungeon braucht keinen Zwang, aber einen
-	# ANLASS, und Silas hat den besten: Er baut an einer Mauer und ihm fehlt Material. Dass
-	# unten Schrott liegt, den keiner holt, ist in dieser Welt kein Geheimnis, sondern der Grund,
-	# warum niemand hinuntergeht.
+	# Er verlangte gewoehnlichen Schrott, und den hat man ohnehin: Er faellt bei jedem Kill,
+	# liegt ueberall herum, und die zwoelf Stueck hatte man beisammen, bevor man Silas
+	# ueberhaupt zugehoert hatte. Ein Auftrag, den man versehentlich erfuellt, ist keiner.
 	#
-	# `collect` und nicht `kill`: Wer unten aufraeumen soll, entscheidet selbst, ob er kaempft
-	# oder sich vorbeidrueckt — und lernt dabei den Stollen kennen, statt eine Strichliste zu
-	# fuehren.
-	# `grubenstahl` und NICHT `schrott`: Der Auftrag verlangte anfangs gewoehnlichen Schrott —
-	# und damit haette man ihn mit dem erledigen koennen, was ohnehin ueberall herumliegt. Der
-	# Stollen waere ein Umweg gewesen, den man auslassen kann. Ein Auftrag, der einen an einen
-	# Ort schicken soll, muss nach etwas verlangen, das es NUR DORT gibt.
-	"q_stollen": { "title": "Grubenstahl aus dem Vorschacht", "giver": "silas", "kind": "collect",
+	# Grubenstahl gibt es NUR in den Truhen des Stollens (siehe GameState.NUR_IM_STOLLEN).
+	# Damit schickt der Auftrag einen an einen Ort, statt eine Strichliste zu fuehren -- und der
+	# Stollen bekommt den Grund, hineinzugehen, den er vorher nicht hatte.
+	"q_scrap":  { "title": "Baumaterial: Grubenstahl", "giver": "silas", "kind": "collect",
+		# ZWANZIG und nicht zwoelf: Ebene 1 des Stollens liefert hoechstens fuenfzehn. Bei
+		# zwoelf waere der Auftrag oben erledigt, und die zweite Ebene haette wieder keinen
+		# Grund. Der Test rechnet das nach — er hat die Zahl auch gefunden.
 		"item": "grubenstahl", "count": 20, "reward_gold": 160, "reward_item": "potion",
 		"target": "stollen", "chapter": 1, "advance_to": 0 },
+	"q_rats":   { "title": "Plage: Schrott-Ratten", "giver": "doc", "kind": "kill",
+		"count": 5, "reward_gold": 70, "reward_item": "potion", "target": "schrott_minen", "chapter": 1, "advance_to": 0 },
 
 	# ── Kapitel 1 geht weiter: je zwei Anschlussaufträge pro Auftraggeber ──
 	#

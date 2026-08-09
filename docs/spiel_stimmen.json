@@ -553,18 +553,18 @@
    "regie": "müde"
   },
   {
-   "id": "f4ae0fe5afff",
+   "id": "7a78f2ec3ee9",
    "rolle": "silas",
-   "text": "„Bring mir Schrott, ich mach dir was daraus, das hält.“",
+   "text": "„Bring mir Grubenstahl aus dem Vorschacht, ich mach dir was daraus, das hält.“",
    "quellen": [
     "DialogData.silas.offer"
    ],
    "regie": "ruhig"
   },
   {
-   "id": "9f22931c2980",
+   "id": "5ba953dd4c12",
    "rolle": "silas",
-   "text": "„Ohne Schrott keine Mauer.“",
+   "text": "„Ohne Grubenstahl keine Mauer. Und den holt keiner da unten raus.“",
    "quellen": [
     "DialogData.silas.wait"
    ],

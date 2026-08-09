@@ -83,10 +83,10 @@ const LINES: Dictionary = {
 		],
 		"offer": [
 			"„Diese Stadt frisst Material.“",   # müde
-			"„Bring mir Schrott, ich mach dir was daraus, das hält.“",   # ruhig
+			"„Bring mir Grubenstahl aus dem Vorschacht, ich mach dir was daraus, das hält.“",   # ruhig
 		],
 		"wait": [
-			"„Ohne Schrott keine Mauer.“",   # trocken
+			"„Ohne Grubenstahl keine Mauer. Und den holt keiner da unten raus.“",   # trocken
 		],
 		"done": [
 			"„Gute Arbeit. Das hält.“",   # ruhig

@@ -87,12 +87,12 @@ Darin liegt das Herz der Sache: **Der Krater ist das Gefängnis, der Tunnel die 
 
 ### KAPITEL 2 — „Sand im Räderwerk"
 
-**Prämisse & Ziel.** Der Fremde wird zu „dem Mann, der die Südsenke gesäubert hat". Er sammelt Schrott für Silas (`q_scrap`), baut den Saloon aus, begegnet der ersten Konzern-Patrouille — und den ersten Rissen in seiner eigenen Fassade: kein Hunger, keine Müdigkeit, kein Schweiß.
+**Prämisse & Ziel.** Der Fremde wird zu „dem Mann, der die Südsenke gesäubert hat". Er holt Grubenstahl aus dem Stollen für Silas (`q_scrap`), baut den Saloon aus, begegnet der ersten Konzern-Patrouille — und den ersten Rissen in seiner eigenen Fassade: kein Hunger, keine Müdigkeit, kein Schweiß.
 **Schlüsselorte:** Rustwater · Wüste um das Rattengestrüpp (500, 200) · Iron-Rail-Signalposten.
 **Neue Figuren:** Konzern-Patrouillenführer (Sprechrolle) · Stadtvolk-Barks aktiv.
 
 **Beat-Liste:**
-1. Silas' Auftrag: 12 Schrott (`q_scrap`), erster Werkstatt-Kontakt.
+1. Silas' Auftrag: 20 Grubenstahl aus dem Stollen (`q_scrap`), erster Werkstatt-Kontakt. Gewöhnlicher Schrott zählt **nicht** — sonst wäre der Auftrag erledigt, bevor man ihn gehört hat.
 2. *Kinoszene:* Konzern-Patrouille an der Wasserstelle (Machtdemonstration).
 3. Tycoon-Tutorial: Saloon-Ausbau Stufe 1.
 4. *Kinoszene:* Nachts bei Doc Aris — die Untersuchung (Foreshadowing).
