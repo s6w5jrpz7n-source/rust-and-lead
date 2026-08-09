@@ -6367,7 +6367,8 @@ func _process_movement(delta: float) -> void:
 	# geht durch denselben Test — nur ist die Blocker-Liste in der Wildnis leer, weshalb sich
 	# dort nichts anfühlt wie eine Wand. Achsenweise nachgeben, damit man an einer Hausecke
 	# entlanggleitet statt hängenzubleiben.
-	if not WorldManager.is_walkable(to_rel) or _blocked(next) or _zu_steil(_player.position, next) \
+	if not WorldManager.is_walkable(to_rel) or _blocked(next) or _gegner_im_weg(next) \
+			or _zu_steil(_player.position, next) \
 			or _am_riss(next):
 		# Erst SCHRAEG zum Hang ausweichen, dann achsenweise.
 		#
@@ -6386,7 +6387,8 @@ func _process_movement(delta: float) -> void:
 			kand.x = clampf(kand.x, 2.0, WorldManager.WORLD_METERS - 2.0)
 			kand.z = clampf(kand.z, -(WorldManager.WORLD_METERS - 2.0), -2.0)
 			if WorldManager.is_walkable(WorldManager.scene_to_world(kand)) \
-					and not _blocked(kand) and not _zu_steil(_player.position, kand) \
+					and not _blocked(kand) and not _gegner_im_weg(kand) \
+					and not _zu_steil(_player.position, kand) \
 					and not _am_riss(kand):
 				next = kand
 				gefunden = true
@@ -6395,9 +6397,11 @@ func _process_movement(delta: float) -> void:
 			var slide_x: Vector3 = Vector3(next.x, 0.0, _player.position.z)
 			var slide_z: Vector3 = Vector3(_player.position.x, 0.0, next.z)
 			if WorldManager.is_walkable(WorldManager.scene_to_world(slide_x)) and not _blocked(slide_x) \
+					and not _gegner_im_weg(slide_x) \
 					and not _zu_steil(_player.position, slide_x) and not _am_riss(slide_x):
 				next = slide_x
 			elif WorldManager.is_walkable(WorldManager.scene_to_world(slide_z)) and not _blocked(slide_z) \
+					and not _gegner_im_weg(slide_z) \
 					and not _zu_steil(_player.position, slide_z) and not _am_riss(slide_z):
 				next = slide_z
 			else:
@@ -6781,8 +6785,30 @@ func _process_enemies(delta: float) -> void:
 ## Bewusst KEINE Schwarmtrennung mit Umkreis: Die haelt Abstand, und ein Rudel, das sich brav
 ## verteilt, sieht aus wie eine Schulklasse beim Aufstellen. Hier wird nur geschoben, was sich
 ## wirklich beruehrt — Schulter an Schulter ist erlaubt, ineinander nicht.
+## Steht an dieser Stelle ein Gegner?
+##
+## Wird in der Bewegung geprueft wie eine Wand — und das ist die HAELFTE der Spieler-Kollision,
+## die dem Spieler nichts wegnimmt. Die andere Haelfte (`_entflechten`) schiebt Gegner aus ihm
+## heraus, ohne IHN je zu verschieben: Ein Gegner, der die Figur wegdrueckt, nimmt die Kontrolle
+## genau dann, wenn man sie am dringendsten braucht.
+##
+## Zusammen heisst das: Man laeuft an einem Rudel entlang statt hindurch, aber niemand
+## verschiebt einen.
+func _gegner_im_weg(p: Vector3) -> bool:
+	var q := Vector2(p.x, p.z)
+	for e in _enemies:
+		var t: CombatTarget = e["target"]
+		if t.health <= 0:
+			continue        # eine Leiche ist kein Hindernis
+		var n: Node3D = e["node"]
+		if Gedraenge.beruehrt(q, Gedraenge.SPIELER_R,
+				Vector2(n.position.x, n.position.z), Gedraenge.radius_fuer(String(t.type_id))):
+			return true
+	return false
+
+
 func _entflechten() -> void:
-	if _enemies.size() < 2:
+	if _enemies.is_empty():
 		return
 	var punkte: Array = []
 	var radien: Array = []
@@ -6791,6 +6817,12 @@ func _entflechten() -> void:
 		punkte.append(Vector2(n.position.x, n.position.z))
 		radien.append(Gedraenge.radius_fuer(String((e["target"] as CombatTarget).type_id)))
 	var neu_pos: Array = Gedraenge.entflechten(punkte, radien)
+	# Und dann aus dem SPIELER heraus — er ist ein Koerper wie jeder andere, wird aber nie
+	# geschoben. Zuletzt, damit dieser Schub nicht von einer Gegner-Gegner-Aufloesung wieder
+	# aufgehoben wird: Lieber zwei Gegner, die sich kurz beruehren, als einer im Spieler.
+	if _player != null:
+		neu_pos = Gedraenge.aus_dem_weg(neu_pos, radien,
+			Vector2(_player.position.x, _player.position.z), Gedraenge.SPIELER_R)
 	for i in _enemies.size():
 		var p2: Vector2 = neu_pos[i]
 		if p2.is_equal_approx(punkte[i]):

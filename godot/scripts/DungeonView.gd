@@ -379,10 +379,12 @@ func _gehen(delta: float) -> void:
 	var schritt: Vector3 = Vector3(v.x, 0.0, v.y).normalized() * SPIELER_TEMPO * delta
 	var p: Vector3 = _spieler.position
 	var nur_x := Vector3(p.x + schritt.x, p.y, p.z)
-	if DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(nur_x)):
+	if DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(nur_x)) \
+			and not _gegner_im_weg(nur_x):
 		p = nur_x
 	var nur_z := Vector3(p.x, p.y, p.z + schritt.z)
-	if DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(nur_z)):
+	if DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(nur_z)) \
+			and not _gegner_im_weg(nur_z):
 		p = nur_z
 	_spieler.position = p
 	_spieler.rotation.y = atan2(-schritt.x, -schritt.z)
@@ -990,19 +992,48 @@ static func _netz_von(name: String) -> Mesh:
 ## Der Unterschied zur Oberwelt ist die Wand: Wer geschoben wird, darf nicht in den Fels
 ## rutschen. Landet die Korrektur auf einem nicht begehbaren Feld, bleibt der Körper stehen —
 ## lieber eine Überlappung als ein Gegner im Gestein.
+## Steht an dieser Stelle ein Gegner?
+##
+## Ein Gegnerkörper wird in der Bewegung behandelt wie eine Wand — getrennt für x und z, damit
+## man an ihm ENTLANGRUTSCHT statt vor ihm zu kleben. Genau das ist im Stollen der Unterschied
+## zwischen „ein Kläffer steht im Gang" und „der Gang ist zu".
+func _gegner_im_weg(p: Vector3) -> bool:
+	var q := Vector2(p.x, p.z)
+	for e in _gegner:
+		var t: CombatTarget = e["target"]
+		if t.health <= 0:
+			continue        # eine Leiche ist kein Hindernis
+		var n: Node3D = e["node"]
+		if Gedraenge.beruehrt(q, Gedraenge.SPIELER_R,
+				Vector2(n.position.x, n.position.z), _radius_von(t)):
+			return true
+	return false
+
+
+## Der Platz, den dieser Gegner braucht. Anfuehrer und Endgegner sind groesser gebaut als ihr
+## Typ — sie brauchen auch mehr davon.
+func _radius_von(t: CombatTarget) -> float:
+	var r: float = Gedraenge.radius_fuer(String(t.type_id))
+	if t.is_elite:
+		return r * 1.6
+	return r * (CombatData.ANFUEHRER_GROESSE_MUL if t.is_leader else 1.0)
+
+
 func _entflechten() -> void:
-	if _gegner.size() < 2:
+	if _gegner.is_empty():
 		return
 	var punkte: Array = []
 	var radien: Array = []
 	for e in _gegner:
 		var n: Node3D = e["node"]
 		punkte.append(Vector2(n.position.x, n.position.z))
-		var t: CombatTarget = e["target"]
-		var r: float = Gedraenge.radius_fuer(String(t.type_id))
-		# Der Endgegner ist groesser gebaut als sein Typ — er braucht auch mehr Platz.
-		radien.append(r * (1.6 if t.is_elite else (CombatData.ANFUEHRER_GROESSE_MUL if t.is_leader else 1.0)))
+		radien.append(_radius_von(e["target"] as CombatTarget))
 	var neu_pos: Array = Gedraenge.entflechten(punkte, radien)
+	# Und zuletzt aus dem SPIELER heraus — er wird dabei nie geschoben. Zuletzt, damit dieser
+	# Schub nicht von einer Gegner-Gegner-Aufloesung wieder aufgehoben wird.
+	if _spieler != null:
+		neu_pos = Gedraenge.aus_dem_weg(neu_pos, radien,
+			Vector2(_spieler.position.x, _spieler.position.z), Gedraenge.SPIELER_R)
 	for i in _gegner.size():
 		var p2: Vector2 = neu_pos[i]
 		if p2.is_equal_approx(punkte[i]):

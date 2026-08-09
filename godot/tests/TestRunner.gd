@@ -83,7 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
-	"_test_gedraenge": 14,
+	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
 	"_test_stollen": 33,
@@ -6085,3 +6085,64 @@ func _test_gedraenge() -> void:
 	# des naechsten Gegners den Schub im selben Bild wieder auf.
 	_check("Geschoben wird nach dem Laufen",
 		ow_g.find("_entflechten()") > ow_g.find("func _process_enemies"))
+
+	# ── Und der Spieler ─────────────────────────────────────────────────────
+	#
+	# Hier ist die Loesung ASYMMETRISCH, und das ist der ganze Witz: Der Spieler ist ein Koerper
+	# wie jeder andere, aber er wird NIE geschoben. Ein Gegner, der die Figur wegdrueckt, nimmt
+	# dem Spieler die Kontrolle — und zwar genau dann, wenn er sie am dringendsten braucht,
+	# naemlich wenn ihm jemand auf den Pelz rueckt. Ein Rudel koennte einen so durch die halbe
+	# Karte schieben.
+	#
+	# Stattdessen weicht der GEGNER ganz, und dass der Spieler trotzdem nicht durch ihn
+	# hindurchlaeuft, macht die Bewegung: Ein Schritt in einen Koerper wird abgelehnt wie ein
+	# Schritt in eine Wand.
+	var held := Vector2(10.0, 10.0)
+	var drin_am_held: Array = [Vector2(10.2, 10.0), Vector2(9.9, 10.1)]
+	var geschoben: Array = Gedraenge.aus_dem_weg(drin_am_held, [0.4, 0.4], held,
+		Gedraenge.SPIELER_R)
+	var raus_genug: bool = true
+	for pkt in geschoben:
+		if (pkt as Vector2).distance_to(held) < 0.4 + Gedraenge.SPIELER_R - 0.05:
+			raus_genug = false
+	_check("Gegner werden ganz aus dem Spieler geschoben", raus_genug)
+	# Und wer schon Abstand hat, wird auch hier nicht angefasst.
+	var fern: Array = [Vector2(14.0, 10.0)]
+	_check("Wer Abstand hat, bleibt auch hier stehen",
+		(Gedraenge.aus_dem_weg(fern, [0.4], held, Gedraenge.SPIELER_R)[0] as Vector2)
+			.is_equal_approx(fern[0]))
+	# Auch ein Gegner exakt AUF dem Spieler bekommt eine Richtung — sonst stuende er fuer immer
+	# in ihm.
+	var drauf: Array = Gedraenge.aus_dem_weg([held], [0.4], held, Gedraenge.SPIELER_R)
+	_check("Auch einer exakt auf dem Spieler wird herausgeschoben",
+		(drauf[0] as Vector2).distance_to(held) > 0.5)
+
+	# Der Spieler kommt NICHT in einen Gegner hinein: In beiden Szenen wird sein Schritt
+	# geprueft wie an einer Wand.
+	_check("Draussen blockiert ein Gegner den Schritt",
+		ow_g.contains("func _gegner_im_weg") and ow_g.contains("_gegner_im_weg(next)"))
+	_check("Und drinnen auch, getrennt fuer x und z",
+		dv_g.contains("func _gegner_im_weg")
+		and dv_g.contains("and not _gegner_im_weg(nur_x)")
+		and dv_g.contains("and not _gegner_im_weg(nur_z)"))
+	# Getrennt fuer x und z heisst: Man RUTSCHT an ihm entlang, statt vor ihm zu kleben. Im
+	# Stollen ist das der Unterschied zwischen „ein Klaeffer steht im Gang" und „der Gang ist zu".
+	# Draussen erledigt das die schon vorhandene Ablenkung.
+	_check("Draussen weicht die Figur um einen Gegner herum",
+		ow_g.contains("and not _gegner_im_weg(kand)")
+		and ow_g.contains("and not _gegner_im_weg(slide_x)"))
+	# Eine LEICHE ist kein Hindernis. Sonst versperrte jeder erlegte Gegner dauerhaft den Weg —
+	# und im Stollen waere ein Gang nach zwei Kaempfen unpassierbar.
+	_check("Eine Leiche versperrt den Weg nicht",
+		ow_g.contains("if t.health <= 0:") and dv_g.contains("if t.health <= 0:"))
+	# Und der Schub aus dem Spieler kommt ZULETZT: Sonst hebt eine Gegner-Gegner-Aufloesung ihn
+	# im selben Bild wieder auf, und einer steht doch wieder in der Figur.
+	_check("Der Schub aus dem Spieler kommt zuletzt",
+		ow_g.find("Gedraenge.aus_dem_weg(") > ow_g.find("Gedraenge.entflechten(")
+		and dv_g.find("Gedraenge.aus_dem_weg(") > dv_g.find("Gedraenge.entflechten("))
+	# Der Spielerkoerper ist knapper als der eines gleich grossen Gegners: Jeder Zentimeter ist
+	# einer, den die Figur in einer Tueroeffnung nicht mehr hat, und Steckenbleiben aergert mehr
+	# als eine Schulter, die kurz ueberlappt.
+	_check("Der Spieler ist schlanker als ein Grenzgaenger (%.2f gegen %.2f m)"
+		% [Gedraenge.SPIELER_R, Gedraenge.radius_fuer("outlaw")],
+		Gedraenge.SPIELER_R < Gedraenge.radius_fuer("outlaw"))

@@ -94,3 +94,42 @@ const RADIUS_MIN: float = 0.25
 static func radius_fuer(type_id: String) -> float:
 	var asset: String = AssetRegistry.enemy_asset(type_id)
 	return maxf(RADIUS_MIN, AssetRegistry.height_of(asset) * RADIUS_ANTEIL)
+
+
+## Der Körperradius des Spielers.
+##
+## Etwas knapper als bei einem Grenzgänger gleicher Größe (0,42 m). Das ist Absicht: Jeder
+## Zentimeter hier ist ein Zentimeter, den die Figur in einer Türöffnung *nicht* mehr hat, und
+## Steckenbleiben ärgert mehr als eine Schulter, die kurz überlappt.
+const SPIELER_R: float = 0.36
+
+
+## Berühren sich diese beiden Körper?
+static func beruehrt(a: Vector2, ra: float, b: Vector2, rb: float) -> bool:
+	return a.distance_squared_to(b) < (ra + rb) * (ra + rb)
+
+
+## Körper aus einem **festen** Punkt herausschieben.
+##
+## Das ist die asymmetrische Auflösung, und sie ist der Kern der Spieler-Kollision: Der Spieler
+## ist ein Körper wie jeder andere, aber er wird **nie geschoben**. Ein Gegner, der die Figur
+## wegdrückt, nimmt dem Spieler die Kontrolle — und zwar genau dann, wenn er sie am dringendsten
+## braucht, nämlich wenn ihm jemand auf den Pelz rückt. Ein Rudel könnte einen so durch die
+## halbe Karte schieben.
+##
+## Stattdessen weicht der Gegner ganz. Dass der Spieler trotzdem nicht durch ihn hindurchläuft,
+## ist die andere Hälfte und passiert in der Bewegung: Ein Schritt, der in einen Körper führt,
+## wird abgelehnt wie ein Schritt in eine Wand.
+static func aus_dem_weg(punkte: Array, radien: Array, fest: Vector2, fest_r: float) -> Array:
+	var raus: Array = punkte.duplicate()
+	for i in raus.size():
+		var a: Vector2 = raus[i]
+		var soll: float = float(radien[i]) + fest_r
+		var weg: Vector2 = a - fest
+		var d: float = weg.length()
+		if d >= soll - SPIEL_M:
+			continue
+		var richtung: Vector2 = weg / d if d > 0.0001 \
+			else Vector2(cos(float(i) * 2.399963), sin(float(i) * 2.399963))
+		raus[i] = fest + richtung * soll
+	return raus
