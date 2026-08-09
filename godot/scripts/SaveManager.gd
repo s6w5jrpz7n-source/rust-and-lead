@@ -50,6 +50,8 @@ static func serialize() -> Dictionary:
 		"schluessel": GameState.schluessel,
 		"met": GameState.met.duplicate(),
 		"hour": GameState.hour,
+		"tag": GameState.tag,
+		"gekauft_heute": GameState.gekauft_heute,
 		"quest_base": GameState.quest_base.duplicate(true),
 		"memories_found": GameState.memories_found,
 		"memorials_seen": GameState.memorials_seen.duplicate(),
@@ -108,6 +110,8 @@ static func deserialize(data: Dictionary) -> void:
 	GameState.schluessel = maxi(0, int(data.get("schluessel", 0)))
 	GameState.met = (data.get("met", {}) as Dictionary).duplicate()
 	GameState.hour = float(data.get("hour", 7.5))
+	GameState.tag = maxi(0, int(data.get("tag", 0)))
+	GameState.gekauft_heute = data.get("gekauft_heute", {})
 	GameState.quest_base = _int_dict(data.get("quest_base", {}))
 	GameState.memories_found = clampi(int(data.get("memories_found", 0)), 0, MemoryManager.chain_length())
 	GameState.memorials_seen = _str_array(data.get("memorials_seen", []))

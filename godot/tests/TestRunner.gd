@@ -88,6 +88,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_kraterrand_kamm": 6,
 	"_test_stimmen": 13,
 	"_test_stufenanforderung": 13,
+	"_test_haendler": 13,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -6776,3 +6777,99 @@ func _test_stufenanforderung() -> void:
 	GameState.level = vorher
 	GameState.bag = bag_vorher
 	GameState.equip = equip_vorher
+
+
+## Wandas Waffenlager.
+##
+## Der Bestand ist eine FUNKTION des Handelstags, kein Feld im Spielstand. Das ist die eine
+## Entscheidung, an der hier alles haengt — und sie hat genau eine Anforderung, die man leicht
+## verletzt: Innerhalb eines Tages muss jedes Abfragen dasselbe liefern. Waere das nicht so,
+## wuerfelte das Regal bei jedem Oeffnen neu, und wer nicht kauft, koennte einfach zumachen und
+## wieder aufmachen, bis etwas Gutes daliegt.
+func _test_haendler() -> void:
+	print("· Wandas Waffenlager")
+
+	var gold_vorher: int = GameState.gold
+	var tag_vorher: int = GameState.tag
+	var bag_vorher: Array = GameState.bag.duplicate(true)
+	var gekauft_vorher: Dictionary = GameState.gekauft_heute.duplicate(true)
+
+	GameState.tag = 3
+	var a: Array = HaendlerData.bestand()
+	var b: Array = HaendlerData.bestand()
+	_check("Das Regal hat %d Plaetze" % a.size(), a.size() == HaendlerData.PLAETZE)
+	var gleich: bool = true
+	for i in a.size():
+		if String(a[i]["name"]) != String(b[i]["name"]) or int(a[i]["req"]) != int(b[i]["req"]):
+			gleich = false
+	_check("Zweimal am selben Tag liefert dasselbe", gleich)
+
+	GameState.tag = 4
+	var c: Array = HaendlerData.bestand()
+	var anders: bool = false
+	for i in a.size():
+		if String(a[i]["name"]) != String(c[i]["name"]):
+			anders = true
+	_check("Am naechsten Tag liegt anderes da", anders)
+
+	# Nichts Gewoehnliches: Das findet man im ersten Fass, dafuer geht niemand zum Haendler.
+	var nur_gut: bool = true
+	for t in [1, 2, 3, 7, 12, 30]:
+		GameState.tag = t
+		for g in HaendlerData.bestand():
+			if String(g["rarity"]) == "common":
+				nur_gut = false
+			if String(g["slot"]) != "weapon":
+				nur_gut = false
+	_check("Sie fuehrt nur Waffen, und nichts Gewoehnliches", nur_gut)
+
+	# Der Preis haengt an der ANFORDERUNG, nicht an der Farbe allein — seit die Anforderung die
+	# Staerke abbildet, waere ein Preis nach Farbe fuer die schwache Waffe Wucher und fuer die
+	# starke geschenkt.
+	var schwach: Dictionary = ProgressionManager.make_gear("weapon", "epic")
+	schwach["req"] = 1
+	var stark: Dictionary = schwach.duplicate(true)
+	stark["req"] = 12
+	_check("Die starke epische Waffe kostet mehr (%d gegen %d)"
+		% [HaendlerData.preis(stark), HaendlerData.preis(schwach)],
+		HaendlerData.preis(stark) > HaendlerData.preis(schwach))
+
+	# Kaufen: ohne Gold geht nichts, und es wird auch nichts abgebucht.
+	GameState.tag = 3
+	GameState.gekauft_heute = {}
+	GameState.bag = []
+	GameState.gold = 0
+	_check("Ohne Gold kein Kauf", not HaendlerData.kaufen(0))
+	_check("Und der Beutel bleibt leer", GameState.bag.is_empty())
+
+	# Mit Gold: Ware in den Beutel, Gold weg, Platz leer.
+	var stueck: Dictionary = HaendlerData.bestand()[0]
+	var p: int = HaendlerData.preis(stueck)
+	GameState.gold = p + 50
+	_check("Mit Gold klappt der Kauf", HaendlerData.kaufen(0))
+	_check("Die Waffe liegt im Beutel", GameState.bag.size() == 1)
+	_check("Und das Gold ist weg (%d statt %d)" % [GameState.gold, p + 50],
+		GameState.gold == 50)
+	_check("Der Platz ist heute verkauft", HaendlerData.verkauft(0))
+	_check("Und laesst sich nicht zweimal kaufen", not HaendlerData.kaufen(0))
+
+	# Der Fall, der beim ersten Entwurf falsch herum stand: voller Beutel. Erst pruefen, DANN
+	# abbuchen — sonst bezahlt man fuer etwas, das man nicht bekommt.
+	GameState.gekauft_heute = {}
+	GameState.bag = []
+	while BagManager.add(ProgressionManager.make_gear("armor", "common")):
+		pass
+	var gold_vor_voll: int = 99999
+	GameState.gold = gold_vor_voll
+	var passt_noch: bool = BagManager.has_room_for(HaendlerData.bestand()[1])
+	if not passt_noch:
+		_check("Bei vollem Beutel kein Kauf", not HaendlerData.kaufen(1))
+		_check("Und kein Gold abgebucht", GameState.gold == gold_vor_voll)
+	else:
+		_check("Beutel liess sich nicht fuellen — Fall nicht pruefbar", true)
+		_check("(uebersprungen)", true)
+
+	GameState.gold = gold_vorher
+	GameState.tag = tag_vorher
+	GameState.bag = bag_vorher
+	GameState.gekauft_heute = gekauft_vorher

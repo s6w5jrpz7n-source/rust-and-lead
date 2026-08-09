@@ -15,7 +15,10 @@ class_name ShopScreen extends Control
 ## „töten → Gold → stärker werden" brach nach dem zweiten Schritt ab, obwohl Kostenkurven,
 ## Höchststufen und Einkommensrechnung im Hintergrund längst liefen.
 
-enum Mode { WERKSTATT, WIRTSCHAFT }
+## `WAFFEN` (bei Wanda Kessler): fertige Waffen gegen Gold. Anders als die beiden anderen
+## Betriebsarten verkauft sie GEGENSTAENDE und keine Stufen — die Spalte "Stufe" traegt deshalb
+## dort die Stufenanforderung des Teils.
+enum Mode { WERKSTATT, WIRTSCHAFT, WAFFEN }
 
 const PANEL_W: float = 470.0
 const ROW_H: float = 52.0
@@ -107,6 +110,30 @@ func _rows() -> Array:
 			out.append([String(id), "%s %s" % [String(u["icon"]), WorkshopData.label(String(id))],
 				String(u["desc"]), lvl, WorkshopData.max_level(String(id)), price,
 				not locked and not maxed and GameState.gold >= price, reason])
+	elif mode == Mode.WAFFEN:
+		var regal: Array = HaendlerData.bestand()
+		for i in regal.size():
+			var g: Dictionary = regal[i]
+			var p: int = HaendlerData.preis(g)
+			var noetig: int = EquipManager.stufe_fuer(g)
+			var weg: bool = HaendlerData.verkauft(i)
+			var farbe: String = String(ProgressionManager.RARITY[String(g["rarity"])]["name"])
+			var desc: String = "%s · +%d %s" % [farbe, int(g["stat"]["val"]),
+				String(g["stat"]["key"])]
+			# Sie verkauft auch, was man noch nicht tragen darf — ein Regal, in dem nur steht,
+			# was man ohnehin anlegen kann, gibt einem nichts zum Hinarbeiten. Die Zeile sagt
+			# es dazu; gekauft werden darf es trotzdem, es wartet dann im Beutel.
+			if not EquipManager.darf_tragen(g):
+				desc += "   ⊘ tragbar ab Stufe %d" % noetig
+			var grund: String = ""
+			if weg:
+				grund = "verkauft"
+			elif GameState.gold < p:
+				grund = "zu teuer"
+			elif not BagManager.has_room_for(g):
+				grund = "Beutel voll"
+			out.append([str(i), "⚔ " + String(g["name"]), desc, noetig, 0, p,
+				not weg and GameState.gold >= p and BagManager.has_room_for(g), grund])
 	else:
 		for id in TycoonManager.BUILDINGS.keys():
 			var b: Dictionary = TycoonManager.BUILDINGS[id]
@@ -128,6 +155,8 @@ func _rows() -> Array:
 func _buy(id: String) -> bool:
 	if mode == Mode.WERKSTATT:
 		return WorkshopData.buy(id)
+	if mode == Mode.WAFFEN:
+		return HaendlerData.kaufen(int(id))
 	return TycoonManager.try_upgrade(id)
 
 
@@ -144,6 +173,11 @@ func refresh() -> void:
 	if mode == Mode.WERKSTATT:
 		_title.text = "⚒ Werkstatt — Silas Kupferauge"
 		_purse.text = "¤ %d Gold" % GameState.gold
+	elif mode == Mode.WAFFEN:
+		_title.text = "⚔ Waffenlager — Wanda Kessler"
+		# Der Hinweis auf den Wechsel gehoert hierher und nicht in eine Zeile darunter: Wer
+		# nichts findet, was ihm passt, soll wissen, dass Wiederkommen etwas bringt.
+		_purse.text = "¤ %d Gold      Neue Ware jeden Morgen" % GameState.gold
 	else:
 		_title.text = "¤ Geschäfte — Mamma Mabel"
 		_purse.text = "¤ %d Gold      Einkommen: %d ¤/s" % [GameState.gold, TycoonManager.income_per_sec()]

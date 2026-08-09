@@ -1757,7 +1757,12 @@ func _build_environment() -> void:
 const DAYTIME_INTERVAL: float = 0.25
 var _daytime_cd: float = 0.0
 func _process_daytime(delta: float) -> void:
+	var stunde_vorher: float = GameState.hour
 	GameState.hour = DayCycle.advance(GameState.hour, delta)
+	# Ueber Mitternacht: Die Uhr faellt zurueck, statt weiterzulaufen. Das ist der einzige
+	# Zeitpunkt, an dem sie kleiner wird — also der Tageswechsel.
+	if GameState.hour < stunde_vorher:
+		GameState.tag += 1
 	# Die Lichter JEDEN Frame: Sonne und Mond duerfen viermal je Sekunde nachziehen, eine Flamme
 	# nicht — bei vier Stufen je Sekunde flackert sie nicht, sie stottert.
 	_flacker_t += delta
@@ -3520,6 +3525,8 @@ func _process_interactions(_delta: float) -> void:
 			_add_action("⚒  Werkstatt", _open_shop.bind(ShopScreen.Mode.WERKSTATT))
 		elif String(npc["giver"]) == "mabel":
 			_add_action("¤  Geschäfte", _open_shop.bind(ShopScreen.Mode.WIRTSCHAFT))
+		elif String(npc["giver"]) == "wanda":
+			_add_action("⚔  Waffenlager", _open_shop.bind(ShopScreen.Mode.WAFFEN))
 	elif ctx == "stollen":
 		_add_action("▼  In den Stollen steigen   [E]", _stollen_betreten)
 	elif ctx.begins_with("pferd:"):

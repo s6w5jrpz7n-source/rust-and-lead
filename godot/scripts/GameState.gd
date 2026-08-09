@@ -160,6 +160,16 @@ var met: Dictionary = {}
 ## aufhoert, faengt abends wieder an.
 var hour: float = DayCycle.START_HOUR
 
+## Wie viele Tage vergangen sind. Zaehlt hoch, wenn `hour` ueber Mitternacht laeuft.
+##
+## Gebraucht fuer Wandas Regal: Ihr Bestand ist eine Funktion dieser Zahl (siehe
+## `HaendlerData`), nicht eine Liste im Spielstand. Damit liegt an einem Tag immer dasselbe
+## aus — beim Oeffnen, beim Schliessen, nach dem Laden — und am naechsten Morgen etwas anderes,
+## ohne dass irgendwo Gegenstaende gespeichert werden muessten, die niemandem gehoeren.
+var tag: int = 0
+## Welche Regalplaetze an welchem Tag schon gekauft wurden. Verkauft ist verkauft.
+var gekauft_heute: Dictionary = {}
+
 ## Wie viele Schlüssel man bei sich trägt.
 ##
 ## Sie kommen ausschließlich von **Anführern** und öffnen ausschließlich **Beutekammern**. Das
@@ -237,6 +247,8 @@ func neu_beginnen() -> void:
 	mag = {}
 	economy = { "saloon": 0, "forge": 0, "distillery": 0, "laboratory": 0 }
 	kills = 0
+	tag = 0
+	gekauft_heute = {}
 	quests = {}
 	quest_base = {}
 	tracked_quest = ""
