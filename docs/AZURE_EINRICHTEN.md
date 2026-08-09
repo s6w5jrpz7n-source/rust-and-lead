@@ -163,8 +163,21 @@ python3 docs/azure_tts.py --spiel
 Absicht (siehe unten). Ein Abbruch ist unschädlich: Fertige Dateien werden
 beim nächsten Lauf übersprungen.
 
-Danach spricht das Spiel. Ohne weiteres Zutun — es findet die Dateien über den
-Zeilentext selbst.
+### Und dann einmal importieren
+
+```bash
+godot --headless --path godot --editor --quit
+```
+
+Godot lädt keine rohe Datei, sondern eine *importierte*: Neben jeder `.mp3`
+muss eine `.mp3.import` liegen. Fehlt sie, verhält sich das Spiel exakt wie im
+unvertonten Zustand — es zeigt den Text und schweigt. Wer gerade 107 Dateien
+gerendert hat und nichts hört, sucht den Fehler überall, nur nicht im Import.
+
+Das Projekt einmal im Godot-Editor zu öffnen tut dasselbe. Beides gehört
+danach ins Repository, die `.mp3` **und** die `.mp3.import`.
+
+Danach spricht das Spiel. Es findet die Dateien über den Zeilentext selbst.
 
 ---
 

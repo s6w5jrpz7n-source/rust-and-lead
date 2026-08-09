@@ -86,7 +86,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_stille_grube": 26,
 	"_test_kraterrand": 8,
 	"_test_kraterrand_kamm": 6,
-	"_test_stimmen": 12,
+	"_test_stimmen": 13,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -6593,6 +6593,43 @@ func _test_stimmen() -> void:
 	block = block.substr(0, block.find("\n\n\n"))
 	_check("Die laufende Stimme wird zuerst angehalten",
 		block.find("_stimme_anhalten()") < block.find("Stimme.laden"))
+
+	# ── Die letzte Meile: gerenderte Dateien muessen AUFFINDBAR sein ─────────
+	#
+	# Zwischen "Datei liegt im Ordner" und "das Spiel spielt sie ab" steht ein
+	# Schritt, den man leicht uebersieht: Godot laedt keine rohe Datei, sondern eine
+	# IMPORTIERTE. Ohne die `.import`-Datei daneben liefert `ResourceLoader.exists`
+	# falsch — und dann verhaelt sich das Spiel exakt so wie im unvertonten Zustand.
+	# Es zeigt den Text und schweigt. Wer gerade 107 Dateien gerendert hat und nichts
+	# hoert, sucht den Fehler ueberall, nur nicht im Import.
+	#
+	# Diese Pruefung richtet sich nach dem, was da ist: Solange nicht vertont wurde,
+	# stellt sie nichts fest. Sobald Dateien da sind, besteht sie darauf, dass sie
+	# auch ankommen.
+	var ordner := DirAccess.open(Stimme.ORDNER)
+	var mp3s: Array[String] = []
+	if ordner != null:
+		for f in ordner.get_files():
+			if f.ends_with(Stimme.ENDUNG):
+				mp3s.append(f)
+	if mp3s.is_empty():
+		_check("Noch nicht vertont — die Wiedergabe wird nicht geprueft", true)
+	else:
+		var pfade_ok: int = 0
+		var laengen_ok: int = 0
+		for f in mp3s:
+			var p2: String = Stimme.ORDNER + f
+			if not ResourceLoader.exists(p2):
+				continue
+			pfade_ok += 1
+			var strom: AudioStream = load(p2) as AudioStream
+			if strom != null and strom.get_length() > 0.05:
+				laengen_ok += 1
+		_check("Alle %d Aufnahmen sind importiert und auffindbar (%d)" % [mp3s.size(), pfade_ok],
+			pfade_ok == mp3s.size(),
+			"nicht importiert — einmal 'godot --headless --path godot --editor --quit' laufen lassen")
+		_check("Und liefern eine Laenge (%d von %d)" % [laengen_ok, mp3s.size()],
+			laengen_ok == mp3s.size())
 
 	# Und der Textbestand selbst: Die Liste, aus der gerendert wird, muss die Zeilen des Spiels
 	# WIRKLICH enthalten. Ein Extraktor, der die Haelfte uebersieht, faellt sonst nicht auf.
