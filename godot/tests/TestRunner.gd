@@ -2292,16 +2292,73 @@ func _test_prolog() -> void:
 	# Die Kamera faengt DICHT am Kopf an — nicht bei sechzehn Metern, wie im ersten Entwurf.
 	_check("Die Kamera steht anfangs dicht am Kopf (%.1f m)" % OW.WACH_NAH_M,
 		OW.WACH_NAH_M > 0.6 and OW.WACH_NAH_M < 2.0)
-	# Und er haelt zwischendurch inne: `Stand_Up1` ist eine durchlaufende Bewegung, wer nach
-	# Stunden im Schutt aufwacht steht aber nicht am Stueck auf.
-	_check("Er haelt beim Aufstehen inne (%d mal)" % OW.WACH_HALT.size(),
-		OW.WACH_HALT.size() >= 2)
-	var halt_ok: bool = true
-	for h in OW.WACH_HALT:
-		if float(h[0]) >= float(h[1]) or float(h[1]) > 1.0:
-			halt_ok = false
-	_check("Und die Haltepunkte liegen in der Aufsteh-Phase", halt_ok)
+
+	# ── Die Szene setzt da ein, wo der Film aufhoert ──────────────────────────
+	#
+	# Der Vorspann endet damit, dass er fast steht. Vorher fing das Spiel danach WIEDER AM BODEN
+	# an — der Zuschauer sah dieselbe Bewegung zweimal, die zweite davon langsamer. Jetzt
+	# springt der Clip in seine letzte Streckung.
+	_check("Der Aufsteh-Clip setzt spaet ein (%.0f %%)" % (float(OW.WACH_EINSPRUNG) * 100.0),
+		float(OW.WACH_EINSPRUNG) > 0.6 and float(OW.WACH_EINSPRUNG) < 0.95)
 	var quelle: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	_check("Und wird auch wirklich mit diesem Einsprung abgespielt",
+		quelle.contains('play_clip(_player_model, "standup", false, laenge * WACH_EINSPRUNG)'))
+	# Danach uebernimmt `idle`. Ohne das steht die Figur den ganzen Rest der Szene in der
+	# Schlusspose des Aufsteh-Clips wie eingefroren.
+	_check("Danach uebernimmt die Ruhe-Animation",
+		quelle.contains('AssetRegistry.play_clip(_player_model, "idle", true)'))
+	# Und keine Haltepunkte mehr: Das Ringen um die Senkrechte ist im Film passiert.
+	_check("Die alten Haltepunkte sind weg", not quelle.contains("WACH_HALT"))
+
+	# ── Er sieht sich um ──────────────────────────────────────────────────────
+	#
+	# Das ist die einzige Handlung, die ihm in diesen zwanzig Sekunden bleibt. Ohne sie steht
+	# eine Figur stumm herum, waehrend aus dem Off geredet wird.
+	var ziel_grad: float = 40.0
+	var von: float = OW.wach_blick(0.0, ziel_grad)
+	var bis: float = OW.wach_blick(1.0, ziel_grad)
+	_check("Am Anfang steht er noch, wie er stand (%.0f°)" % von, absf(von) < 0.001)
+	_check("Am Ende sieht er dorthin, wovon sein letzter Satz spricht (%.0f°)" % bis,
+		absf(bis - ziel_grad) < 0.001)
+	# In BEIDE Richtungen: Wer sich nur nach einer Seite wendet, sucht nicht — er hat gefunden.
+	var links: float = 0.0
+	var rechts: float = 0.0
+	var dreh_weg: float = 0.0
+	var vorher_w: float = von
+	for i in range(1, 201):
+		var v: float = OW.wach_blick(float(i) / 200.0, ziel_grad)
+		links = minf(links, v)
+		rechts = maxf(rechts, v)
+		dreh_weg += absf(v - vorher_w)
+		vorher_w = v
+	_check("Er sieht nach links (%.0f°) UND nach rechts (%.0f°)" % [links, rechts],
+		links < -30.0 and rechts > 30.0)
+	# Und die Drehung ist stetig — ein Sprung waere ein Bildfehler, kein Blick.
+	var groesster_w: float = 0.0
+	vorher_w = von
+	for i in range(1, 601):
+		var v2: float = OW.wach_blick(float(i) / 600.0, ziel_grad)
+		groesster_w = maxf(groesster_w, absf(v2 - vorher_w))
+		vorher_w = v2
+	_check("Der Blick wandert stetig (groesster Schritt %.1f° je 1/600 der Szene)"
+		% groesster_w, groesster_w < 2.0)
+	_check("Insgesamt dreht er sich %.0f° weit" % dreh_weg,
+		dreh_weg > 150.0 and dreh_weg < 400.0)
+	# Die Kamera darf seiner Drehung NICHT folgen: Ein Versatz in seinem Bezugssystem dreht sich
+	# mit ihm, und dann steht er im Bild still, waehrend die Welt sich dreht.
+	var wach_block: String = quelle.substr(quelle.find("func _erwachen()"))
+	wach_block = wach_block.substr(0, wach_block.find("_wach_licht_setzen"))
+	_check("Die Kamerapunkte des Erwachens haengen nicht am Kopf",
+		not wach_block.contains('"kopf": true'))
+	# Und der Text widerspricht der Figur nicht mehr. Gesucht wird die GEGENWART: „Wer laesst
+	# einen Mann auf einer Halde liegen" spricht von dem, was ihm angetan wurde, und bleibt
+	# richtig — falsch war nur „Ich lieg auf einer Muellkippe", waehrend er dasteht.
+	var liegt: String = ""
+	for z in wach_zeilen:
+		var zt: String = String(z)
+		if zt.contains("Ich lieg") or zt.contains("ich lieg"):
+			liegt = zt
+	_check("Keine Zeile behauptet mehr, er laege da", liegt == "", liegt)
 	# Der Held redet SELBST, in der Sprechtafel — nicht ein Erzaehler in der Meldungszeile.
 	_check("Der Held hat eine Stimme", OW.HELD_NAME != "")
 	_check("Und die Prolog-Zeilen laufen ueber die Sprechtafel",

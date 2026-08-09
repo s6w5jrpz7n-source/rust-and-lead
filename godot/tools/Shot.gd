@@ -538,8 +538,8 @@ func _setup_ui(art: String) -> void:
 		_cam.fov = float(vf[2])
 		_cam.current = true
 	elif art.begins_with("wach_"):
-		# Der Anfang: die Figur liegt am Grund der Grube und steht auf, waehrend die Kamera von
-		# oben herunterkommt. Derselbe Aufbau wie bei den Flug-Bildern (siehe dort, warum die
+		# Der Anfang: die Figur richtet sich vollends auf und sieht sich um, waehrend die Kamera
+		# um sie herumfaehrt. Derselbe Aufbau wie bei den Flug-Bildern (siehe dort, warum die
 		# Welt dabei angehalten wird).
 		ow.set_process(true)
 		ow._end_flight()
@@ -562,9 +562,26 @@ func _setup_ui(art: String) -> void:
 		ow._player.position = grube
 		ow._cam.position = grube + ow._cam_offset(ow._cam_dist)
 		ow._cam.look_at(grube + Vector3(0.0, 1.0, 0.0), Vector3.UP)
+		# Die Rede des VORIGEN Bildes wegraeumen. `_play_speech` haengt an, wenn derselbe
+		# Sprecher noch redet — und der Held redet in jedem dieser Bilder. Ohne das hier stand
+		# bei 50 % der Szene schon Satz 13 auf der Tafel statt Satz 9: Die Warteschlange lief
+		# aus vier Durchlaeufen weiter, waehrend die Kamera jedes Mal von vorn anfing.
+		ow._speech.clear()
 		ow._erwachen()
 		var anteil: float = float(art.get_slice("_", 1).to_float())
-		ow._flight_t = ow._flight_total() * anteil
+		var bis_w: float = ow._flight_total() * anteil
+		ow._flight_t = bis_w
+		# Die SZENE mitziehen, nicht nur die Kamera. `_process_wach` dreht die Figur (sie sieht
+		# sich um) und `_process_speech` blaettert den Text — beide haengen an `_process`, das
+		# gleich stillsteht. Ohne diesen Vorlauf zeigte jedes Bild dieselbe Anfangsdrehung und
+		# denselben ersten Satz, und die Aufnahme haette genau den Teil der Szene NICHT
+		# geprueft, um den es geht.
+		var rest_w: float = bis_w
+		while rest_w > 0.0:
+			var dw: float = minf(0.05, rest_w)
+			ow._process_wach(dw)
+			ow._process_speech(dw)
+			rest_w -= dw
 		# Die Animation an dieselbe Stelle stellen und die Pose ANWENDEN. Ohne das steht das
 		# Skelett in der Ruhepose — und weil die Kamera dem Kopfknochen folgt, zielte sie auf
 		# den Kopf eines Stehenden, waehrend die Figur am Boden lag.
@@ -572,7 +589,13 @@ func _setup_ui(art: String) -> void:
 		if ap != null:
 			var laenge: float = ap.current_animation_length
 			ap.speed_scale = 1.0
-			ap.seek(laenge * clampf(anteil / OverworldView.WACH_STEH_ANTEIL, 0.0, 1.0), true)
+			# Der Clip setzt bei WACH_EINSPRUNG ein und laeuft nur noch seinen Rest — die Szene
+			# faengt da an, wo der Film aufhoert. Der Rest der Szene ist Umsehen und Reden, und
+			# dafuer steht das Skelett in `idle`.
+			var rest: float = laenge * (1.0 - OverworldView.WACH_EINSPRUNG)
+			var steh_anteil: float = rest / maxf(ow._wach_total, 0.01)
+			ap.seek(laenge * OverworldView.WACH_EINSPRUNG
+				+ rest * clampf(anteil / maxf(steh_anteil, 0.001), 0.0, 1.0), true)
 			ap.advance(0.0)
 			# Und ANHALTEN. `set_process(false)` friert die Overworld ein, den AnimationPlayer
 			# aber nicht — er hat seinen eigenen Takt. Ohne dies stand die Figur beim Abgreifen

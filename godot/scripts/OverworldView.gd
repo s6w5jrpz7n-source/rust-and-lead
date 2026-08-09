@@ -431,54 +431,98 @@ func _process_beats(delta: float) -> void:
 ##
 ## Die alte Begrüßung („Willkommen im Krater — 5000 m Kante zu Kante") war ein Handbuch. Ein
 ## Spiel, das mit seinen eigenen Maßen anfängt, hat noch nicht angefangen.
-## Wie lange das Aufwachen dauert — und warum nicht so lange wie der Clip.
-##
-## `Stand_Up1` dauert **8,27 s**. Die ersten Sekunden davon liegt die Figur nur da; das ist als
-## Animation richtig und als Spielanfang eine Zumutung. Gezeigt wird deshalb das ENDE: Der Clip
-## springt so weit hinein, dass er zusammen mit der Kamerafahrt aufhoert — man sieht das
-## Hochstemmen, das Aufknien, das Aufstehen, und dann hat man die Steuerung.
-##
-## Die Zahl steht nicht doppelt da: Wie weit gesprungen wird, rechnet `_erwachen` aus der
-## tatsaechlichen Clip-Laenge. Wer das Rig austauscht, bekommt automatisch den passenden
-## Einsprung statt einer Figur, die zu frueh steht.
 ## Das Erwachen — der erste Augenblick des Spiels, und der laengste.
 ##
-## Er dauert so lange, wie der Held zu reden hat. Nicht andersherum: Eine Kamerafahrt mit
-## fester Laenge zwingt den Text in ihr Korsett, und was dabei herauskommt, sind vier
-## Halbsaetze. Hier gibt `_wach_zeilen()` die Dauer vor, und die Kamera verteilt sich darauf.
+## ## Es faengt da an, wo der Film aufhoert
 ##
-## ## Die Kamera bleibt am KOPF
+## Der Vorspann endet damit, dass der Held sich fast aufgerichtet hat und sich umsieht. Bis
+## hierher fing das Spiel danach WIEDER AM BODEN an: `Stand_Up1` lief von vorn, mit zwei
+## Haltepunkten und halbem Tempo, damit das Aufstemmen lange genug dauert. Zwei Minuten
+## Aufstehen hintereinander, davon eine doppelt — der Schnitt sass mitten in einer Bewegung,
+## die der Zuschauer gerade gesehen hatte.
 ##
-## Sie faengt dicht am Gesicht an — man sieht einen Mann im Dreck, bevor man sieht, wo er
-## liegt. Waehrend er sich hochstemmt, wandert der Blickpunkt mit dem Kopf nach oben und die
-## Kamera zieht sich zurueck; der Kopf bleibt dabei im Bild, der Ausschnitt wird groesser.
-## Erst ganz zum Schluss gibt sie ihn frei und geht in die Spielhaltung.
+## Also setzt der Clip bei `WACH_EINSPRUNG` ein: die letzte Streckung, mehr nicht. Die
+## Haltepunkte sind ersatzlos weg; das Ringen um die Senkrechte ist im Film passiert.
 ##
-## ## Er haelt zwischendurch inne
+## ## Was er stattdessen tut: sich umsehen
 ##
-## `Stand_Up1` ist eine durchlaufende Bewegung — jemand steht auf, fertig. Wer nach Stunden im
-## Schutt aufwacht, tut das nicht am Stueck: Er kommt auf einen Arm, bleibt liegen, versucht es
-## noch einmal. Nachgebaut wird das mit ZWEI HALTEPUNKTEN, an denen der Clip stehenbleibt
-## (`WACH_HALT`), und einem Grundtempo unter eins. Beides zusammen macht aus acht Sekunden
-## Animation eine halbe Minute Aufstehen.
-const WACH_HOCH_M: float = 16.0
+## Das ist keine Kosmetik, sondern die einzige Handlung, die ihm in diesen zwanzig Sekunden
+## bleibt — ohne sie steht eine Figur stumm herum, waehrend aus dem Off geredet wird. Er dreht
+## sich nach links auf den halben Zug, dann weit nach rechts ueber die Grube, und zuletzt auf
+## den Fels, von dem sein letzter Satz spricht. Damit ist die Drehung auch die Antwort auf die
+## Frage, wohin man als Naechstes geht (siehe `wach_blick`).
+##
+## ## Die Kamera
+##
+## Sie steht auf AUGENHOEHE, nicht am Boden: Er steht ja schon. Erst nah am Gesicht, dann
+## zurueck und um ihn herum, waehrend er sich dreht — und dabei kommt die Grube ins Bild, ohne
+## dass man sie ihm zeigen muesste. Zuletzt gibt sie ihn frei.
+##
+## Die Punkte stehen in WELTKOORDINATEN und nicht relativ zu seinem Kopf. Das ist der
+## Unterschied, an dem die Szene sonst gescheitert waere: Ein Versatz in seinem Bezugssystem
+## dreht sich MIT ihm: Die Kamera waere seiner Drehung gefolgt, er haette im Bild stillgestanden
+## und die Welt haette sich gedreht. Genau umgekehrt ist es gemeint.
+##
+## ## Und die Dauer kommt aus dem Text
+##
+## Nicht andersherum: Eine Kamerafahrt mit fester Laenge zwingt den Text in ihr Korsett, und was
+## dabei herauskommt, sind vier Halbsaetze. `_wach_zeilen()` gibt die Dauer vor, die Kamera
+## verteilt sich darauf.
+
+## Wo im Aufsteh-Clip die Szene EINSETZT, als Anteil seiner Laenge. 0,82 von 8,27 s laesst rund
+## anderthalb Sekunden uebrig — die letzte Streckung in die Senkrechte.
+const WACH_EINSPRUNG: float = 0.82
 const WACH_NAH_M: float = 1.15
 const WACH_AUGE_M: float = 1.62
-## Anteil der Szene, in dem er sich aufrichtet. Danach steht er und redet zu Ende.
-const WACH_STEH_ANTEIL: float = 0.66
-## Wo der Clip stehenbleibt, als Anteile der Aufsteh-Phase, und wie lange (Anteil der Phase).
-const WACH_HALT: Array = [[0.30, 0.40], [0.63, 0.71]]
 ## Mindestdauer, falls einmal keine Zeilen da sind.
 const WACH_SEK: float = 9.0
 
 var _wach_left: float = 0.0
 var _wach_total: float = 0.0
-var _wach_tempo: float = 1.0
+## Wie lange der Aufsteh-Clip noch laeuft, bevor `idle` uebernimmt.
+var _wach_steh_t: float = 0.0
+## Seine Drehung beim Einsetzen der Szene, und der Winkel zum Fels — beide in `_erwachen`
+## gesetzt, weil `wach_blick` in Grad GEGENUEBER dem Anfang rechnet.
+var _wach_yaw0: float = 0.0
+var _wach_ziel_grad: float = 0.0
+
+
+## Wohin er zum Zeitpunkt `anteil` der Szene sieht — Grad gegenueber seiner Anfangsdrehung.
+##
+## Als Rechnung und nicht als Zeilen mitten in `_erwachen`, damit der Test nachmessen kann, was
+## sie behauptet: dass er sich ueberhaupt dreht, dass er dabei in BEIDE Richtungen sieht (eine
+## Figur, die sich nur nach einer Seite wendet, sucht nicht, sondern hat schon gefunden), und
+## dass er am Ende genau dort steht, wo sein letzter Satz hinzeigt.
+##
+## Innerhalb jedes Abschnitts weich: Ein Kopf, der mit gleichmaessiger Geschwindigkeit
+## herumfaehrt und dann abrupt haelt, sieht aus wie ein Geschuetzturm.
+static func wach_blick(anteil: float, ziel_grad: float) -> float:
+	var punkte: Array = [
+		[0.00, 0.0],          # er kommt noch hoch
+		[0.18, 0.0],
+		[0.36, -74.0],        # nach links, auf den halben Zug
+		[0.62, 62.0],         # weit nach rechts, ueber die Grube
+		[0.82, ziel_grad],    # und auf den Fels
+		[1.00, ziel_grad],
+	]
+	var t: float = clampf(anteil, 0.0, 1.0)
+	for i in range(punkte.size() - 1):
+		var a: Array = punkte[i]
+		var b: Array = punkte[i + 1]
+		if t > float(b[0]):
+			continue
+		var spanne: float = maxf(float(b[0]) - float(a[0]), 0.0001)
+		var k: float = smoothstep(0.0, 1.0, (t - float(a[0])) / spanne)
+		return lerpf(float(a[1]), float(b[1]), k)
+	return ziel_grad
 
 ## Was er sagt, waehrend er sich aufrichtet.
 ##
 ## Der Held ist nicht Beobachter seiner selbst, sondern ein Mensch, der nicht weiss, wo er ist,
-## wie er hierherkommt und wer er war. Genau in dieser Reihenfolge: erst der Koerper (Schaedel,
+## wie er hierherkommt und wer er war. Er STEHT dabei — der Film hat ihn hochgebracht, und zwei
+## Zeilen, die ihn wieder hinlegten („Ich lieg auf einer Muellkippe"), sind entsprechend
+## umgeschrieben. Ein Text, der der Figur widerspricht, faellt schneller auf als jeder Fehler
+## in der Kamera. Genau in dieser Reihenfolge: erst der Koerper (Schaedel,
 ## Geschmack, das Klebrige im Haar), dann der Ort, dann die Frage nach ihm selbst — und die
 ## bleibt offen. Zum Schluss das Einzige, was jetzt zaehlt: Wasser, und etwas in der Hand.
 ##
@@ -492,12 +536,12 @@ var _wach_tempo: float = 1.0
 ## noch gar nichts.
 static func _wach_zeilen() -> Array:
 	return [
-		"„…hh.“",
+		"„…hh. Steh. Bleib stehen.“",
 		"„Mein Schädel. Als hätte mir jemand einen Kessel drübergezogen und draufgeschlagen.“",
 		"„Öl im Mund. Rost in der Nase. Und irgendwas Klebriges im Haar.“",
 		"„…das ist Blut. Meins, nehm ich an.“",
 		"„Wo bin ich hier? Blech. Fässer. Ein halber Zug.“",
-		"„Eine Kippe. Ich lieg auf einer Müllkippe, in einer Pfütze aus irgendwas.“",
+		"„Eine Kippe. Ich steh auf einer Müllkippe, knöcheltief in irgendwas.“",
 		"„Wie komm ich hierher? Denk nach. Irgendwas.“",
 		"„Nichts. Kein Weg, kein Gesicht, kein gestern.“",
 		"„Wer bringt einen Mann auf eine Halde und lässt ihn liegen? Und wofür?“",
@@ -521,43 +565,50 @@ func _erwachen() -> void:
 	# Tempo so, dass der Clip die Aufsteh-Phase ausfuellt — abzueglich der Zeit, die er
 	# stillsteht. Aus der ECHTEN Cliplaenge, damit ein neues Rig nicht neu eingestellt werden
 	# muss.
-	var steh_sek: float = _wach_total * WACH_STEH_ANTEIL
-	var halt_anteil: float = 0.0
-	for h in WACH_HALT:
-		halt_anteil += float(h[1]) - float(h[0])
+	# In den Clip HINEINSPRINGEN statt ihn von vorn zu spielen: Was davor liegt, hat der Film
+	# gezeigt. Volles Tempo — was uebrig ist, ist eine einzige Streckung, und die zieht man
+	# nicht in die Laenge.
 	var laenge: float = AssetRegistry.clip_length(_player_model, "standup")
-	_wach_tempo = clampf(laenge / maxf(steh_sek * (1.0 - halt_anteil), 0.5), 0.05, 2.0)
-	AssetRegistry.play_clip(_player_model, "standup", false)
+	_wach_steh_t = laenge * (1.0 - WACH_EINSPRUNG)
+	AssetRegistry.play_clip(_player_model, "standup", false, laenge * WACH_EINSPRUNG)
 	var ap: AnimationPlayer = AssetRegistry.animation_player(_player_model)
 	if ap != null:
-		ap.speed_scale = _wach_tempo
+		ap.speed_scale = 1.0
 
-	# Die Kamera: erst dicht am Kopf, dann mit ihm nach oben und zurueck.
 	var p: Vector3 = _player.position
-	# Die ersten vier Etappen haengen am KOPF (`"kopf": true`): `pos` ist ein Versatz von ihm,
-	# geblickt wird auf ihn. Dadurch bleibt das Gesicht im Bild, waehrend es sich vom Boden bis
-	# auf Augenhoehe bewegt — und der Ausschnitt wird nur groesser, weil der Versatz waechst.
-	var kopf0: Vector3 = _kopf_welt()
-	if kopf0.x >= INF:
-		kopf0 = p + Vector3(0.0, 0.28, 0.0)
-	var dreh := Basis(Vector3.UP, _player.rotation.y)
-	_cam.position = kopf0 + dreh * Vector3(0.30, 0.42, -WACH_NAH_M)
-	_cam.look_at(kopf0, Vector3.UP)
-	# Alle Versaetze in SEINEM Bezugssystem: −Z ist vorn. Die Kamera steht also VOR ihm und
-	# etwas ueber ihm — ein Gesicht sieht man von vorn, nicht von hinten.
+	_wach_yaw0 = _player.rotation.y
+	# Der Fels, von dem sein letzter Satz spricht — dorthin dreht er sich am Ende. Damit ist die
+	# Drehung nicht bloss Bewegung, sondern die Antwort auf „wohin jetzt".
+	_wach_ziel_grad = 0.0
+	var ausguck: Dictionary = _feature("ausguck")
+	if not ausguck.is_empty():
+		var fels: Vector3 = WorldManager.feature_center(ausguck)
+		var hin := Vector3(fels.x - p.x, 0.0, fels.z - p.z)
+		if hin.length() > 0.5:
+			_wach_ziel_grad = rad_to_deg(wrapf(atan2(-hin.x, -hin.z) - _wach_yaw0, -PI, PI))
+
+	# Die Kamera: Augenhoehe, nicht Boden — er steht schon. Und in WELTKOORDINATEN, damit sie
+	# seiner Drehung NICHT folgt (siehe oben).
+	var kopf: Vector3 = p + Vector3(0.0, WACH_AUGE_M, 0.0)
+	var dreh := Basis(Vector3.UP, _wach_yaw0)
+	# −Z ist vorn: Die Kamera steht VOR ihm. Ein Gesicht sieht man von vorn.
+	_cam.position = kopf + dreh * Vector3(0.30, 0.10, -WACH_NAH_M)
+	_cam.look_at(kopf, Vector3.UP)
 	_play_flight([
-		# 1. Am Gesicht. Ein Mann im Dreck, bevor man sieht, wo er liegt.
-		{ "pos": Vector3(0.34, 0.44, -WACH_NAH_M), "kopf": true, "ziel": p,
-			"sek": _wach_total * 0.22 },
-		# 2. Er kommt auf den Arm — die Kamera weicht zurueck, der Kopf bleibt in der Mitte.
-		{ "pos": Vector3(0.72, 0.62, -1.85), "kopf": true, "ziel": p, "sek": _wach_total * 0.24 },
-		# 3. Auf die Knie. Jetzt ist der Oberkoerper im Bild.
-		{ "pos": Vector3(1.15, 0.80, -2.55), "kopf": true, "ziel": p, "sek": _wach_total * 0.22 },
-		# 4. Er steht. Weiter am Kopf, aber der Ausschnitt zeigt schon die Grube.
-		{ "pos": Vector3(1.70, 1.15, -3.70), "kopf": true, "ziel": p, "sek": _wach_total * 0.20 },
-		# 5. Und gibt ihn frei.
+		# 1. Auf sein Gesicht. Ein Mann im Dreck, bevor man sieht, wo er steht.
+		{ "pos": kopf + dreh * Vector3(0.42, 0.12, -1.30), "ziel": kopf,
+			"sek": _wach_total * 0.20, "fov": 42.0 },
+		# 2. Zurueck und zur Seite, waehrend er sich nach links wendet.
+		{ "pos": kopf + dreh * Vector3(1.70, 0.55, -2.50),
+			"ziel": kopf - Vector3(0.0, 0.25, 0.0), "sek": _wach_total * 0.26, "fov": 48.0 },
+		# 3. Um ihn herum nach hinten — jetzt liegt die Grube um ihn her im Bild, ohne dass man
+		#    sie ihm zeigen muesste. Er dreht sich gerade nach rechts, die Kamera nach links:
+		#    Zwei Bewegungen gegeneinander lesen sich als eine.
+		{ "pos": kopf + dreh * Vector3(3.20, 2.20, 1.40),
+			"ziel": p + Vector3(0.0, 1.0, 0.0), "sek": _wach_total * 0.30, "fov": 55.0 },
+		# 4. Und gibt ihn frei.
 		{ "pos": p + _cam_offset(_cam_dist), "ziel": p + Vector3(0.0, 1.0, 0.0),
-			"sek": _wach_total * 0.12 },
+			"sek": _wach_total * 0.24 },
 	])
 	_wach_licht_setzen(p)
 	_play_speech(HELD_NAME, "held", zeilen)
@@ -633,7 +684,7 @@ static func _skelett(root: Node) -> Skeleton3D:
 	return null
 
 
-## Die Aufsteh-Phase: Tempo und Haltepunkte.
+## Die Erwachen-Szene: die letzte Streckung, dann das Umsehen.
 func _process_wach(delta: float) -> void:
 	if _wach_left <= 0.0:
 		return
@@ -642,18 +693,20 @@ func _process_wach(delta: float) -> void:
 	if ap == null:
 		return
 	if _wach_left <= 0.0:
-		ap.speed_scale = 1.0
 		if _wach_licht != null and is_instance_valid(_wach_licht):
 			_wach_licht.queue_free()
 			_wach_licht = null
 		return
-	# Anteil der AUFSTEH-Phase (nicht der ganzen Szene): danach steht er und redet zu Ende.
-	var f: float = (1.0 - _wach_left / maxf(_wach_total, 0.01)) / maxf(WACH_STEH_ANTEIL, 0.01)
-	var haelt: bool = false
-	for h in WACH_HALT:
-		if f >= float(h[0]) and f < float(h[1]):
-			haelt = true
-	ap.speed_scale = 0.0 if haelt else _wach_tempo
+	# Ist die Streckung durch, uebernimmt `idle` — sonst bleibt die Figur in der Schlusspose
+	# des Aufsteh-Clips stehen wie eingefroren, und zwar den ganzen Rest der Szene.
+	if _wach_steh_t > 0.0:
+		_wach_steh_t -= delta
+		if _wach_steh_t <= 0.0:
+			AssetRegistry.play_clip(_player_model, "idle", true)
+	# Und er sieht sich um.
+	if _player != null:
+		_player.rotation.y = _wach_yaw0 + deg_to_rad(wach_blick(
+			1.0 - _wach_left / maxf(_wach_total, 0.01), _wach_ziel_grad))
 	# Das Szenenlicht geht am Ende unter, waehrend die Kamera zurueckfaehrt — sonst erloescht
 	# es auf einen Schlag und die Grube wird in einem Bild dunkel.
 	if _wach_licht != null and is_instance_valid(_wach_licht):
