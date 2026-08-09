@@ -15,8 +15,26 @@ class_name OverworldView extends Node3D
 # Figur. Die alten Werte (32 m Schussweite, Spawn ab 140 m) stammen von einer viel weiter
 # entfernten Kamera: der Spieler hat Gegner erledigt, die nie im Bild waren. Alles hier liegt
 # jetzt INNERHALB des Ausschnitts — man sieht, worauf man schießt.
-const AGGRO_M: float = 16.0          # Gegner erwachen, sobald sie im Bild sind
-const SHOOT_RANGE_M: float = 11.0    # Auto-Ziel-Reichweite: gut sichtbar, nicht am Bildrand
+const AGGRO_M: float = 16.0          # Obergrenze; im Bild ist meist weniger — siehe `sichtweite()`
+const SHOOT_RANGE_M: float = 11.0    # Auto-Ziel-Reichweite bei Vorgabe-Zoom
+## Wie weit man bei einem gegebenen Kameraabstand ueberhaupt sieht, in Metern je Meter Abstand.
+##
+## ## Das war der Fehler: eine feste Reichweite bei verstellbarer Kamera
+##
+## „wenn ich reingezoomt habe schiessen die gegner schon ohne dass ich sie sehe, das ist zu weit
+## weg." Genau so ist es, und es ist Geometrie und keine Meinung: Die Kamera steht 52 Grad
+## geneigt bei 50 Grad Sichtfeld. Bei Abstand d liegt die obere Bildkante rund 0,93·d vor der
+## Figur, der seitliche Rand rund 0,83·d neben ihr. Bei der Vorgabe (9,5 m) ist das ein Kreis
+## von knapp neun Metern — die Gegner erwachten aber bei SECHZEHN und schossen aus ihrer vollen
+## Waffenreichweite. Auf der naechsten Zoomstufe (7,5 m) sind es noch sechseinhalb.
+##
+## Also haengt beides jetzt am Zoom: Wer nah heranfaehrt, wird auch erst spaeter beschossen.
+## 0,9 liegt zwischen der Tiefe (0,93) und der Breite (0,83) — von vorn sieht man den Schuetzen
+## gerade noch, von der Seite ist er am Rand.
+const SICHT_JE_ABSTAND: float = 0.9
+## Untergrenze. Ohne sie waere auf der naechsten Stufe kaum noch Platz zwischen „erwacht" und
+## „steht davor", und ein Nahkaempfer haette nicht einmal Anlauf.
+const SICHT_MIN_M: float = 6.5
 const CONTACT_RANGE_M: float = 2.2   # Nahkampf-Kontakt
 const ENEMY_SPEED_MS: float = 3.4    # Referenztempo (CombatData `speed` 100); Typen skalieren daran
 ## Ersatzbewegung für Modelle ohne Lauf-Animation (siehe `_scurry`).
@@ -27,8 +45,26 @@ const SCURRY_ROLL_RAD: float = 0.09
 const RUSTWATER_SPAWN_OFFSET: Vector3 = Vector3(0.0, 0.0, 25.0)   # 25 m südlich der Säule
 
 # ── Kontinuierliches Spawning (echter Biom-Gegnermix aus WorldManager) ────────
-const ENEMY_MAX: int = 12
-const SPAWN_INTERVAL_SEC: float = 4.0
+## Wie viele gleichzeitig draussen stehen duerfen.
+##
+## Zwoelf waren zu viele, und der Beweis kam aus dem Spiel: „gegner kommen zu viele, wenn ich
+## vom doc zu der muellkippe geschickt werde sind da genug dazwischen, dass ich den auftrag
+## erfuelle." Ein Auftrag, der einen an einen ORT schicken soll, wird unterwegs nebenbei fertig
+## — dann war der Ort nie noetig. Acht lassen den Weg wieder ein Weg sein.
+const ENEMY_MAX: int = 8
+## Grundabstand zwischen zwei Nachschub-Wuerfen.
+##
+## Vier Sekunden hiessen: Was man erlegt hat, steht nach dem naechsten Atemzug wieder da
+## („ausserdem respawnen die zu schnell"). Elf Sekunden sind lang genug, dass ein gewonnener
+## Kampf sich nach etwas anfuehlt, und kurz genug, dass die Wueste nicht leer wirkt.
+const SPAWN_INTERVAL_SEC: float = 11.0
+## Um wie viel sich die Pause streckt, wenn schon viel draussen steht.
+##
+## Eine feste Pause ist an beiden Enden falsch: Steht niemand da, wartet man zu lange auf den
+## ersten; steht schon ein halbes Rudel, kommt der naechste Wurf trotzdem im selben Takt, und
+## das Feld laeuft bis zur Kappe voll. Mit dem Faktor haengt die Pause daran, wie voll es
+## GERADE ist — leer bleibt zuegig, voll wird zaeh.
+const SPAWN_STAU_FAKTOR: float = 2.0
 ## Knapp außerhalb des Bildes bis kurze Laufdistanz — nah genug, dass Nachschub ankommt,
 ## solange man noch da ist, und weit genug, dass niemand vor der Nase aus dem Nichts auftaucht.
 const SPAWN_MIN_DIST: float = 18.0
@@ -3466,9 +3502,31 @@ func _quest_for_giver(giver: String) -> String:
 		if String(def.get("giver", "")) != giver:
 			continue
 		var st: String = QuestManager.get_quest_state(String(qid))
-		if st != QuestManager.STATE_DONE:
-			return String(qid)
+		if st == QuestManager.STATE_DONE:
+			continue
+		# Ein wiederholbarer Auftrag, der HEUTE schon abgegeben wurde, gilt fuer heute als
+		# erledigt: Sonst bietet ihn der Auftraggeber an, der Spieler sagt zu, und
+		# `accept_quest` lehnt ab — ein Gespraech, das mit einer stummen Absage endet.
+		# `heute_schon_abgegeben` liefert bei allen anderen Auftraegen falsch.
+		if st == QuestManager.STATE_AVAILABLE and QuestManager.heute_schon_abgegeben(String(qid)):
+			continue
+		return String(qid)
 	return ""
+
+
+## Hat dieser Auftraggeber heute schon einen wiederholbaren Auftrag abgerechnet?
+##
+## Braucht das Gespraech: Ohne diese Auskunft steht der Spieler vor einer Mabel, die auf einmal
+## nichts mehr zu sagen hat, und weiss nicht, ob er fertig ist oder etwas kaputt ist. Mit ihr
+## sagt sie „morgen wieder", und das ist eine Antwort.
+func _heute_erledigt(giver: String) -> bool:
+	for qid in QuestManager.QUESTS.keys():
+		var def: Dictionary = QuestManager.QUESTS[qid]
+		if String(def.get("giver", "")) != giver:
+			continue
+		if QuestManager.heute_schon_abgegeben(String(qid)):
+			return true
+	return false
 
 
 ## Nähe zu einem NPC = Gespräch. Annehmen, Fortschritt melden oder abgeben — die
@@ -3600,6 +3658,10 @@ func _talk_to(giver: String) -> void:
 	var qid: String = _quest_for_giver(giver)
 	if qid == "":
 		zeilen.append_array(_dialog_zeilen(giver, "idle"))
+		# Und wenn er heute schon gezahlt hat, sagt er auch, warum sonst nichts kommt. Eine
+		# Absage ohne Grund sieht aus wie ein Fehler.
+		if _heute_erledigt(giver):
+			zeilen.append("✦ Für heute ist die Arbeit vergeben. Komm morgen wieder.")
 		_talk_lines(npc, giver, zeilen)
 		return
 	var def: Dictionary = QuestManager.QUESTS[qid]
@@ -4851,6 +4913,10 @@ func _build_hud() -> void:
 	layer.add_child(_shop)
 	_char = CharacterScreen.new()
 	layer.add_child(_char)
+	# Beide Bildschirme haben jetzt ein ✕. Sie schliessen sich NICHT selbst, sondern melden es
+	# hierher: Zum Schliessen gehoert mehr, als unsichtbar zu werden — das HUD muss zurueck.
+	_shop.zu_machen.connect(_close_shop)
+	_char.zu_machen.connect(_close_character)
 
 
 ## Vollbild-Weltkarte: liegt fertig gebaut, aber unsichtbar über allem und geht per Tippen auf
@@ -5215,13 +5281,22 @@ static func stille_vor_dem_ersten(erst_gegner_done: bool, prolog_done: bool) -> 
 	return not erst_gegner_done
 
 
+## Wie lange bis zum naechsten Nachschub-Wurf.
+##
+## Statisch und ohne Szene, damit eine Pruefung die Kurve nachrechnen kann statt die Zahl
+## abzuschreiben — eine Konstante, die nur in einem Test noch einmal steht, ist keine Pruefung.
+static func nachschub_pause(lebend: int) -> float:
+	var voll: float = clampf(float(lebend) / float(maxi(ENEMY_MAX, 1)), 0.0, 1.0)
+	return SPAWN_INTERVAL_SEC * (1.0 + voll * SPAWN_STAU_FAKTOR)
+
+
 func _process_spawns(delta: float) -> void:
 	if stille_vor_dem_ersten(GameState.erst_gegner_done, GameState.prolog_done):
 		return
 	_spawn_cd -= delta
 	if _spawn_cd > 0.0 or _enemies.size() >= ENEMY_MAX:
 		return
-	_spawn_cd = SPAWN_INTERVAL_SEC
+	_spawn_cd = nachschub_pause(_enemies.size())
 	var ang: float = randf() * TAU
 	var dist: float = randf_range(SPAWN_MIN_DIST, SPAWN_MAX_DIST)
 	var pos: Vector3 = _player.position + Vector3(cos(ang) * dist, 0.0, sin(ang) * dist)
@@ -6610,6 +6685,21 @@ func _process_movement(delta: float) -> void:
 		_player.rotation.y = lerp_angle(_player.rotation.y, want, clampf(delta * TURN_RATE, 0.0, 1.0))
 
 
+## Wie weit man beim gegebenen Kameraabstand sieht. Statisch, damit ein Test sie nachrechnen
+## kann, ohne die Szene zu bauen.
+static func sichtweite(cam_dist: float) -> float:
+	return clampf(cam_dist * SICHT_JE_ABSTAND, SICHT_MIN_M, AGGRO_M)
+
+
+## Dasselbe fuer den gerade eingestellten Zoom.
+##
+## `_cam_dist` und nicht die Zoomstufe: Der Abstand zieht weich nach (`CAM_ZOOM_RATE`), und
+## waehrend er nachzieht soll die Reichweite mitwandern statt zu springen. Sonst erwacht beim
+## Herauszoomen die halbe Wueste einen Wimpernschlag, bevor sie im Bild ist.
+func _sichtweite() -> float:
+	return sichtweite(_cam_dist)
+
+
 func _nearest_enemy(max_dist: float) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d: float = max_dist
@@ -6664,7 +6754,12 @@ func _process_combat(delta: float) -> void:
 			_reload_left = 0.0
 			if geladen > 0 and geladen < AmmoData.mag_size(_weapon_id):
 				_say("↻ Nur %d Schuss geladen — der Vorrat geht zur Neige." % geladen, 2.0)
-	var e: Dictionary = _nearest_enemy(SHOOT_RANGE_M)
+	# Das Zielen des Spielers folgt derselben Regel wie das der Gegner, aber nach unten
+	# gedeckelt: Er schiesst nie weiter, als er sieht, und nie weniger als acht Meter — sonst
+	# waere er auf der nahen Stufe kurzreichweitiger als ein Schuetze, der ihn beschiesst.
+	# Nach oben bleibt es bei SHOOT_RANGE_M, damit der weite Zoom keine heimliche Aufwertung
+	# der Waffen ist.
+	var e: Dictionary = _nearest_enemy(clampf(_sichtweite(), 8.0, SHOOT_RANGE_M))
 	var wants: bool = _fire_wanted()
 	# Ohne Waffe wird nicht geschossen. Der Held erwacht mit leeren Haenden auf der Kippe —
 	# bis zur ersten Truhe ist Weglaufen die einzige Antwort, und genau das soll man merken.
@@ -6939,15 +7034,24 @@ func _process_enemies(delta: float) -> void:
 			if _tick_windup(e, d, delta):
 				return                       # Spieler gestorben; `_enemies` ist neu
 			continue
-		if d > AGGRO_M:
+		# Erwachen erst, wenn er im Bild IST — und nicht bei festen sechzehn Metern, die auf der
+		# nahen Zoomstufe weit ausserhalb liegen.
+		var sicht: float = _sichtweite()
+		if d > sicht:
 			if not AssetRegistry.play_clip(e["model"], "idle"):
 				AssetRegistry.rest(e["model"])
 			_scurry(e, false)
 			continue
 		var dir: Vector3 = zu / maxf(d, 0.001)
 		node.rotation.y = atan2(-dir.x, -dir.z)   # wach heißt: zum Spieler gedreht
-		var weit: float = _attack_range(e)
-		var nah: float = _min_range(e)
+		# Und geschossen wird hoechstens so weit, wie man sieht. Ein Schuetze mit zwoelf Metern
+		# Waffenreichweite stand bei nahem Zoom ausserhalb des Bildes und traf trotzdem — das
+		# fuehlt sich nicht nach Gegner an, sondern nach Fehler.
+		var weit: float = minf(_attack_range(e), sicht)
+		# Der Rueckzugsabstand muss UNTER der Schussweite bleiben, sonst weicht ein Schuetze aus
+		# einer Entfernung zurueck, aus der er gar nicht mehr schiessen darf: Er laeuft rueckwaerts,
+		# bis er aus dem Bild ist, und kommt nie wieder.
+		var nah: float = minf(_min_range(e), weit - 0.6)
 		if d > weit:
 			_move_enemy(e, dir, 1.0, delta)
 			AssetRegistry.play_clip(e["model"], _gait(_enemy_speed(e)))

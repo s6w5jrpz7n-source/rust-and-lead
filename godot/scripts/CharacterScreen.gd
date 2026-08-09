@@ -24,6 +24,14 @@ const LEFT_W: float = 430.0     # Spalte „Getragen" + Werteblatt
 const GRID_W: float = 250.0
 const PAD: float = 14.0     # 5 Spalten x 44 px + Fugen
 
+## „Mach zu." — vom ✕ oben rechts in der Tafel.
+##
+## Hinaus kam man bisher mit `[C]`, `[Esc]` oder einem Tipp NEBEN die Tafel. Auf einem Telefon
+## gibt es die ersten beiden nicht, und der dritte ist ein Rand von wenigen Millimetern: Die
+## Tafel ist 1080 von 1280 Punkten breit. Wer im Rucksack sitzt und diesen Streifen nicht
+## trifft, kommt nicht mehr heraus — dieselbe Sorte Sackgasse wie der Ausgang des Stollens.
+signal zu_machen
+
 var tab: int = Tab.AUSRUESTUNG
 
 var _head: Label
@@ -116,8 +124,19 @@ func _ready() -> void:
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.position = Vector2(0.0, PANEL_H - 24.0)
 	hint.custom_minimum_size = Vector2(PANEL_W, 0.0)
-	hint.text = "Fassung an der Puppe oder Teil im Raster antippen → Anlegen / Ablegen · [C]/[Esc] schließt"
+	hint.text = "Fassung an der Puppe oder Teil im Raster antippen → Anlegen / Ablegen · ✕ oder [C]/[Esc] schließt"
 	_panel.add_child(hint)
+	# Der Schliessknopf sitzt IN der Tafel, oben rechts — dort, wo ihn jeder sucht, und innerhalb
+	# von `hits_panel()`, damit der Tipp an ihn durchgereicht wird statt als „daneben" zu gelten.
+	var zu := Button.new()
+	zu.text = "✕"
+	zu.focus_mode = Control.FOCUS_NONE
+	zu.add_theme_font_size_override("font_size", 22)
+	zu.position = Vector2(PANEL_W - 60.0, 8.0)
+	zu.size = Vector2(48.0, 40.0)
+	zu.custom_minimum_size = zu.size
+	zu.pressed.connect(func() -> void: zu_machen.emit())
+	_panel.add_child(zu)
 
 
 ## Rechte Spalte: Kopfzeile, Raster, Beschreibung des gewählten Teils, zwei Aktionen.

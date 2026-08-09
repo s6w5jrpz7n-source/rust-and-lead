@@ -23,6 +23,14 @@ enum Mode { WERKSTATT, WIRTSCHAFT, WAFFEN }
 const PANEL_W: float = 470.0
 const ROW_H: float = 52.0
 
+## „Mach zu." — vom ✕ oben rechts.
+##
+## Es gab schon zwei Wege hinaus: `[Esc]` und ein Tipp neben die Liste. Beide sind auf einem
+## Telefon unbrauchbar, der erste offensichtlich und der zweite auf den zweiten Blick: Die Liste
+## ist 470 Punkte breit, die Abdunklung liegt darueber, und „daneben" ist auf einem schmalen
+## Bildschirm ein Streifen von wenigen Millimetern am Rand. Wer ihn nicht trifft, sitzt fest.
+signal zu_machen
+
 var mode: int = Mode.WERKSTATT
 
 var _list: VBoxContainer
@@ -63,8 +71,22 @@ func _ready() -> void:
 	_hint = Label.new()
 	_hint.add_theme_font_size_override("font_size", 13)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hint.text = "Tippen neben die Liste oder [Esc] schließt"
+	_hint.text = "✕ oben rechts, Tippen neben die Liste oder [Esc] schließt"
 	box.add_child(_hint)
+	# Der ✕ sitzt am BILDSCHIRMRAND, nicht an der Liste: Er soll immer an derselben Stelle sein,
+	# auch wenn die Liste je nach Laden drei oder acht Zeilen hat. Ein Schliessknopf, der wandert,
+	# muss gesucht werden.
+	var zu := Button.new()
+	zu.text = "✕"
+	zu.focus_mode = Control.FOCUS_NONE
+	zu.add_theme_font_size_override("font_size", 24)
+	zu.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	zu.offset_left = -74.0
+	zu.offset_right = -18.0
+	zu.offset_top = 14.0
+	zu.offset_bottom = 62.0
+	zu.pressed.connect(func() -> void: zu_machen.emit())
+	add_child(zu)
 
 
 func open(which: int) -> void:

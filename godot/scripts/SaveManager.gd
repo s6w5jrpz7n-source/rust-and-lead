@@ -52,6 +52,7 @@ static func serialize() -> Dictionary:
 		"hour": GameState.hour,
 		"tag": GameState.tag,
 		"gekauft_heute": GameState.gekauft_heute,
+		"quest_tag": GameState.quest_tag,
 		"quest_base": GameState.quest_base.duplicate(true),
 		"memories_found": GameState.memories_found,
 		"memorials_seen": GameState.memorials_seen.duplicate(),
@@ -112,11 +113,16 @@ static func deserialize(data: Dictionary) -> void:
 	GameState.hour = float(data.get("hour", 7.5))
 	GameState.tag = maxi(0, int(data.get("tag", 0)))
 	GameState.gekauft_heute = data.get("gekauft_heute", {})
+	GameState.quest_tag = _int_dict(data.get("quest_tag", {}))
 	GameState.quest_base = _int_dict(data.get("quest_base", {}))
 	GameState.memories_found = clampi(int(data.get("memories_found", 0)), 0, MemoryManager.chain_length())
 	GameState.memorials_seen = _str_array(data.get("memorials_seen", []))
 	GameState.family_buried = bool(data.get("family_buried", false))
 	GameState.codex = _str_array(data.get("codex", []))
+	# Zuletzt, wenn Stufe UND Raenge stehen: Faehigkeitspunkte wurden bis vor Kurzem ueberhaupt
+	# nie vergeben — jeder aeltere Stand traegt eine Null, die nicht stimmt. Der Abgleich holt
+	# sie nach und tut bei einem gesunden Stand nichts.
+	ProgressionManager.punkte_abgleichen()
 
 # ── JSON ──────────────────────────────────────────────────────────────────────
 

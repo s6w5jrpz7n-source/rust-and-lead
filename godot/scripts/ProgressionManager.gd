@@ -411,6 +411,36 @@ static func xor_blocked(id: String) -> bool:
 static func has_cap(branch: String) -> bool:
 	return perk_rank("cap_" + branch) > 0
 
+## Wie viele Punkte eine Stufe insgesamt eingebracht hat.
+##
+## `stufe - 1`, weil man auf Stufe 1 anfaengt: Der erste Punkt kommt mit dem ERSTEN Aufstieg.
+static func verdiente_punkte(stufe: int) -> int:
+	return maxi(0, stufe - 1) * GameState.PERK_PUNKTE_JE_STUFE
+
+
+## Wie viele schon in Raenge gesteckt wurden.
+static func ausgegebene_punkte() -> int:
+	var n: int = 0
+	for pid in GameState.perks:
+		n += int(GameState.perks[pid])
+	return n
+
+
+## Bringt `perk_points` mit Stufe und Raengen in Einklang.
+##
+## Das ist die Reparatur fuer alte Spielstaende. Punkte wurden bis eben ueberhaupt nie vergeben;
+## wer jetzt mit Stufe drei laedt, haette weiterhin null — der Fehler waere behoben und der
+## Spieler merkte nichts davon, weil sein Schaden schon entstanden ist.
+##
+## Sie ERHOEHT NUR. Ein Gleichsetzen waere falsch: Nach einer Neuverdrahtung (`do_respec`)
+## liegen erstattete Punkte auf der Hand, ohne dass ein Rang dafuer steht — die kassierte ein
+## `=` ein. Und so ist sie mehrfach aufrufbar, ohne dass etwas doppelt herauskommt.
+static func punkte_abgleichen() -> void:
+	var soll: int = verdiente_punkte(GameState.level) - ausgegebene_punkte()
+	if GameState.perk_points < soll:
+		GameState.perk_points = soll
+
+
 static func perk_can_buy(id: String) -> bool:
 	if not PERKS.has(id):
 		return false

@@ -68,7 +68,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_asset_registry": 38,
 	"_test_overworld_loot_flow": 6,
 	"_test_overworld_quest_flow": 14,
-	"_test_quest_wayfinding": 50,
+	"_test_quest_wayfinding": 63,
 	"_test_closeup": 13,
 	"_test_poi_walkable": 24,
 	"_test_town_walkable": 17,
@@ -95,6 +95,9 @@ const TEST_UMFANG: Dictionary = {
 	"_test_stollen": 34,
 	"_test_stollen_bedienbar": 17,
 	"_test_stollen_lampen": 12,
+	"_test_faehigkeitspunkte": 9,
+	"_test_sichtweite": 12,
+	"_test_nachschub": 9,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -184,6 +187,10 @@ func _reset_state() -> void:
 	GameState.economy = { "saloon": 0, "forge": 0, "distillery": 0, "laboratory": 0 }
 	GameState.quests = {}
 	GameState.quest_base = {}
+	# Tag und Tagesgrenzen mit: Seit wiederholbare Auftraege einmal am Tag gehen, traegt eine
+	# Testfunktion sonst die Sperre der vorherigen mit sich herum.
+	GameState.tag = 0
+	GameState.quest_tag = {}
 	GameState.flags_ui = { "reveal_playing": false }
 	GameState.memories_found = 0
 	GameState.memorials_seen = []
@@ -707,7 +714,11 @@ func _test_save_manager() -> void:
 	GameState.chosen_guild = "rebels"
 	GameState.level = 12
 	GameState.xp = 55
-	GameState.perk_points = 2
+	# Stimmig zur Stufe: elf Aufstiege bringen elf Punkte, vier stecken in Raengen, sieben liegen
+	# auf der Hand. Ein UNstimmiger Stand waere hier ein schlechter Pruefling — `deserialize`
+	# gleicht ihn an, seit Aufstiege Punkte bringen, und dann pruefte diese Stelle den Abgleich
+	# statt des Roundtrips. Der Abgleich hat seinen eigenen Test.
+	GameState.perk_points = 7
 	GameState.perks = { "scharf": 3, "krit": 1 }
 	GameState.gold = 777
 	GameState.inventory = { "schrott": 4, "zahnrad": 1, "dampfkern": 2 }
@@ -730,7 +741,7 @@ func _test_save_manager() -> void:
 	SaveManager.deserialize(snap)
 	_check("Roundtrip: Kapitel/Gilde", GameState.current_chapter == 8 and GameState.chosen_guild == "rebels")
 	_check("Roundtrip: Level/Gold", GameState.level == 12 and GameState.gold == 777)
-	_check("Roundtrip: Perks", ProgressionManager.perk_rank("scharf") == 3 and GameState.perk_points == 2)
+	_check("Roundtrip: Perks", ProgressionManager.perk_rank("scharf") == 3 and GameState.perk_points == 7)
 	_check("Roundtrip: Quests", String(GameState.quests["q_rebels5"]) == "done" and int(GameState.quest_base["q_rebels8"]) == 120)
 	_check("Roundtrip: roter Faden", GameState.memories_found == 9 and GameState.memorials_seen == ["doorframe", "photo"] and GameState.codex.has("familie"))
 	_check("Roundtrip: Gebäude", GameState.building_level("saloon") == 3)
@@ -1896,10 +1907,32 @@ func _test_quest_wayfinding() -> void:
 		QuestManager.complete_quest("q_d3"))
 	_check("Danach steht er wieder auf `available`, nicht auf `done`",
 		QuestManager.get_quest_state("q_d3") == QuestManager.STATE_AVAILABLE)
-	_check("Er laesst sich erneut annehmen", QuestManager.accept_quest("q_d3"))
+	# ABER NICHT HEUTE. Das war der Fehler, den das Spiel gezeigt hat: „ich kann bei Mabel den
+	# Auftrag unendlich oft abschliessen." Wiederholbar heisst wiederholbar, nicht beliebig oft
+	# hintereinander — zehn Gegner, zweihundert Gold, wieder annehmen, und jeder Preis im Spiel
+	# ist bedeutungslos.
+	_check("Aber heute nicht mehr", not QuestManager.accept_quest("q_d3"))
+	_check("Und der Auftraggeber bietet ihn heute auch nicht an",
+		QuestManager.heute_schon_abgegeben("q_d3"))
+	# Morgen schon.
+	GameState.tag += 1
+	_check("Morgen wieder", QuestManager.accept_quest("q_d3"))
 	var p2: Dictionary = QuestManager.check_quest_progress("q_d3")
 	_check("Und faengt wieder bei 0 an (%d/%d)" % [int(p2["current"]), int(p2["target"])],
 		int(p2["current"]) == 0)
+	# Die Grenze muss den Spielstand ueberleben, sonst haelt Speichern und Laden sie fuer
+	# aufgehoben — und der Geldhahn steht wieder offen, nur mit einem Umweg ueber das Menue.
+	GameState.kills += int(QuestManager.QUESTS["q_d3"]["count"])
+	QuestManager.complete_quest("q_d3")
+	var stand_d3: Dictionary = SaveManager.serialize()
+	GameState.quest_tag = {}
+	SaveManager.deserialize(stand_d3)
+	_check("Die Tagesgrenze ueberlebt den Spielstand",
+		QuestManager.heute_schon_abgegeben("q_d3"))
+	# Und ein NICHT wiederholbarer Auftrag traegt gar keine Tagesgrenze — sonst haenge dieselbe
+	# Bremse an Auftraegen, die ohnehin nur einmal stattfinden.
+	_check("Ein einmaliger Auftrag kennt keine Tagesgrenze",
+		not QuestManager.heute_schon_abgegeben("q_rats"))
 	# ── Die Kette, wie der Spieler sie erlebt ────────────────────────────────
 	# Genau der Weg, der beim Auftraggeber ankommt: `_quest_for_giver` nimmt den ersten nicht
 	# erledigten Auftrag. Erledigt man ihn, muss der naechste kommen — und irgendwann einer, der
@@ -1924,9 +1957,29 @@ func _test_quest_wayfinding() -> void:
 			else:
 				GameState.add_item(String(d3["item"]), int(d3["count"]))
 			QuestManager.complete_quest(q)
+			# Ein Tag je Auftrag. Im Spiel vergeht er ohnehin (die Uhr laeuft, siehe
+			# `DayCycle`); hier muss er von Hand weiter, sonst laeuft die Kette in die
+			# Tagesgrenze des letzten, wiederholbaren Auftrags und bricht scheinbar ab.
+			GameState.tag += 1
 		_check("%s bietet nacheinander %d Auftraege an" % [wer2, gesehen.size()],
 			gesehen.size() >= 3, "nur %s" % str(gesehen))
 		_check("%s hat auch danach noch etwas zu tun" % wer2,
+			ow3._quest_for_giver(String(wer2)) != "")
+		# Und am selben Tag NICHT mehr: Wer den wiederholbaren gerade abgegeben hat, hoert
+		# heute nichts Neues. Das ist die Bremse, um die es geht — sie darf die Kette aber
+		# nicht dauerhaft schliessen, deshalb steht die Gegenprobe direkt daneben.
+		var q_letzt: String = ow3._quest_for_giver(String(wer2))
+		QuestManager.accept_quest(q_letzt)
+		var d_letzt: Dictionary = QuestManager.QUESTS[q_letzt]
+		if String(d_letzt["kind"]) == "kill":
+			GameState.kills += int(d_letzt["count"])
+		else:
+			GameState.add_item(String(d_letzt["item"]), int(d_letzt["count"]))
+		QuestManager.complete_quest(q_letzt)
+		_check("%s ist fuer heute fertig" % wer2, ow3._quest_for_giver(String(wer2)) == "")
+		_check("%s sagt auch, warum" % wer2, ow3._heute_erledigt(String(wer2)))
+		GameState.tag += 1
+		_check("%s hat morgen wieder Arbeit" % wer2,
 			ow3._quest_for_giver(String(wer2)) != "")
 	# Gegenprobe: ein normaler Auftrag bleibt erledigt.
 	_reset_state()
@@ -5597,8 +5650,17 @@ func _test_truhen() -> void:
 	var nur_e1: int = kisten_1 * int((ChestData.art(ChestData.STANDARD)["stahl"] as Array)[1])
 	_check("Ebene 1 allein reicht nicht (hoechstens %d)" % nur_e1,
 		nur_e1 < int(q_stollen["count"]))
+	# Ausdruecklich zuruecksetzen und nicht auf den Stand von vorher hoffen: Die Pruefung hing
+	# an dem, was die vorherige Testfunktion hinterlassen hatte, und schlug fehl, sobald irgendwo
+	# davor ein Sammelauftrag durchgespielt wurde. Eine Aussage ueber „ein neues Spiel" muss ein
+	# neues Spiel herstellen.
+	# `neu_beginnen()` und nicht `_reset_state()`: Geprueft wird die VORGABE eines neuen Spiels,
+	# also genau das, was das Spiel selbst herstellt. Der Testhelfer setzt seinen eigenen
+	# Startzustand und wuerde die Frage beantworten, die er selbst gestellt hat.
+	GameState.neu_beginnen()
 	_check("Ein neues Spiel faengt ohne Grubenstahl an",
 		int(GameState.inventory.get("grubenstahl", -1)) == 0)
+	GameState.level = 30
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Anfuehrer und Schluessel
@@ -5940,7 +6002,12 @@ func _test_spielstand_vollstaendig() -> void:
 	# `SaveManager`, faellt es beim naechsten Lauf auf.
 	var proben: Dictionary = {
 		"current_chapter": 3, "is_revealed": true, "level": 7, "xp": 42,
-		"perk_points": 4, "ng_plus": 2, "gold": 1234, "potions": 9,
+		# NEUN und nicht vier, und zwar MEHR als die sechs, die Stufe 7 einbringt: `deserialize`
+		# gleicht Faehigkeitspunkte nach oben ab (`punkte_abgleichen`), damit alte Staende ihre
+		# nie vergebenen Punkte bekommen. Bei einem Wert UNTER dem Soll wuerde dieser Test also
+		# auch dann bestehen, wenn der SaveManager das Feld ganz vergisst — der Abgleich fuellte
+		# es auf. Ueber dem Soll faellt das Vergessen auf.
+		"perk_points": 9, "ng_plus": 2, "gold": 1234, "potions": 9,
 		"kills": 55, "tracked_quest": "q_scrap", "weapon_id": "gatling",
 		"prolog_done": true, "saw_rustwater": true, "saw_wake": true, "saw_vista": true,
 		"erst_gegner_done": true, "schluessel": 3, "cam_zoom": 2,
@@ -7064,3 +7131,196 @@ func _test_stollen_lampen() -> void:
 			if (nochmal[i] as Dictionary)["feld"] != (lampen[i] as Dictionary)["feld"]:
 				gleich = false
 	_check("Derselbe Stollen bekommt dieselben Lampen", gleich)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Ein Aufstieg bringt einen Punkt — vorher brachte er nichts
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# „bin zwar stufe drei, hab aber keine punkte zu verteilen im faehigkeiten menue."
+#
+# Der Perk-Baum stand seit Langem, `buy_perk` funktionierte, der Bildschirm zeigte ihn an — und
+# `perk_points` wurde von NIEMANDEM je erhoeht. Die einzige Stelle, die die Zahl ueberhaupt
+# anfasste, war der Kauf, der sie senkt. Ein ganzes Fortschrittssystem, das nur nach unten geht.
+#
+# Das Heikle daran ist der zweite Teil: Wer den Fehler behebt, hat den vorhandenen Spielstaenden
+# damit noch nichts gegeben. Die Stufen sind schon vergeben, und die Punkte dafuer gibt es nie
+# wieder — es sei denn, das Laden rechnet sie nach.
+func _test_faehigkeitspunkte() -> void:
+	print("· Faehigkeitspunkte (Aufstieg, Altstand, Erstattung)")
+	_reset_state()
+
+	_check("Auf Stufe 1 hat man noch keinen Punkt", GameState.perk_points == 0)
+	# Genug XP fuer genau einen Aufstieg.
+	GameState.add_xp(GameState.xp_to_next(1))
+	_check("Nach dem ersten Aufstieg einer (Stufe %d, %d Punkte)"
+		% [GameState.level, GameState.perk_points],
+		GameState.level == 2 and GameState.perk_points == 1)
+
+	# Zwei Stufen in einem Zug — beim Abschluss eines Auftrags nicht selten. Der Zuschlag muss
+	# IM Schleifenkoerper stehen; danach gaebe es fuer zwei Aufstiege einen Punkt.
+	_reset_state()
+	var weit: int = GameState.xp_to_next(1) + GameState.xp_to_next(2) + GameState.xp_to_next(3)
+	GameState.add_xp(weit)
+	_check("Drei Stufen auf einmal bringen drei Punkte (Stufe %d, %d Punkte)"
+		% [GameState.level, GameState.perk_points],
+		GameState.level == 4 and GameState.perk_points == 3)
+
+	# ── Der Altstand ────────────────────────────────────────────────────────
+	#
+	# Genau der Fall des Spielers: Stufe drei, null Punkte, weil es die Regel damals nicht gab.
+	_reset_state()
+	GameState.level = 3
+	GameState.perk_points = 0
+	ProgressionManager.punkte_abgleichen()
+	_check("Ein Altstand auf Stufe 3 bekommt seine zwei Punkte nachgereicht (%d)"
+		% GameState.perk_points, GameState.perk_points == 2)
+	# Schon ausgegebene Raenge werden angerechnet, sonst bekaeme ein Altstand sie doppelt.
+	_reset_state()
+	GameState.level = 10
+	GameState.perks = { "scharf": 3 }
+	GameState.perk_points = 0
+	ProgressionManager.punkte_abgleichen()
+	_check("Ausgegebene Raenge zaehlen dagegen (9 verdient, 3 verbaut -> %d)"
+		% GameState.perk_points, GameState.perk_points == 6)
+	# Und der Abgleich ist mehrfach aufrufbar — sonst waechst der Vorrat bei jedem Laden.
+	ProgressionManager.punkte_abgleichen()
+	ProgressionManager.punkte_abgleichen()
+	_check("Mehrfach abgleichen aendert nichts mehr (%d)" % GameState.perk_points,
+		GameState.perk_points == 6)
+
+	# Er nimmt NICHTS weg. Nach einer Neuverdrahtung liegen erstattete Punkte auf der Hand,
+	# ohne dass ein Rang dafuer steht — ein Gleichsetzen kassierte sie ein.
+	_reset_state()
+	GameState.level = 5
+	GameState.perks = {}
+	GameState.perk_points = 40
+	ProgressionManager.punkte_abgleichen()
+	_check("Zu viele Punkte werden nicht einkassiert (%d)" % GameState.perk_points,
+		GameState.perk_points == 40)
+
+	# ── Die Rechnung im Ganzen ──────────────────────────────────────────────
+	_check("Auf Hoechststufe gibt es %d Punkte"
+		% ProgressionManager.verdiente_punkte(GameState.LEVEL_MAX),
+		ProgressionManager.verdiente_punkte(GameState.LEVEL_MAX)
+			== (GameState.LEVEL_MAX - 1) * GameState.PERK_PUNKTE_JE_STUFE)
+	# Und sie reichen NICHT fuer alles. Ein Baum, den man ganz kaufen kann, ist keine Wahl.
+	var alle_raenge: int = 0
+	for pid in ProgressionManager.PERKS:
+		alle_raenge += int(ProgressionManager.PERKS[pid]["max"])
+	_check("Sie reichen nicht fuer den ganzen Baum (%d von %d Raengen)"
+		% [ProgressionManager.verdiente_punkte(GameState.LEVEL_MAX), alle_raenge],
+		ProgressionManager.verdiente_punkte(GameState.LEVEL_MAX) < alle_raenge)
+
+	_reset_state()
+	GameState.level = 30
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Wer nah heranzoomt, wird nicht aus dem Nichts beschossen
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# „wenn ich reingezoomt habe schiessen die gegner schon ohne dass ich sie sehe, das ist zu weit
+# weg."
+#
+# Der Zoom war verstellbar, die Reichweiten nicht: Gegner erwachten bei festen sechzehn Metern
+# und schossen aus ihrer vollen Waffenreichweite — auf der nahen Stufe ist das weit ausserhalb
+# des Bildes. Das ist kein Balance-Gefuehl, sondern Geometrie, und deshalb laesst es sich
+# nachrechnen.
+func _test_sichtweite() -> void:
+	print("· Sichtweite (Kampfreichweite haengt am Zoom)")
+
+	# Die Kamera steht CAM_PITCH geneigt bei CAM_FOV senkrechtem Sichtfeld. Bei Abstand d liegt
+	# die obere Bildkante bei h/tan(PITCH - FOV/2) vom Objektiv, also um so viel VOR der Figur:
+	var d: float = 9.5
+	var hoehe: float = d * sin(deg_to_rad(OverworldView.CAM_PITCH))
+	var vor_kamera: float = hoehe / tan(deg_to_rad(OverworldView.CAM_PITCH - OverworldView.CAM_FOV * 0.5))
+	var vor_figur: float = vor_kamera - d * cos(deg_to_rad(OverworldView.CAM_PITCH))
+	_check("Bei Vorgabe-Zoom liegt die Bildkante %.1f m vor der Figur" % vor_figur,
+		vor_figur > 8.0 and vor_figur < 10.0)
+	# Und genau daran ist die Sichtweite eingemessen: nicht groesser als die Bildtiefe.
+	_check("Die Sichtweite passt ins Bild (%.1f m bei %.1f m Abstand)"
+		% [OverworldView.sichtweite(d), d], OverworldView.sichtweite(d) <= vor_figur + 0.1)
+
+	# Sie waechst mit dem Zoom — das ist der ganze Punkt.
+	var nah: float = OverworldView.sichtweite(float(OverworldView.CAM_ZOOM_STEPS[0]))
+	var fern: float = OverworldView.sichtweite(
+		float(OverworldView.CAM_ZOOM_STEPS[OverworldView.CAM_ZOOM_STEPS.size() - 1]))
+	_check("Nah sieht man weniger als fern (%.1f gegen %.1f m)" % [nah, fern], nah < fern)
+	_check("Und nah deutlich weniger als die alten festen 16 m (%.1f)" % nah,
+		nah < OverworldView.AGGRO_M * 0.7)
+	# Nach unten begrenzt: Sonst waere auf der naechsten Stufe kein Platz zwischen „erwacht"
+	# und „steht davor", und ein Nahkaempfer haette nicht einmal Anlauf.
+	_check("Aber nie unter dem Nahkampfabstand (%.1f m gegen %.1f m)"
+		% [nah, OverworldView.CONTACT_RANGE_M], nah > OverworldView.CONTACT_RANGE_M * 2.0)
+	# Nach oben auch: Der weite Zoom darf die Wueste nicht in Bewegung versetzen.
+	_check("Und nie ueber der alten Obergrenze (%.1f m)" % fern, fern <= OverworldView.AGGRO_M)
+	# Monoton — eine Stufe weiter heraus darf nie WENIGER Sicht bedeuten.
+	var monoton: bool = true
+	for i in range(1, OverworldView.CAM_ZOOM_STEPS.size()):
+		if OverworldView.sichtweite(float(OverworldView.CAM_ZOOM_STEPS[i])) \
+				< OverworldView.sichtweite(float(OverworldView.CAM_ZOOM_STEPS[i - 1])):
+			monoton = false
+	_check("Jede Stufe weiter heraus zeigt mehr", monoton)
+
+	# Der Spieler wird nie kurzreichweitiger als ein Schuetze, der auf ihn haelt: Sein Zielen
+	# ist bei 8 m nach unten gedeckelt, die Gegner sind es nicht.
+	var ow_q: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	_check("Der Spieler zielt gedeckelt, nicht ungebremst",
+		ow_q.contains("_nearest_enemy(clampf(_sichtweite(), 8.0, SHOOT_RANGE_M))"))
+	_check("Er behaelt auf der nahen Stufe die laengere Reichweite (%.1f gegen %.1f m)"
+		% [maxf(nah, 8.0), nah], maxf(nah, 8.0) > nah - 0.001)
+	# Gegner erwachen und schiessen nach derselben Zahl — zwei Reichweiten waeren zwei Fehler.
+	_check("Gegner erwachen nach der Sichtweite", ow_q.contains("if d > sicht:"))
+	_check("Und schiessen hoechstens so weit", ow_q.contains("minf(_attack_range(e), sicht)"))
+	# Der Rueckzugsabstand eines Schuetzen muss UNTER seiner Schussweite bleiben, sonst weicht er
+	# rueckwaerts aus dem Bild und kommt nie wieder.
+	_check("Ein Schuetze weicht nicht aus dem Bild zurueck",
+		ow_q.contains("minf(_min_range(e), weit - 0.6)"))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Der Weg zum Ort ist wieder ein Weg
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# „gegner kommen zu viele, wenn ich vom doc zu der muellkippe geschickt werde sind da genug
+# dazwischen, dass ich den auftrag erfuelle, ausserdem respawnen die zu schnell."
+#
+# Beides an einem Ort: Alle vier Sekunden ein Wurf, zwoelf gleichzeitig erlaubt, und ein Wurf
+# eines Schwarmtyps setzt gleich vier bis sieben ab. Ein Auftrag „erlege fuenf an der Muellkippe"
+# ist damit auf dem Hinweg fertig — und ein Auftrag, der einen an einen ORT schicken soll, hat
+# seinen Zweck verloren, bevor man dort ist.
+func _test_nachschub() -> void:
+	print("· Nachschub (Dichte und Takt)")
+
+	_check("Hoechstens %d gleichzeitig" % OverworldView.ENEMY_MAX,
+		OverworldView.ENEMY_MAX <= 8)
+	_check("Und der Grundtakt ist kein Sekundentakt (%.0f s)" % OverworldView.SPAWN_INTERVAL_SEC,
+		OverworldView.SPAWN_INTERVAL_SEC >= 8.0)
+
+	# Die Kurve: leer zuegig, voll zaeh.
+	var leer: float = OverworldView.nachschub_pause(0)
+	var halb: float = OverworldView.nachschub_pause(OverworldView.ENEMY_MAX / 2)
+	var voll: float = OverworldView.nachschub_pause(OverworldView.ENEMY_MAX)
+	_check("Bei leerem Feld kommt der Grundtakt (%.1f s)" % leer,
+		is_equal_approx(leer, OverworldView.SPAWN_INTERVAL_SEC))
+	_check("Halb voll dauert es laenger (%.1f s)" % halb, halb > leer)
+	_check("Ganz voll noch laenger (%.1f s)" % voll, voll > halb)
+	_check("Und nie unbegrenzt lang (%.1f s)" % voll,
+		voll <= OverworldView.SPAWN_INTERVAL_SEC * (1.0 + OverworldView.SPAWN_STAU_FAKTOR) + 0.01)
+	# Ueber der Kappe darf die Rechnung nicht davonlaufen — sie wird zwar nicht gerufen, aber
+	# eine Formel, die nur innerhalb ihres Erwartungsbereichs stimmt, ist eine Falle.
+	_check("Auch ueber der Kappe bleibt sie gedeckelt",
+		is_equal_approx(OverworldView.nachschub_pause(OverworldView.ENEMY_MAX * 3), voll))
+
+	# Und die Probe aufs Exempel: Wie lange braucht das Feld, um von leer auf voll zu laufen?
+	# Vorher waren es zwoelf mal vier Sekunden, also unter einer Minute — und mit Schwarmwuerfen
+	# noch viel weniger.
+	var sek: float = 0.0
+	var stehen: int = 0
+	while stehen < OverworldView.ENEMY_MAX:
+		sek += OverworldView.nachschub_pause(stehen)
+		stehen += 1
+	_check("Von leer auf voll dauert es %.0f Sekunden" % sek, sek > 120.0)
+	# Gegenprobe gegen den alten Zustand: zwoelf mal vier Sekunden waren 48.
+	_check("Vorher waren es 48", 12 * 4 == 48)

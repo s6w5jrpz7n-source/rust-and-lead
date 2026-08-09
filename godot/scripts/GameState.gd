@@ -37,6 +37,16 @@ const LEVEL_HP_BONUS: int = 8
 const PLAYER_BASE_HP: int = 100
 var level: int = 1
 var xp: int = 0
+## Wie viele Fähigkeitspunkte ein Aufstieg bringt.
+##
+## Das war die ganze Lücke: Der Baum stand, die Punkte ließen sich ausgeben, im Bildschirm stand
+## „✴ Fähigkeiten (0)" — und **niemand hat je einen Punkt vergeben**. Wer Stufe drei erreichte,
+## hatte drei Aufstiege gefeiert und nichts davon in der Hand.
+##
+## Einer je Stufe, dreißig über das ganze Spiel. Das ist keine willkürliche Zahl: Der Baum
+## verlangt für seine Kapsteine eine Vorstufe (`perk_tier_ok`), und mit dreißig Punkten kommt
+## man in genau zwei Zweigen bis oben. Wer alles will, bekommt nichts ganz.
+const PERK_PUNKTE_JE_STUFE: int = 1
 ## Perk-Baum (Fallout-Achse, Master-GDD §7.5.1): Punkte + Ränge je Perk-id.
 var perk_points: int = 0
 var perks: Dictionary = {}   ## perk_id (String) -> Rang (int)
@@ -169,6 +179,12 @@ var hour: float = DayCycle.START_HOUR
 var tag: int = 0
 ## Welche Regalplaetze an welchem Tag schon gekauft wurden. Verkauft ist verkauft.
 var gekauft_heute: Dictionary = {}
+## An welchem Tag ein wiederholbarer Auftrag zuletzt abgegeben wurde: quest_id -> Tag.
+##
+## Die Tagesgrenze gegen den Geldhahn — siehe `QuestManager.heute_schon_abgegeben`. Sie liegt
+## hier und nicht im QuestManager, weil sie in den Spielstand gehoert: Wer speichert, laedt und
+## den Auftrag noch einmal abgibt, haette die Grenze sonst umgangen.
+var quest_tag: Dictionary = {}
 
 ## Wie viele Schlüssel man bei sich trägt.
 ##
@@ -251,6 +267,7 @@ func neu_beginnen() -> void:
 	gekauft_heute = {}
 	quests = {}
 	quest_base = {}
+	quest_tag = {}
 	tracked_quest = ""
 	weapons = []
 	weapon_id = ""
@@ -320,6 +337,9 @@ func add_xp(amount: int) -> void:
 	while level < LEVEL_MAX and xp >= xp_to_next(level):
 		xp -= xp_to_next(level)
 		level += 1
+		# IM Schleifenkörper, nicht danach: Wer zwei Stufen auf einmal macht — beim Abschluss
+		# eines Auftrags nicht selten —, bekommt zwei Punkte und nicht einen.
+		perk_points += PERK_PUNKTE_JE_STUFE
 		leveled = true
 	if leveled:
 		level_up.emit(level)

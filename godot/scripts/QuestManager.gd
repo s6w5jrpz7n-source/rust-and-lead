@@ -142,6 +142,29 @@ func get_quest_state(quest_id: String) -> String:
 func is_faction_quest(quest_id: String) -> bool:
 	return get_definition(quest_id).has("guild")
 
+
+## Wurde dieser wiederholbare Auftrag heute schon abgegeben?
+##
+## ## Warum es diese Bremse gibt
+##
+## Wiederholbare Auftraege waren als Gegenmittel gegen ein stummes Rustwater gedacht: Nach den
+## letzten Kopfgeldern hatte kein NPC mehr etwas zu sagen. Sie schossen aber uebers Ziel hinaus
+## — „ich kann bei Mabel den Auftrag unendlich oft abschliessen". Zehn Gegner am Zugdepot,
+## zweihundert Gold, wieder annehmen: Das ist kein Auftrag mehr, sondern ein Geldhahn, und er
+## entwertet nebenbei jedes Fundstueck, jeden Preis und jede Kaufentscheidung im Spiel.
+##
+## Die Bremse ist der TAG und nicht ein Zaehler. Ein „dreimal und dann nie wieder" waere
+## dasselbe Problem eine Woche spaeter: Rustwater faellt zurueck ins Schweigen. Einmal am Tag
+## bleibt beides erhalten — der Ort hat dauerhaft etwas zu bieten, und niemand steht eine
+## Stunde vor demselben Auftraggeber.
+##
+## Es kostet den Spieler nichts an Zeit: Die Uhr laeuft ohnehin (`DayCycle`), und ein Tag ist
+## in wenigen Minuten Spielzeit herum.
+func heute_schon_abgegeben(quest_id: String) -> bool:
+	if not bool(get_definition(quest_id).get("repeatable", false)):
+		return false
+	return int(GameState.quest_tag.get(quest_id, -1)) == GameState.tag
+
 ## Ist die Fraktion aktuell zugänglich? Vor dem Reveal niemand; danach nur die gewählte.
 func can_access_guild(guild_id: String) -> bool:
 	if not GameState.is_revealed:
@@ -270,6 +293,13 @@ func accept_quest(quest_id: String) -> bool:
 		questline_blocked.emit(quest_id, "chapter_locked")
 		return false
 
+	# (4) Tagesgrenze bei wiederholbaren Auftraegen. Sie steht beim ANNEHMEN und nicht erst beim
+	#     Abgeben: Wer ihn annehmen darf und am Ende hoert „heute nicht mehr", hat umsonst
+	#     gekaempft. Ein gesperrter Auftrag darf gar nicht erst anfangen.
+	if heute_schon_abgegeben(quest_id):
+		questline_blocked.emit(quest_id, "heute_schon")
+		return false
+
 	# Übergang. Bei Kill-Quests den aktuellen Kill-Stand als Basis einfrieren.
 	GameState.quests[quest_id] = STATE_ACTIVE
 	if String(def["kind"]) == "kill":
@@ -326,6 +356,10 @@ func complete_quest(quest_id: String) -> bool:
 	# Fortschritt fängt also wieder bei 0 an statt sofort auf voll zu stehen.
 	var wiederholbar: bool = bool(def.get("repeatable", false))
 	var neuer_zustand: String = STATE_AVAILABLE if wiederholbar else STATE_DONE
+	# Und der Tag wird vermerkt: Wieder verfuegbar heisst „ab morgen", nicht „sofort noch mal".
+	# Ohne diese Zeile ist der Auftrag ein Geldhahn (siehe `heute_schon_abgegeben`).
+	if wiederholbar:
+		GameState.quest_tag[quest_id] = GameState.tag
 	GameState.quests[quest_id] = neuer_zustand
 	GameState.quest_base.erase(quest_id)
 	GameState.quest_state_changed.emit(quest_id, neuer_zustand)
