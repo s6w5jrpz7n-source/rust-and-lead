@@ -6726,6 +6726,9 @@ func _tracer(von: Vector3, nach: Vector3, farbe: Color) -> void:
 ## wenn man ihnen zu nah kommt.
 func _process_enemies(delta: float) -> void:
 	var jetzt: int = Time.get_ticks_msec()
+	# Erst laufen alle, dann werden Ueberlappungen aufgeloest — siehe `_entflechten()` unten.
+	# Umgekehrt (waehrend des Laufens schieben) wuerde jeder Gegner den naechsten in eine Lage
+	# druecken, die dessen eigene Bewegung im selben Bild schon wieder aufhebt.
 	for e in _enemies:
 		var node: Node3D = e["node"]
 		if e.has("marken") and is_instance_valid(e["marken"]):
@@ -6766,6 +6769,36 @@ func _process_enemies(delta: float) -> void:
 				_begin_attack(e)
 			elif not AssetRegistry.play_clip(e["model"], "idle"):
 				AssetRegistry.rest(e["model"])
+	_entflechten()
+
+
+## Gegner, die sich ueberlappen, auseinanderschieben.
+##
+## Sie liefen vorher DURCHEINANDER DURCH: Jeder rechnete nur seinen Weg zum Spieler und pruefte
+## das Gelaende, keiner je den Nachbarn. Bei einem Rudel stand am Ende alles auf demselben
+## Fleck, und aus vier Gegnern wurde optisch einer.
+##
+## Bewusst KEINE Schwarmtrennung mit Umkreis: Die haelt Abstand, und ein Rudel, das sich brav
+## verteilt, sieht aus wie eine Schulklasse beim Aufstellen. Hier wird nur geschoben, was sich
+## wirklich beruehrt — Schulter an Schulter ist erlaubt, ineinander nicht.
+func _entflechten() -> void:
+	if _enemies.size() < 2:
+		return
+	var punkte: Array = []
+	var radien: Array = []
+	for e in _enemies:
+		var n: Node3D = e["node"]
+		punkte.append(Vector2(n.position.x, n.position.z))
+		radien.append(Gedraenge.radius_fuer(String((e["target"] as CombatTarget).type_id)))
+	var neu_pos: Array = Gedraenge.entflechten(punkte, radien)
+	for i in _enemies.size():
+		var p2: Vector2 = neu_pos[i]
+		if p2.is_equal_approx(punkte[i]):
+			continue
+		var n2: Node3D = _enemies[i]["node"]
+		# Die HOEHE kommt aus dem Gelaende, nicht aus der Schiebung: Wer seitlich versetzt wird,
+		# steht sonst in der Luft oder im Hang.
+		n2.position = Vector3(p2.x, WorldManager.height_at(p2.x, p2.y), p2.y)
 
 
 ## Tempo beim Rückwärtsgehen, als Anteil des Vorwärtstempos.

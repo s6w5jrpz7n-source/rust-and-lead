@@ -83,6 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
+	"_test_gedraenge": 14,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
 	"_test_stollen": 33,
@@ -5974,3 +5975,113 @@ func _test_ui_grafiken() -> void:
 	_check("Und solange es fehlt, faellt nichts aus",
 		AssetRegistry.resolve("dungeon_wall") == ""
 		or ResourceLoader.exists(AssetRegistry.resolve("dungeon_wall")))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Gedraenge — Gegner stossen aneinander, halten aber keinen Abstand
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Sie liefen DURCHEINANDER DURCH. Jeder rechnete nur seinen Weg zum Spieler und pruefte das
+# Gelaende, keiner je den Nachbarn — bei einem Rudel stand am Ende alles auf demselben Fleck,
+# und aus vier Gegnern wurde optisch einer. Im Stollen wiegt das schwerer: Ein Gang ist 4 m
+# breit, und drei Klaeffer, die sich durchdringen, kommen als EIN Gegner an.
+#
+# Die uebliche Loesung waere eine Schwarmtrennung mit Umkreis. Die ist hier ausdruecklich NICHT
+# gewollt: Sie haelt Abstand, und ein Rudel, das sich brav auf zwei Meter verteilt, sieht aus
+# wie eine Schulklasse beim Aufstellen. Verlangt war echte Kollision — Schulter an Schulter
+# erlaubt, ineinander nicht.
+func _test_gedraenge() -> void:
+	print("· Gedraenge (echte Kollision, kein Abstandhalten)")
+
+	# ── DIE Zusicherung: Wer sich nicht beruehrt, wird nicht angefasst ───────
+	#
+	# Das ist der Unterschied zwischen Kollision und Schwarmtrennung, und er laesst sich exakt
+	# pruefen: Koerper mit Abstand duerfen sich um KEINEN Millimeter bewegen.
+	var weit: Array = [Vector2(0, 0), Vector2(5, 0), Vector2(0, 5), Vector2(-6, -6)]
+	var r_weit: Array = [0.4, 0.4, 0.4, 0.4]
+	var nachher: Array = Gedraenge.entflechten(weit, r_weit)
+	var verrutscht: Array[String] = []
+	for i in weit.size():
+		if not (nachher[i] as Vector2).is_equal_approx(weit[i]):
+			verrutscht.append("%d um %.3f m" % [i, (nachher[i] as Vector2).distance_to(weit[i])])
+	_check("Wer sich nicht beruehrt, bleibt stehen", verrutscht.is_empty(),
+		", ".join(verrutscht))
+	# Und Schulter an Schulter bleibt Schulter an Schulter: exakt beruehrend ist keine
+	# Ueberlappung.
+	var dicht: Array = [Vector2(0, 0), Vector2(0.8, 0)]
+	var n_dicht: Array = Gedraenge.entflechten(dicht, [0.4, 0.4])
+	_check("Schulter an Schulter wird nicht auseinandergedrueckt",
+		(n_dicht[0] as Vector2).distance_to(n_dicht[1] as Vector2) < 0.85)
+
+	# ── Und wer ineinander steht, wird getrennt ─────────────────────────────
+	var drin: Array = [Vector2(0, 0), Vector2(0.2, 0)]
+	var n_drin: Array = Gedraenge.entflechten(drin, [0.4, 0.4])
+	var d_drin: float = (n_drin[0] as Vector2).distance_to(n_drin[1] as Vector2)
+	_check("Zwei ineinander werden getrennt (%.2f m statt 0.20)" % d_drin, d_drin >= 0.75)
+	# Symmetrisch: Beide weichen zur Haelfte. Schoebe man nur einen, gewaenne immer der, der
+	# zuerst in der Liste steht — und der andere draengelte sich jedes Mal durch.
+	var w0: float = (n_drin[0] as Vector2).distance_to(drin[0])
+	var w1: float = (n_drin[1] as Vector2).distance_to(drin[1])
+	_check("Und zwar beide gleich weit (%.3f / %.3f m)" % [w0, w1], absf(w0 - w1) < 0.01)
+
+	# ── Ein Gedraenge, wie es im Spiel nie vorkommt ──────────────────────────
+	#
+	# Zwoelf Koerper auf einem Fleck. Genau dafuer steht die Rechnung getrennt von der Szene:
+	# Solche Lagen laufen im Spiel selten zusammen, und wenn doch, sieht man das Ergebnis
+	# schlecht — hier laesst es sich nachrechnen.
+	var haufen: Array = []
+	var r_haufen: Array = []
+	for i in 12:
+		haufen.append(Vector2(cos(float(i)) * 0.15, sin(float(i)) * 0.15))
+		r_haufen.append(0.4)
+	var geloest: Array = Gedraenge.entflechten(haufen, r_haufen)
+	var schlimmste: float = 0.0
+	for i in geloest.size():
+		for j in range(i + 1, geloest.size()):
+			var d: float = (geloest[i] as Vector2).distance_to(geloest[j] as Vector2)
+			schlimmste = maxf(schlimmste, 0.8 - d)
+	_check("Zwoelf auf einem Fleck loesen sich weitgehend (Rest %.2f m)" % schlimmste,
+		schlimmste < 0.4, "steckt noch %.2f m ineinander" % schlimmste)
+	# Auch zwei EXAKT uebereinander: Ohne Sonderfall gaebe es keine Richtung zum Schieben, eine
+	# Division durch null, und beide stuenden fuer immer ineinander.
+	var exakt: Array = Gedraenge.entflechten([Vector2.ZERO, Vector2.ZERO], [0.4, 0.4])
+	_check("Auch zwei exakt uebereinander werden getrennt",
+		(exakt[0] as Vector2).distance_to(exakt[1] as Vector2) > 0.5)
+
+	# ── Die Koerpergroesse kommt aus der HOEHE ──────────────────────────────
+	#
+	# Eine eigene Radienliste waere eine zweite Wahrheit ueber dieselbe Sache und beim ersten
+	# neuen Gegner vergessen.
+	var r_ratte: float = Gedraenge.radius_fuer("fauna")
+	var r_konstrukt: float = Gedraenge.radius_fuer("konstrukt")
+	_check("Ein Konstrukt nimmt mehr Platz weg als eine Ratte (%.2f gegen %.2f m)"
+		% [r_konstrukt, r_ratte], r_konstrukt > r_ratte)
+	# Und der Radius ist KNAPP: Verlangt war Kollision, kein Abstand. Ein Grenzgaenger von
+	# 1,6 m bekommt gut 40 cm — ein Rudel steht damit fast Schulter an Schulter.
+	var r_outlaw: float = Gedraenge.radius_fuer("outlaw")
+	_check("Und er ist knapp gehalten (%.2f m fuer einen Grenzgaenger)" % r_outlaw,
+		r_outlaw < 0.55)
+	var zu_klein: Array[String] = []
+	for art in CombatData.ENEMY_TYPES:
+		if Gedraenge.radius_fuer(String(art)) < Gedraenge.RADIUS_MIN - 0.001:
+			zu_klein.append(String(art))
+	_check("Kein Gegner ist koerperlos", zu_klein.is_empty(), ", ".join(zu_klein))
+
+	# ── Beide Szenen benutzen dieselbe Regel ────────────────────────────────
+	var ow_g: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	var dv_g: String = FileAccess.get_file_as_string("res://scripts/DungeonView.gd")
+	_check("Draussen wird entflochten", ow_g.contains("func _entflechten")
+		and ow_g.contains("Gedraenge.entflechten("))
+	_check("Und drinnen auch", dv_g.contains("func _entflechten")
+		and dv_g.contains("Gedraenge.entflechten("))
+	# Drinnen zusaetzlich mit Wandpruefung: Wer geschoben wird, darf nicht in den Fels rutschen.
+	_check("Drinnen schiebt niemand in den Fels",
+		dv_g.contains("if not DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(ziel)):"))
+	# Draussen kommt die Hoehe aus dem Gelaende: Wer seitlich versetzt wird, stuende sonst in
+	# der Luft oder im Hang.
+	_check("Draussen bleibt die Hoehe am Gelaende",
+		ow_g.contains("WorldManager.height_at(p2.x, p2.y)"))
+	# Und geschoben wird NACH dem Laufen, nicht waehrenddessen — sonst hebt die eigene Bewegung
+	# des naechsten Gegners den Schub im selben Bild wieder auf.
+	_check("Geschoben wird nach dem Laufen",
+		ow_g.find("_entflechten()") > ow_g.find("func _process_enemies"))

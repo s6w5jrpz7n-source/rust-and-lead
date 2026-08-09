@@ -655,6 +655,7 @@ func _kampf(delta: float) -> void:
 				if _hp <= 0.0:
 					_ohnmacht()
 					return
+	_entflechten()
 	_feuer_bereit -= delta
 	if _feuern_gedrueckt() and _feuer_bereit <= 0.0:
 		_schiessen(jetzt)
@@ -978,3 +979,35 @@ static func _netz_von(name: String) -> Mesh:
 		offen.append_array(n.get_children())
 	wurzel.queue_free()
 	return gefunden
+
+
+## Gegner, die sich überlappen, auseinanderschieben — dieselbe Regel wie draußen.
+##
+## Drinnen wiegt es schwerer: Ein Gang ist 4 m breit, und drei Kläffer, die sich durchdringen,
+## kommen als **ein** Gegner an. Man schießt auf einen Klumpen und weiß nicht, wie viele darin
+## stecken.
+##
+## Der Unterschied zur Oberwelt ist die Wand: Wer geschoben wird, darf nicht in den Fels
+## rutschen. Landet die Korrektur auf einem nicht begehbaren Feld, bleibt der Körper stehen —
+## lieber eine Überlappung als ein Gegner im Gestein.
+func _entflechten() -> void:
+	if _gegner.size() < 2:
+		return
+	var punkte: Array = []
+	var radien: Array = []
+	for e in _gegner:
+		var n: Node3D = e["node"]
+		punkte.append(Vector2(n.position.x, n.position.z))
+		var t: CombatTarget = e["target"]
+		var r: float = Gedraenge.radius_fuer(String(t.type_id))
+		# Der Endgegner ist groesser gebaut als sein Typ — er braucht auch mehr Platz.
+		radien.append(r * (1.6 if t.is_elite else (CombatData.ANFUEHRER_GROESSE_MUL if t.is_leader else 1.0)))
+	var neu_pos: Array = Gedraenge.entflechten(punkte, radien)
+	for i in _gegner.size():
+		var p2: Vector2 = neu_pos[i]
+		if p2.is_equal_approx(punkte[i]):
+			continue
+		var ziel := Vector3(p2.x, 0.0, p2.y)
+		if not DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(ziel)):
+			continue
+		(_gegner[i]["node"] as Node3D).position = ziel
