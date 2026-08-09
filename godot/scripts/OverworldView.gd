@@ -106,6 +106,18 @@ const TOWN_NPCS: Array = [
 	["mabel", "Mamma „Rusty“ Mabel", Vector2(-5.0, 3.0), Color(0.85, 0.45, 0.35)],
 	["silas", "Silas „Kupferauge“ Finch", Vector2(5.0, 3.0), Color(0.55, 0.50, 0.40)],
 	["doc", "Doktor „Doc“ Aris", Vector2(5.5, 15.0), Color(0.88, 0.88, 0.90)],
+	# ── Der Waffenhaendler ────────────────────────────────────────────────────
+	#
+	# PLATZHALTER. `npc_wanda.glb` gibt es noch nicht; solange steht hier die Kapsel, die
+	# `_build_town_npcs` fuer jede fehlende Figur setzt — dieselbe Notloesung, mit der Mabel,
+	# Silas und der Doc angefangen haben. Der Eintrag ist trotzdem vollstaendig: Name,
+	# Standort, Farbe. Faellt die Datei irgendwann in den Ordner, steht sie da, ohne dass
+	# hier eine Zeile geaendert werden muss.
+	#
+	# Sie steht der Schmiede gegenueber, nicht daneben: Silas repariert, was man hat — sie
+	# verkauft, was man noch nicht hat. Die beiden gehoeren nebeneinander und nicht
+	# durcheinander.
+	["wanda", "Wanda Kessler, Waffenhandel", Vector2(-6.0, 15.0), Color(0.62, 0.42, 0.30)],
 ]
 ## Material-Drops beim Kill — ohne sie ist die Sammel-Quest „Baumaterial: Schrott" unlösbar.
 const DROP_TABLE: Array = [["schrott", 0.65], ["zahnrad", 0.22], ["dampfkern", 0.05]]

@@ -83,6 +83,12 @@ STIMMEN = {
     "quentin": {"azure": "de-DE-RalfNeural",
                 "name": "Quentin",
                 "hint": "gemessen, trocken"},
+    # Geraten, nicht gehoert -- die einzige Stimme hier, die noch keiner beurteilt hat.
+    # Tanja ist kerniger als Katja; passt sie nicht, steht der Vergleich in
+    # docs/stimmprobe bereit.
+    "wanda":   {"azure": "de-DE-TanjaNeural",
+                "name": "Wanda Kessler",
+                "hint": "trocken, geschäftsmäßig, redet schnell"},
     "slick":   {"azure": "de-DE-ConradNeural",
                 "name": "Slick",
                 "hint": "glatt, zu freundlich"},

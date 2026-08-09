@@ -399,6 +399,17 @@ func _stat_sheet() -> String:
 
 func _describe(g: Dictionary) -> String:
 	var out: String = "%s  (+%d %s)" % [String(g["name"]), int(g["stat"]["val"]), String(g["stat"]["key"])]
+	# Die Stufenanforderung — und zwar NUR, wenn sie eine ist.
+	#
+	# Bei jedem gewoehnlichen Teil steht dort 1, und "ab Stufe 1" auf der Haelfte aller Zeilen
+	# ist Rauschen, das man nach dem dritten Mal nicht mehr liest. Sichtbar wird sie erst, wo
+	# sie etwas bedeutet: bei allem oberhalb der eigenen Stufe steht sie als Sperre da, sonst
+	# als blosse Angabe.
+	var noetig: int = EquipManager.stufe_fuer(g)
+	if not EquipManager.darf_tragen(g):
+		out += "   ⊘ ab Stufe %d" % noetig
+	elif noetig > 1:
+		out += "   ab Stufe %d" % noetig
 	var extra: Array = g.get("affixes", [])
 	if not extra.is_empty():
 		var parts: Array = []

@@ -32,6 +32,11 @@
    "name": "Quentin",
    "hint": "gemessen, trocken"
   },
+  "wanda": {
+   "azure": "de-DE-TanjaNeural",
+   "name": "Wanda Kessler",
+   "hint": "trocken, geschäftsmäßig, redet schnell"
+  },
   "slick": {
    "azure": "de-DE-ConradNeural",
    "name": "Slick",
@@ -983,6 +988,51 @@
     "DialogData.doc.idle_enthuellt"
    ],
    "regie": "leise"
+  },
+  {
+   "id": "6b65edc6cb85",
+   "rolle": "wanda",
+   "text": "„Du trägst das Ding wie einen Spaten. Kann man ändern.“",
+   "quellen": [
+    "DialogData.wanda.erst"
+   ],
+   "regie": "trocken"
+  },
+  {
+   "id": "7926ae031e2a",
+   "rolle": "wanda",
+   "text": "„Wanda. Ich verkaufe Läufe, keine Ratschläge — die gibt's gratis dazu.“",
+   "quellen": [
+    "DialogData.wanda.erst"
+   ],
+   "regie": "schnell"
+  },
+  {
+   "id": "c3a54091b736",
+   "rolle": "wanda",
+   "text": "„Was bei mir liegt, hat schon mal jemanden überlebt. Meistens den Vorbesitzer.“",
+   "quellen": [
+    "DialogData.wanda.erst"
+   ],
+   "regie": "trocken"
+  },
+  {
+   "id": "fdbdbbf926e7",
+   "rolle": "wanda",
+   "text": "„Sieh dich um. Und fass nichts an, was noch geladen ist.“",
+   "quellen": [
+    "DialogData.wanda.idle"
+   ],
+   "regie": "ruhig"
+  },
+  {
+   "id": "6c61bcc53d43",
+   "rolle": "wanda",
+   "text": "„Ein Ding, das Waffen kauft. Na und? Dein Gold ist aus demselben Metall wie meins.“",
+   "quellen": [
+    "DialogData.wanda.idle_enthuellt"
+   ],
+   "regie": "trocken"
   }
  ]
 }

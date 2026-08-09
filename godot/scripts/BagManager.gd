@@ -101,6 +101,10 @@ static func equip_from_bag(index: int) -> bool:
 	var slot: String = String(gear.get("slot", ""))
 	if not EquipManager.slot_accepts(slot, gear):
 		return false
+	# Stufe zu niedrig? Dann gar nicht erst anfangen. Weiter unten wird das Teil aus dem Beutel
+	# GENOMMEN, bevor angelegt wird — scheitert das Anlegen dort, liegt es nirgendwo mehr.
+	if not EquipManager.darf_tragen(gear):
+		return false
 	var old: Dictionary = EquipManager.equipped(slot)
 	GameState.bag.remove_at(index)
 	if not old.is_empty() and not add(old):

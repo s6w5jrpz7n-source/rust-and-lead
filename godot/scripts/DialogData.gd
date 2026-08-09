@@ -200,6 +200,25 @@ const LINES: Dictionary = {
 			"„Ein Jammer. Du wärst ein guter Patient gewesen.“",   # leise
 		],
 	},
+
+	# ── Wanda Kessler, Waffenhandel ───────────────────────────────────────────
+	#
+	# Sie verkauft, was Silas nur repariert. Der Ton ist Gegengewicht zu ihm: Er redet wenig
+	# und meint es; sie redet gern und meint das Geschaeft. Beides ist ehrlich, nur auf
+	# verschiedene Art.
+	"wanda": {
+		"erst": [
+			"„Du trägst das Ding wie einen Spaten. Kann man ändern.“",   # trocken
+			"„Wanda. Ich verkaufe Läufe, keine Ratschläge — die gibt's gratis dazu.“",   # schnell
+			"„Was bei mir liegt, hat schon mal jemanden überlebt. Meistens den Vorbesitzer.“",   # trocken
+		],
+		"idle": [
+			"„Sieh dich um. Und fass nichts an, was noch geladen ist.“",   # ruhig
+		],
+		"idle_enthuellt": [
+			"„Ein Ding, das Waffen kauft. Na und? Dein Gold ist aus demselben Metall wie meins.“",   # trocken
+		],
+	},
 }
 
 

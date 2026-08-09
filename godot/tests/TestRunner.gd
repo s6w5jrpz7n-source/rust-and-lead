@@ -87,6 +87,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_kraterrand": 8,
 	"_test_kraterrand_kamm": 6,
 	"_test_stimmen": 13,
+	"_test_stufenanforderung": 8,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -100,6 +101,17 @@ func _ready() -> void:
 	print("──────────────────────────────────────────────")
 	print("  Rust & Lead — Backend Test-Suite")
 	print("──────────────────────────────────────────────")
+	# Die Suite laeuft auf einer hohen Stufe.
+	#
+	# Nicht aus Bequemlichkeit: Seit Ausruestung eine Stufe VERLANGT, scheiterten zwanzig
+	# Pruefungen, die mit episch und legendaer hantieren — Set-Boni, Werte-Summen,
+	# Beutel-Tausch. Keine davon handelt von Stufen; sie hatten sich nur nie darum kuemmern
+	# muessen, weil es die Regel nicht gab. Ihnen jetzt einzeln ein `GameState.level` zu
+	# verpassen, hiesse zwanzig Stellen zu aendern, an denen es nichts zur Sache tut.
+	#
+	# Die Sperre selbst hat ihren eigenen Test (`_test_stufenanforderung`), und der setzt die
+	# Stufe ausdruecklich hoch und runter.
+	GameState.level = 30
 	# Gemessen wird pro Funktion, damit ein Abbruch nicht in der Gesamtzahl untergeht.
 	var zu_klein: Array[String] = []
 	var gemessen: Dictionary = {}
@@ -750,6 +762,7 @@ func _test_save_manager() -> void:
 func _test_equip_manager() -> void:
 	print("· EquipManager (Loadout & Sets §7.4.4)")
 	_reset_state()
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	GameState.equip = {}
 	GameState.bag = []
 	GameState.ammo = AmmoData.fresh()
@@ -777,6 +790,7 @@ func _test_equip_manager() -> void:
 
 	# Stat-Aggregation über angelegte Teile.
 	_reset_state(); GameState.equip = {}
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	var a1: Dictionary = ProgressionManager.make_gear("armor", "epic", "", rng)
 	var h1: Dictionary = ProgressionManager.make_gear("helmet", "epic", "", rng)
 	EquipManager.equip_item(a1, "armor")
@@ -786,6 +800,7 @@ func _test_equip_manager() -> void:
 
 	# ── Legendäre Sets ──
 	_reset_state(); GameState.equip = {}
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	# Direktorat (2-teilig): Wachsherz-Kürass (vaneward) + Golem-Faust (overcharge).
 	var vane: Dictionary = ProgressionManager.make_gear("armor", "legendary", "vaneward", rng)
 	var golem: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "overcharge", rng)
@@ -798,6 +813,7 @@ func _test_equip_manager() -> void:
 
 	# Grenzland (3-teilig): gestufte Boni (2 -> Krit-Stat, 3 -> critchain).
 	_reset_state(); GameState.equip = {}
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	var trommel: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "spread11", rng)
 	var sohlen: Dictionary = ProgressionManager.make_gear("boots", "legendary", "plunder", rng)
 	var visier: Dictionary = ProgressionManager.make_gear("helmet", "legendary", "critbase", rng)
@@ -843,6 +859,7 @@ func _test_player_stats() -> void:
 
 	# Werkstatt-Upgrade + Ausrüstung + Legendär-Kraft (overcharge x1.18).
 	_reset_state(); GameState.equip = {}
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	GameState.upgrades["damage"] = 2   # +12
 	var rng := RandomNumberGenerator.new(); rng.seed = 3
 	var wpn: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "overcharge", rng)
@@ -853,6 +870,7 @@ func _test_player_stats() -> void:
 
 	# Set-Integration: Direktorat verleiht cap_grit -> max_hp x1.2 & Schaden-genommen x0.8.
 	_reset_state(); GameState.equip = {}
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	var hp_base: int = PlayerStats.max_hp()   # 100
 	var vane: Dictionary = ProgressionManager.make_gear("armor", "legendary", "vaneward", rng)
 	var golem: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "overcharge", rng)
@@ -867,6 +885,7 @@ func _test_player_stats() -> void:
 
 	# Beute & Spread über Legendaries + NG+.
 	_reset_state(); GameState.equip = {}
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	GameState.ng_plus = 2   # +0.70
 	var sohlen: Dictionary = ProgressionManager.make_gear("boots", "legendary", "plunder", rng)
 	var trommel: Dictionary = ProgressionManager.make_gear("weapon", "legendary", "spread11", rng)
@@ -4176,6 +4195,7 @@ func _test_reload() -> void:
 func _test_bag() -> void:
 	print("· Beutel (Grid-Kapazitaet)")
 	_reset_state()
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	var ruestung: Dictionary = ProgressionManager.make_gear("armor", "common")
 	var helm: Dictionary = ProgressionManager.make_gear("helmet", "common")
 	_check("Ruestung belegt 2x2", BagManager.footprint(ruestung) == Vector2i(2, 2))
@@ -4188,6 +4208,7 @@ func _test_bag() -> void:
 
 	# Anlegen aus dem Beutel: Das getragene Teil muss ZURUECK in den Beutel, nicht verschwinden.
 	_reset_state()
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	var alt: Dictionary = ProgressionManager.make_gear("armor", "common")
 	var neu_teil: Dictionary = ProgressionManager.make_gear("armor", "epic")
 	EquipManager.equip_item(alt, "armor")
@@ -4203,6 +4224,7 @@ func _test_bag() -> void:
 
 	# Voller Beutel darf nichts verschlucken.
 	_reset_state()
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	var passt: int = 0
 	for i in 60:
 		if BagManager.add(ProgressionManager.make_gear("armor", "common")):
@@ -4222,6 +4244,7 @@ func _test_bag() -> void:
 
 	# Verschrotten macht Platz und bringt Schrott.
 	_reset_state()
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 	BagManager.add(ProgressionManager.make_gear("armor", "legendary"))
 	var vorher: int = GameState.item_count("schrott")
 	var ertrag: int = BagManager.scrap_at(0)
@@ -4246,6 +4269,7 @@ func _test_bag() -> void:
 
 
 	_reset_state()
+	GameState.level = 30   # Ausruestung verlangt eine Stufe; hier geht es nicht darum
 
 
 ## Werkstatt & Wirtschaft: die Gold-Senke.
@@ -6657,3 +6681,66 @@ func _test_stimmen() -> void:
 		if Stimme.kennung(String(z)).length() != 12:
 			fehlt.append(String(z))
 	_check("Jede Erwachen-Zeile bekommt eine Kennung", fehlt.is_empty())
+
+
+## Die Stufenanforderung von Ausruestung.
+##
+## Sie stand seit jeher auf jedem Fundstueck — `req`, abgeleitet aus der Seltenheit — und hat
+## nie etwas bewirkt. Ein Held auf Stufe 1 konnte eine legendaere Waffe anlegen, sobald sie ihm
+## vor die Fuesse fiel. Damit war die ganze Stufenkurve Dekoration: Was Aufsteigen bringen soll,
+## bringt es nur, wenn vorher etwas NICHT ging.
+##
+## Der Test prueft beides — dass die Sperre greift, und dass man sie nicht umgehen kann. Das
+## Zweite ist das Wichtigere: Eine Regel, die nur im Charakterschirm steht, gilt fuer den
+## Beutel nicht, und ueber den Beutel legt man an.
+func _test_stufenanforderung() -> void:
+	print("· Ausruestung verlangt eine Stufe")
+
+	var vorher: int = GameState.level
+	var bag_vorher: Array = GameState.bag.duplicate(true)
+	var equip_vorher: Dictionary = GameState.equip.duplicate(true)
+
+	# Die Zahlen kommen aus der Seltenheit und muessen aufsteigen — sonst ist "seltener" keine
+	# Belohnung fuers Aufsteigen, sondern nur eine andere Farbe.
+	var letzte: int = 0
+	var steigend: bool = true
+	for r in ProgressionManager.RARITY_ORDER:
+		var n: int = int(ProgressionManager.RARITY[r]["req"])
+		if n < letzte:
+			steigend = false
+		letzte = n
+	_check("Die Anforderung steigt mit der Seltenheit (1/3/7/11)", steigend and letzte > 1)
+
+	GameState.level = 1
+	var legendaer: Dictionary = ProgressionManager.make_gear("weapon", "legendary")
+	var gewoehnlich: Dictionary = ProgressionManager.make_gear("weapon", "common")
+	_check("Stufe 1 darf Gewoehnliches tragen", EquipManager.darf_tragen(gewoehnlich))
+	_check("Stufe 1 darf Legendaeres NICHT tragen (braucht %d)"
+		% EquipManager.stufe_fuer(legendaer), not EquipManager.darf_tragen(legendaer))
+
+	# Und die Sperre wirkt auch da, wo wirklich angelegt wird.
+	GameState.equip = {}
+	_check("Anlegen scheitert", not EquipManager.equip_item(legendaer, "weapon"))
+	_check("Und es ist auch nichts angelegt worden",
+		EquipManager.equipped("weapon").is_empty())
+
+	# Der Weg, ueber den man im Spiel tatsaechlich anlegt: aus dem Beutel. Hier steckte die
+	# gefaehrlichere Luecke — `equip_from_bag` NIMMT das Teil erst aus dem Beutel und legt es
+	# dann an. Scheitert das Anlegen an dieser Stelle, liegt das Teil nirgendwo mehr.
+	GameState.bag = []
+	GameState.equip = {}
+	BagManager.add(legendaer)
+	var vor_beutel: int = GameState.bag.size()
+	_check("Aus dem Beutel anlegen scheitert ebenfalls",
+		not BagManager.equip_from_bag(0))
+	_check("Und das Teil liegt noch im Beutel (%d von %d)"
+		% [GameState.bag.size(), vor_beutel], GameState.bag.size() == vor_beutel)
+
+	# Eine Stufe hoeher darf man es dann.
+	GameState.level = EquipManager.stufe_fuer(legendaer)
+	_check("Auf Stufe %d geht es" % GameState.level,
+		EquipManager.darf_tragen(legendaer) and BagManager.equip_from_bag(0))
+
+	GameState.level = vorher
+	GameState.bag = bag_vorher
+	GameState.equip = equip_vorher

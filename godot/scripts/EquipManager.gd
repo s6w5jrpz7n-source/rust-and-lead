@@ -53,8 +53,30 @@ static func is_equipped(slot: String) -> bool:
 	return not equipped(slot).is_empty()
 
 ## Legt ein Teil in einen Slot (muss passen). Gibt Erfolg zurück; ersetzt vorhandenes still.
+## Ab welcher Stufe man dieses Teil tragen darf.
+##
+## Die Zahl steht seit jeher auf jedem Fundstueck (`req`, aus der Seltenheit: Gewoehnlich 1,
+## Selten 3, Episch 7, Legendaer 11) — nur hat sie nie jemand gelesen. Ein Held auf Stufe 1
+## konnte eine legendaere Waffe anlegen, sobald sie ihm vor die Fuesse fiel, und die ganze
+## Stufenkurve war damit Dekoration: Was Aufsteigen bringen soll, bringt es nur, wenn vorher
+## etwas nicht ging.
+static func stufe_fuer(gear: Dictionary) -> int:
+	return int(gear.get("req", 1))
+
+
+static func darf_tragen(gear: Dictionary) -> bool:
+	return GameState.level >= stufe_fuer(gear)
+
+
+## Anlegen.
+##
+## Die Stufenpruefung steht HIER und nicht in der Oberflaeche: `equip_from_bag`, der
+## Charakterschirm, die Startausruestung und jeder kuenftige Haendler laufen alle hier durch.
+## Eine Regel, die in der Oberflaeche steht, gilt nur fuer den Weg, an den jemand gedacht hat.
 static func equip_item(gear: Dictionary, slot: String) -> bool:
 	if not slot_accepts(slot, gear):
+		return false
+	if not darf_tragen(gear):
 		return false
 	GameState.equip[slot] = gear
 	return true
