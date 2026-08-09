@@ -5037,6 +5037,11 @@ func _spawn_pack() -> void:
 	# Der erste Kontakt steht direkt VOR dem Südtor — Rustwater ist befriedet (TOWN_SAFE_M),
 	# drinnen spawnt nichts, also gehört das Empfangskomitee dorthin, wo man beim Verlassen
 	# der Stadt hinschaut. Danach übernimmt der kontinuierliche Spawner.
+	# Auch das Empfangskomitee wartet, bis die Erstbegegnung gelaufen ist. Es steht zwar am
+	# Suedtor und nicht in der Grube — aber wer im Prolog dorthin laeuft, traefe sonst ein
+	# ganzes Rudel, bevor er den ersten Gegner ueberhaupt gesehen hat.
+	if stille_vor_dem_ersten(GameState.erst_gegner_done, GameState.prolog_done):
+		return
 	var gate: Vector3 = WorldManager.poi_scene_position("rustwater") + Vector3(0.0, 0.0, TOWN_SAFE_M + 12.0)
 	for i in 4:
 		var type_id: String = "klaeffer" if i == 3 else "outlaw"
@@ -5075,7 +5080,30 @@ func _spawn_swarm(type_id: String, center: Vector3) -> void:
 ## Spawnt in Lauf-Distanz um den Spieler herum, aber nie in einem noch gesperrten Sektor
 ## (Gates sind aus GameState/WorldManager abgeleitet — sobald die Kampagne hier andockt,
 ## respektiert der Nachschub automatisch Kapitel-/Tor-Fortschritt).
+## Ist die Welt noch LEER, weil der erste Gegner noch nicht gezeigt wurde?
+##
+## Der Prolog erzaehlt eine bestimmte Sache: Der Held erwacht allein in einer Grube, findet ein
+## Gewehr, steigt heraus — und DANN steht zum ersten Mal etwas vor ihm, das hier herumlaeuft.
+## Er soll es ansehen koennen, sich wundern, was das ist. Das ist der ganze Sinn der Szene.
+##
+## Genau das war kaputt: Der Dauer-Nachschub lief von der ersten Sekunde an weiter und setzte
+## alle vier Sekunden irgendetwas im Umkreis von 18 bis 45 Metern ab — also mitten in die
+## Grube. Wer erwachte, stand in einem belebten Krater, und die grosse Erstbegegnung war der
+## siebte Gegner, den man sah.
+##
+## Rein gerechnet und ohne Szenenzugriff, damit der Test die Wahrheitstafel durchgehen kann.
+static func stille_vor_dem_ersten(erst_gegner_done: bool, prolog_done: bool) -> bool:
+	# Nach dem Prolog gilt die Regel nicht mehr — wer eine zweite Runde spielt, will eine
+	# bevoelkerte Welt und nicht wieder eine leere.
+	if prolog_done:
+		return false
+	# Und sobald die Erstbegegnung gelaufen ist, darf nachrücken: Sie hat ihren Zweck erfuellt.
+	return not erst_gegner_done
+
+
 func _process_spawns(delta: float) -> void:
+	if stille_vor_dem_ersten(GameState.erst_gegner_done, GameState.prolog_done):
+		return
 	_spawn_cd -= delta
 	if _spawn_cd > 0.0 or _enemies.size() >= ENEMY_MAX:
 		return
@@ -7683,6 +7711,10 @@ func _maybe_erst_gegner() -> void:
 func _erst_starten() -> void:
 	_erst_phase = 1
 	GameState.erst_gegner_done = true
+	# Ab jetzt darf die Welt sich fuellen. Das Empfangskomitee am Suedtor wurde beim Aufbau
+	# uebersprungen (die Grube sollte leer sein) — ohne diesen Nachzug bliebe Rustwater fuer
+	# den Rest der Runde unbewacht, und die erste Stadt waere ein Spaziergang.
+	_spawn_pack()
 	var blick: Vector3 = -_player.global_transform.basis.z
 	blick.y = 0.0
 	if blick.length() < 0.1:

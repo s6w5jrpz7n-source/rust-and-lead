@@ -83,6 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
+	"_test_stille_grube": 6,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -6146,3 +6147,62 @@ func _test_gedraenge() -> void:
 	_check("Der Spieler ist schlanker als ein Grenzgaenger (%.2f gegen %.2f m)"
 		% [Gedraenge.SPIELER_R, Gedraenge.radius_fuer("outlaw")],
 		Gedraenge.SPIELER_R < Gedraenge.radius_fuer("outlaw"))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Die Grube ist leer, bis der erste Gegner kommt
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Der Prolog erzaehlt eine bestimmte Sache: Der Held erwacht ALLEIN in einer Grube, findet ein
+# Gewehr, steigt heraus — und dann steht zum ersten Mal etwas vor ihm, das hier herumlaeuft. Er
+# soll es ansehen koennen und sich wundern, was das ist. Dafuer gibt es eine eigene Szene.
+#
+# Genau das war kaputt: Der Dauer-Nachschub lief von der ersten Sekunde an weiter und setzte
+# alle vier Sekunden irgendetwas im Umkreis von 18 bis 45 Metern ab — also mitten in die Grube.
+# Wer erwachte, stand in einem belebten Krater, und die grosse Erstbegegnung war der siebte
+# Gegner, den man sah. Die Szene selbst war die ganze Zeit richtig gebaut; sie kam nur zu spaet.
+func _test_stille_grube() -> void:
+	print("· Die Grube ist leer, bis der erste Gegner kommt")
+
+	var OWS = load("res://scripts/OverworldView.gd")
+	# Die Wahrheitstafel. Vier Faelle, und jeder einzelne hat einen Grund.
+	_check("Beim Erwachen ist es still",
+		OWS.stille_vor_dem_ersten(false, false))
+	# Sobald die Erstbegegnung gelaufen ist, darf nachruecken — sie hat ihren Zweck erfuellt.
+	_check("Nach der Erstbegegnung ruecken sie nach",
+		not OWS.stille_vor_dem_ersten(true, false))
+	# Und nach dem Prolog gilt die Regel gar nicht mehr: Wer eine zweite Runde spielt, will eine
+	# bevoelkerte Welt und nicht wieder eine leere.
+	_check("In einer spaeteren Runde gilt die Regel nicht",
+		not OWS.stille_vor_dem_ersten(false, true)
+		and not OWS.stille_vor_dem_ersten(true, true))
+
+	# Und BEIDE Quellen fragen danach. Der Dauer-Nachschub war die laute; das Empfangskomitee am
+	# Suedtor steht zwar weit weg, aber wer im Prolog dorthin laeuft, traefe sonst ein ganzes
+	# Rudel, bevor er den ersten Gegner ueberhaupt gesehen hat.
+	var ow_s: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	var zeilen: PackedStringArray = ow_s.split("\n")
+	var quellen: Dictionary = { "_process_spawns": false, "_spawn_pack": false }
+	var funktion: String = ""
+	for z in zeilen:
+		if z.begins_with("func "):
+			funktion = z.substr(5).split("(")[0]
+		if _ohne_kommentar(z, false).contains("stille_vor_dem_ersten(GameState.erst_gegner_done"):
+			if quellen.has(funktion):
+				quellen[funktion] = true
+	var stumm: Array[String] = []
+	for f in quellen:
+		if not bool(quellen[f]):
+			stumm.append(String(f))
+	_check("Beide Spawn-Quellen halten im Prolog still", stumm.is_empty(),
+		"fragt nicht: " + ", ".join(stumm))
+
+	# Aber die Welt bleibt nicht leer: Nach der Erstbegegnung wird das uebersprungene Rudel
+	# nachgeholt. Ohne diesen Nachzug waere Rustwater fuer den Rest der Runde unbewacht, und die
+	# erste Stadt ein Spaziergang.
+	_check("Nach der Erstbegegnung wird das Rudel nachgeholt",
+		ow_s.contains("GameState.erst_gegner_done = true")
+		and ow_s.find("_spawn_pack()", ow_s.find("func _erst_starten")) > 0)
+	# Der Gegner der Szene selbst bleibt natuerlich — er IST die Erstbegegnung.
+	_check("Der erste Gegner selbst kommt trotzdem",
+		ow_s.contains('_erst_gegner = _make_enemy("konstrukt")'))
