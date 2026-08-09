@@ -52,9 +52,14 @@ OUT = HERE / "spiel_stimmen.json"
 # Rolle -> Azure-Stimme. Vier davon kommen aus dem Hoerspiel-Mapping und
 # bleiben dieselben, damit eine Figur in beiden Fassungen gleich klingt.
 STIMMEN = {
-    "held":    {"azure": "de-DE-FlorianMultilingualNeural",
+    # Ausgesucht nach Gehoer aus `--faecher`, nicht nach Beschreibung. Christoph
+    # kann keine Sprechstile — das kostet weniger, als es klingt: Von den 40
+    # Zeilen des Helden haetten nur rund zwoelf einen bekommen, weil "trocken",
+    # "ruhig" und "langsam" in Azure gar keine Entsprechung haben. Die STIMME
+    # hoert man auf allen vierzig.
+    "held":    {"azure": "de-DE-ChristophNeural",
                 "name": "Der Namenlose",
-                "hint": "Bariton, heiser, nie theatralisch"},
+                "hint": "trocken, nie theatralisch"},
     "mabel":   {"azure": "de-DE-KatjaNeural",
                 "name": "Mamma „Rusty“ Mabel",
                 "hint": "Frau ~50, rau, warm, Whiskey-tief"},
@@ -64,7 +69,8 @@ STIMMEN = {
     "gideon":  {"azure": "de-DE-KillianNeural",
                 "name": "Gideon Cross",
                 "hint": "hart, direkt, keine Höflichkeit"},
-    "doc":     {"azure": "de-DE-ChristophNeural",
+    # Christoph ist an den Helden gegangen; der Doc bekommt Ralf.
+    "doc":     {"azure": "de-DE-RalfNeural",
                 "name": "Doc Aris",
                 "hint": "hager, präzise, nervös wenn er lügt"},
     "quentin": {"azure": "de-DE-ConradNeural",

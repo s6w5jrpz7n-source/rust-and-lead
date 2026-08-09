@@ -3,9 +3,9 @@
  "hinweis": "Erzeugt von docs/build_spiel_stimmen.py. Nicht von Hand aendern — die Wahrheit steht im Quelltext.",
  "voices": {
   "held": {
-   "azure": "de-DE-FlorianMultilingualNeural",
+   "azure": "de-DE-ChristophNeural",
    "name": "Der Namenlose",
-   "hint": "Bariton, heiser, nie theatralisch"
+   "hint": "trocken, nie theatralisch"
   },
   "mabel": {
    "azure": "de-DE-KatjaNeural",
@@ -23,7 +23,7 @@
    "hint": "hart, direkt, keine Höflichkeit"
   },
   "doc": {
-   "azure": "de-DE-ChristophNeural",
+   "azure": "de-DE-RalfNeural",
    "name": "Doc Aris",
    "hint": "hager, präzise, nervös wenn er lügt"
   },
