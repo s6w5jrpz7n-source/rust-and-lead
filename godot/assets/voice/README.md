@@ -20,7 +20,9 @@ und schweigt. Wer gerade 107 Dateien gerendert hat und nichts hört, sucht den
 Fehler überall, nur nicht im Import. Ein Öffnen des Projekts im Godot-Editor
 tut dasselbe.
 
-Beides gehört ins Repository, die `.mp3` **und** die `.mp3.import`.
+Ins Repository gehört nur die `.mp3`. Die `.mp3.import` steht in `.gitignore`
+und wird von Godot beim ersten Öffnen neu erzeugt — so wie bei jedem anderen
+Asset hier.
 
 Die Testsuite passt auf: Sobald hier Dateien liegen, besteht sie darauf, dass
 das Spiel sie auch findet und dass sie eine Länge liefern.

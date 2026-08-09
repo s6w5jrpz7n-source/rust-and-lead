@@ -174,8 +174,11 @@ muss eine `.mp3.import` liegen. Fehlt sie, verhält sich das Spiel exakt wie im
 unvertonten Zustand — es zeigt den Text und schweigt. Wer gerade 107 Dateien
 gerendert hat und nichts hört, sucht den Fehler überall, nur nicht im Import.
 
-Das Projekt einmal im Godot-Editor zu öffnen tut dasselbe. Beides gehört
-danach ins Repository, die `.mp3` **und** die `.mp3.import`.
+Das Projekt einmal im Godot-Editor zu öffnen tut dasselbe.
+
+Ins Repository gehört nur die **`.mp3`**. Die `.mp3.import` steht in
+`.gitignore` — Godot erzeugt sie beim ersten Öffnen neu, genau wie bei jedem
+anderen Asset im Projekt.
 
 Danach spricht das Spiel. Es findet die Dateien über den Zeilentext selbst.
 
