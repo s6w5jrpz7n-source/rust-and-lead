@@ -96,7 +96,9 @@ rust-and-lead/
 ├── index.html               # Single-File Web-Prototyp (Phaser.js)
 ├── docs/
 │   ├── MASTER_GDD.md         # Game Design Document (Systeme, Balancing, Spezifikation)
-│   └── STORY_BIBLE.md        # Story-Bibel (Haupt- & Nebenstories, alle Dialoge)
+│   ├── STORY_BIBLE.md        # Story-Bibel (Haupt- & Nebenstories, alle Dialoge)
+│   ├── ANDROID_EXPORT.md     # APK bauen und aufs Telefon bringen — Klick für Klick
+│   └── AZURE_EINRICHTEN.md   # Sprachausgabe rendern — Klick für Klick
 ├── godot/                    # Phase-2-Produktion (Godot 4)
 ├── .gitignore
 └── README.md
