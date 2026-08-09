@@ -280,3 +280,40 @@ man hat in dem Moment zwei Schlüssel in der Tasche.
 
 Sein Schimmer ist **glühendes Rot**, nicht das Violett der Anführer. Wer den Unterschied nicht
 sieht, hält ihn für den vierten Anführer und läuft mit halbem Leben hinein.
+
+---
+
+## Die vollständige Liste — was an 3D-Modellen wirklich noch fehlt
+
+Aus der Registry gezogen, nicht aus dem Gedächtnis: **69 Modelle liegen im Projekt, neun
+fehlen.** Alle neun haben inzwischen einen Registry-Eintrag samt Zielhöhe, das heißt: Datei
+ablegen genügt, sie greift von selbst.
+
+| Registry-Name | Datei | Höhe | wofür |
+|---|---|---|---|
+| `horse` | `characters/horse.glb` | 1,55 m | **Das Pferd.** Reiten ist gebaut — dreifaches Tempo, kein Schuss aus dem Sattel — und läuft auf einem Kasten. |
+| `enemy_klaeffer` | `enemies/klaeffer.glb` | 0,80 m | Kessel-Kläffer. Stellt auf Stollen-Ebene 2 die halbe Besatzung. |
+| `enemy_goliath` | `enemies/goliath.glb` | 4,00 m | Schwerer Ernter, der erste richtige Boss. |
+| `companion_dog` | `characters/bolzen.glb` | 0,70 m | Bolzen, der Blechhund. |
+| `chest_boss` | `items/chest_boss.glb` | 0,95 m | Die Beutekammer. Prompt steht oben. |
+| `dungeon_wall` | `dungeon/wall.glb` | 3,50 m | Wandsegment, 4 m breit. Ersetzt die Kästen im Stollen automatisch. |
+| `dungeon_wall_prop` | `dungeon/wall_prop.glb` | 3,50 m | Zweite Fassung mit Rohren — bricht die Wiederholung. |
+| `dungeon_pillar` | `dungeon/pillar.glb` | 3,50 m | Stützpfeiler. |
+| `dungeon_stairs` | `dungeon/stairs.glb` | 3,50 m | Treppe nach unten. |
+| `handcart` | `props/handcart.glb` | 3,00 m | Letzter aus der Prop-Erstliste. |
+
+Prompts: die vier Stollen-Teile in `docs/PLAN_DUNGEON.md`, die Gegner in
+`docs/PROMPTS_GEGNER.md`, die Beutekammer weiter oben in diesem Dokument.
+
+### Zwei Dinge, die dabei aufgefallen sind
+
+**Die vier Stollen-Modelle standen nirgends in der Registry.** Sie waren im Plan angefordert,
+aber eine gelieferte Datei hätte *gar nichts* bewirkt — sie wäre im Ordner gelegen, und das
+Spiel hätte weiter seine Kästen gestellt. Ein Eintrag, den es nicht gibt, ist eine
+Lieferadresse, die niemand kennt. Jetzt prüft `_test_ui_grafiken()`, dass jedes angeforderte
+Modell einen Eintrag *und* eine Zielhöhe hat, **gerade solange die Datei fehlt**.
+
+**Das Pferd hatte keine Zielhöhe** und fiel auf die Vorgabe von 1,6 m zurück. Das ist zufällig
+ungefähr richtig — aber zufällig richtig ist nicht richtig: Wer die Vorgabe einmal ändert,
+ändert stillschweigend die Größe des Pferdes mit. Jetzt 1,55 m, die Widerristhöhe eines
+Arbeitspferdes.

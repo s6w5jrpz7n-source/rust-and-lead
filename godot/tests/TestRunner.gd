@@ -83,7 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
-	"_test_ui_grafiken": 6,
+	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
 	"_test_stollen": 33,
 	"_test_truhen": 37,
@@ -5887,6 +5887,8 @@ func _test_spielstand_vollstaendig() -> void:
 func _test_ui_grafiken() -> void:
 	print("· Oberflaechen-Grafiken (Symbole und Rahmen)")
 	var UiAssets = load("res://scripts/UiAssets.gd")
+	var DVT = load("res://scripts/DungeonView.gd")
+	var dv_q: String = FileAccess.get_file_as_string("res://scripts/DungeonView.gd")
 
 	# Die Symbole. Sie sind WEISS auf transparent — die Farbe setzt das Spiel, damit dasselbe
 	# Symbol gelb bei Knappheit und rot bei leer sein kann.
@@ -5936,3 +5938,39 @@ func _test_ui_grafiken() -> void:
 		if t != null and (t.get_width() != 64 or t.get_height() != 64):
 			falsch.append("%s (%dx%d)" % [n, t.get_width(), t.get_height()])
 	_check("Die Symbole sind 64 x 64", falsch.is_empty(), ", ".join(falsch))
+
+	# ── Jedes versprochene Modell hat auch eine Lieferadresse ────────────────
+	#
+	# Die vier Stollen-Modelle standen in `docs/PLAN_DUNGEON.md` als „brauche ich von dir" —
+	# aber NICHT in der Registry. Eine gelieferte Datei haette gar nichts bewirkt: Sie waere im
+	# Ordner gelegen, und das Spiel haette weiter seine Kaesten gestellt. Ein Eintrag, den es
+	# nicht gibt, ist eine Lieferadresse, die niemand kennt.
+	#
+	# Deshalb muss JEDES Modell, das ein Dokument anfordert, hier einen Eintrag haben — auch und
+	# gerade, solange die Datei fehlt.
+	var versprochen: Array[String] = ["chest_boss", "dungeon_wall", "dungeon_wall_prop",
+		"dungeon_pillar", "dungeon_stairs", "handcart", "companion_dog", "enemy_klaeffer",
+		"enemy_goliath", "horse"]
+	var ohne_adresse: Array[String] = []
+	for m in versprochen:
+		if not AssetRegistry.PATHS.has(m):
+			ohne_adresse.append(m)
+	_check("Jedes angeforderte Modell hat einen Registry-Eintrag", ohne_adresse.is_empty(),
+		", ".join(ohne_adresse))
+	# Und eine Zielhoehe, sonst landet es in beliebiger Groesse in der Welt.
+	var ohne_mass: Array[String] = []
+	for m in versprochen:
+		if not AssetRegistry.TARGET_HEIGHT.has(m):
+			ohne_mass.append(m)
+	_check("Und eine Zielhoehe", ohne_mass.is_empty(), ", ".join(ohne_mass))
+	# Die Wandhoehe muss zu der passen, die der Stollen stellt — ein geliefertes Wandstueck soll
+	# die Kaesten ERSETZEN und nicht neben ihnen stehen.
+	_check("Das Wandstueck passt zur Stollenwand (%.1f m)" % DVT.WAND_H,
+		is_equal_approx(float(AssetRegistry.TARGET_HEIGHT["dungeon_wall"]), float(DVT.WAND_H)))
+	# Und der Stollen benutzt es auch, sobald es daliegt.
+	_check("Ein geliefertes Wandstueck loest die Kaesten von selbst ab",
+		dv_q.contains('_netz_von("dungeon_wall")'))
+	# Solange es fehlt, faellt nichts aus.
+	_check("Und solange es fehlt, faellt nichts aus",
+		AssetRegistry.resolve("dungeon_wall") == ""
+		or ResourceLoader.exists(AssetRegistry.resolve("dungeon_wall")))

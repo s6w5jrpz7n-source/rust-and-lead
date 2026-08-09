@@ -185,16 +185,27 @@ func _waende_bauen() -> void:
 	var multi := MultiMeshInstance3D.new()
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
-	var box := BoxMesh.new()
-	box.size = Vector3(DungeonLayout.FELD_M, WAND_H, DungeonLayout.FELD_M)
-	mm.mesh = box
+	# Ein geliefertes Wandstueck loest die Kaesten von selbst ab: Liegt `dungeon_wall` im
+	# Projekt, wird SEIN Netz vervielfacht; sonst der Kasten. So ersetzt eine abgelegte Datei
+	# die Platzhalter, ohne dass hier eine Zeile geaendert werden muss — genau so ist es
+	# in `docs/PLAN_DUNGEON.md` versprochen.
+	var wand_netz: Mesh = _netz_von("dungeon_wall")
+	if wand_netz != null:
+		mm.mesh = wand_netz
+	else:
+		var box := BoxMesh.new()
+		box.size = Vector3(DungeonLayout.FELD_M, WAND_H, DungeonLayout.FELD_M)
+		mm.mesh = box
 	var felder: Array[Vector2i] = DungeonLayout.waende(_plan)
 	mm.instance_count = felder.size()
 	for i in felder.size():
 		var m: Vector3 = DungeonLayout.feld_zu_szene(felder[i])
 		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, m + Vector3(0.0, WAND_H * 0.5, 0.0)))
 	multi.multimesh = mm
-	multi.material_override = mat
+	# Die eigene Farbe nur ueber die KAESTEN legen. Ein geliefertes Modell bringt seine Textur
+	# mit, und ein Override wuerde sie loeschen — dann waere die neue Wand ein grauer Block.
+	if wand_netz == null:
+		multi.material_override = mat
 	add_child(multi)
 
 
@@ -947,3 +958,23 @@ func _ton(quelle: AudioStreamPlayer3D, pfad: String, hoehe: float) -> void:
 	# Kleine Tonhöhenstreuung, sonst klingt die dritte Salve wie ein Metronom.
 	quelle.pitch_scale = 1.0 + hoehe
 	quelle.play()
+
+
+## Das erste Netz eines Modells aus der Registry — oder `null`, wenn die Datei fehlt.
+##
+## Gebraucht fuer die Waende: Ein `MultiMesh` vervielfacht EIN Netz, keinen ganzen Szenenbaum.
+## Wer ein `.glb` liefert, liefert aber einen Baum, und irgendwo darin haengt das Netz.
+static func _netz_von(name: String) -> Mesh:
+	var wurzel: Node3D = AssetRegistry.instantiate(name, 0.0)
+	if wurzel == null:
+		return null
+	var gefunden: Mesh = null
+	var offen: Array[Node] = [wurzel]
+	while not offen.is_empty():
+		var n: Node = offen.pop_back()
+		if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+			gefunden = (n as MeshInstance3D).mesh
+			break
+		offen.append_array(n.get_children())
+	wurzel.queue_free()
+	return gefunden

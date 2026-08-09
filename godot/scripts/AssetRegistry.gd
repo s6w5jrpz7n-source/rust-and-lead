@@ -115,6 +115,17 @@ const PATHS: Dictionary = {
 	# es von selbst — ohne eine Zeile Code.
 	"chest_boss":      ["res://assets/models/items/chest_boss.glb",
 		"res://assets/models/items/chest_boss/chest_boss.gltf"],
+	# ── Der Stollen ──
+	#
+	# Diese vier standen in `docs/PLAN_DUNGEON.md` als „brauche ich von dir" — aber NICHT hier.
+	# Damit haette eine gelieferte Datei gar nichts bewirkt: Sie waere im Ordner gelegen, und
+	# das Spiel haette weiter seine Kaesten gestellt. Ein Eintrag, den es nicht gibt, ist eine
+	# Lieferadresse, die niemand kennt.
+	"dungeon_wall":    ["res://assets/models/dungeon/wall.glb"],
+	"dungeon_wall_prop": ["res://assets/models/dungeon/wall_prop.glb"],
+	"dungeon_pillar":  ["res://assets/models/dungeon/pillar.glb"],
+	"dungeon_stairs":  ["res://assets/models/dungeon/stairs.glb"],
+	"handcart":        ["res://assets/models/props/handcart.glb"],
 	"ammo_box":        ["res://assets/models/props/ammo_box_1k/ammo_box_1k.gltf"],
 	"tool_cart":       ["res://assets/models/props/tool_cart_1k/tool_cart_1k.gltf"],
 	"metal_rack":      ["res://assets/models/props/worn_metal_rack_1k/worn_metal_rack_1k.gltf"],
@@ -135,8 +146,20 @@ const TARGET_HEIGHT: Dictionary = {
 	"enemy_klaeffer": 0.8,       # Kessel-Kläffer (Maschine, Schwarm)
 	"enemy_konstrukt": 2.0,      # Konzern-Konstrukt / kleiner Panzer — überragt den Spieler
 	"enemy_goliath": 4.0,        # Schwerer Ernter (Boss)
+	# Das Pferd hatte KEINE Zielhoehe und fiel auf die Vorgabe zurueck. Bei 1,6 m ist das
+	# zufaellig ungefaehr richtig — aber zufaellig richtig ist nicht richtig: Wer die Vorgabe
+	# einmal aendert, aendert damit stillschweigend die Groesse des Pferdes mit. 1,55 m ist die
+	# Widerristhoehe eines Arbeitspferdes; der Reiter sitzt darueber.
+	"horse": 1.55,
 	"chest": 0.7,
 	"chest_boss": 0.95,          # groesser als die gewoehnliche, damit man sie von weitem trennt
+	# Der Stollen: Die Wandhoehe ist dieselbe, die `DungeonView.WAND_H` stellt — ein geliefertes
+	# Wandstueck soll die Kaesten ersetzen und nicht neben ihnen stehen.
+	"dungeon_wall": 3.5,
+	"dungeon_wall_prop": 3.5,
+	"dungeon_pillar": 3.5,
+	"dungeon_stairs": 3.5,
+	"handcart": 3.0,
 	# ── NPCs: Körpergrößen aus der Story-Bibel (§4) ──
 	"npc_mabel": 1.70,           # stämmig, Mitte fünfzig
 	"npc_silas": 1.75,
