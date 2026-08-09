@@ -67,13 +67,13 @@ const TEST_UMFANG: Dictionary = {
 	"_test_bag": 21,
 	"_test_asset_registry": 38,
 	"_test_overworld_loot_flow": 6,
-	"_test_overworld_quest_flow": 12,
+	"_test_overworld_quest_flow": 14,
 	"_test_quest_wayfinding": 50,
 	"_test_closeup": 13,
-	"_test_poi_walkable": 22,
+	"_test_poi_walkable": 24,
 	"_test_town_walkable": 17,
 	"_test_enemy_attacks": 20,
-	"_test_daycycle": 208,
+	"_test_daycycle": 219,
 	"_test_dialog": 22,
 	"_test_memory_manager": 29,
 	"_test_encounter_manager": 24,
@@ -86,15 +86,17 @@ const TEST_UMFANG: Dictionary = {
 	"_test_stille_grube": 26,
 	"_test_kraterrand": 8,
 	"_test_kraterrand_kamm": 6,
-	"_test_stimmen": 13,
+	"_test_stimmen": 14,
 	"_test_stufenanforderung": 13,
-	"_test_haendler": 14,
+	"_test_haendler": 15,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
-	"_test_stollen": 33,
+	"_test_stollen": 34,
+	"_test_stollen_bedienbar": 17,
+	"_test_stollen_lampen": 12,
 	"_test_truhen": 37,
-	"_test_anfuehrer": 54,
+	"_test_anfuehrer": 55,
 }
 
 
@@ -6910,3 +6912,155 @@ func _test_haendler() -> void:
 	GameState.tag = tag_vorher
 	GameState.bag = bag_vorher
 	GameState.gekauft_heute = gekauft_vorher
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Der Stollen laesst sich mit dem Daumen bedienen — und bewegt sich dabei
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Vier Meldungen, ein gemeinsamer Grund: Die Szene war fuer Tastatur und Maus gebaut und wurde
+# auf einem Telefon gespielt.
+#
+#   „ich kann nicht schiessen"      → jede Beruehrung ging an den Stick, der Schussknopf sah nie
+#                                     eine. Nur die Leertaste feuerte.
+#   „raus komme ich auch nicht"     → der Ausgang haengt an `[E]`. Ein Telefon hat kein [E].
+#                                     Das ist ein Steckenbleiben ohne Ausweg.
+#   „keine Animation des Charakters"→ `play_clip` wurde hier nie gerufen. Draussen laeuft die
+#                                     Figur, drinnen rutscht sie in Bindepose ueber den Boden.
+#   „auch die Gegner"               → dasselbe, und beim Gegner faellt es staerker auf: Er steht
+#                                     mit ausgebreiteten Armen im T da, bis er sich das erste
+#                                     Mal bewegt.
+#
+# Geprueft wird die VERDRAHTUNG, nicht das Bild: ob die Beruehrung erst an die Knoepfe geht,
+# ob es einen Aktionsknopf gibt, ob die Anzeigenamen der Zustaende gesetzt werden.
+func _test_stollen_bedienbar() -> void:
+	var dv: String = FileAccess.get_file_as_string("res://scripts/DungeonView.gd")
+
+	# ── Beruehrung: erst die Knoepfe, dann der Stick ────────────────────────
+	#
+	# Die Reihenfolge ist der ganze Fehler. `_unhandled_input` gab jede Beruehrung an den Stick
+	# weiter, und der Schussknopf las `pressed` nie.
+	_check("Es gibt eine Knopfpruefung vor dem Stick", dv.contains("func _knopf_beruehrt"))
+	_check("Und sie kommt VOR dem Stick",
+		dv.find("_knopf_beruehrt(") < dv.find("_stick_setzen(")
+		or dv.find("if _knopf_beruehrt(") < dv.find("_stick_setzen("))
+	_check("Der Schussknopf wird vom Finger gesetzt", dv.contains("_feuer.pressed"))
+	# Der zweite Finger darf den ersten nicht aufheben: Wer mit links laeuft und mit rechts
+	# schiesst, haelt zwei Beruehrungen gleichzeitig. Ohne Fingerkennung loest das Loslassen
+	# des Schussfingers den Stick mit aus — die Figur bleibt mitten im Gefecht stehen.
+	_check("Der Schussfinger wird gemerkt", dv.contains("_feuer_finger"))
+	_check("Und ein fremder Finger zieht nicht am Stick",
+		dv.contains("_feuer_finger") and dv.contains("func _stick_ziehen"))
+
+	# ── Der Ausgang ohne Tastatur ──────────────────────────────────────────
+	_check("Es gibt einen Aktionsknopf", dv.contains("_aktion_btn"))
+	_check("Er ruft dieselbe Aktion wie [E]", dv.contains("_aktion_btn.pressed.connect(_benutzen)")
+		or dv.contains("_benutzen()"))
+	_check("Er wird je nach Naehe gesetzt", dv.contains("func _aktion_knopf_setzen"))
+	# Und er traegt nicht „[E]" auf sich: Das steht im Hinweis fuer die Tastatur, auf dem Knopf
+	# waere es Unsinn.
+	_check("Auf dem Knopf steht kein [E]", dv.contains("\"   [E]\""))
+	# Ein Hinweis mit ⊘ sagt „geht nicht" (verschlossen, zu wenig Schluessel). Dafuer darf kein
+	# Knopf erscheinen — sonst drueckt man auf etwas, das nichts tut.
+	_check("Bei einem ⊘-Hinweis erscheint kein Knopf", dv.contains("⊘"))
+
+	# ── Der Spieler bewegt sich sichtbar ───────────────────────────────────
+	_check("Der Spieler bekommt beim Bauen eine Ruhepose",
+		dv.contains("AssetRegistry.play_clip(_spieler, \"idle\")"))
+	_check("Er laeuft, wenn er laeuft", dv.contains("_bewegt_sich"))
+	_check("Und schlaegt an, wenn er schiesst", dv.contains("_angriff_t"))
+	# Die Reihenfolge der drei Zustaende: Angriff schlaegt Laufen schlaegt Stehen. Andersherum
+	# wird die Schussanimation vom naechsten Schritt abgeschnitten.
+	var i_angriff: int = dv.find("if _angriff_t > 0.0")
+	var i_lauf: int = dv.find("elif _bewegt_sich")
+	_check("Angriff hat Vorrang vor Laufen", i_angriff >= 0 and i_lauf > i_angriff)
+
+	# ── Und die Gegner auch ────────────────────────────────────────────────
+	_check("Gegner laufen sichtbar", dv.contains("\"walk\""))
+	_check("Gegner schlagen sichtbar zu", dv.contains("\"attack\""))
+	# Der wichtigste der drei: OHNE ein `idle` beim Aufstellen steht das Modell in der Bindepose
+	# — mit waagerecht ausgestreckten Armen. Genau das war gemeint mit „sehen nicht animiert
+	# aus": Sie bewegten sich beim Laufen durchaus, standen aber vorher als T da.
+	_check("Und stehen beim Aufstellen nicht in Bindepose",
+		dv.count("play_clip(knoten, \"idle\")") >= 2)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Licht an den Waenden — aber nicht zu viel
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Der Stollen hatte eine einzige Lichtquelle: die Lampe am Guertel. Das ist stimmig und nach
+# zwei Kammern ermuedend — man sieht immer denselben Kreis um sich und nie den Raum.
+#
+# Der Auftrag war ausdruecklich zweiseitig: „elektrische Lampen an den Waenden. nicht zu viele,
+# soll ja atmosphaerisch bleiben." Die zweite Haelfte ist die schwierigere, und sie ist es, die
+# hier geprueft wird: Die Lampen duerfen den Stollen NICHT ausleuchten.
+func _test_stollen_lampen() -> void:
+	var DV = load("res://scripts/DungeonView.gd")
+	var plan: Dictionary = DungeonLayout.erzeugen(4242, 2)
+	var lampen: Array = DV.lampen_plaetze(plan)
+
+	_check("Es haengen Lampen (%d)" % lampen.size(), lampen.size() > 0)
+	_check("Aber hoechstens %d" % int(DV.LAMPEN_MAX), lampen.size() <= int(DV.LAMPEN_MAX))
+
+	var boden: Dictionary = plan["boden"]
+	# Jede Lampe steht an einer echten Wand: Feld begehbar, Nachbar in Richtung `hin` nicht.
+	# Andersherum haengt sie frei im Gang oder mit dem Ruecken zum Spieler im Fels.
+	var falsch_platziert: int = 0
+	for l in lampen:
+		var feld: Vector2i = (l as Dictionary)["feld"]
+		var hin: Vector2i = (l as Dictionary)["hin"]
+		if not boden.has(feld) or boden.has(feld + hin):
+			falsch_platziert += 1
+	_check("Jede haengt an einer Wand und zeigt in den Gang", falsch_platziert == 0,
+		"%d falsch" % falsch_platziert)
+
+	# Der Mindestabstand. Er ist der Grund, warum es nicht hell wird.
+	var zu_dicht: int = 0
+	for i in lampen.size():
+		for k in range(i + 1, lampen.size()):
+			var d: Vector2i = ((lampen[i] as Dictionary)["feld"] as Vector2i) \
+				- ((lampen[k] as Dictionary)["feld"] as Vector2i)
+			if absi(d.x) < int(DV.LAMPEN_ABSTAND) and absi(d.y) < int(DV.LAMPEN_ABSTAND):
+				zu_dicht += 1
+	_check("Keine zwei stehen dicht beieinander", zu_dicht == 0, "%d Paare" % zu_dicht)
+
+	# Und der Punkt, an dem „atmosphaerisch" zur Zahl wird: Der Abstand zweier Lampen muss
+	# GROESSER sein als das, was eine ausleuchtet. Sonst ueberlappen die Kegel, und zwischen
+	# ihnen liegt kein Dunkel mehr — dann ist der Stollen ein Flur.
+	var abstand_m: float = float(DV.LAMPEN_ABSTAND) * DungeonLayout.FELD_M
+	_check("Zwischen zwei Lampen bleibt Dunkelheit (%.0f m Abstand, %.0f m Reichweite)"
+		% [abstand_m, float(DV.LAMPEN_REICHWEITE)],
+		abstand_m > float(DV.LAMPEN_REICHWEITE) * 1.5)
+	# Und sie sind schwaecher als die Guertellampe. Die gehoert dem Spieler und soll das
+	# Hellste im Bild bleiben — sonst laeuft man von Insel zu Insel und traegt sie umsonst.
+	_check("Die Guertellampe bleibt die staerkste (%.1f gegen %.1f)"
+		% [2.1, float(DV.LAMPEN_ENERGIE)], float(DV.LAMPEN_ENERGIE) < 2.1)
+
+	# Warm, nicht weiss: Kohlefaden hinter angelaufenem Glas.
+	var farbe: Color = DV.LAMPEN_FARBE
+	_check("Ihr Licht ist warm", farbe.r > farbe.b + 0.4)
+
+	# Kein Schatten. Acht schattenwerfende Punktlampen sind acht mal sechs Renderdurchgaenge je
+	# Bild — auf einem Telefon der Unterschied zwischen fluessig und Diashow.
+	var dv_q: String = FileAccess.get_file_as_string("res://scripts/DungeonView.gd")
+	_check("Sie werfen keine Schatten", dv_q.contains("licht.shadow_enabled = false"))
+	# Das Flackern ist klein. Eine sichtbar blinkende Lampe wird zum Ereignis; gemeint war das
+	# Gegenteil.
+	_check("Das Flackern ist kaum merklich (%.0f %%)" % (float(DV.LAMPEN_FLACKERN) * 100.0),
+		float(DV.LAMPEN_FLACKERN) > 0.0 and float(DV.LAMPEN_FLACKERN) < 0.15)
+	# Und jede flackert fuer sich. Im Gleichtakt pulsiert der ganze Stollen wie ein Herz.
+	_check("Jede Lampe hat ihre eigene Phase", dv_q.contains("\"phase\": float(i) * 1.73"))
+
+	# Ein anderer Grundriss bekommt andere Lampen — sie haengen am Plan, nicht an einer festen
+	# Liste. Und derselbe Grundriss zweimal bekommt dieselben.
+	var plan2: Dictionary = DungeonLayout.erzeugen(99, 1)
+	var l2: Array = DV.lampen_plaetze(plan2)
+	_check("Auch Ebene 1 bekommt Licht (%d)" % l2.size(), l2.size() > 0)
+	var nochmal: Array = DV.lampen_plaetze(plan)
+	var gleich: bool = nochmal.size() == lampen.size()
+	if gleich:
+		for i in lampen.size():
+			if (nochmal[i] as Dictionary)["feld"] != (lampen[i] as Dictionary)["feld"]:
+				gleich = false
+	_check("Derselbe Stollen bekommt dieselben Lampen", gleich)

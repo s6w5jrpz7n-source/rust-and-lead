@@ -36,11 +36,38 @@ const NAH_M: float = 2.6
 const WAND_H: float = 3.5
 const DECKE_H: float = 3.6
 
+## Mindestabstand zweier Grubenlampen, in Feldern (ein Feld = 4 m).
+##
+## Sieben Felder sind achtundzwanzig Meter und damit reichlich mehr, als eine Lampe ausleuchtet
+## (`LAMPEN_REICHWEITE`). Das ist Absicht: Zwischen zwei Lampen soll ein Stueck Dunkelheit
+## liegen, durch das man mit der Guertellampe geht. Wer die Zahl kleiner macht, bekommt einen
+## beleuchteten Stollen — und ein beleuchteter Stollen ist ein Keller mit Licht, kein Berg.
+const LAMPEN_ABSTAND: int = 7
+## Obergrenze. Ebene 2 hat neun Kammern; mehr als acht Lampen waeren auch dort zu viel.
+const LAMPEN_MAX: int = 8
+## Wie hoch sie haengen. Ueber Kopfhoehe, aber deutlich unter der Decke (`DECKE_H`) — eine Lampe
+## an der Decke leuchtet den Boden aus, eine an der Wand wirft lange Schatten in den Gang.
+const LAMPEN_H: float = 2.55
+## Wie weit eine Lampe traegt.
+const LAMPEN_REICHWEITE: float = 8.5
+const LAMPEN_ENERGIE: float = 1.5
+## Warm und schmutzig — Kohlefaden hinter angelaufenem Glas, nicht Neonroehre.
+const LAMPEN_FARBE: Color = Color(1.0, 0.66, 0.30)
+## Wie stark das Flackern ausschlaegt, als Anteil der Grundhelligkeit.
+##
+## Sieben Prozent sind bewusst wenig. Eine Lampe, die sichtbar blinkt, zieht das Auge auf sich
+## und wird zum Ereignis; eine, die kaum merklich atmet, macht den Gang lebendig, ohne dass man
+## sagen koennte, woran es liegt. Genau das ist gemeint mit „soll ja atmosphaerisch bleiben".
+const LAMPEN_FLACKERN: float = 0.07
+
 var _plan: Dictionary = {}
 var _spieler: Node3D
 var _kamera: Camera3D
 var _stick: VirtualStick
 var _lampe: OmniLight3D
+## Die Grubenlampen an den Waenden: je `{"licht": OmniLight3D, "phase": float}`.
+var _lampen: Array = []
+var _flacker_t: float = 0.0
 var _text: Label
 var _hinweis: Label
 ## Bis wann eine ANTWORT stehen bleibt (Sekunden, `Time.get_ticks_msec`-Basis).
@@ -64,7 +91,11 @@ var _boden: Array = []
 var _gegner: Array = []
 var _hp: float = 0.0
 var _feuer: FireButton
+var _aktion_btn: Button
 var _feuer_bereit: float = 0.0
+## Laeuft gerade eine Angriffs-Animation? Sie hat Vorrang vor Laufen und Stehen.
+var _angriff_t: float = 0.0
+var _bewegt_sich: bool = false
 ## Ton und Lebensbalken — beides fehlte hier, und beides fehlt man erst im Gefecht.
 var _sfx_schuss: AudioStreamPlayer3D = null
 var _sfx_repetieren: AudioStreamPlayer3D = null
@@ -126,6 +157,7 @@ func _ready() -> void:
 	_umgebung_bauen()
 	_boden_bauen()
 	_waende_bauen()
+	_lampen_bauen()
 	_kisten_bauen()
 	_gegner_bauen()
 	_spieler_bauen()
@@ -209,6 +241,120 @@ func _waende_bauen() -> void:
 	add_child(multi)
 
 
+## Wo eine Grubenlampe haengt: Feld davor und Richtung zur Wand.
+##
+## Rueckgabe: Array von `{"feld": Vector2i, "hin": Vector2i}` — `feld` ist BEGEHBAR, `hin` zeigt
+## auf das anliegende Wandfeld. Die Lampe sitzt an dieser Wandflaeche.
+##
+## ## Warum nicht die Wandfelder durchgehen?
+##
+## Naheliegend waere, `DungeonLayout.waende()` zu nehmen und dort Lampen aufzuhaengen. Das geht
+## schief: Ein Wandfeld grenzt oft an ZWEI Gaenge, und dann steht nicht fest, in welche Richtung
+## die Lampe zeigt — die Haelfte haengt mit dem Ruecken zum Spieler und leuchtet ins Gestein.
+## Vom begehbaren Feld aus ist die Richtung eindeutig: weg vom Boden, in den Fels.
+##
+## ## Die Reihenfolge ist die des Grundrisses und das ist gewollt
+##
+## `plan["boden"]` traegt die Felder in der Reihenfolge, in der sie eingetragen wurden: erst die
+## Kammern der Reihe nach, dann die Gaenge. Wer sie so durchgeht und gierig mit Mindestabstand
+## auswaehlt, bekommt ungefaehr eine Lampe je Kammer und dazwischen dunkle Gaenge. Genau so soll
+## es aussehen. Eine sortierte Reihenfolge waere ordentlicher und wuerde die Lampen an den linken
+## Rand der Karte draengen.
+static func lampen_plaetze(plan: Dictionary) -> Array:
+	var boden: Dictionary = plan.get("boden", {})
+	var raus: Array = []
+	for f in boden:
+		if raus.size() >= LAMPEN_MAX:
+			break
+		var feld: Vector2i = f as Vector2i
+		var zu_nah: bool = false
+		for l in raus:
+			var d: Vector2i = (l["feld"] as Vector2i) - feld
+			if absi(d.x) < LAMPEN_ABSTAND and absi(d.y) < LAMPEN_ABSTAND:
+				zu_nah = true
+				break
+		if zu_nah:
+			continue
+		for hin in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			if boden.has(feld + hin):
+				continue
+			raus.append({"feld": feld, "hin": hin})
+			break
+	return raus
+
+
+## Elektrische Grubenlampen an den Waenden.
+##
+## Der Stollen hatte bis hierher genau eine Lichtquelle: die Lampe am Guertel. Das ist stimmig
+## und war nach zwei Kammern auch ermuedend — man sieht immer denselben Kreis um sich herum und
+## nie den Raum. Ein paar feste Lampen geben dem Gang eine Richtung: Man laeuft auf ein Licht zu.
+##
+## Sie werfen KEINE Schatten (`shadow_enabled = false`). Acht schattenwerfende Punktlampen sind
+## acht mal sechs Renderdurchgaenge je Bild — auf einem Telefon ist das der Unterschied zwischen
+## fluessig und Diashow, und gesehen haette man davon fast nichts: Das Wenige, was sie beleuchten,
+## ist Fels.
+func _lampen_bauen() -> void:
+	var gehaeuse := BoxMesh.new()
+	gehaeuse.size = Vector3(0.30, 0.44, 0.20)
+	var schirm := StandardMaterial3D.new()
+	schirm.albedo_color = Color(0.09, 0.08, 0.075)
+	schirm.metallic = 0.55
+	schirm.roughness = 0.65
+	var birne := SphereMesh.new()
+	birne.radius = 0.10
+	birne.height = 0.20
+	# Unbeleuchtet und leuchtend: Der Glaskolben soll hell sein, WEIL er die Quelle ist, und
+	# nicht davon abhaengen, ob etwas anderes ihn anstrahlt.
+	var glas := StandardMaterial3D.new()
+	glas.albedo_color = LAMPEN_FARBE
+	glas.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glas.emission_enabled = true
+	glas.emission = LAMPEN_FARBE
+	glas.emission_energy_multiplier = 3.0
+	var plaetze: Array = lampen_plaetze(_plan)
+	for i in plaetze.size():
+		var p: Dictionary = plaetze[i]
+		var hin: Vector2i = p["hin"] as Vector2i
+		var nach := Vector3(float(hin.x), 0.0, float(hin.y))
+		# An die Wandflaeche, nicht in die Wand: eine halbe Feldbreite hin, ein Stueck zurueck.
+		var wo: Vector3 = DungeonLayout.feld_zu_szene(p["feld"] as Vector2i) \
+			+ nach * (DungeonLayout.FELD_M * 0.5 - 0.14) + Vector3(0.0, LAMPEN_H, 0.0)
+		var traeger := Node3D.new()
+		traeger.position = wo
+		add_child(traeger)
+		var kasten := MeshInstance3D.new()
+		kasten.mesh = gehaeuse
+		kasten.material_override = schirm
+		traeger.add_child(kasten)
+		var kugel := MeshInstance3D.new()
+		kugel.mesh = birne
+		kugel.material_override = glas
+		kugel.position = -nach * 0.16 + Vector3(0.0, -0.20, 0.0)
+		traeger.add_child(kugel)
+		var licht := OmniLight3D.new()
+		licht.omni_range = LAMPEN_REICHWEITE
+		licht.light_energy = LAMPEN_ENERGIE
+		licht.light_color = LAMPEN_FARBE
+		licht.shadow_enabled = false
+		licht.position = -nach * 0.30 + Vector3(0.0, -0.20, 0.0)
+		traeger.add_child(licht)
+		# Jede Lampe bekommt ihre eigene Phase, sonst flackern acht Lampen im Gleichtakt und der
+		# ganze Stollen pulsiert wie ein Herz.
+		_lampen.append({"licht": licht, "phase": float(i) * 1.73})
+
+
+## Das Flackern. Zwei ueberlagerte Schwingungen mit unrunden Frequenzen — eine allein waere ein
+## sauberer Sinus, und sauber ist genau das, was ein alter Generator nicht liefert.
+func _lampen_flackern(delta: float) -> void:
+	if _lampen.is_empty():
+		return
+	_flacker_t += delta
+	for l in _lampen:
+		var t: float = _flacker_t + float(l["phase"])
+		var s: float = sin(t * 7.3) * 0.5 + sin(t * 2.1) * 0.5
+		(l["licht"] as OmniLight3D).light_energy = LAMPEN_ENERGIE * (1.0 + s * LAMPEN_FLACKERN)
+
+
 ## Truhen an ihre Plätze. Gegner macht `_gegner_bauen()`.
 ##
 ## Die **letzte** Truhe der Kaverne ist eine Beutekammer — sie liegt im Raum mit der Treppe,
@@ -266,6 +412,7 @@ func _spieler_bauen() -> void:
 		_spieler = Node3D.new()
 	_spieler.position = _eingang_pos
 	add_child(_spieler)
+	AssetRegistry.play_clip(_spieler, "idle")
 
 	# Die Lampe haengt am Spieler, nicht an der Kamera: Sie soll zeigen, wo ER steht, und beim
 	# Drehen mitgehen.
@@ -315,6 +462,25 @@ func _oberflaeche_bauen() -> void:
 	layer.add_child(_hinweis)
 	_feuer = FireButton.new()
 	layer.add_child(_feuer)
+	# Der Aktionsknopf. Draussen gibt es eine ganze Aktionsleiste; hier stand nur ein Hinweis
+	# mit „[E]" darin — und auf einem Telefon gibt es kein [E]. Wer hinunterstieg, kam nicht
+	# mehr heraus.
+	#
+	# Er sitzt UEBER dem Schussknopf und nicht daneben: Der Daumen liegt beim Kaempfen unten
+	# rechts, und was man im selben Griff erreichen soll, gehoert in dieselbe Ecke. Er
+	# erscheint nur, wenn es etwas zu tun gibt — ein Knopf, der immer da ist und meistens
+	# nichts tut, wird nicht mehr angesehen.
+	_aktion_btn = Button.new()
+	_aktion_btn.visible = false
+	_aktion_btn.focus_mode = Control.FOCUS_NONE
+	_aktion_btn.add_theme_font_size_override("font_size", 17)
+	_aktion_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_aktion_btn.offset_right = -26.0
+	_aktion_btn.offset_bottom = -156.0
+	_aktion_btn.offset_left = -300.0
+	_aktion_btn.offset_top = -204.0
+	_aktion_btn.pressed.connect(_benutzen)
+	layer.add_child(_aktion_btn)
 	# Ein BALKEN, nicht nur die Zahl in der Kopfzeile. Draussen gibt es ihn seit Langem, hier
 	# stand nur „69/100" zwischen fuenf anderen Angaben — und eine Zahl muss man lesen, einen
 	# Balken sieht man. Im Stollen wiegt das schwerer als draussen: Dort kommt der Schaden aus
@@ -359,6 +525,7 @@ func _process(delta: float) -> void:
 	_gehen(delta)
 	_kamera_nachziehen()
 	_kampf(delta)
+	_lampen_flackern(delta)
 	_ton_ticken(delta)
 	_naehe_pruefen()
 	_kopf_setzen()
@@ -388,6 +555,7 @@ func _gehen(delta: float) -> void:
 		p = nur_z
 	_spieler.position = p
 	_spieler.rotation.y = atan2(-schritt.x, -schritt.z)
+	_bewegt_sich = true
 
 
 func _richtung() -> Vector2:
@@ -453,6 +621,24 @@ func _naehe_pruefen() -> void:
 		_hinweis.text = "▲ Den Stollen verlassen   [E]"
 	else:
 		_hinweis.text = ""
+	_aktion_knopf_setzen()
+
+
+## Der Aktionsknopf zeigt, was der Hinweis sagt — ohne das „[E]".
+##
+## Eine Quelle, zwei Ausgaben: Der Hinweis oben SAGT es, der Knopf unten TUT es. Zwei getrennte
+## Texte waeren zwei Wahrheiten, und die eine haette den anderen frueher oder spaeter
+## widersprochen.
+func _aktion_knopf_setzen() -> void:
+	if _aktion_btn == null or _hinweis == null:
+		return
+	var t: String = _hinweis.text.replace("   [E]", "").strip_edges()
+	# Nur was man TUN kann. Eine verschlossene Truhe meldet, warum sie zu ist — das ist eine
+	# Auskunft und keine Handlung, und ein Knopf darauf tut nichts.
+	var handelt: bool = t != "" and not t.begins_with("⊘")
+	_aktion_btn.visible = handelt
+	if handelt:
+		_aktion_btn.text = t
 
 
 ## Der Stick zeichnet nur; wo er aufsetzt, entscheidet der Aufrufer — genauso wie draussen.
@@ -460,21 +646,66 @@ func _naehe_pruefen() -> void:
 ## Er setzt dort auf, wo der Finger HINFAELLT, und nicht an einer festen Stelle: Auf einem
 ## Telefon sieht man den eigenen Daumen nicht, und ein Stick mit fester Lage zwingt zum Zielen,
 ## bevor man losgehen kann.
+## Eingabe.
+##
+## ## Die Reihenfolge ist der ganze Fehler gewesen
+##
+## Vorher ging JEDE Beruehrung an den Stick — auch die auf dem Schussknopf und die auf der
+## Aktionsflaeche. `_feuer.pressed` wurde damit nie wahr, und weil `_feuern_gedrueckt()` sonst
+## nur die Leertaste kennt, konnte man im Stollen auf einem Telefon ueberhaupt nicht schiessen.
+## Der Knopf war da, er leuchtete sogar auf, wenn ein Ziel in Reichweite stand — er tat nur
+## nichts.
+##
+## Dasselbe beim Ausgang: Verlassen ging allein ueber `[E]`. Auf einem Telefon gibt es kein
+## `[E]`. Wer hinunterstieg, kam nicht mehr heraus.
+##
+## Jetzt wird von oben nach unten gefragt: Schussknopf, Aktionsknopf, sonst Stick. Der Finger
+## gehoert dem, der zuerst zutrifft.
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
+		if _knopf_beruehrt(t.pressed, t.position, t.index):
+			return
 		_stick_setzen(t.pressed, t.position)
 	elif event is InputEventScreenDrag:
-		_stick_ziehen((event as InputEventScreenDrag).position)
+		var d := event as InputEventScreenDrag
+		if d.index == _feuer_finger:
+			return
+		_stick_ziehen(d.position)
 	elif event is InputEventMouseButton:
 		var m := event as InputEventMouseButton
 		if m.button_index == MOUSE_BUTTON_LEFT:
+			if _knopf_beruehrt(m.pressed, m.position, -2):
+				return
 			_stick_setzen(m.pressed, m.position)
 	elif event is InputEventMouseMotion and _stick != null and _stick.active:
 		_stick_ziehen((event as InputEventMouseMotion).position)
 	elif event is InputEventKey and event.pressed and not event.echo \
 			and (event as InputEventKey).keycode == KEY_E:
 		_benutzen()
+
+
+## Welcher Finger auf dem Schussknopf liegt. −1 = keiner.
+##
+## Ohne diese Zuordnung reisst der zweite Finger den ersten mit: Wer mit links geht und mit
+## rechts schiesst, hebt beim Loslassen des Schussknopfes auch den Stick auf.
+var _feuer_finger: int = -1
+
+func _knopf_beruehrt(gedrueckt: bool, at: Vector2, finger: int) -> bool:
+	if _feuer != null and gedrueckt and _feuer.hits(at):
+		_feuer.pressed = true
+		_feuer_finger = finger
+		return true
+	if not gedrueckt and finger == _feuer_finger:
+		if _feuer != null:
+			_feuer.pressed = false
+		_feuer_finger = -1
+		return true
+	if _aktion_btn != null and gedrueckt and _aktion_btn.visible \
+			and _aktion_btn.get_global_rect().has_point(at):
+		_benutzen()
+		return true
+	return false
 
 
 func _stick_setzen(gedrueckt: bool, at: Vector2) -> void:
@@ -554,6 +785,10 @@ func _gegner_bauen() -> void:
 			(knoten as MeshInstance3D).mesh = box
 		knoten.position = DungeonLayout.feld_zu_szene(f)
 		add_child(knoten)
+		# Sofort in die Ruhepose. Ohne diesen Aufruf steht das Modell in der BINDEPOSE — Arme
+		# waagerecht abgespreizt — bis es sich das erste Mal bewegt. Genau das sah aus wie
+		# "nicht animiert", und zwar bei jedem Gegner, den man von Weitem sieht.
+		AssetRegistry.play_clip(knoten, "idle")
 		if ist_kopf:
 			AssetRegistry.schimmer_anlegen(knoten, CombatData.ANFUEHRER_SCHIMMER)
 		# Die Lebensleiste über dem Kopf, wie draußen: Ohne sie sieht man nur, DASS man trifft,
@@ -597,6 +832,7 @@ func _endgegner_bauen() -> void:
 	# keinen Augenblick, ihn anzusehen — und genau der ist der Auftritt.
 	knoten.position = _treppe_pos + Vector3(DungeonLayout.FELD_M * 1.2, 0.0, 0.0)
 	add_child(knoten)
+	AssetRegistry.play_clip(knoten, "idle")
 	# Ein ANDERES Rot als das Violett der Anführer. Beide leuchten, beide heißen „hier ist
 	# etwas Besonderes" — aber wer den Unterschied nicht sieht, hält den Endgegner für den
 	# vierten Anführer und läuft mit halbem Leben hinein.
@@ -648,16 +884,31 @@ func _kampf(delta: float) -> void:
 			if DungeonLayout.begehbar(_plan, DungeonLayout.szene_zu_feld(probe)):
 				n.position.z = probe.z
 			n.rotation.y = atan2(-richtung.x, -richtung.z)
+			AssetRegistry.play_clip(n, "walk")
 		else:
 			e["kaltzeit"] = float(e["kaltzeit"]) - delta
 			if float(e["kaltzeit"]) <= 0.0:
 				e["kaltzeit"] = CombatData.MELEE_INTERVAL_SEC
+				AssetRegistry.play_clip(n, "attack", false)
 				_hp -= float(t.contact_dps) * CombatData.MELEE_INTERVAL_SEC \
 					* CombatEngine.player_damage_taken_mul(PlayerStats.player_armor())
 				if _hp <= 0.0:
 					_ohnmacht()
 					return
 	_entflechten()
+	# Die Figur ANIMIEREN. Draussen laeuft das seit Langem, hier stand sie in der Ruhepose und
+	# glitt ueber den Boden — `play_clip` wurde im Stollen kein einziges Mal gerufen. Ein Modell
+	# ohne Clip sieht nicht "ruhig" aus, sondern kaputt.
+	#
+	# `attack` hat Vorrang und laeuft aus, bevor wieder `walk` oder `idle` uebernimmt: Sonst
+	# schneidet der naechste Schritt den Schlag nach zwei Bildern ab.
+	if _angriff_t > 0.0:
+		_angriff_t -= delta
+	elif _bewegt_sich:
+		AssetRegistry.play_clip(_spieler, "walk")
+	else:
+		AssetRegistry.play_clip(_spieler, "idle")
+	_bewegt_sich = false
 	_feuer_bereit -= delta
 	if _feuern_gedrueckt() and _feuer_bereit <= 0.0:
 		_schiessen(jetzt)
@@ -692,6 +943,15 @@ func _schiessen(jetzt: int) -> void:
 	if e.is_empty():
 		return
 	_feuer_bereit = float(PlayerStats.fire_ms(waffe)) / 1000.0
+	AssetRegistry.play_clip(_spieler, "attack", false)
+	_angriff_t = maxf(AssetRegistry.clip_length(_spieler, "attack"), 0.25)
+	# Zum Ziel drehen — sonst schiesst er in die Laufrichtung, waehrend das Konstrukt seitlich
+	# neben ihm steht.
+	var ziel_n: Node3D = e["node"]
+	var hin := Vector3(ziel_n.position.x - _spieler.position.x, 0.0,
+		ziel_n.position.z - _spieler.position.z)
+	if hin.length() > 0.05:
+		_spieler.rotation.y = atan2(-hin.x, -hin.z)
 	_schuss_ton()
 	var t: CombatTarget = e["target"]
 	var art: String = String(CombatData.WEAPONS[waffe]["type"])

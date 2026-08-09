@@ -28,6 +28,16 @@ var _buehne: Vector3
 
 func _ready() -> void:
 	get_window().size = Vector2i(1280, 720)
+	# Der Stollen ist eine EIGENE Szene und wird getrennt aufgebaut.
+	#
+	# Ihn mit hineinzuladen ginge nicht: Beide Szenen setzen ein `WorldEnvironment`, und zwei
+	# davon im selben Baum heisst, dass eines gewinnt — welches, haengt an der Reihenfolge.
+	# Der Stollen lebt aber von seiner Dunkelheit; unter dem Wuestenhimmel waere er ein Zimmer
+	# mit grauen Waenden, und genau das, was zu pruefen ist, waere weg.
+	var vorwahl: PackedStringArray = OS.get_cmdline_user_args()
+	if vorwahl.size() > 0 and String(vorwahl[0]).begins_with("stollen"):
+		_stollen_aufbauen()
+		return
 	_welt = load("res://scenes/Overworld.tscn").instantiate()
 	add_child(_welt)
 	_cam = Camera3D.new()
@@ -194,6 +204,42 @@ func _ready() -> void:
 					break
 		if not gewaehlt.is_empty():
 			_views = gewaehlt
+
+
+## Bilder aus dem Stollen — vor allem: wie viel Licht steht an den Waenden?
+##
+## „Nicht zu viele Lampen" ist keine Zahl, die man aus der Konstanten abliest. Zwei Kegel, die
+## einander gerade nicht beruehren, sehen im Bild ganz anders aus als in der Rechnung. Also
+## einmal aus Spielerhoehe an einer Lampe vorbei in den Gang und einmal von oben ueber die
+## ganze Ebene: Auf dem zweiten sieht man auf einen Blick, ob dazwischen noch Dunkel liegt.
+func _stollen_aufbauen() -> void:
+	# Fester Startwert, damit zwei Laeufe dasselbe Bild ergeben und ein Unterschied im Bild
+	# eine Aenderung im Code ist und nicht ein anderer Grundriss.
+	GameState.stollen_startwert = 4242
+	GameState.stollen_ebene = 2
+	_welt = load("res://scenes/Dungeon.tscn").instantiate()
+	add_child(_welt)
+	_cam = Camera3D.new()
+	_cam.fov = 60.0
+	add_child(_cam)
+	var dv = _welt
+	var plaetze: Array = dv.lampen_plaetze(dv._plan)
+	print("── Stollen: %d Lampen ──" % plaetze.size())
+	if plaetze.is_empty():
+		get_tree().quit()
+		return
+	# An der ersten Lampe: von schraeg gegenueber, damit Gehaeuse UND Lichtkegel im Bild sind.
+	var erste: Dictionary = plaetze[0]
+	var wo: Vector3 = DungeonLayout.feld_zu_szene(erste["feld"] as Vector2i)
+	var hin: Vector2i = erste["hin"] as Vector2i
+	var weg := Vector3(-float(hin.x), 0.0, -float(hin.y))
+	_views = [
+		["stollen_lampe", wo + weg * 7.0 + Vector3(0.0, 2.4, 0.0),
+			wo + Vector3(float(hin.x), 0.0, float(hin.y)) * 2.0 + Vector3(0.0, 2.4, 0.0)],
+		["stollen_gang", wo + weg * 16.0 + Vector3(1.5, 2.2, 0.0), wo + Vector3(0.0, 1.6, 0.0)],
+		["stollen_oben", wo + Vector3(0.0, 62.0, 34.0), wo],
+	]
+	_wait = 30
 
 
 ## Ausgangslage fuer ein Oberflaechen-Bild. Eine leere Puppe und ein leerer Beutel zeigen
