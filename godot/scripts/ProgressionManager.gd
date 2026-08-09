@@ -21,6 +21,38 @@ const RARITY: Dictionary = {
 }
 const RARITY_ORDER: Array = ["common", "rare", "epic", "legendary"]
 
+## Ab welcher Stufe man ein Teil tragen darf — als SPANNE je Seltenheit, nicht als eine Zahl.
+##
+## Vorher hatte jedes epische Teil dieselbe Anforderung: Stufe 7. Damit war "episch" eine
+## Schranke und keine Auswahl — man konnte gar nichts davon tragen, und ab Stufe 7 dann alles.
+## Zwischen einem schwachen und einem starken Fundstueck derselben Farbe lag kein Unterschied,
+## den die Stufe abgebildet haette.
+##
+## Jetzt entscheidet der WURF. Er bestimmt ohnehin schon, wie stark das Teil ist (siehe
+## `roll_affix`); dieselbe Zahl bestimmt jetzt auch, ab wann man es tragen darf. Damit gilt
+## automatisch, was gelten soll: Ein schwaches episches Teil traegt man ab Stufe 1, ein starkes
+## erst ab zwoelf — und man kann sich nicht das eine ohne das andere aussuchen.
+##
+## Legendaeres faengt nicht bei 1 an. Es ist die einzige Gattung mit einer eigenen Kraft, und
+## eine Kraft, die man in der ersten Spielminute bekommt, ist keine Belohnung mehr.
+## `common` bleibt bei 1, als einzige Gattung ohne Spanne. Nicht aus Bequemlichkeit: Der Prolog
+## legt dem Helden einen GEWOEHNLICHEN Karabiner in die Hand, und mit einer Spanne von 1 bis 3
+## haette der bei jedem dritten Spielstart Stufe 2 oder 3 verlangt — er haette seine eigene
+## Startwaffe nicht anlegen koennen. Gewoehnlich ist der Grundzustand; ihn zu verriegeln bringt
+## nichts und kann alles kaputtmachen. Die Testsuite hat es gefangen.
+const REQ_SPANNE: Dictionary = {
+	"common":    [1, 1],
+	"rare":      [1, 7],
+	"epic":      [1, 12],
+	"legendary": [4, 20],
+}
+
+
+## Die Stufenanforderung aus dem Wurf. `guete` ist 0…1 — derselbe Wert, der die Staerke setzt.
+static func req_fuer(rarity: String, guete: float) -> int:
+	var sp: Array = REQ_SPANNE.get(rarity, [1, 1])
+	return int(round(lerpf(float(sp[0]), float(sp[1]), clampf(guete, 0.0, 1.0))))
+
 ## Die Farbe je Seltenheitsstufe.
 ##
 ## Sie stand in `OverworldView` — und vier andere Dateien griffen quer dorthin, darunter der
@@ -231,10 +263,13 @@ static func make_gear(slot: String, rarity: String, force_power: String = "",
 		kind = ""
 	var stat_key: String = String(def["stat"])
 	var factor: float = (float(def["base"]) / float(SUB_BASE.get(stat_key, def["base"]))) * extra_mul
-	var primary: Dictionary = roll_affix(stat_key, float(r["mult"]), factor, rng.randf())
+	# EIN Wurf fuer beides: Staerke und Stufenanforderung. Zwei getrennte Wuerfe koennten ein
+	# schwaches Teil mit hoher Anforderung ergeben — und das waere keine Abstufung, sondern Pech.
+	var guete: float = rng.randf()
+	var primary: Dictionary = roll_affix(stat_key, float(r["mult"]), factor, guete)
 	_uid += 1
 	var g: Dictionary = {
-		"uid": _uid, "slot": slot, "rarity": rarity, "req": int(r["req"]), "big": big,
+		"uid": _uid, "slot": slot, "rarity": rarity, "req": req_fuer(rarity, guete), "big": big,
 		"name": base_name, "stat": primary, "affixes": [], "desc": String(GEAR_FLAVOR.get(slot, "")),
 	}
 	if kind != "":
@@ -270,7 +305,11 @@ static func make_tech(tech_type: String, rarity: String) -> Dictionary:
 	var r: Dictionary = RARITY[rarity]
 	_uid += 1
 	return {
-		"uid": _uid, "slot": "tech", "tech_type": tech_type, "rarity": rarity, "req": int(r["req"]),
+		# Tech-Module wuerfeln ihren Wert nicht aus — er steht fest je Seltenheit. Also auch
+		# eine feste Anforderung, und zwar die MITTE der Spanne: Sie sollen sich zwischen den
+		# schwachen und den starken Fundstuecken derselben Farbe einordnen, nicht davor.
+		"uid": _uid, "slot": "tech", "tech_type": tech_type, "rarity": rarity,
+		"req": req_fuer(rarity, 0.5),
 		"name": String(r["name"]) + " " + String(t["name"]),
 		"stat": { "key": String(t["stat"]), "val": maxi(1, roundi(float(t["base"]) * float(r["mult"]))) },
 		"desc": String(t["desc"]),

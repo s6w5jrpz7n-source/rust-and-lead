@@ -87,7 +87,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_kraterrand": 8,
 	"_test_kraterrand_kamm": 6,
 	"_test_stimmen": 13,
-	"_test_stufenanforderung": 8,
+	"_test_stufenanforderung": 13,
 	"_test_gedraenge": 23,
 	"_test_ui_grafiken": 11,
 	"_test_spielstand_vollstaendig": 6,
@@ -6700,16 +6700,48 @@ func _test_stufenanforderung() -> void:
 	var bag_vorher: Array = GameState.bag.duplicate(true)
 	var equip_vorher: Dictionary = GameState.equip.duplicate(true)
 
-	# Die Zahlen kommen aus der Seltenheit und muessen aufsteigen — sonst ist "seltener" keine
-	# Belohnung fuers Aufsteigen, sondern nur eine andere Farbe.
-	var letzte: int = 0
+	# Die Anforderung ist eine SPANNE je Seltenheit, keine feste Zahl. Vorher hatte jedes
+	# epische Teil dieselbe: Stufe 7 — damit war "episch" eine Schranke und keine Auswahl. Man
+	# konnte gar keins tragen, und ab Stufe 7 dann alle.
+	var oben: int = 0
 	var steigend: bool = true
 	for r in ProgressionManager.RARITY_ORDER:
-		var n: int = int(ProgressionManager.RARITY[r]["req"])
-		if n < letzte:
+		var sp: Array = ProgressionManager.REQ_SPANNE[r]
+		if int(sp[1]) < oben or int(sp[0]) > int(sp[1]):
 			steigend = false
-		letzte = n
-	_check("Die Anforderung steigt mit der Seltenheit (1/3/7/11)", steigend and letzte > 1)
+		oben = int(sp[1])
+	_check("Die Spanne waechst mit der Seltenheit (bis Stufe %d)" % oben,
+		steigend and oben >= 15)
+	# Einfaches Episches ab Stufe 1, starkes Episches erst spaet — das ist die Forderung.
+	_check("Schwaches Episches geht ab Stufe 1 (%d)"
+		% ProgressionManager.req_fuer("epic", 0.0),
+		ProgressionManager.req_fuer("epic", 0.0) == 1)
+	_check("Starkes Episches erst ab Stufe %d"
+		% ProgressionManager.req_fuer("epic", 1.0),
+		ProgressionManager.req_fuer("epic", 1.0) >= 10)
+	# Legendaeres faengt NICHT bei 1 an: Es ist die einzige Gattung mit eigener Kraft, und eine
+	# Kraft in der ersten Spielminute ist keine Belohnung mehr.
+	_check("Schwaches Legendaeres verlangt trotzdem Stufe %d"
+		% ProgressionManager.req_fuer("legendary", 0.0),
+		ProgressionManager.req_fuer("legendary", 0.0) >= 3)
+	# Und Staerke und Anforderung haengen am SELBEN Wurf. Zwei getrennte Wuerfe koennten ein
+	# schwaches Teil mit hoher Anforderung ergeben — keine Abstufung, sondern Pech.
+	var quelle_pm: String = FileAccess.get_file_as_string("res://scripts/ProgressionManager.gd")
+	_check("Staerke und Anforderung kommen aus demselben Wurf",
+		quelle_pm.contains("var guete: float = rng.randf()")
+		and quelle_pm.contains("roll_affix(stat_key, float(r[\"mult\"]), factor, guete)")
+		and quelle_pm.contains("req_fuer(rarity, guete)"))
+	# Nachgemessen an echten Wuerfen: In einer Kategorie muss es BEIDES geben.
+	var rng_req := RandomNumberGenerator.new()
+	rng_req.seed = 99
+	var tief: int = 999
+	var hoch: int = 0
+	for i in 400:
+		var e: Dictionary = ProgressionManager.make_gear("weapon", "epic", "", rng_req)
+		tief = mini(tief, int(e["req"]))
+		hoch = maxi(hoch, int(e["req"]))
+	_check("Unter 400 epischen Waffen: von Stufe %d bis %d" % [tief, hoch],
+		tief <= 2 and hoch >= 10)
 
 	GameState.level = 1
 	var legendaer: Dictionary = ProgressionManager.make_gear("weapon", "legendary")
