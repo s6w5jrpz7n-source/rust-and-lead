@@ -30,3 +30,8 @@ __pycache__/
 # bei jedem Start 120 Dateien, und jeder Pull scheitert an "would be overwritten".
 # Die Dateien tragen keine Entscheidung, die man nicht in zehn Sekunden neu erzeugt.
 *.import
+
+# Gerendertes Audio und SSML. Es entsteht aus docs/hoerspiel_tts.json und
+# gehoert nicht ins Repository: 111 WAVs sind dreistellige Megabyte, und
+# jede Neufassung des Skripts erzeugt sie ohnehin neu.
+docs/hoerspiel_audio/
