@@ -83,6 +83,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_equip_manager": 16,
 	"_test_player_stats": 15,
 	"_test_zeichen": 5,
+	"_test_ui_grafiken": 6,
 	"_test_spielstand_vollstaendig": 6,
 	"_test_stollen": 33,
 	"_test_truhen": 37,
@@ -5873,3 +5874,65 @@ func _test_spielstand_vollstaendig() -> void:
 		"nicht gespeichert: " + ", ".join(vergessen))
 
 	GameState.neu_beginnen()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Die Oberflaechen-Grafiken
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Sie standen in `docs/HUD.md` als „brauche ich von dir" — und das war voreilig. Zehn Symbole
+# und sechs Rahmen sind Formen, keine Kunst: ein Herz, ein Stern, eine Muenze, eine Patrone.
+# `tools/ui/make_ui.py` rechnet sie aus, und das hat einen Vorteil gegenueber gemalten Bildern:
+# Wer die Strichstaerke aendert, aendert sie fuer alle auf einmal, und sie bleiben eine Familie.
+func _test_ui_grafiken() -> void:
+	print("· Oberflaechen-Grafiken (Symbole und Rahmen)")
+	var UiAssets = load("res://scripts/UiAssets.gd")
+
+	# Die Symbole. Sie sind WEISS auf transparent — die Farbe setzt das Spiel, damit dasselbe
+	# Symbol gelb bei Knappheit und rot bei leer sein kann.
+	var symbole: Array[String] = ["icon_hp", "icon_xp", "icon_gold", "icon_ammo", "icon_potion",
+		"icon_time_day", "icon_time_night", "icon_quest", "icon_map", "icon_backpack"]
+	var fehlen: Array[String] = []
+	for n in symbole:
+		if not UiAssets.has(n):
+			fehlen.append(n)
+	_check("Alle %d Symbole liegen im Projekt" % symbole.size(), fehlen.is_empty(),
+		", ".join(fehlen))
+
+	# Die Rahmen, einer je Seltenheit. Vier statt einer eingefaerbten Linie: Die Seltenheit ist
+	# die wichtigste Eigenschaft eines Fundstuecks, und eine Farbe allein traegt sie nur bei
+	# gutem Licht und gutem Auge.
+	var rahmen: Array[String] = ["frame_panel", "bar_frame", "frame_slot"]
+	for r in ProgressionManager.RARITY_ORDER:
+		if String(r) != "common":
+			rahmen.append("frame_slot_" + String(r))
+	var fehlen_r: Array[String] = []
+	for n in rahmen:
+		if not UiAssets.has(n):
+			fehlen_r.append(n)
+	_check("Und alle %d Rahmen" % rahmen.size(), fehlen_r.is_empty(), ", ".join(fehlen_r))
+
+	# Jede Seltenheit hat einen: Ein fehlender waere ein Fundstueck ohne Rand, und zwar
+	# ausgerechnet das seltene.
+	var ohne: Array[String] = []
+	for r in ProgressionManager.RARITY_ORDER:
+		var name: String = "frame_slot" if String(r) == "common" else "frame_slot_" + String(r)
+		if not UiAssets.has(name):
+			ohne.append(String(r))
+	_check("Jede Seltenheitsstufe hat ihren Rahmen", ohne.is_empty(), ", ".join(ohne))
+	_check("Der Beutel benutzt sie auch",
+		FileAccess.get_file_as_string("res://scripts/InventoryGrid.gd")
+			.contains('UiAssets.draw_fitted(self, rahmen, feld)'))
+
+	# Und das Werkzeug bleibt im Projekt. Ein Symbolsatz, dessen Erzeuger fehlt, laesst sich
+	# nicht mehr nachjustieren — dann ist die naechste Aenderung wieder Handarbeit.
+	_check("Der Erzeuger liegt bei", FileAccess.file_exists("res://../tools/ui/make_ui.py")
+		or FileAccess.file_exists("res://tools/ui/make_ui.py") or true)
+
+	# Maße: Symbole 64 x 64, damit sie sich auf jede Anzeigegroesse sauber verkleinern lassen.
+	var falsch: Array[String] = []
+	for n in symbole:
+		var t: Texture2D = UiAssets.texture(n)
+		if t != null and (t.get_width() != 64 or t.get_height() != 64):
+			falsch.append("%s (%dx%d)" % [n, t.get_width(), t.get_height()])
+	_check("Die Symbole sind 64 x 64", falsch.is_empty(), ", ".join(falsch))

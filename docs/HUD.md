@@ -90,6 +90,22 @@ zusammengehören.
 
 ## Was ich dafür brauche
 
+> **Korrektur: das meiste brauchte ich gar nicht von dir.** Die Liste unten stand monatelang als
+> „liefere mir das" da, und das war voreilig. Zehn Symbole und sechs Rahmen sind **Formen, keine
+> Kunst** — ein Herz, ein Stern, eine Münze, eine Patrone, ein Flakon. Die rechnet
+> `tools/ui/make_ui.py` aus, und zwar besser als von Hand gemalt: Wer die Strichstärke ändert,
+> ändert sie für alle zehn auf einmal, und sie bleiben eine Familie. **Alle sind da.**
+>
+> Drei mussten zweimal gebaut werden, und nur das Kontaktbild hat es gezeigt: Die Münze war ein
+> Ring mit einem Querbalken und las sich als **Minuszeichen** — an einer Goldanzeige das
+> Gegenteil von hilfreich. Die Patrone war Spitze plus Rechteck und sah aus wie ein **Obelisk**;
+> es fehlte der Rand am Boden, das Stück, an dem man eine Patrone überhaupt erkennt. Und die
+> Sonnenstrahlen fingen wegen eines Rechenfehlers *innerhalb* der Scheibe an, sodass sie wie
+> gepunktete Fusseln aussahen.
+>
+> Was ich weiterhin nicht selbst kann, sind die **3D-Modelle** — die brauchen eine Hand, die
+> Formen erfindet, keine, die Kreise rechnet.
+
 Der Ordner `assets/ui/` hat schon einen brauchbaren Grundstock: `portrait_frame`, `dialog_frame`,
 `btn_normal/hover/disabled`, `btn_fire`, `btn_character`, die sechs Slot-Symbole, `doll_body`,
 `footprint`. Es fehlen:

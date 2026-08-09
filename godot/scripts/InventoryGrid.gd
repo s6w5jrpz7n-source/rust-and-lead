@@ -112,7 +112,15 @@ func _draw() -> void:
 			Color.WHITE)
 		var feld: Rect2 = _rect_of(r)
 		draw_rect(feld, Color(col.r, col.g, col.b, 0.22))
-		draw_rect(feld, col, false, 2.0 if i == selected else 1.0)
+		# Der RAHMEN je Seltenheit, wenn einer daliegt — sonst die gezeichnete Linie.
+		#
+		# Vier Rahmen statt einer eingefärbten Linie: Die Seltenheit ist die wichtigste
+		# Eigenschaft eines Fundstücks, und eine Farbe allein trägt sie nur bei gutem Licht und
+		# gutem Auge. Ein eigener Rand gibt ihr Form.
+		var rahmen: String = "frame_slot" if String(g.get("rarity", "common")) == "common" \
+			else "frame_slot_" + String(g.get("rarity", "common"))
+		if not UiAssets.draw_fitted(self, rahmen, feld):
+			draw_rect(feld, col, false, 2.0 if i == selected else 1.0)
 		if i == selected:
 			# Ausgewähltes Feld doppelt umrandet statt farblich verändert: Die Farbe TRÄGT hier
 			# Bedeutung (Seltenheit), die darf die Auswahl nicht überschreiben.
