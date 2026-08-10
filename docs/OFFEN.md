@@ -30,6 +30,29 @@ Sinnbilder.
 
 ## 2 · Von mir, noch nicht gemacht
 
+> **Das Größte zuerst: Es gibt zwei Oberflächen, und das ist die Ursache, nicht das Symptom.**
+>
+> „warum ist das nicht das genau gleiche hud wie oben??? das sollte doch universell das gleiche
+> sein." — Richtig, und genau daran hängen die meisten Stollen-Meldungen.
+>
+> `OverworldView` baut seine Oberfläche selbst (rund 400 Zeilen: Balken, Kopfzeile, Minikarte,
+> Portrait/Rucksack, Aktionsleiste, Schussknopf mit Trabanten, Zoomknöpfe, Sprechtafel).
+> `DungeonView` baut seine eigene — und hatte davon **zwei** Elemente: Knüppel und Abzug.
+>
+> Jede meiner Reparaturen im Stollen war deshalb ein **Nachbau** dessen, was oben längst
+> existiert: erst der Aktionsknopf, dann der Lebensbalken, jetzt der Rucksack-Knopf. Das ist
+> dreimal dieselbe Arbeit und dreimal eine neue Stelle, an der etwas fehlen kann. Der nächste
+> Wunsch („zeig die Uhrzeit auch unten") wäre der vierte Nachbau.
+>
+> **Richtig wäre eine Klasse `GameHud`**, die beide Ansichten einhängen — mit Schaltern dafür,
+> was der Stollen nicht braucht (Weltkarte, Tageszeit). Dann ist die Oberfläche einmal gebaut,
+> einmal getestet und überall gleich. Das ist kein Nachmittag: Es sind zwei große Dateien, und
+> die Oberfläche hängt an Dutzenden Feldern von `OverworldView`.
+>
+> Ich habe es **nicht** angefangen, statt es halb zu tun — ein halb umgezogenes HUD wäre
+> schlimmer als zwei ganze. Sag Bescheid, wenn ich damit anfangen soll; es ist die eine
+> Änderung, die die Stollen-Meldungen dauerhaft beendet.
+
 | Was | Wo es klemmt |
 | :-- | :-- |
 | **Fünf Sinnbilder liegen weiter ungenutzt**: `icon_hp`, `icon_xp`, `icon_ammo`, `icon_map`, `icon_backpack`. Gold, Uhr, Auftrag und Trank benutzen ihres jetzt | Bei Leben und Erfahrung habe ich es bewusst gelassen — du wolltest **weniger** in der Kopfzeile, und die Balken sagen es schon. Karte und Rucksack haben ihren Knopf bereits (Minikarte und Porträt) |
