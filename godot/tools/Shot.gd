@@ -262,19 +262,6 @@ func _stollen_aufbauen() -> void:
 ## Spielerradius wie im Spiel. Darauf sieht man Loecher, die im Bild unter einem Dach liegen.
 func _sperren_messen(ow: Node) -> void:
 	var stadt: Vector3 = WorldManager.poi_scene_position("rustwater")
-	# WAS wird ueberhaupt eingetragen? Nach Bauteil gezaehlt, und daneben, was in der Szene
-	# steht. Weichen die Zahlen ab, fehlen Sperren — und dann laeuft man durch eine Wand.
-	var szene: Node3D = (load(OverworldView.TOWN_SCENE) as PackedScene).instantiate()
-	var aus_szene: Dictionary = {}
-	for r0 in TownCollision.rects(szene, Transform3D.IDENTITY):
-		var a0: String = String(r0["asset"])
-		aus_szene[a0] = int(aus_szene.get(a0, 0)) + 1
-	szene.queue_free()
-	print("── Was die Stadtszene an Sperren hergibt ──")
-	var namen: Array = aus_szene.keys()
-	namen.sort()
-	for n0 in namen:
-		print("   %-24s %d" % [String(n0), int(aus_szene[n0])])
 	var liste: Array = []
 	for b in ow._rot_blockers:
 		var h: Vector2 = b["h"]

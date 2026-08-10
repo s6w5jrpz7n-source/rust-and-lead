@@ -3541,6 +3541,23 @@ func _register_town_rects(sperren: Array) -> void:
 	#
 	# Die Bruecken kommen VOR den Bauten in die Liste, damit `wer_blockiert` bei einer Meldung
 	# den Grund nennt und nicht das naechstbeste Haus.
+	# WAS traegt sich ueberhaupt ein? Nach Bauteil gezaehlt, einmal beim Aufbau.
+	#
+	# „kann immer noch durch alle palisaden durchlaufen." Die Rasterkarte sagt, an der
+	# Palisade sei gesperrt — der Spieler sagt, er laufe hindurch. Einer von beiden misst das
+	# Falsche, und diese Zeile entscheidet, welcher: Steht hier kein Palisadenstueck, ist die
+	# Mauer nie eingetragen worden und die Karte zeigt etwas anderes an, als sie soll.
+	var zaehlung: Dictionary = {}
+	for r0 in sperren:
+		var a0: String = String(r0.get("asset", ""))
+		if a0 == "":
+			a0 = "(ohne Namen) " + String(r0.get("name", "?"))
+		zaehlung[a0] = int(zaehlung.get(a0, 0)) + 1
+	var namen: Array = zaehlung.keys()
+	namen.sort()
+	print("── Stadt: %d Sperren ──" % sperren.size())
+	for n0 in namen:
+		print("   %-30s %d" % [String(n0), int(zaehlung[n0])])
 	for br in TownCollision.gassen_schliessen(sperren, PLAYER_RADIUS_M):
 		_solid_rect_rot(Vector3(br["c"].x, 0.0, br["c"].y), Vector2(br["h"]), float(br["yaw"]))
 	for r in sperren:
@@ -3566,8 +3583,22 @@ func _register_town_rects(sperren: Array) -> void:
 		# `_build_npcs` stellt den Wirt danach davor.
 		var wirt: String = String(r.get("npc", ""))
 		if wirt != "":
-			_haus_von_npc[wirt] = { "c": Vector2(r["c"]), "h": Vector2(r["h"]),
-				"yaw": float(r["yaw"]) }
+			# Das GROESSTE Stueck gilt als das Haus.
+			#
+			# „silas steht zu weit links von der schmiede. soll mittig stehen."
+			#
+			# Ein Gebaeude kommt selten als ein einziger Kasten: Die Schmiede hat Esse, Vordach
+			# und Anbau, und jedes Teil traegt dieselbe `metadata/npc`. Bisher gewann schlicht
+			# das ZULETZT durchlaufene — und wenn das der Schornstein war, stellte sich Silas
+			# mittig vor den Schornstein, also seitlich neben das Haus. Von dort trifft ihn
+			# nachts auch die Beleuchtung nicht, die auf die Fassade zielt.
+			#
+			# Die groesste Grundflaeche ist das Haus selbst; alles andere haengt daran.
+			var flaeche: float = float(r["h"].x) * float(r["h"].y)
+			var bisher: Dictionary = _haus_von_npc.get(wirt, {})
+			if bisher.is_empty() or flaeche > float(bisher.get("flaeche", 0.0)):
+				_haus_von_npc[wirt] = { "c": Vector2(r["c"]), "h": Vector2(r["h"]),
+					"yaw": float(r["yaw"]), "flaeche": flaeche }
 		var text: String = String(r["label"])
 		if text != "":
 			_label(Vector3(r["c"].x, float(r["deckel"]) + 2.2, r["c"].y), text,
@@ -5026,6 +5057,34 @@ func _trank_trinken() -> void:
 static func hud_umriss(lbl: Label, staerke: int = 4) -> void:
 	lbl.add_theme_constant_override("outline_size", staerke)
 	lbl.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.03, 0.92))
+
+
+## Die Figur an die naechste freie Stelle setzen.
+##
+## In Ringen nach aussen gesucht, in halben Metern, hoechstens acht Meter weit — das ist mehr
+## als die halbe Breite jedes Bauwerks im Spiel und damit immer genug, um aus einem
+## herauszukommen. Findet sich nichts, bleibt die Figur stehen: Ein Sprung ins Ungewisse waere
+## schlimmer als das Steckenbleiben, das er beheben soll.
+##
+## Gelaende zaehlt mit — herausgesetzt wird auf Grund, auf dem man auch stehen darf, nicht in
+## den Riss und nicht in eine Wand.
+func _frei_setzen() -> void:
+	if _player == null:
+		return
+	var p: Vector3 = _player.position
+	for r in [0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.5, 8.0]:
+		for grad in range(0, 360, 20):
+			var kand: Vector3 = p + Vector3(cos(deg_to_rad(grad)), 0.0, sin(deg_to_rad(grad))) * r
+			if _blocked(kand) or _am_riss(kand):
+				continue
+			if not WorldManager.is_walkable(WorldManager.scene_to_world(kand)):
+				continue
+			kand.y = WorldManager.height_at(kand.x, kand.z)
+			_player.position = kand
+			if _fest_gemeldet <= 0.0:
+				_say("✖ Du hast in einer Wand gesteckt — herausgesetzt.", 2.2)
+				_fest_gemeldet = 8.0
+			return
 
 
 ## Ein Sinnbild in der Kopfzeile: das gemalte Bild, sonst ein leeres Control zum Selbstzeichnen.
@@ -7160,11 +7219,24 @@ func _process_movement(delta: float) -> void:
 	# Gelaende bleibt gesperrt (`is_walkable`, `_zu_steil`, `_am_riss`) — ein Notausgang durch
 	# eine Hauswand ist ein Notausgang; einer in den Abgrund waere ein zweites Problem.
 	_fest_gemeldet = maxf(0.0, _fest_gemeldet - delta)
-	var steckt_fest: bool = _blocked(_player.position)
-	if steckt_fest and _fest_gemeldet <= 0.0:
-		_say("✖ Du hast festgesteckt — geh zur Seite.", 2.0)
-		_fest_gemeldet = 8.0
-	if not WorldManager.is_walkable(to_rel) or (_weg_blockiert(_player.position, next) and not steckt_fest) \
+	# Wer feststeckt, wird HERAUSGESETZT — die Sperren bleiben an.
+	#
+	# Der erste Anlauf hat statt dessen die Kollision ausgeschaltet, solange die Figur in einer
+	# Sperre stand. Das war ein Fehler mit Ansage, und er hat genau das angerichtet, was
+	# gemeldet wurde: „kann immer noch durch alle palisaden durchlaufen."
+	#
+	# Denn „in einer Sperre" ist keine seltene Ausnahme. Die Rechtecke tragen den Spielerradius
+	# schon in sich, und geprueft wird mit `<=`: Wer sich an eine Wand stellt, steht damit
+	# GENAU auf ihrem Rand und gilt als drin. Ein Rundungsrest genuegt. Und dann waren, solange
+	# man an der Mauer entlangstrich, saemtliche Sperren der Welt abgeschaltet — man ging durch
+	# die Palisade wie durch Luft.
+	#
+	# Richtig ist die Umkehrung: Die Regel bleibt IMMER an, und wer trotzdem drinsteht, wird
+	# einmal an die naechste freie Stelle gesetzt. Das ist ein sichtbarer Ruck statt einer
+	# stillen Ausnahme — und ein Ruck ist ehrlicher als eine Welt, deren Waende manchmal gelten.
+	if _blocked(_player.position):
+		_frei_setzen()
+	if not WorldManager.is_walkable(to_rel) or _weg_blockiert(_player.position, next) \
 			or _gegner_im_weg(next) \
 			or _zu_steil(_player.position, next) \
 			or _am_riss(next):
@@ -7185,7 +7257,7 @@ func _process_movement(delta: float) -> void:
 			kand.x = clampf(kand.x, 2.0, WorldManager.WORLD_METERS - 2.0)
 			kand.z = clampf(kand.z, -(WorldManager.WORLD_METERS - 2.0), -2.0)
 			if WorldManager.is_walkable(WorldManager.scene_to_world(kand)) \
-					and (steckt_fest or not _weg_blockiert(_player.position, kand)) and not _gegner_im_weg(kand) \
+					and not _weg_blockiert(_player.position, kand) and not _gegner_im_weg(kand) \
 					and not _zu_steil(_player.position, kand) \
 					and not _am_riss(kand):
 				next = kand
@@ -7195,24 +7267,15 @@ func _process_movement(delta: float) -> void:
 			var slide_x: Vector3 = Vector3(next.x, 0.0, _player.position.z)
 			var slide_z: Vector3 = Vector3(_player.position.x, 0.0, next.z)
 			if WorldManager.is_walkable(WorldManager.scene_to_world(slide_x)) \
-					and (steckt_fest or not _weg_blockiert(_player.position, slide_x)) \
+					and not _weg_blockiert(_player.position, slide_x) \
 					and not _gegner_im_weg(slide_x) \
 					and not _zu_steil(_player.position, slide_x) and not _am_riss(slide_x):
 				next = slide_x
 			elif WorldManager.is_walkable(WorldManager.scene_to_world(slide_z)) \
-					and (steckt_fest or not _weg_blockiert(_player.position, slide_z)) \
+					and not _weg_blockiert(_player.position, slide_z) \
 					and not _gegner_im_weg(slide_z) \
 					and not _zu_steil(_player.position, slide_z) and not _am_riss(slide_z):
 				next = slide_z
-			elif not steckt_fest and _blocked(next):
-				# EINGEKESSELT. Man steht selbst im Freien, aber jede Richtung ist gesperrt —
-				# ein Loch von einem Meter zwischen zwei Kisten. Der Notausgang oben greift
-				# hier nicht, denn `_blocked(_player.position)` ist falsch: Frei zu stehen und
-				# nicht weglaufen zu koennen sind zwei verschiedene Lagen mit derselben
-				# Wirkung. Also dieselbe Ausnahme, eine Stufe spaeter.
-				if _fest_gemeldet <= 0.0:
-					_say("✖ Du warst eingekesselt — geh zur Seite.", 2.0)
-					_fest_gemeldet = 8.0
 			else:
 				return   # in eine Ecke gelaufen — Position halten
 		step = next - _player.position
