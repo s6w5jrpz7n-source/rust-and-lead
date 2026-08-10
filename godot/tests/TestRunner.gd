@@ -7160,7 +7160,8 @@ func _test_stollen_lampen() -> void:
 	# Und sie sind schwaecher als die Guertellampe. Die gehoert dem Spieler und soll das
 	# Hellste im Bild bleiben — sonst laeuft man von Insel zu Insel und traegt sie umsonst.
 	_check("Die Guertellampe bleibt die staerkste (%.1f gegen %.1f)"
-		% [2.1, float(DV.LAMPEN_ENERGIE)], float(DV.LAMPEN_ENERGIE) < 2.1)
+		% [float(DV.GUERTEL_ENERGIE), float(DV.LAMPEN_ENERGIE)],
+		float(DV.LAMPEN_ENERGIE) < float(DV.GUERTEL_ENERGIE))
 
 	# Warm, nicht weiss: Kohlefaden hinter angelaufenem Glas.
 	var farbe: Color = DV.LAMPEN_FARBE

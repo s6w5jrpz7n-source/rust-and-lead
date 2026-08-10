@@ -30,7 +30,7 @@ extends Node3D
 const SPIELER_TEMPO: float = 7.0
 ## Wie weit die Gürtellampe trägt. 9 m laut Plan — weit genug, um den Raum zu ahnen, zu kurz,
 ## um ihn zu überblicken.
-const LAMPE_M: float = 9.0
+const LAMPE_M: float = 12.0
 ## Wie nah man an Treppe oder Ausgang muss.
 const NAH_M: float = 2.6
 const WAND_H: float = 3.5
@@ -50,7 +50,13 @@ const LAMPEN_MAX: int = 8
 const LAMPEN_H: float = 2.55
 ## Wie weit eine Lampe traegt.
 const LAMPEN_REICHWEITE: float = 8.5
-const LAMPEN_ENERGIE: float = 1.5
+## Die Guertellampe des Spielers — sie gehoert IHM und bleibt das Hellste im Bild.
+##
+## Als Konstante, weil ein Test sie mit den Wandlampen vergleicht. Vorher stand ihr Wert als
+## nackte 2.1 im Code UND noch einmal als 2.1 im Test: Wer den einen aendert, sieht den anderen
+## nicht, und dann prueft der Test eine Zahl, die es nicht mehr gibt.
+const GUERTEL_ENERGIE: float = 3.0
+const LAMPEN_ENERGIE: float = 2.2
 ## Warm und schmutzig — Kohlefaden hinter angelaufenem Glas, nicht Neonroehre.
 const LAMPEN_FARBE: Color = Color(1.0, 0.66, 0.30)
 ## Wie stark das Flackern ausschlaegt, als Anteil der Grundhelligkeit.
@@ -92,6 +98,9 @@ var _gegner: Array = []
 var _hp: float = 0.0
 var _feuer: FireButton
 var _aktion_btn: Button
+var _rucksack_btn: Button = null
+var _rucksack: Control = null
+var _ui_layer: CanvasLayer = null
 var _feuer_bereit: float = 0.0
 ## Laeuft gerade eine Angriffs-Animation? Sie hat Vorrang vor Laufen und Stehen.
 var _angriff_t: float = 0.0
@@ -175,11 +184,21 @@ func _umgebung_bauen() -> void:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	# Nicht ganz null: Bei absoluter Schwärze sieht man außerhalb des Lampenkegels NICHTS, und
 	# ein Spieler, der die Wand nicht ahnt, läuft nicht vorsichtig, sondern ratlos.
-	env.ambient_light_color = Color(0.18, 0.17, 0.22)
-	env.ambient_light_energy = 0.14
+	# „stollen ist immer noch zu dunkel."
+	#
+	# Beim ersten Mal habe ich LAMPEN dazugestellt und die Grundhelligkeit gelassen, wie sie
+	# war. Das war die falsche Haelfte: Lampen machen Kegel, und zwischen den Kegeln blieb es
+	# genauso schwarz wie vorher. Was fehlt, ist das Licht, das ueberall ist.
+	#
+	# 0,42 statt 0,14 — dreimal so viel. Damit sieht man Waende, Gaenge und Gegner auch dort,
+	# wo keine Lampe haengt; die Lampen bleiben trotzdem die hellen Stellen und geben dem Gang
+	# seinen Rhythmus. Und der Nebel wird duenner: Bei 0,035 lag ab sechs Metern eine Wand aus
+	# Grau, die jede zusaetzliche Helligkeit gleich wieder aufgefressen hat.
+	env.ambient_light_color = Color(0.42, 0.40, 0.46)
+	env.ambient_light_energy = 0.42
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.05, 0.045, 0.055)
-	env.fog_density = 0.035
+	env.fog_light_color = Color(0.10, 0.09, 0.11)
+	env.fog_density = 0.016
 	welt.environment = env
 	add_child(welt)
 
@@ -418,7 +437,7 @@ func _spieler_bauen() -> void:
 	# Drehen mitgehen.
 	_lampe = OmniLight3D.new()
 	_lampe.omni_range = LAMPE_M
-	_lampe.light_energy = 2.1
+	_lampe.light_energy = GUERTEL_ENERGIE
 	_lampe.light_color = Color(1.0, 0.86, 0.62)
 	# Die Lampe haengt UEBER der Figur, nicht in ihr.
 	#
@@ -500,7 +519,46 @@ func _oberflaeche_bauen() -> void:
 	_hp_bar.add_theme_stylebox_override("background", hinten)
 	_hp_bar.add_theme_stylebox_override("fill", vorn)
 	layer.add_child(_hp_bar)
+	# Der Rucksack. „rucksack nicht zugänglich" — er war es wirklich nicht: Diese Ansicht
+	# baute genau zwei Bedienelemente, Knueppel und Abzug. Draussen oeffnet das Portraet oben
+	# links den Rucksack; hier gab es weder Portraet noch Taste, die etwas bewirkt haette.
+	#
+	# Gerade im Stollen zaehlt er: Dort findet man Truhen, dort wird man verwundet, und dort
+	# will man umruesten. Wer hinuntersteigt, soll nicht bis zum Ausgang warten muessen.
+	_rucksack_btn = Button.new()
+	_rucksack_btn.text = "▣  Rucksack"
+	_rucksack_btn.focus_mode = Control.FOCUS_NONE
+	_rucksack_btn.add_theme_font_size_override("font_size", 16)
+	_rucksack_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_rucksack_btn.offset_left = -152.0
+	_rucksack_btn.offset_right = -14.0
+	_rucksack_btn.offset_top = 12.0
+	_rucksack_btn.offset_bottom = 50.0
+	_rucksack_btn.pressed.connect(_rucksack_umschalten)
+	layer.add_child(_rucksack_btn)
+	_ui_layer = layer
 	_kopf_setzen()
+
+
+## Rucksack auf und zu — dieselbe Anzeige wie draussen, damit nichts zweimal gebaut wird.
+func _rucksack_umschalten() -> void:
+	if _rucksack != null and is_instance_valid(_rucksack):
+		_rucksack.queue_free()
+		_rucksack = null
+		return
+	_rucksack = CharacterScreen.new()
+	_rucksack.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Die Tafel meldet sich selbst ab — ueber ihr ✕ oben rechts. Ohne diese Verbindung waere
+	# sie zwar zu, laege aber weiter als unsichtbare Flaeche ueber dem Bild und finge jeden
+	# Fingertipp ab; genau so entsteht ein „nichts geht mehr".
+	_rucksack.zu_machen.connect(_rucksack_umschalten)
+	_ui_layer.add_child(_rucksack)
+
+
+## Ist der Rucksack offen? Dann ruht das Spiel dahinter — sonst laeuft man blind weiter,
+## waehrend man Ausruestung vergleicht.
+func _rucksack_offen() -> bool:
+	return _rucksack != null and is_instance_valid(_rucksack)
 
 
 func _kopf_setzen() -> void:
@@ -573,7 +631,13 @@ func _kamera_nachziehen() -> void:
 		return
 	# Steiler als draussen: In einem engen Gang zeigt eine flache Kamera vor allem die Wand
 	# direkt vor der Nase.
-	_kamera.position = _spieler.position + Vector3(0.0, 13.0, 11.0)
+	# „zoom sieht auch nicht korrekt aus."
+	#
+	# 13 m ueber und 11 m hinter der Figur ist ein Blick fuer eine Karte, nicht fuer einen
+	# Gang: Die Figur war ein Fleck von wenigen Pixeln in einem schwarzen Feld. Draussen steht
+	# die Kamera deutlich naeher, und im Stollen — wo es eng ist und der Gegner neben einem
+	# steht — muss sie es erst recht. 8,6 hoch und 7,4 zurueck ist derselbe Winkel, nur naeher.
+	_kamera.position = _spieler.position + Vector3(0.0, 8.6, 7.4)
 	_kamera.look_at(_spieler.position + Vector3(0.0, 1.0, 0.0), Vector3.UP)
 
 
@@ -662,6 +726,17 @@ func _aktion_knopf_setzen() -> void:
 ## Jetzt wird von oben nach unten gefragt: Schussknopf, Aktionsknopf, sonst Stick. Der Finger
 ## gehoert dem, der zuerst zutrifft.
 func _unhandled_input(event: InputEvent) -> void:
+	# [I], [C] und [Esc] oeffnen und schliessen den Rucksack — dieselben Tasten wie draussen.
+	# Und solange er offen ist, kommt keine Eingabe mehr in den Stollen durch: Wer Ausruestung
+	# vergleicht, soll nicht nebenher weiterlaufen und beschossen werden.
+	if event is InputEventKey and event.pressed and not event.echo:
+		var k: int = (event as InputEventKey).keycode
+		if k == KEY_I or k == KEY_C or (k == KEY_ESCAPE and _rucksack_offen()):
+			_rucksack_umschalten()
+			get_viewport().set_input_as_handled()
+			return
+	if _eingabe_gesperrt():
+		return
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
 		if _knopf_beruehrt(t.pressed, t.position, t.index):
@@ -723,6 +798,11 @@ func _stick_ziehen(at: Vector2) -> void:
 		return
 	_stick.knob = _stick.origin + (at - _stick.origin).limit_length(_stick.radius)
 	_stick.queue_redraw()
+
+
+## Solange der Rucksack offen ist, ruht der Stollen: keine Bewegung, kein Schuss.
+func _eingabe_gesperrt() -> bool:
+	return _rucksack_offen()
 
 
 func _benutzen() -> void:
@@ -905,7 +985,11 @@ func _kampf(delta: float) -> void:
 	if _angriff_t > 0.0:
 		_angriff_t -= delta
 	elif _bewegt_sich:
-		AssetRegistry.play_clip(_spieler, "walk")
+		# RENNEN, nicht gehen. Im Stollen laeuft die Figur mit 7,0 m/s (`SPIELER_TEMPO`) —
+		# schneller als draussen —, und dazu einen Geh-Clip abzuspielen sieht aus, als
+		# schliddere sie ueber den Boden. Kennt das Modell kein „run", faellt `play_clip`
+		# ohnehin auf das zurueck, was da ist.
+		AssetRegistry.play_clip(_spieler, "run")
 	else:
 		AssetRegistry.play_clip(_spieler, "idle")
 	_bewegt_sich = false
@@ -939,10 +1023,17 @@ func _schiessen(jetzt: int) -> void:
 	var waffe: String = GameState.weapon_id
 	if waffe == "":
 		return
+	_feuer_bereit = float(PlayerStats.fire_ms(waffe)) / 1000.0
 	var e: Dictionary = _naechster()
 	if e.is_empty():
+		# INS LEERE schiessen, statt gar nichts zu tun. „kann nich schießen" hiess nicht, dass
+		# der Knopf klemmt — er tat nur nichts, solange kein Gegner in Reichweite stand, und
+		# ein Knopf ohne Rueckmeldung ist von einem kaputten nicht zu unterscheiden. Draussen
+		# schiesst man auch in die Wueste. Schuss, Ton, Ruecklauf; getroffen wird niemand.
+		AssetRegistry.play_clip(_spieler, "attack", false)
+		_angriff_t = maxf(AssetRegistry.clip_length(_spieler, "attack"), 0.25)
+		_schuss_ton()
 		return
-	_feuer_bereit = float(PlayerStats.fire_ms(waffe)) / 1000.0
 	AssetRegistry.play_clip(_spieler, "attack", false)
 	_angriff_t = maxf(AssetRegistry.clip_length(_spieler, "attack"), 0.25)
 	# Zum Ziel drehen — sonst schiesst er in die Laufrichtung, waehrend das Konstrukt seitlich

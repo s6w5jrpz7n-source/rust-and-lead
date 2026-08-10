@@ -163,7 +163,13 @@ static func sun_color(stunde: float) -> Color:
 ## Eine Wuestennacht bei Vollmond und klarem Himmel ist HELL — man liest keine Zeitung, aber man
 ## sieht den Weg, die Kante eines Felsens und den eigenen Schatten. Genau das ist der Anspruch:
 ## Der Mond wirft harte Schatten, die Farbe ist blaugrau, aber die Form der Welt bleibt lesbar.
-const MOND_ENERGIE: float = 0.34
+## „mach außerdem die nacht heller. das ist zu dunkel."
+##
+## 0,55 statt 0,34. Die Erhoehung geht bewusst hierhin und nicht ins Umgebungslicht: Das
+## Mondlicht ist GERICHTET und wirft Schatten — es macht die Nacht hell und laesst sie
+## trotzdem wie Nacht aussehen. Umgebungslicht hebt alles gleichmaessig an; davon wird eine
+## Mondnacht ein truebe beleuchteter Tag.
+const MOND_ENERGIE: float = 0.55
 static func sun_energy(stunde: float) -> float:
 	return lerpf(0.0, 1.7, daylight(stunde))
 
@@ -225,7 +231,10 @@ static func ambient_energy(stunde: float) -> float:
 	# gleichmaessig an und macht aus einer Mondnacht einen truebe beleuchteten Tag. Die
 	# Helligkeit muss vom gerichteten MONDLICHT kommen, das Schatten wirft; das Umgebungslicht
 	# fuellt nur so weit auf, dass die Schattenseite nicht schwarz absaeuft.
-	return lerpf(0.11, 0.42, daylight(stunde))
+	# Der Sockel steigt von 0,11 auf 0,18 mit: Ohne ihn saeuft die Schattenseite ab, waehrend
+	# die Mondseite hell ist, und der Unterschied wird zu hart. Mehr als das nicht — die
+	# Helligkeit soll weiter vom Mond kommen.
+	return lerpf(0.18, 0.42, daylight(stunde))
 
 
 ## Wo steht der Mond? Gegenüber der Sonne — er geht auf, wenn sie untergeht.
