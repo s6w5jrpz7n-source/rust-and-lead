@@ -61,8 +61,9 @@ deshalb wird sie beim Füllen ausgespart.
 
 **0. Es ist Abendrot.** Eine Runde beginnt um **18:36** (`DayCycle.START_HOUR`). Das ist keine
 Kosmetik, sondern der Bauplan des Prologs: Der Held erwacht in der Dämmerung, und während er
-Richtung Rustwater geht, wird es Nacht. Zu Fuß dauert der Kilometer vier Minuten — acht
-Spielstunden, Ankunft gegen **01:40**. Im Sattel reicht es gerade für die Dämmerung.
+Richtung Rustwater geht, wird es Nacht. Zu Fuß dauert der Kilometer vier Minuten — bei einem
+Spieltag von vierundzwanzig Minuten sind das vier Spielstunden, Ankunft gegen **22:40**. Im
+Sattel kommt man im letzten Abendrot an.
 
 **1. Aufwachen.** Gut eine Minute — die Szene dauert so lange, wie der Held zu reden hat, nicht
 andersherum. Eine Kamerafahrt mit fester Länge zwingt den Text in ihr Korsett, und dabei kommen

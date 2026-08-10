@@ -7,12 +7,18 @@ extends RefCounted
 ## auch dort, wo es keine Szene gibt (Tests, `QuestManager`). Deshalb: reine Rechnung, keine
 ## Knoten, alles statisch.
 ##
-## ## Der Tag ist kurz
+## ## Der Tag ist kurz — aber nicht mehr SO kurz
 ##
-## Ein Spieltag dauert **zwölf Minuten** Echtzeit. Das ist bewusst knapp: Wer eine Nachtquest
-## hat, soll nicht eine Stunde warten, und wer die Wüste bei Abendlicht sehen will, soll sie
-## heute noch sehen. Zum Vergleich: Eine Querung des Kraters zu Fuß dauert achtzehn Minuten —
-## eine lange Reise führt also durch mehr als eine Tageszeit, und genau das soll sie.
+## Ein Spieltag dauert **vierundzwanzig Minuten** Echtzeit. Vorher waren es zwölf, und das war
+## zu wenig: Man stand in Rustwater vor einem Händler, und während des Gesprächs wurde es
+## Nacht. Bei zwölf Minuten vergeht in jeder Sekunde eine Spielminute — die Uhr rennt sichtbar,
+## und eine Uhr, die man beim Zusehen laufen sieht, ist keine Tageszeit mehr, sondern ein
+## Ticker.
+##
+## Kurz bleibt der Tag trotzdem, und mit Absicht: Wer eine Nachtquest hat, soll nicht eine
+## Stunde warten, und wer die Wüste bei Abendlicht sehen will, soll sie heute noch sehen. Zum
+## Vergleich: Eine Querung des Kraters zu Fuß dauert achtzehn Minuten — eine lange Reise führt
+## also immer noch durch mehr als eine Tageszeit, und genau das soll sie.
 ##
 ## ## Fünf Phasen, nicht zwei
 ##
@@ -21,7 +27,11 @@ extends RefCounted
 ## Deshalb bekommen Dämmerung und Abendrot eigene Phasen — sie sind kurz und sollen es sein.
 
 ## Länge eines Spieltags in echten Sekunden.
-const DAY_SEC: float = 720.0
+##
+## Die Zahl steht an genau einer Stelle, und alles andere rechnet sie sich aus (`advance`,
+## `sun_energy`, die Phasen). Wer sie ändert, ändert die Uhr des ganzen Spiels und nichts
+## sonst — deshalb war das Verdoppeln auch eine einzige Zeile.
+const DAY_SEC: float = 1440.0
 
 ## Uhrzeit, bei der eine neue Runde beginnt: **Abendrot**.
 ##
@@ -29,10 +39,14 @@ const DAY_SEC: float = 720.0
 ## Richtung Rustwater geht, wird es Nacht. Wenn die Stadt in Sicht kommt, liegt sie als warmer
 ## Lichtfleck in einer dunklen Wüste — das ist das Bild, auf das der ganze Anfang zuläuft.
 ##
-## Die Rechnung dahinter: Ein Spieltag dauert zwölf Minuten, der Weg von der Grube nach
-## Rustwater gut einen Kilometer, also vier Minuten zu Fuß. Das sind acht Spielstunden — von
-## 18:36 aus wird es unterwegs verlässlich dunkel, im Sattel (dreifaches Tempo) reicht es
-## gerade für die Dämmerung.
+## Die Rechnung dahinter: Ein Spieltag dauert vierundzwanzig Minuten, der Weg von der Grube
+## nach Rustwater gut einen Kilometer, also vier Minuten zu Fuß. Das sind vier Spielstunden —
+## von 18:36 aus wird es unterwegs verlässlich dunkel (Ankunft gegen 22:40), im Sattel
+## (dreifaches Tempo) kommt man im letzten Abendrot an.
+##
+## Seit der Tag doppelt so lang ist, ist die Ankunft im Sattel also früher — 19:55 statt 21:20.
+## Das bleibt so: Beide Ankünfte liegen weiterhin nach Sonnenuntergang, und wer reitet, soll
+## auch etwas davon haben, dass er schneller da ist.
 const START_HOUR: float = 18.6
 
 # ── Phasen ────────────────────────────────────────────────────────────────────
@@ -80,8 +94,8 @@ static func daylight(stunde: float) -> float:
 
 ## ## Sonne und Mond STEHEN — sie wandern nicht
 ##
-## Ein Spieltag dauert zwoelf Minuten. Eine Sonne, die in dieser Zeit den ganzen Bogen
-## abfaehrt, bewegt sich um zwei Grad je Sekunde — und damit wandert jeder Schatten in der Welt
+## Ein Spieltag dauert vierundzwanzig Minuten. Eine Sonne, die in dieser Zeit den ganzen Bogen
+## abfaehrt, bewegt sich um ein Grad je Sekunde — und damit wandert jeder Schatten in der Welt
 ## sichtbar mit. Godot rechnet die Schattenkarte fuer jeden Frame neu, und weil sie eine
 ## begrenzte Aufloesung hat, tanzen die Kanten dabei: Was aussieht wie grobes Rauschen, ist
 ## eine Schattenkarte, die zwischen zwei Rasterpositionen hin- und herspringt.

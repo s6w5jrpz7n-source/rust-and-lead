@@ -73,7 +73,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_poi_walkable": 24,
 	"_test_town_walkable": 17,
 	"_test_enemy_attacks": 20,
-	"_test_daycycle": 219,
+	"_test_daycycle": 221,
 	"_test_dialog": 22,
 	"_test_memory_manager": 29,
 	"_test_encounter_manager": 24,
@@ -2133,7 +2133,8 @@ func _test_quest_wayfinding() -> void:
 ## Geprueft wird, was daran schiefgehen KANN: dass die Phasen den Tag luecken- und
 ## ueberschneidungsfrei abdecken (der Uebergang ueber Mitternacht ist der einzige, der hinten
 ## herum geht), dass die Beleuchtung nirgends SPRINGT — eine Sonne, die an einer Phasengrenze
-## einen Satz macht, liest sich als Fehler — und dass ein Tag wirklich zwoelf Minuten dauert.
+## einen Satz macht, liest sich als Fehler — und dass ein Tag wirklich so lange dauert wie
+## eingetragen (`DAY_SEC`, seit dem Verdoppeln vierundzwanzig Minuten).
 func _test_daycycle() -> void:
 	print("· Tageszeit")
 	# 1. Jede Stunde hat genau eine Phase, und alle vier kommen vor.
@@ -2237,6 +2238,19 @@ func _test_daycycle() -> void:
 	var ankunft: float = DayCycle.advance(DayCycle.START_HOUR, marsch)
 	_check("Bei Ankunft zu Fuss ist es Nacht (%s)" % DayCycle.clock_text(ankunft),
 		DayCycle.phase_at(ankunft) == DayCycle.NACHT)
+	# Und im Sattel — dreifaches Tempo — wenigstens nicht mehr am hellen Tag. Das ist die
+	# Pruefung, die beim Verdoppeln der Taglaenge etwas zu sagen hatte: Wer schneller ankommt,
+	# kommt bei einer laengeren Uhr FRUEHER an, und irgendwann waere er im Sonnenschein da.
+	# Der Prolog laeuft auf ein beleuchtetes Rustwater in dunkler Wueste zu; bei Tageslicht
+	# gibt es dieses Bild nicht.
+	var ritt: float = DayCycle.advance(DayCycle.START_HOUR, marsch / 3.0)
+	_check("Und im Sattel wenigstens Abendrot (%s)" % DayCycle.clock_text(ritt),
+		DayCycle.phase_at(ritt) == DayCycle.ABEND or DayCycle.phase_at(ritt) == DayCycle.NACHT)
+	# Die Uhr darf nicht rennen. Bei zwoelf Minuten verging in JEDER Sekunde eine Spielminute —
+	# man sah sie beim Zusehen laufen, und ein Gespraech mit einem Haendler kostete eine
+	# Tageszeit. Eine Spielstunde muss laenger dauern als ein Gespraech.
+	var sek_je_stunde: float = DayCycle.DAY_SEC / 24.0
+	_check("Eine Spielstunde dauert %.0f echte Sekunden" % sek_je_stunde, sek_je_stunde >= 55.0)
 	# 9. Flammen flackern — und zwar so, dass es nicht auffaellt, WIE sie es tun.
 	_test_flacker()
 	# 10. Die Umrundung des Wasserturms ist wirklich eine.

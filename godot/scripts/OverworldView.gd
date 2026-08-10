@@ -1788,8 +1788,8 @@ func _build_environment() -> void:
 ## Quests, die eine Uhrzeit verlangen. Die Rechnung dazu steht in `DayCycle`; hier wird sie nur
 ## angewendet.
 ##
-## Nicht jeden Frame: Ein Spieltag dauert zwoelf Minuten, in einer Zehntelsekunde bewegt sich
-## die Sonne um zwei Bogenminuten. Viermal je Sekunde reicht und ist unsichtbar.
+## Nicht jeden Frame: Ein Spieltag dauert vierundzwanzig Minuten, in einer Zehntelsekunde
+## bewegt sich die Sonne um eine Bogenminute. Viermal je Sekunde reicht und ist unsichtbar.
 const DAYTIME_INTERVAL: float = 0.25
 var _daytime_cd: float = 0.0
 func _process_daytime(delta: float) -> void:
