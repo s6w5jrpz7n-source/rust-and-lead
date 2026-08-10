@@ -161,6 +161,17 @@ static func _eintrag(node: Node3D, mitte: Vector3, halb: Vector2, yaw: float, ho
 	var schild: String = ""
 	if mit_schild and node.has_meta("label"):
 		schild = String(node.get_meta("label"))
+	# Wem gehoert das Haus? `metadata/npc` in der Szene, sonst leer.
+	#
+	# Damit steht der Wirt vor SEINEM Haus, auch nachdem jemand es im Editor verschoben hat.
+	# Vorher standen die Standorte als feste Zahlen im Code, gemessen an der Stadt, die der
+	# Code selbst baut — und seit `Rustwater.tscn` die Wahrheit ist, stimmten sie nicht mehr:
+	# Der Saloon war um sieben Meter gewandert, die Schmiede um vier, und Doc und Wanda hatten
+	# ueberhaupt kein Haus mehr, weil Destille und Labor in der Szene gar nicht vorkommen.
+	# Die Figuren standen daraufhin auf der Strasse herum.
+	var wirt: String = ""
+	if mit_schild and node.has_meta("npc"):
+		wirt = String(node.get_meta("npc"))
 	return {
 		"c": Vector2(mitte.x, mitte.z),
 		"h": halb,
@@ -168,6 +179,7 @@ static func _eintrag(node: Node3D, mitte: Vector3, halb: Vector2, yaw: float, ho
 		"deckel": mitte.y + hoehe * 0.5,
 		"asset": asset,
 		"label": schild,
+		"npc": wirt,
 		"name": node.name,
 	}
 

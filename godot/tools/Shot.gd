@@ -118,6 +118,12 @@ func _ready() -> void:
 	# Wandas Regal. Es gab davon nie ein Bild, und ein Laden ist genau die Sorte Bildschirm, bei
 	# der eine falsche Zeilenbreite oder ein fehlender Preis nur im Bild auffaellt.
 	_views.append(["ui_waffenlager", null, "waffenlager"])
+	# Wer steht wo? Vier Auftraggeber, vier Haeuser — und die Frage, ob die Figur wirklich VOR
+	# ihrem Haus steht, beantwortet kein Zahlenvergleich, sondern ein Bild von oben.
+	_views.append(["stadt_wirte", null, "wirte"])
+	# Und einmal aus Spielerhoehe auf die Praxis: Aus 78 m Hoehe ist eine Figur vier Bildpunkte
+	# gross, und ob sie VOR der Wand steht oder darin, sieht man daran nicht.
+	_views.append(["stadt_praxis", null, "praxis"])
 	# Das SPIEL-HUD selbst: Kopfzeile, Abzug, Trank-Trabant. Es gab lange kein Bild davon, und
 	# genau deshalb ist niemandem aufgefallen, dass die halbe Kopfzeile aus leeren Kaestchen
 	# bestand — die Schrift kannte kein einziges der Symbole. Was man nicht knipst, prueft man
@@ -245,6 +251,15 @@ func _stollen_aufbauen() -> void:
 	_wait = 30
 
 
+## Senkrecht ueber Rustwater — der Blick, auf dem man Standorte wirklich beurteilen kann.
+func _kamera_ueber_stadt(ow: Node) -> void:
+	var rw: Vector3 = WorldManager.poi_scene_position("rustwater")
+	ow._player.position = Vector3(rw.x, WorldManager.height_at(rw.x, rw.z), rw.z + 6.0)
+	_cam.position = rw + Vector3(0.0, 78.0, 30.0)
+	_cam.look_at(rw, Vector3.UP)
+	_cam.current = true
+
+
 ## Ausgangslage fuer ein Oberflaechen-Bild. Eine leere Puppe und ein leerer Beutel zeigen
 ## nichts von dem, worauf es ankommt — also erst Beute erzeugen, dann anlegen, dann knipsen.
 ## Liegt ein Bildpunkt im sichtbaren Rahmen?
@@ -266,6 +281,39 @@ func _setup_ui(art: String) -> void:
 		for s2 in ["weapon", "armor", "gadget", "helmet", "boots", "armor"]:
 			BagManager.add(ProgressionManager.make_gear(String(s2), "epic"))
 		ow._toggle_character(CharacterScreen.Tab.AUSRUESTUNG)
+	elif art == "wirte":
+		ow._close_character()
+		ow._close_shop()
+		GameState.hour = 12.0
+		_kamera_ueber_stadt(ow)
+		# Und die gemessenen Abstaende dazu — ein Bild sagt „sieht gut aus", eine Zahl sagt
+		# „drei Meter vor der Wand".
+		for n in ow._npcs:
+			var p: Vector3 = n["pos"]
+			var haus: Dictionary = ow._haus_von_npc.get(String(n["giver"]), {})
+			if haus.is_empty():
+				print("    %-7s ohne Haus" % String(n["giver"]))
+				continue
+			var d: float = Vector2(p.x, p.z).distance_to(Vector2(haus["c"]))
+			print("    %-7s %.1f m von der Hausmitte (halb %.1f/%.1f)"
+				% [String(n["giver"]), d, float(haus["h"].x), float(haus["h"].y)])
+	elif art == "praxis":
+		ow._close_character()
+		ow._close_shop()
+		GameState.hour = 12.0
+		var haus: Dictionary = ow._haus_von_npc.get("doc", {})
+		var rw2: Vector3 = WorldManager.poi_scene_position("rustwater")
+		var ziel: Vector3 = rw2
+		if not haus.is_empty():
+			ziel = Vector3(float(haus["c"].x), rw2.y, float(haus["c"].y))
+		# Von der Stadtmitte aus darauf zu — also aus der Richtung, aus der ein Spieler kommt.
+		var her: Vector3 = (rw2 - ziel)
+		her = Vector3(her.x, 0.0, her.z).normalized()
+		ow._player.position = ziel + her * 9.0
+		ow._player.position.y = WorldManager.height_at(ow._player.position.x, ow._player.position.z)
+		_cam.position = ziel + her * 17.0 + Vector3(0.0, 7.5, 0.0)
+		_cam.look_at(ziel + Vector3(0.0, 2.0, 0.0), Vector3.UP)
+		_cam.current = true
 	elif art == "waffenlager":
 		ow._close_character()
 		# Fester Handelstag, damit zwei Laeufe dasselbe Regal zeigen — der Bestand ist eine

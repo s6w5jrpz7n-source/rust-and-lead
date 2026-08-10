@@ -21,11 +21,13 @@
 transform = Transform3D(5.326587, 0, 4.5888615, 0, 7.0306587, 0, -4.5888615, 0, 5.326587, -9.52667, 4.28167, -2.8330593)
 metadata/label = "♠ Gatling-Saloon"
 metadata/asset = "saloon"
+metadata/npc = "mabel"
 
 [node name="Schmiede" parent="." unique_id=1559253342 instance=ExtResource("2_q6y6r")]
 transform = Transform3D(4.4472227, 0, -2.7667177, 0, 5.2376094, 0, 2.7667177, 0, 4.4472227, 16.943102, 3.50811, -7.0289907)
 metadata/label = "⚒ Eiserne Schmiede"
 metadata/asset = "forge"
+metadata/npc = "silas"
 
 [node name="Wasserturm" parent="." unique_id=1076767127 instance=ExtResource("3_m1gqn")]
 transform = Transform3D(-9.47219, 0, -8.28085e-07, 0, 9.47219, 0, 8.28085e-07, 0, -9.47219, -14.008921, 8.969069, 28.113071)
@@ -78,6 +80,18 @@ metadata/asset = "shack_a"
 [node name="Huette13" parent="." unique_id=1929608111 instance=ExtResource("5_bav70")]
 transform = Transform3D(3.70471, 0, 0.720123, 0, 3.77405, 0, -0.720123, 0, 3.70471, 30.081238, 2.10258, 6.402858)
 metadata/asset = "shack_b"
+
+[node name="Praxis" parent="." unique_id=411002701 instance=ExtResource("7_6ffvv")]
+transform = Transform3D(2.8285, 0, 1.0294, 0, 3.01, 0, -1.0294, 0, 2.8285, 12, 2.63, 12)
+metadata/label = "⚕ Praxis — Doc Aris"
+metadata/asset = "shack_d"
+metadata/npc = "doc"
+
+[node name="Waffenlager" parent="." unique_id=411002702 instance=ExtResource("6_8svoa")]
+transform = Transform3D(3.6704, 0, 0.9835, 0, 3.8, 0, -0.9835, 0, 3.6704, -9, 2.01, 14)
+metadata/label = "⚔ Waffenlager — Wanda Kessler"
+metadata/asset = "shack_c"
+metadata/npc = "wanda"
 
 [node name="gate" parent="." unique_id=108297808 instance=ExtResource("8_ci27e")]
 transform = Transform3D(0.9987025, 0, -0.050923746, 0, 1, 0, 0.050923746, 0, 0.9987025, 0.6937671, -0.008780718, -16.102121)

@@ -100,6 +100,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_nachschub": 9,
 	"_test_deutsche_werte": 8,
 	"_test_kopfzeile": 17,
+	"_test_wirte_vor_haus": 13,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -7491,3 +7492,90 @@ func _test_kopfzeile() -> void:
 	for knoten in ["_hp_txt", "_lv_lbl", "_gold_icon", "_gold_lbl", "_uhr_lbl"]:
 		_check("%s wird im Kino mit ausgeblendet" % knoten,
 			ow.contains(knoten + ", ") or ow.contains(knoten + "]"))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Jeder Wirt vor seinem Haus — auch nachdem jemand das Haus verschoben hat
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# „Die NPCs stehen nicht mehr vor ihren Gebaeuden."
+#
+# Der Grund war eine stille Doppelung: Die Standorte standen als feste Zahlen in `TOWN_NPCS`,
+# gemessen an der Stadt, die der CODE baut. Seit `Rustwater.tscn` die Wahrheit ist, stimmten sie
+# nicht mehr — der Saloon war beim Umbau von Hand sieben Meter gewandert, die Schmiede vier. Und
+# Doc und Wanda hatten ueberhaupt kein Haus: Destille und Alchemie-Labor kommen in der Szene gar
+# nicht vor, und das sind ohnehin WIRTSCHAFTSgebaeude, die niemandem persoenlich gehoeren.
+#
+# Zwei Zahlenreihen, die dasselbe meinen, driften auseinander, sobald jemand an einer davon
+# dreht. Jetzt gibt es nur noch eine: Das Haus traegt `metadata/npc`, und der Wirt stellt sich
+# davor.
+func _test_wirte_vor_haus() -> void:
+	print("· Wirte vor ihren Haeusern")
+
+	# ── Die Rechnung ────────────────────────────────────────────────────────
+	var mitte := Vector2(0.0, 0.0)
+	# Haus im Osten, ungedreht: Der Wirt steht auf der WESTseite, also zur Mitte hin.
+	var p: Vector2 = OverworldView.npc_platz(Vector2(10.0, 0.0), Vector2(3.0, 2.0), 0.0, mitte)
+	_check("Der Wirt steht zur Mitte hin (x=%.1f)" % p.x, p.x < 10.0)
+	_check("Und ausserhalb der Wand (%.1f m von der Hausmitte)" % p.length(),
+		p.distance_to(Vector2(10.0, 0.0)) > 3.0)
+	_check("Genau `halbe Tiefe + Abstand` davor",
+		is_equal_approx(p.x, 10.0 - 3.0 - OverworldView.NPC_VOR_HAUS_M))
+	# Haus im Norden: dann steht er suedlich davon. Die Richtung faellt aus der Lage und
+	# nicht aus einer Tabelle — genau das ist der Punkt.
+	var q: Vector2 = OverworldView.npc_platz(Vector2(0.0, -12.0), Vector2(3.0, 2.0), 0.0, mitte)
+	_check("Bei einem Haus im Norden steht er suedlich davon (z=%.1f)" % q.y, q.y > -12.0)
+	# Ein GEDREHTES Haus wird richtig vermessen: Bei 90 Grad zeigt seine lange Seite quer, die
+	# Tiefe in Blickrichtung ist dann die andere Kante. Ohne die Drehung stuende der Wirt bei
+	# einem breiten Haus in der Wand.
+	var r: Vector2 = OverworldView.npc_platz(Vector2(10.0, 0.0), Vector2(3.0, 2.0),
+		deg_to_rad(90.0), mitte)
+	_check("Ein gedrehtes Haus wird mit der richtigen Kante gerechnet (%.1f gegen %.1f)"
+		% [r.x, p.x], not is_equal_approx(r.x, p.x))
+	_check("Und auch dort steht er draussen",
+		r.distance_to(Vector2(10.0, 0.0)) > 2.0)
+	# Ein Haus GENAU in der Mitte hat keine Richtung — das darf nicht in eine Division durch
+	# null laufen, sondern muss irgendeine brauchbare Seite liefern.
+	var m0: Vector2 = OverworldView.npc_platz(Vector2.ZERO, Vector2(3.0, 2.0), 0.0, mitte)
+	_check("Ein Haus ohne Richtung stuerzt nicht ab", m0.length() > 1.0 and m0.length() < 99.0)
+
+	# ── Die Zuordnung in der Szene ──────────────────────────────────────────
+	#
+	# Das ist die eigentliche Zusicherung: Jeder Auftraggeber MUSS ein Haus haben, sonst steht
+	# er wieder auf der Strasse. Geprueft an der Szene, nicht am Code — sie ist die Wahrheit.
+	var szene: String = FileAccess.get_file_as_string(OverworldView.TOWN_SCENE)
+	var ohne_haus: Array[String] = []
+	for n in OverworldView.TOWN_NPCS:
+		if not szene.contains("metadata/npc = \"%s\"" % String(n[0])):
+			ohne_haus.append(String(n[0]))
+	_check("Jeder Auftraggeber hat ein Haus in der Szene", ohne_haus.is_empty(),
+		", ".join(ohne_haus))
+	# Und der Doc hat eine eigene Praxis, nicht das Labor der Stadt. Das war die Frage, mit der
+	# es angefangen hat, und die Antwort ist ja: Ein Arzt, der vor dem Wirtschaftsgebaeude der
+	# Stadt steht, ist kein Arzt mit einer Praxis.
+	_check("Der Doc hat eine Praxis", szene.contains("⚕ Praxis"))
+	_check("Und Wanda ein Waffenlager", szene.contains("⚔ Waffenlager"))
+
+	# ── Und in der Stadt aus dem Code auch ──────────────────────────────────
+	#
+	# Sie ist der Rueckfall, wenn die Szene fehlt. Ohne dieselbe Zuordnung dort stuenden die
+	# Wirte in genau dem Fall wieder herum, in dem niemand nachsieht.
+	var wirte_im_plan: Dictionary = {}
+	for b in OverworldView.TOWN_LAYOUT:
+		if (b as Array).size() > 6 and String(b[6]) != "":
+			wirte_im_plan[String(b[6])] = true
+	_check("Auch der Stadtplan im Code kennt Praxis und Waffenlager",
+		wirte_im_plan.has("doc") and wirte_im_plan.has("wanda"))
+	# Saloon und Schmiede stehen dort ohne siebtes Feld, weil sie in der Szene ihre Zuordnung
+	# tragen — im Rueckfall gelten fuer Mabel und Silas die Ersatzplaetze aus `TOWN_NPCS`, und
+	# die passen zu DIESEM Stadtplan.
+	var ersatz: Dictionary = {}
+	for n in OverworldView.TOWN_NPCS:
+		ersatz[String(n[0])] = Vector2(n[2])
+	_check("Jeder Wirt hat weiterhin einen Ersatzplatz", ersatz.size() == OverworldView.TOWN_NPCS.size())
+	# Die Ersatzplaetze liegen auf der Strasse und nicht in der Wueste.
+	var weit: String = ""
+	for wer in ersatz:
+		if (ersatz[wer] as Vector2).length() > OverworldView.TOWN_R:
+			weit = String(wer)
+	_check("Und der liegt im Ort", weit == "", weit)

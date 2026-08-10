@@ -285,6 +285,31 @@ const TOWN_LAYOUT: Array = [
 		Vector3(12.0, 6.0, 10.0), Color(0.30, 0.36, 0.31)],
 	["", "water_tower", Vector2(-14.0, -18.0), 180.0,
 		Vector3(9.0, 18.0, 9.0), Color(0.48, 0.38, 0.26)],
+	# ── Die beiden Haeuser, die nachgereicht wurden ──────────────────────────
+	#
+	# Vier Auftraggeber, zwei Haeuser: Mabel hatte den Saloon, Silas die Schmiede, und Doc und
+	# Wanda standen auf der Strasse. Die Destille und das Alchemie-Labor daneben sind
+	# WIRTSCHAFTSgebaeude (siehe `TycoonManager`) und gehoeren niemandem persoenlich — ein
+	# Arzt, der vor dem Labor der Stadt steht, ist kein Arzt mit einer Praxis.
+	#
+	# Beide sind Huetten mit einem Schild und keine eigenen Modelle. Das ist kein Notbehelf,
+	# sondern das, was zu ihnen passt: Eine Praxis in Rustwater ist ein Raum mit einer Pritsche,
+	# und ein Waffenlager ist ein Schuppen mit einem Riegel. Ein siebtes Feld nennt den Wirt —
+	# davor stellt sich die Figur.
+	#
+	# Die Plaetze sind GESUCHT und nicht geschaetzt: Die Innenstadt ist eng, der Saloon allein
+	# ist dreizehn mal zwoelf Meter, und die erste Wahl (beidseits der Strasse auf Hoehe der
+	# Kernbauten) steckte in Schmiede und Labor. Ein kurzes Skript hat den Stadtplan mit den
+	# GEMESSENEN Modellmassen abgerastert und die Plaetze genommen, die zu allem mindestens
+	# einen halben Meter Luft halten und die zwoelf Meter Gasse frei lassen.
+	#
+	# Dass beide am Nordende liegen, ist ein Gewinn: Dort kommt man durch das Tor herein. Wer
+	# Rustwater betritt, geht am Arzt und am Waffenhaendler vorbei, bevor er den Saloon
+	# erreicht — und beides ist das, was ein Ankommender braucht.
+	["⚕ Praxis — Doc Aris", "shack_d", Vector2(11.0, -8.0), 20.0,
+		Vector3(7.0, 5.0, 6.0), Color(0.62, 0.62, 0.60), "doc"],
+	["⚔ Waffenlager — Wanda Kessler", "shack_c", Vector2(-11.0, -9.5), 15.0,
+		Vector3(7.0, 4.5, 6.0), Color(0.50, 0.40, 0.30), "wanda"],
 ]
 ## Der Turm steht NEBEN dem Kopfende der Straße, nicht darauf: mit 9,4 m Breite würde er die
 ## zwölf Meter Gasse dichtmachen. Bei 18 m Höhe sieht man ihn von überall, auch von der Seite.
@@ -3411,6 +3436,12 @@ func _register_town_rects(sperren: Array) -> void:
 				# Anflug; beide zielten vorher auf leeren Sand neben der Stadt.
 				_turm_welt = Vector3(r["c"].x, stadt.y, r["c"].y)
 				_light_tower(r)
+		# Wem gehoert das Haus? Steht `metadata/npc` daran, merkt sich die Szene den Platz —
+		# `_build_npcs` stellt den Wirt danach davor.
+		var wirt: String = String(r.get("npc", ""))
+		if wirt != "":
+			_haus_von_npc[wirt] = { "c": Vector2(r["c"]), "h": Vector2(r["h"]),
+				"yaw": float(r["yaw"]) }
 		var text: String = String(r["label"])
 		if text != "":
 			_label(Vector3(r["c"].x, float(r["deckel"]) + 2.2, r["c"].y), text,
@@ -3426,6 +3457,11 @@ func _build_township_from_code(c: Vector3) -> void:
 		if String(b[0]) != "":
 			_label(pos + Vector3(0.0, size.y + 2.2, 0.0), String(b[0]),
 				Color(0.98, 0.90, 0.72), LBL_HAUS, 150.0)
+		# Siebtes Feld = der Wirt. Die aelteren Eintraege haben nur sechs; `size() > 6` statt
+		# eines Umbaus aller Zeilen, von denen die meisten niemandem gehoeren.
+		if (b as Array).size() > 6 and String(b[6]) != "":
+			_haus_von_npc[String(b[6])] = { "c": Vector2(pos.x, pos.z),
+				"h": Vector2(size.x, size.z) * 0.5, "yaw": deg_to_rad(float(b[3])) }
 	var shacks: Array = []
 	for suffix in ["a", "b", "c", "d"]:
 		if AssetRegistry.has_model("shack_" + suffix):
@@ -3464,11 +3500,55 @@ func _place_building(asset: String, pos: Vector3, yaw: float, fallback: Vector3,
 
 # ── NPCs & Quests ─────────────────────────────────────────────────────────────
 
+## Welches Haus welchem NPC gehoert: giver -> {"c", "h", "yaw"} in Weltkoordinaten.
+##
+## Gefuellt aus der Szene (`metadata/npc`), leer, solange der Code die Stadt selbst baut. Dann
+## gelten die Ersatzplaetze aus `TOWN_NPCS`.
+var _haus_von_npc: Dictionary = {}
+
+## Wie weit ein NPC vor seiner Hauswand steht.
+const NPC_VOR_HAUS_M: float = 2.6
+## Wie weit die Suche nach einem freien Fleck hoechstens geht, wenn der Platz besetzt ist.
+const NPC_AUSWEICH_M: float = 7.0
+
+
+## Der Platz vor einem Haus, zur Stadtmitte hin.
+##
+## „Vor dem Haus" heisst: auf der Seite, die zur Mitte zeigt. Das ist bei einem Ort, dessen
+## Haeuser um eine Strasse stehen, genau die Seite mit der Tuer — und es bleibt richtig, wenn
+## jemand ein Haus im Editor verschiebt oder dreht.
+##
+## `raus` ist die halbe Ausdehnung des Hauses IN DIESER RICHTUNG. Ein Rechteck, das man schraeg
+## trifft, reicht weiter als seine halbe Kante und weniger weit als seine halbe Diagonale;
+## genau das rechnet die Projektion. Ohne sie stuende der Wirt bei einem breiten Haus (der
+## Saloon ist dreizehn Meter lang) in der Wand.
+static func npc_platz(haus_c: Vector2, halb: Vector2, yaw: float, mitte: Vector2) -> Vector2:
+	var hin: Vector2 = mitte - haus_c
+	if hin.length() < 0.01:
+		hin = Vector2(0.0, 1.0)
+	hin = hin.normalized()
+	var lokal: Vector2 = hin.rotated(-yaw)
+	var raus: float = absf(lokal.x) * halb.x + absf(lokal.y) * halb.y
+	return haus_c + hin * (raus + NPC_VOR_HAUS_M)
+
+
 func _build_npcs() -> void:
 	var c: Vector3 = WorldManager.poi_scene_position("rustwater")
 	for n in TOWN_NPCS:
 		var spot: Vector2 = n[2]
 		var pos: Vector3 = c + Vector3(spot.x, 0.0, spot.y)
+		# Steht sein Haus in der Szene, gilt DESSEN Platz — der Ersatz aus `TOWN_NPCS` ist nur
+		# fuer die vom Code gebaute Stadt.
+		var haus: Dictionary = _haus_von_npc.get(String(n[0]), {})
+		if not haus.is_empty():
+			var p2: Vector2 = npc_platz(Vector2(haus["c"]), Vector2(haus["h"]),
+				float(haus["yaw"]), Vector2(c.x, c.z))
+			# Und wenn dort schon etwas steht, ein Stueck weiter zur Mitte. Rustwater ist eng
+			# gebaut; vor dem Saloon steht acht Meter weiter eine Huette, und ein Wirt IN einer
+			# Huette ist schlimmer als einer, der zwei Schritte zu weit vorn steht.
+			p2 = _freier_fleck(p2, Vector2(c.x, c.z))
+			pos = Vector3(p2.x, 0.0, p2.y)
+			spot = p2 - Vector2(c.x, c.z)
 		var node := Node3D.new()
 		var asset: String = "npc_" + String(n[0])
 		var model: Node3D = AssetRegistry.instantiate(asset, AssetRegistry.height_of(asset))
@@ -3492,6 +3572,27 @@ func _build_npcs() -> void:
 		add_child(node)
 		var label: Label3D = _label(pos + Vector3(0.0, 2.5, 0.0), String(n[1]), Color(0.98, 0.94, 0.82), LBL_FIGUR, 140.0)
 		_npcs.append({ "giver": String(n[0]), "name": String(n[1]), "node": node, "label": label, "pos": pos })
+
+
+## Ein Fleck, auf dem wirklich jemand stehen kann — ausgehend von `p`, zur Mitte hin.
+##
+## Meterweise nach innen, und wenn das nichts hilft, faechefoermig zur Seite. Findet sich gar
+## nichts, bleibt es beim Ausgangspunkt: Ein NPC, der in einer Wand steht, ist immer noch
+## ansprechbar; einer, den es nicht gibt, nicht.
+func _freier_fleck(p: Vector2, mitte: Vector2) -> Vector2:
+	if not _blocked(Vector3(p.x, 0.0, p.y)):
+		return p
+	var hin: Vector2 = (mitte - p)
+	hin = hin.normalized() if hin.length() > 0.01 else Vector2(0.0, 1.0)
+	for grad in [0.0, 30.0, -30.0, 60.0, -60.0, 90.0, -90.0]:
+		var richtung: Vector2 = hin.rotated(deg_to_rad(grad))
+		var d: float = 1.0
+		while d <= NPC_AUSWEICH_M:
+			var q: Vector2 = p + richtung * d
+			if not _blocked(Vector3(q.x, 0.0, q.y)):
+				return q
+			d += 1.0
+	return p
 
 
 ## Die (erste) Quest dieses Auftraggebers, die gerade relevant ist — offen oder aktiv.
