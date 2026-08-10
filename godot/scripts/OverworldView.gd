@@ -4659,7 +4659,19 @@ var _hud_layer: CanvasLayer
 const HUD_RAND: float = 12.0
 const PORTRAIT_PX: float = 72.0
 const BALKEN_W: float = 210.0
-const BALKEN_H: float = 16.0
+## Wie dick der Lebensbalken ist.
+##
+## Sechzehn Punkte waren zu viel („Lebensbalken ist zu dick"), und der Grund liegt daran, wie
+## man ihn liest: Man schaut nicht hin, um zu erfahren WIE VIEL — dafuer steht die Zahl darauf
+## —, sondern man nimmt aus dem Augenwinkel wahr, WIE LANG er noch ist. Dafuer zaehlt die
+## Laenge, und die Dicke ist nur Flaeche, die die Welt dahinter verdeckt.
+##
+## Neun Punkte sind schmal genug, dass der Balken als Strich liest, und dick genug, dass die
+## Zahl darauf noch Platz hat.
+const BALKEN_H: float = 9.0
+## Der Erfahrungsbalken darunter ist noch einmal schmaeler. Er ist eine Nebenauskunft: Wie weit
+## man zur naechsten Stufe ist, entscheidet nie etwas im Gefecht.
+const XP_BALKEN_H: float = 4.0
 ## Wo die Trabanten am Schussknopf sitzen — als Winkel, 0° = rechts, gegen den Uhrzeigersinn.
 ##
 ## Der Trank steht **so weit rechts, wie er überhaupt stehen kann** — und das ist nicht 0°.
@@ -4687,6 +4699,20 @@ var _portrait_btn: TextureButton = null
 var _portrait_rahmen: TextureRect = null
 var _hp_bar: ProgressBar = null
 var _xp_bar: ProgressBar = null
+## Die Lebenszahl liegt AUF dem Balken, nicht daneben.
+##
+## Sie stand vorher als „❤ 71/158" am Anfang einer Textzeile mit sechs weiteren Angaben. Damit
+## war sie eine von sieben und ging unter. Auf dem Balken ist sie dort, wo der Blick beim
+## Nachsehen ohnehin hingeht — und die Textzeile ist eine Angabe kuerzer.
+var _hp_txt: Label = null
+## Die Stufe als Marke an der Ecke des Portraets. „★ Lv 4" war eine weitere Textangabe fuer
+## eine Zahl, die sich alle paar Stunden aendert; als Abzeichen am Bild kostet sie keine Zeile.
+var _lv_lbl: Label = null
+## Gold: eine gezeichnete Muenze und die Zahl dahinter, sonst nichts.
+var _gold_icon: Control = null
+var _gold_lbl: Label = null
+## Die Uhr. Sie bleibt, weil an ihr etwas HAENGT — Nachttiere kommen im Dunkeln heraus.
+var _uhr_lbl: Label = null
 var _spieler_marken: Label = null
 ## Wie lange eine Spielermarke nach dem letzten Schaden noch stehen bleibt.
 ##
@@ -4718,6 +4744,27 @@ func _trank_trinken() -> void:
 
 
 ## Ein Balken im Ton der Welt: dunkle Fassung, warme Fuellung, kein Rahmen.
+## Ein Control auf eine feste Groesse zwingen — NACH dem Einhaengen.
+##
+## `size` vor `add_child` zu setzen ist wirkungslos, und das war der ganze Grund, warum der
+## Lebensbalken „zu dick" war: In `BALKEN_H` stand neun, im Bild waren es vierzehn, und der
+## Erfahrungsbalken war statt vier ganze zweiundzwanzig Punkte hoch. Beim Eintritt in den Baum
+## rechnet Godot die Groesse neu und nimmt dabei mindestens die Mindestgroesse — ein Control
+## direkt unter einem `CanvasLayer` bekam so 36 Punkte Hoehe zugeteilt, egal was zugewiesen war.
+##
+## Nachgemessen und nicht vermutet: Ein Wegwerf-Probelauf hat `size` vor und nach `add_child`
+## ausgedruckt. Vorher (210|9) zugewiesen, nachher (210|36) im Baum. Und die Reihenfolge zaehlt
+## auch danach: erst `custom_minimum_size`, dann `size` — andersherum klemmt die alte
+## Mindestgroesse den neuen Wert ab.
+##
+## Fuer LABEL gilt das nur in der Breite: Ihre Mindesthoehe kommt aus der Schrift (bei
+## Vorgabegroesse 32 Punkte) und laesst sich nicht unterschreiten. Wer Text auf einen schmalen
+## Balken legen will, zentriert ihn deshalb ueber die Position und nicht ueber die Hoehe.
+static func hud_groesse(c: Control, w: float, h: float) -> void:
+	c.custom_minimum_size = Vector2(w, h)
+	c.size = Vector2(w, h)
+
+
 func _hud_balken(voll: Color, leer: Color) -> ProgressBar:
 	var b := ProgressBar.new()
 	b.custom_minimum_size = Vector2(BALKEN_W, BALKEN_H)
@@ -4780,16 +4827,87 @@ func _build_hud() -> void:
 		_portrait_rahmen.size = Vector2(PORTRAIT_PX, PORTRAIT_PX)
 		_portrait_rahmen.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(_portrait_rahmen)
+	# Die Stufe als ABZEICHEN an der Ecke des Portraets.
+	#
+	# Sie stand als „★ Lv 4" mitten in der Textzeile — eine Zahl, die sich alle paar Stunden
+	# aendert, auf demselben Platz wie das Leben, das sich sekuendlich aendert. An der Ecke des
+	# Bildes kostet sie keine Zeile und steht trotzdem dort, wo man nach ihr sucht.
+	_lv_lbl = Label.new()
+	_lv_lbl.add_theme_font_size_override("font_size", 13)
+	_lv_lbl.add_theme_color_override("font_color", Color(0.98, 0.88, 0.58))
+	_lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lv_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lv_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lv_kasten := StyleBoxFlat.new()
+	lv_kasten.bg_color = Color(0.09, 0.07, 0.05, 0.88)
+	lv_kasten.set_corner_radius_all(4)
+	lv_kasten.set_border_width_all(1)
+	lv_kasten.border_color = Color(0.55, 0.42, 0.18, 0.9)
+	_lv_lbl.add_theme_stylebox_override("normal", lv_kasten)
+	layer.add_child(_lv_lbl)
+	hud_groesse(_lv_lbl, 26.0, 20.0)
+	# An die untere rechte Ecke des Portraets, ein paar Punkte darueber hinaus — ein Abzeichen,
+	# das ganz INNEN sitzt, sieht aus wie ein Fleck auf dem Bild.
+	_lv_lbl.position = Vector2(HUD_RAND + PORTRAIT_PX - 20.0,
+		HUD_RAND + PORTRAIT_PX - _lv_lbl.size.y * 0.5)
 	# Leben und Erfahrung als BALKEN neben dem Portraet. Eine Zahl muss man lesen; einen Balken
-	# sieht man. Beides steht trotzdem noch als Zahl darin, weil „wie viel genau" im Kampf
-	# zaehlt und ein Balken das nicht beantwortet.
+	# sieht man.
 	_hp_bar = _hud_balken(Color(0.72, 0.16, 0.14), Color(0.34, 0.09, 0.08))
-	_hp_bar.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, HUD_RAND + 6.0)
+	_hp_bar.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, HUD_RAND + 8.0)
 	layer.add_child(_hp_bar)
+	hud_groesse(_hp_bar, BALKEN_W, BALKEN_H)
+	# Die Zahl liegt DARAUF, rechtsbuendig, mit Umriss.
+	#
+	# Ohne Umriss verschwindet sie im Rot: Der Balken ist an der vollen Seite dunkelrot und an
+	# der leeren noch dunkler, und weisse Schrift auf beidem ist grenzwertig. Der Umriss macht
+	# sie von beidem unabhaengig — und das ist noetig, weil sie ueber die Grenze zwischen voll
+	# und leer WANDERT, waehrend das Leben sinkt.
+	_hp_txt = Label.new()
+	_hp_txt.add_theme_font_size_override("font_size", 11)
+	_hp_txt.add_theme_constant_override("outline_size", 4)
+	_hp_txt.add_theme_color_override("font_outline_color", Color(0.06, 0.03, 0.03, 0.95))
+	_hp_txt.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_hp_txt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hp_txt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_hp_txt)
+	# Nur die BREITE laesst sich vorgeben: Die Mindesthoehe eines Labels kommt aus der Schrift.
+	# Also wird der Text ueber die Lage auf dem Balken zentriert, nicht ueber die Hoehe.
+	hud_groesse(_hp_txt, BALKEN_W - 6.0, BALKEN_H)
+	_hp_txt.position = _hp_bar.position + Vector2(0.0, (BALKEN_H - _hp_txt.size.y) * 0.5)
 	_xp_bar = _hud_balken(Color(0.86, 0.68, 0.24), Color(0.32, 0.26, 0.10))
-	_xp_bar.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, HUD_RAND + 6.0 + BALKEN_H + 5.0)
-	_xp_bar.size.y = BALKEN_H * 0.6
+	_xp_bar.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, HUD_RAND + 8.0 + BALKEN_H + 4.0)
 	layer.add_child(_xp_bar)
+	hud_groesse(_xp_bar, BALKEN_W, XP_BALKEN_H)
+	# ── Gold: eine Muenze und eine Zahl ─────────────────────────────────────
+	#
+	# Und sonst nichts. Vorher stand hier eine Zeile mit sieben Angaben — Leben, Gold, Stufe,
+	# getragene Teile, Waffe, Uhrzeit — und darunter noch eine mit drei Materialien. Wie viel
+	# Schrott man hat, entscheidet beim Spielen nie etwas; das gehoert in den Beutel, wo man
+	# hinsieht, wenn man es wissen will. Was bleibt, ist Gold: die einzige Zahl, an der eine
+	# Entscheidung haengt, die man UNTERWEGS trifft.
+	var zeile_y: float = HUD_RAND + 8.0 + BALKEN_H + 4.0 + XP_BALKEN_H + 7.0
+	_gold_icon = Control.new()
+	_gold_icon.custom_minimum_size = Vector2(18.0, 18.0)
+	_gold_icon.size = Vector2(18.0, 18.0)
+	_gold_icon.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, zeile_y)
+	_gold_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Gezeichnet statt gesetzt — der Grund steht bei `HudGlyph.zeichne_muenze`.
+	_gold_icon.draw.connect(func() -> void:
+		HudGlyph.zeichne_muenze(_gold_icon, Vector2(9.0, 9.0), 8.0))
+	layer.add_child(_gold_icon)
+	_gold_lbl = Label.new()
+	_gold_lbl.add_theme_font_size_override("font_size", 15)
+	_gold_lbl.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + 22.0, zeile_y - 2.0)
+	_gold_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_gold_lbl)
+	# Die Uhr daneben, gedaempft. Sie bleibt als Einzige der alten Zeile uebrig, weil an ihr
+	# etwas HAENGT: Nachttiere kommen nur im Dunkeln heraus, und wer das weiss, plant danach.
+	_uhr_lbl = Label.new()
+	_uhr_lbl.add_theme_font_size_override("font_size", 14)
+	_uhr_lbl.add_theme_color_override("font_color", Color(0.72, 0.70, 0.64))
+	_uhr_lbl.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + 96.0, zeile_y - 1.0)
+	_uhr_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_uhr_lbl)
 	# Was gerade AN MIR frisst — rechts neben dem Lebensbalken, wohin der Blick beim Sinken
 	# ohnehin faellt.
 	#
@@ -4800,14 +4918,17 @@ func _build_hud() -> void:
 	# die STEHT, solange es frisst, beantwortet das dauerhaft.
 	_spieler_marken = Label.new()
 	_spieler_marken.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + BALKEN_W + 8.0,
-		HUD_RAND + 3.0)
+		HUD_RAND + 1.0)
 	_spieler_marken.add_theme_font_size_override("font_size", 17)
 	_spieler_marken.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_spieler_marken)
+	# Was uebrig bleibt: der verfolgte Auftrag, und am Bahnsteig der Hinweis auf die Bahn.
+	# Beides sind Saetze und keine Werte — sie gehoeren in eine Zeile und nicht in eine Reihe
+	# von Zahlen.
 	_hud = Label.new()
-	_hud.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0,
-		HUD_RAND + 6.0 + BALKEN_H + 5.0 + BALKEN_H * 0.6 + 6.0)
-	_hud.add_theme_font_size_override("font_size", 15)
+	_hud.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, zeile_y + 22.0)
+	_hud.add_theme_font_size_override("font_size", 14)
+	_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_hud)
 	# Ortsschrift: Beim Betreten eines Ortes zieht sein Name gross und gesperrt ueber die Mitte
 	# und blendet wieder weg. Kostet nichts und macht aus einem Punkt auf der Karte einen Ort,
@@ -6120,7 +6241,8 @@ func _set_cine_clean(an: bool) -> void:
 	# der Erstbegegnung: Sie lagen hinter dem schwarzen Balken, der sie zu 92 % abdunkelt, und
 	# das ergibt genau das schlechteste Ergebnis — eine Bedienoberflaeche, die man gerade noch
 	# erkennt, in einem Augenblick, aus dem sie verschwinden sollte.
-	for c in [_portrait_btn, _portrait_rahmen, _hp_bar, _xp_bar, _spieler_marken]:
+	for c in [_portrait_btn, _portrait_rahmen, _hp_bar, _xp_bar, _spieler_marken,
+			_hp_txt, _lv_lbl, _gold_icon, _gold_lbl, _uhr_lbl]:
 		if c != null and is_instance_valid(c):
 			(c as CanvasItem).visible = not an
 	# Und die Lebensleisten ueber den Gegnern. In der Erstbegegnung ist das keine Kosmetik: Die
@@ -7469,18 +7591,11 @@ func _update_hud() -> void:
 	# Ort, Entfernung, Sektor und Biom wurden hier jedes Bild ausgerechnet — fuer eine Zeile,
 	# die es nicht mehr gibt. Mit ihr faellt die Rechnerei weg: `nearest_poi` laeuft ueber alle
 	# Orte, und das sechzigmal in der Sekunde fuer einen Text, den niemand liest.
-	var worn_n: int = EquipManager.worn().size()
-	# Waffe kann LEER sein — der Held erwacht ohne alles. Ein harter Tabellenzugriff mit dem
-	# leeren Namen waere hier der Absturz gleich im ersten Bild des Spiels; deshalb steht die
-	# leere Hand als eigener Fall davor und `HudGlyph.z()` gibt fuer Unbekanntes ohnehin nach.
-	var waffe: String = "∅ ohne Waffe"
-	if _weapon_id != "":
-		waffe = "%s %s" % [HudGlyph.z(_weapon_id),
-			String(CombatData.WEAPONS[_weapon_id]["name"])]
-	# Leben und Erfahrung stehen als BALKEN daneben — hier bleibt die Zahl, weil „wie viel
-	# genau" im Kampf zaehlt und ein Balken das nicht beantwortet. Was WEG ist: der Hinweis
-	# „[Tab] Inventar". Er stand dort fuer die Tastatur, und auf dem Handy gibt es keine; jetzt
-	# ist das Portraet daneben der Knopf, und ein Bild braucht keine Beschriftung.
+	# Der WAFFENNAME stand hier ebenfalls und steht jetzt nirgends mehr — mit Absicht. Welche
+	# Waffe man traegt, sieht man an drei Stellen: in der Hand der Figur, an der Puppe im
+	# Rucksack, und unten am Abzug steht ihr Magazin. Ein vierter Ort, der es noch einmal
+	# hinschreibt, ist genau die Sorte Doppelung, die die Kopfzeile ueberladen hat. Was
+	# WIRKLICH fehlte, war der Fall der leeren Haende — der steht unten als „∅ ohne Waffe".
 	if _hp_bar != null:
 		_hp_bar.max_value = maxf(1.0, float(PlayerStats.max_hp()))
 		_hp_bar.value = clampf(_hp, 0.0, _hp_bar.max_value)
@@ -7509,18 +7624,39 @@ func _update_hud() -> void:
 	# erfährt man beim Anrennen; was das Biom tut, steht jetzt als Marke an der Lebensleiste
 	# und liegt als Tönung über der Welt.
 	#
-	# Geblieben ist, was eine ENTSCHEIDUNG trägt — und die Iron-Rail-Zeile ist der Grund, warum
-	# hier überhaupt noch eine zweite stehen darf: Sie nennt Tasten, die nur an diesem Fleck
-	# etwas tun. Ohne sie wüsste niemand, dass er gerade fahren kann.
-	_hud.text = "❤ %d/%d   ¤ %d   ★ Lv %d   ▣ %d/%d   %s   %s" % [
-		maxi(0, roundi(_hp)), PlayerStats.max_hp(), GameState.gold, GameState.level,
-		worn_n, EquipManager.GEAR_SLOTS.size(), waffe,
-		DayCycle.phase_label(GameState.hour)]
+	# Und der zweite Durchgang, nach der Rueckmeldung „alles in Text, sehr ueberladen":
+	#
+	#   „❤ 71/158  ¤ 340  ★ Lv 4  ▣ 5/5  ⚔ Blei-Karabiner  ☾ 20:38"
+	#   „▬ 48  ⚙ 20  ◉ 8"
+	#
+	# Sieben Angaben in einer Reihe und drei in der naechsten, alle gleich gross, alle gleich
+	# wichtig aussehend. Was davon TRAEGT, ist unterschiedlich:
+	#
+	#  * Leben aendert sich sekuendlich und entscheidet ueber Leben und Tod → auf den Balken.
+	#  * Die Stufe aendert sich alle paar Stunden → Abzeichen am Portraet.
+	#  * Gold entscheidet, ob man bei Wanda kauft → Muenze und Zahl, sonst nichts.
+	#  * Getragene Teile (▣ 5/5) entscheiden im Gefecht NIE → weg, das sagt der Beutel.
+	#  * Schrott, Zahnrad, Dampfkern ebenso → weg, dasselbe.
+	#  * Die Waffe steht schon unten am Abzug, wo auch ihre Munition steht → weg von oben.
+	#  * Die Uhrzeit bleibt, weil Nachttiere an ihr haengen.
+	#
+	# Uebrig bleibt hier eine Zeile fuer SAETZE — den verfolgten Auftrag und, am Bahnsteig, den
+	# Hinweis auf die Bahn. Der ist der Grund, warum die Zeile ueberhaupt noch existiert: Er
+	# nennt Tasten, die nur an diesem einen Fleck etwas tun.
+	if _hp_txt != null:
+		_hp_txt.text = "%d/%d" % [maxi(0, roundi(_hp)), PlayerStats.max_hp()]
+	if _lv_lbl != null:
+		_lv_lbl.text = str(GameState.level)
+	if _gold_lbl != null:
+		_gold_lbl.text = str(GameState.gold)
+	if _uhr_lbl != null:
+		_uhr_lbl.text = DayCycle.phase_label(GameState.hour)
+	_hud.text = ""
 	if _station_at_player() != "":
-		_hud.text += "   ⇄ [1-5] Iron Rail"
+		_hud.text = "⇄ [1-5] Iron Rail"
 	var q: String = _active_quest_line()
 	if q != "":
-		_hud.text += "\n✦ " + q
+		_hud.text = ("✦ " + q) if _hud.text == "" else (_hud.text + "\n✦ " + q)
 	# Die Trabanten haengen an der LAGE des Schussknopfes, und die steht erst, wenn er selbst
 	# `_ready` durchlaufen hat. Einmal je Bild nachziehen kostet nichts und ist gegen jede
 	# Reihenfolge unempfindlich — auch gegen eine Fenstergroesse, die sich aendert.
@@ -7533,7 +7669,7 @@ func _update_hud() -> void:
 	if _ammo_lbl != null and _weapon_id == "":
 		# Leere Haende: Es gibt kein Magazin, also auch keinen Zaehler. Ein „0/0" waere die
 		# Behauptung, hier fehle Munition — es fehlt aber die WAFFE, und das steht schon oben.
-		_ammo_lbl.text = "∅ —"
+		_ammo_lbl.text = "∅ ohne Waffe"
 		_ammo_lbl.add_theme_color_override("font_color", Color(0.62, 0.60, 0.56))
 	elif _ammo_lbl != null:
 		var pool: String = AmmoData.pool_for(_weapon_id)
@@ -7553,8 +7689,6 @@ func _update_hud() -> void:
 			elif mag <= maxi(1, AmmoData.mag_size(_weapon_id) / 4):
 				col = Color(1.0, 0.82, 0.25)
 		_ammo_lbl.add_theme_color_override("font_color", col)
-	_hud.text += "\n▬ %d  ⚙ %d  ◉ %d" % [
-		GameState.item_count("schrott"), GameState.item_count("zahnrad"), GameState.item_count("dampfkern")]
 	if _minimap != null:
 		var ep: Array = []
 		for e in _enemies:

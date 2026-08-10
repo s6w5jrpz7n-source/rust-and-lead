@@ -134,3 +134,35 @@ static func zeichne_flakon(ci: CanvasItem, mitte: Vector2, r: float, farbe: Colo
 	var k_h: float = r * 0.12
 	ci.draw_line(mitte + Vector2(-0.24, -0.70) * r, mitte + Vector2(0.24, -0.70) * r,
 		farbe, k_h * 2.0)
+
+
+## Eine Goldmuenze — gezeichnet, nicht gesetzt.
+##
+## ## Warum eine Muenze und kein „¤ 340"
+##
+## Die Kopfzeile war eine Textzeile mit sieben Angaben nebeneinander („zu ueberladen, alles in
+## Text"). Der Gegenvorschlag war ausdruecklich: Gold **nur mit Goldmuenze und Zahl dahinter**.
+##
+## Das ist mehr als Geschmack. Eine Zahl hinter einem Waehrungszeichen muss man LESEN — man
+## erfasst erst das Zeichen, ordnet es zu, liest dann die Zahl. Ein rundes gelbes Ding erkennt
+## man, ohne hinzusehen; danach ist die Zahl daneben nur noch eine Zahl. In einem Kopfbereich,
+## den man im Gefecht mit einem Seitenblick streift, ist das der ganze Unterschied.
+##
+## Gezeichnet und nicht als Schriftzeichen — aus demselben Grund wie beim Flakon: `¤` haengt an
+## der Schrift, an der Groesse und daran, dass niemand die Vorgabe ueberschreibt. Ein Kreis aus
+## Punkten sieht ueberall gleich aus und kann nicht zum leeren Kaestchen werden.
+##
+## `r` ist der AUSSENradius. Alles andere leitet sich daraus ab, damit die Muenze in jeder
+## Groesse dieselbe bleibt.
+static func zeichne_muenze(ci: CanvasItem, mitte: Vector2, r: float) -> void:
+	# Der Rand liegt zuerst und ganz — die Scheibe darueber laesst ihn als Ring stehen. Das ist
+	# billiger und genauer als ein Ring aus zwei Boegen, und vor allem bricht es nicht auf,
+	# wenn `r` klein wird.
+	ci.draw_circle(mitte, r, Color(0.42, 0.28, 0.06))
+	ci.draw_circle(mitte, r * 0.86, Color(0.94, 0.74, 0.22))
+	# Eine Praegung in der Mitte: etwas dunkler als die Scheibe, damit die Muenze nicht als
+	# flacher Punkt liest. Kein Motiv — bei 9 Punkten Radius waere jedes Motiv Matsch.
+	ci.draw_circle(mitte, r * 0.46, Color(0.80, 0.60, 0.14))
+	# Und ein Glanzpunkt oben links. Er macht aus der Scheibe eine Muenze: Er sagt, dass das
+	# Ding Wölbung hat und Licht von irgendwo kommt.
+	ci.draw_circle(mitte + Vector2(-r * 0.34, -r * 0.34), r * 0.20, Color(1.0, 0.95, 0.70, 0.85))

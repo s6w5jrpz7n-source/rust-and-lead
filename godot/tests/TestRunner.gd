@@ -99,6 +99,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_sichtweite": 12,
 	"_test_nachschub": 9,
 	"_test_deutsche_werte": 8,
+	"_test_kopfzeile": 17,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -7421,3 +7422,72 @@ func _test_deutsche_werte() -> void:
 	# Und die Stufenzeile schweigt, wo es keine Ausbaustufe gibt: „Stufe 1/0" war die
 	# Hoechststufe null, die als leeres Feld durchschlug.
 	_check("Ohne Ausbaustufe steht keine Stufenzeile", sh.contains("if int(r[4]) > 0:"))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Die Kopfzeile: weniger lesen, und der Balken so dick wie eingetragen
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# „Das Hud sieht immer noch nicht gut aus. Alles in Text, sehr ueberladen. Wie viel Gold und
+# Schrott er hat ist im hud nicht so wichtig. Wenn dann Gold, aber nur mit Goldmuenze und Zahl
+# dahinter. Lebensbalken ist zu dick."
+#
+# Der zweite Teil war ein echter Fehler und kein Geschmack: In `BALKEN_H` stand neun, im Bild
+# waren es vierzehn — und der Erfahrungsbalken war statt vier ganze zweiundzwanzig Punkte hoch.
+# Ein Control, dem man `size` VOR `add_child` zuweist, bekommt beim Eintritt in den Baum eine
+# neue Groesse zugeteilt; unter einem `CanvasLayer` waren das 36 Punkte. Die Zahl stimmte also,
+# sie kam nur nie an.
+#
+# Deshalb prueft der erste Teil dieser Funktion nicht die Konstante, sondern haengt einen
+# echten Balken in einen echten Baum und misst nach.
+func _test_kopfzeile() -> void:
+	print("· Kopfzeile (Balkenhoehe, weniger Text)")
+
+	# ── Die Groesse kommt wirklich an ───────────────────────────────────────
+	var schicht := CanvasLayer.new()
+	add_child(schicht)
+	_scratch.append(schicht)
+	var b := ProgressBar.new()
+	b.show_percentage = false
+	schicht.add_child(b)
+	# GENAU der Fehler: `size` allein, gegen eine groessere Mindestgroesse. Die Zuweisung wird
+	# stillschweigend abgeklemmt — kein Fehler, keine Warnung, nur ein zu dicker Balken.
+	b.custom_minimum_size = Vector2(OverworldView.BALKEN_W, 36.0)
+	b.size = Vector2(OverworldView.BALKEN_W, OverworldView.BALKEN_H)
+	_check("`size` allein wird von der Mindestgroesse abgeklemmt (%.0f statt %.0f)"
+		% [b.size.y, OverworldView.BALKEN_H], b.size.y > OverworldView.BALKEN_H)
+	OverworldView.hud_groesse(b, OverworldView.BALKEN_W, OverworldView.BALKEN_H)
+	_check("Nach `hud_groesse` stimmt sie (%.0f)" % b.size.y,
+		is_equal_approx(b.size.y, OverworldView.BALKEN_H))
+	OverworldView.hud_groesse(b, OverworldView.BALKEN_W, OverworldView.XP_BALKEN_H)
+	# Und zwar auch nach UNTEN: Die alte Mindestgroesse darf den neuen Wert nicht abklemmen —
+	# genau daran scheiterte der erste Anlauf, der nur `size` setzte.
+	_check("Und auch beim Verkleinern (%.0f)" % b.size.y,
+		is_equal_approx(b.size.y, OverworldView.XP_BALKEN_H))
+
+	# ── Die Masse selbst ────────────────────────────────────────────────────
+	_check("Der Lebensbalken ist ein Strich, kein Block (%.0f px)" % OverworldView.BALKEN_H,
+		OverworldView.BALKEN_H <= 10.0)
+	_check("Der Erfahrungsbalken ist noch schmaler (%.0f gegen %.0f)"
+		% [OverworldView.XP_BALKEN_H, OverworldView.BALKEN_H],
+		OverworldView.XP_BALKEN_H < OverworldView.BALKEN_H)
+	# Lang statt dick: Man liest an ihm die LAENGE ab, nicht die Flaeche.
+	_check("Und deutlich laenger als dick (%.0f zu %.0f)"
+		% [OverworldView.BALKEN_W, OverworldView.BALKEN_H],
+		OverworldView.BALKEN_W > OverworldView.BALKEN_H * 15.0)
+
+	# ── Was aus der Kopfzeile verschwunden ist ──────────────────────────────
+	var ow: String = FileAccess.get_file_as_string("res://scripts/OverworldView.gd")
+	_check("Die Materialzeile ist weg", not ow.contains("\"\\n▬ %d  ⚙ %d  ◉ %d\""))
+	_check("Die Zahlenreihe ist weg", not ow.contains("❤ %d/%d   ¤ %d   ★ Lv %d"))
+	# Gold steht als MUENZE da, nicht als Waehrungszeichen mit Zahl.
+	_check("Es gibt eine gezeichnete Muenze", ow.contains("HudGlyph.zeichne_muenze("))
+	_check("Und sie haengt am Goldwert", ow.contains("_gold_lbl.text = str(GameState.gold)"))
+	# Die Lebenszahl liegt auf dem Balken, die Stufe am Portraet.
+	_check("Die Lebenszahl liegt auf dem Balken", ow.contains("_hp_txt.position = _hp_bar.position"))
+	_check("Die Stufe ist ein Abzeichen", ow.contains("_lv_lbl.text = str(GameState.level)"))
+	# Und beides verschwindet in einer Nahaufnahme mit dem uebrigen HUD. Das war schon einmal
+	# ein Fehler: `_hud` allein auszublenden liess Portraet und Balken im schwarzen Balken stehen.
+	for knoten in ["_hp_txt", "_lv_lbl", "_gold_icon", "_gold_lbl", "_uhr_lbl"]:
+		_check("%s wird im Kino mit ausgeblendet" % knoten,
+			ow.contains(knoten + ", ") or ow.contains(knoten + "]"))

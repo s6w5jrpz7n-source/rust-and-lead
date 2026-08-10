@@ -33,16 +33,30 @@ drei Zeilen Text mit vierzehn Zahlen darin. Im Gefecht liest die niemand. Was ma
 ### Oben links — wer ich bin
 
 ```
-┌────────┐
-│ Porträt│  ████████████████░░░░  ❤ 128/128
-│  72 px │  ██████░░░░░░░░░░░░░░  ★ Lv 1
-└────────┘  ¤ 340   ▣ 4/6   ☾ Nacht
+┌────────┐  ▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱      68/151
+│ Porträt│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+│  72 px │  ⬤ 340        ☾ 20:58
+└──────⑷┘  ✦ Kopfgeld: Wegelagerer 0/8  ⊕ nach Das Rattengestrüpp
 ```
 
 * **Porträt** im Rahmen, klickbar → Rucksack. *(steht)*
-* **Lebensbalken**, darunter schmaler der **Erfahrungsbalken**. *(steht)*
-* Darunter eine Zeile: Gold, getragene Ausrüstung, Tageszeit. *(noch Text — soll Symbole
-  bekommen)*
+* **Stufe** als Abzeichen an seiner unteren rechten Ecke. *(steht)*
+* **Lebensbalken**, 9 px, mit der Zahl rechtsbündig DARAUF; darunter der **Erfahrungsbalken**
+  mit 4 px. *(steht)*
+* **Gold**: eine gezeichnete Münze und die Zahl dahinter. Daneben die Uhr. *(steht)*
+* Darunter eine Zeile für **Sätze** — verfolgter Auftrag, am Bahnsteig der Hinweis auf die
+  Bahn. *(steht)*
+
+> **Was hier NICHT mehr steht**, und warum: getragene Ausrüstung (`▣ 5/5`), Schrott, Zahnrad
+> und Dampfkern entscheiden im Gefecht nie etwas — das beantwortet der Beutel, wenn man es
+> wissen will. Der Waffenname stand doppelt: Man sieht die Waffe in der Hand der Figur, an der
+> Puppe im Rucksack, und unten am Abzug steht ihr Magazin.
+>
+> **Und der Balken war zu dick, obwohl neun zugewiesen waren.** `size` vor `add_child` zu
+> setzen ist wirkungslos: Beim Eintritt in den Baum bekommt ein Control unter einem
+> `CanvasLayer` eine neue Größe (gemessen: 36 px). `OverworldView.hud_groesse()` setzt sie
+> danach — erst `custom_minimum_size`, dann `size`, sonst klemmt die alte Mindestgröße den
+> neuen Wert ab.
 * **Statusmarken** — *(steht, aber am Gegner statt am Spieler)*. Das Kampfsystem verteilt seit
   Langem Zustände, und der Spieler konnte **keinen** davon sehen. Wer eine Säureflasche wirft und
   nichts passiert, lernt daraus nur, dass Säureflaschen nichts tun; dass sie gerade die Panzerung
