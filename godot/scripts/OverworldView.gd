@@ -1583,6 +1583,51 @@ func _zu_steil(von: Vector3, nach: Vector3) -> bool:
 	return hoch / STEIGUNG_BASIS_M > MAX_STEIGUNG
 
 
+## Wie fein ein Schritt zerlegt wird, bevor er auf Sperren geprueft wird.
+##
+## „mit pferd kann ich durch alles hindurchreiten, keine kollision."
+##
+## Kein fehlender Test, sondern ein zu grober: Geprueft wurde nur der ZIELPUNKT eines Schritts.
+## Zu Fuss geht das gut — 4,7 m/s sind bei sechzig Bildern acht Zentimeter, da liegt zwischen
+## Start und Ziel nichts. Im Sattel sind es 14,1 m/s (`MOUNT_SPEED_MUL` = 3), und auf einem
+## Telefon mit dreissig Bildern ist ein Schritt damit fast ein halber Meter. Eine Palisade ist
+## kaum dicker. Also stand die Figur in einem Bild davor und im naechsten dahinter, und
+## dazwischen hat nie jemand gefragt — der klassische Tunneleffekt.
+##
+## Dreissig Zentimeter sind knapp die halbe Dicke des duennsten Bauteils im Spiel. Damit kann
+## kein Schritt mehr ueber eine Wand springen, egal wie schnell die Figur ist und wie langsam
+## das Geraet.
+const SCHRITT_PRUEF_M: float = 0.30
+
+
+## Ist der WEG von `von` nach `nach` durch ein Bauwerk versperrt?
+##
+## Der Startpunkt wird nicht geprueft: Wer schon in einer Sperre steht, soll herauslaufen
+## duerfen (siehe den Notausgang in `_process_player_move`).
+func _weg_blockiert(von: Vector3, nach: Vector3) -> bool:
+	for p in weg_punkte(von, nach, SCHRITT_PRUEF_M):
+		if _blocked(p):
+			return true
+	return false
+
+
+## Die Pruefpunkte eines Schritts — der Startpunkt NICHT dabei, der Zielpunkt immer.
+##
+## Statisch und ohne Weltzustand, damit die eigentliche Zusage pruefbar ist: Zwischen zwei
+## aufeinanderfolgenden Punkten liegt nie mehr als `schritt`. Genau daran haengt, ob ein
+## Schritt ueber eine Wand springen kann.
+static func weg_punkte(von: Vector3, nach: Vector3, schritt: float) -> Array:
+	var d: Vector3 = nach - von
+	var weite: float = Vector2(d.x, d.z).length()
+	if weite <= schritt or schritt <= 0.0:
+		return [nach]
+	var stufen: int = int(ceil(weite / schritt))
+	var out: Array = []
+	for i in range(1, stufen + 1):
+		out.append(von + d * (float(i) / float(stufen)))
+	return out
+
+
 func _blocked(p: Vector3) -> bool:
 	var q := Vector2(p.x, p.z)
 	for b in _blockers:
@@ -4912,11 +4957,14 @@ const XP_BALKEN_H: float = 4.0
 ## Abstand zur Kante ändert sich nie. 55° hält gut 16 px Luft und liegt trotzdem klar rechts
 ## oben — der Daumen bleibt auf seiner Seite. `_trabanten_setzen()` klemmt zusätzlich ins Bild,
 ## falls jemand später an `MARGIN` oder den Radien dreht.
-const TRABANT_WINKEL: Array = [55.0]
+## Zwei Trabanten, zwei Winkel: der Trank oben, der Ruf darueber hinaus im Bogen nach links.
+## Beide bleiben ausserhalb des Schussknopfes, damit ein Fehlgriff schiesst statt zu rufen.
+const TRABANT_WINKEL: Array = [55.0, 92.0]
 ## Wie viel Luft ein Trabant mindestens zum Bildrand behält.
 const TRABANT_LUFT: float = 8.0
 var _trabanten: Array = []
 var _trank_btn: ActionSatellite = null
+var _ruf_btn: ActionSatellite = null
 var _portrait_btn: TextureButton = null
 var _portrait_rahmen: TextureRect = null
 var _hp_bar: ProgressBar = null
@@ -5272,6 +5320,13 @@ func _build_hud() -> void:
 	_trank_btn.ausgeloest.connect(_trank_trinken)
 	layer.add_child(_trank_btn)
 	_trabanten.append(_trank_btn)
+	# Und daneben der Ruf. Er steht IMMER da, nicht nur in Reichweite des Tieres — das ist
+	# sein ganzer Zweck: Man drueckt ihn gerade dann, wenn das Pferd nicht in der Naehe ist.
+	_ruf_btn = ActionSatellite.new()
+	_ruf_btn.ausgeloest.connect(_pferd_rufen)
+	_ruf_btn.setzen("♞", -1, true)
+	layer.add_child(_ruf_btn)
+	_trabanten.append(_ruf_btn)
 	# Aktionsleiste unten Mitte: erscheint nur, wenn etwas in Reichweite ist. Ohne sie gäbe es
 	# auf dem Handy keinen Weg, jemanden anzusprechen oder die Bahn zu nehmen — das ging bisher
 	# nur über die Tastatur, also ausgerechnet nicht auf der Zielplattform.
@@ -6212,6 +6267,10 @@ func _input(event: InputEvent) -> void:
 			# Frueher der Waffen-Umschalter. Waffen wechselt man jetzt dort, wo man sie auch
 			# vergleicht: an der Puppe.
 			_toggle_character(CharacterScreen.Tab.AUSRUESTUNG)
+		elif event.keycode == KEY_R:
+			# R wie Rufen. Am Rechner die Taste, auf dem Handy der Trabant am Schussknopf —
+			# beide loesen dasselbe aus.
+			_pferd_rufen()
 		elif event.keycode == KEY_E:
 			# Dieselbe Rangfolge wie in der Aktionsleiste, damit Taste und Knopf nie etwas
 			# Verschiedenes tun.
@@ -7105,7 +7164,7 @@ func _process_movement(delta: float) -> void:
 	if steckt_fest and _fest_gemeldet <= 0.0:
 		_say("✖ Du hast festgesteckt — geh zur Seite.", 2.0)
 		_fest_gemeldet = 8.0
-	if not WorldManager.is_walkable(to_rel) or (_blocked(next) and not steckt_fest) \
+	if not WorldManager.is_walkable(to_rel) or (_weg_blockiert(_player.position, next) and not steckt_fest) \
 			or _gegner_im_weg(next) \
 			or _zu_steil(_player.position, next) \
 			or _am_riss(next):
@@ -7126,7 +7185,7 @@ func _process_movement(delta: float) -> void:
 			kand.x = clampf(kand.x, 2.0, WorldManager.WORLD_METERS - 2.0)
 			kand.z = clampf(kand.z, -(WorldManager.WORLD_METERS - 2.0), -2.0)
 			if WorldManager.is_walkable(WorldManager.scene_to_world(kand)) \
-					and (steckt_fest or not _blocked(kand)) and not _gegner_im_weg(kand) \
+					and (steckt_fest or not _weg_blockiert(_player.position, kand)) and not _gegner_im_weg(kand) \
 					and not _zu_steil(_player.position, kand) \
 					and not _am_riss(kand):
 				next = kand
@@ -7136,12 +7195,12 @@ func _process_movement(delta: float) -> void:
 			var slide_x: Vector3 = Vector3(next.x, 0.0, _player.position.z)
 			var slide_z: Vector3 = Vector3(_player.position.x, 0.0, next.z)
 			if WorldManager.is_walkable(WorldManager.scene_to_world(slide_x)) \
-					and (steckt_fest or not _blocked(slide_x)) \
+					and (steckt_fest or not _weg_blockiert(_player.position, slide_x)) \
 					and not _gegner_im_weg(slide_x) \
 					and not _zu_steil(_player.position, slide_x) and not _am_riss(slide_x):
 				next = slide_x
 			elif WorldManager.is_walkable(WorldManager.scene_to_world(slide_z)) \
-					and (steckt_fest or not _blocked(slide_z)) \
+					and (steckt_fest or not _weg_blockiert(_player.position, slide_z)) \
 					and not _gegner_im_weg(slide_z) \
 					and not _zu_steil(_player.position, slide_z) and not _am_riss(slide_z):
 				next = slide_z
@@ -7879,6 +7938,83 @@ func _pferd_greifbar() -> bool:
 	return _mounted or _player.position.distance_to(_horse.position) <= MOUNT_RANGE_M
 
 
+# ── Begleiter ─────────────────────────────────────────────────────────────────
+#
+# Ein Tier, das einem gehoert und einem folgt. Heute das Pferd, spaeter der Hund — deshalb
+# steht hier eine TABELLE und keine Sonderbehandlung fuer Pferde. Wer den Hund einbaut, traegt
+# eine Zeile ein und schreibt die Platzierung nicht noch einmal.
+#
+# Zwei Zusagen gelten fuer jeden Begleiter:
+#
+#  1. **Er ist rufbar.** Ein Tier, das man zu Fuss suchen muss, ist kein Begleiter, sondern ein
+#     Gegenstand mit Standort. Vor allem auf dem Handy: Wer sein Pferd am anderen Ende eines
+#     5000-m-Kraters abgestellt hat, holt es nie wieder.
+#  2. **Er ueberlebt den Tod.** Beim Ausknocken springt die Figur nach Rustwater — das Pferd
+#     blieb bisher stehen, wo es stand, und war damit weg. „auch wenn man gestroben ist, ist
+#     das erst mal weg. soll wieder kommen."
+const BEGLEITER: Array = [
+	{ "id": "pferd", "modell": "horse", "hoehe": 1.6, "name": "Pferd", "zeichen": "♞" },
+	# Der Hund kommt hierher, sobald sein Modell da ist:
+	# { "id": "hund", "modell": "dog", "hoehe": 0.7, "name": "Hund", "zeichen": "♘" },
+]
+## Wie weit vor der Figur ein gerufener Begleiter auftaucht.
+const RUF_ABSTAND_M: float = 3.2
+## Und wie weit daneben gesucht wird, wenn dort etwas steht.
+const RUF_SUCH_R_M: float = 9.0
+
+
+## Einen Begleiter neben die Figur setzen — auf freien Grund.
+##
+## Nicht stur auf den Punkt vor der Nase: Steht dort eine Wand, landete das Tier darin und
+## waere im selben Augenblick wieder unerreichbar. Gesucht wird deshalb in Ringen nach aussen,
+## und zwar mit demselben Test, der auch die Figur aufhaelt.
+func _begleiter_absetzen(node: Node3D) -> void:
+	if node == null or _player == null:
+		return
+	var vorn: Vector3 = -_player.global_transform.basis.z
+	vorn.y = 0.0
+	if vorn.length() < 0.01:
+		vorn = Vector3(0.0, 0.0, -1.0)
+	vorn = vorn.normalized()
+	var ziel: Vector3 = _player.position + vorn * RUF_ABSTAND_M
+	if _blocked(ziel):
+		var gefunden: bool = false
+		for r in [RUF_ABSTAND_M, RUF_ABSTAND_M + 2.0, RUF_ABSTAND_M + 4.0, RUF_SUCH_R_M]:
+			for grad in range(0, 360, 30):
+				var kand: Vector3 = _player.position \
+					+ Vector3(cos(deg_to_rad(grad)), 0.0, sin(deg_to_rad(grad))) * r
+				if not _blocked(kand) \
+						and WorldManager.is_walkable(WorldManager.scene_to_world(kand)):
+					ziel = kand
+					gefunden = true
+					break
+			if gefunden:
+				break
+	ziel.y = WorldManager.height_at(ziel.x, ziel.z)
+	node.position = ziel
+	# Mit dem Blick zur Figur — ein Tier, das gerufen wird, dreht sich um.
+	var her: Vector3 = _player.position - ziel
+	if Vector2(her.x, her.z).length() > 0.01:
+		node.rotation.y = atan2(-her.x, -her.z)
+
+
+## „Pferd zu mir rufen." Holt das Tier, egal wo es steht.
+##
+## Und baut es notfalls neu: Wer aus dem Stollen kommt oder einen alten Spielstand laedt, hat
+## unter Umstaenden gar keins in der Welt. Ein Ruf, der nichts tut, waere schlimmer als kein
+## Knopf — dann sucht man weiter.
+func _pferd_rufen() -> void:
+	if _mounted:
+		_say("♞ Du sitzt schon drauf.", 1.6)
+		return
+	if _horse == null or not is_instance_valid(_horse):
+		_build_horse()
+	if _horse == null:
+		return
+	_begleiter_absetzen(_horse)
+	_say("♞ Das Pferd kommt.", 2.0)
+
+
 func _toggle_mount() -> void:
 	if _horse == null:
 		return
@@ -7935,7 +8071,14 @@ func _process_hazards(delta: float) -> void:
 func _respawn() -> void:
 	_hp = float(PlayerStats.max_hp())
 	_player.position = _rustwater_spawn()
-	_say("☠ Ausgeknockt — zurück in Rustwater.", 3.0)
+	# Absitzen, bevor die Figur springt: Sonst bleibt `_mounted` stehen und man reitet in
+	# Rustwater ein Pferd, das am anderen Ende der Welt liegt — dreifaches Tempo inklusive.
+	_mounted = false
+	# Und die Begleiter kommen mit. Wer ausgeknockt wird, verliert Zeit und ein paar Meter,
+	# nicht sein Pferd: Es stand bisher da, wo man gefallen ist, und war damit praktisch weg.
+	if _horse != null and is_instance_valid(_horse):
+		_begleiter_absetzen(_horse)
+	_say("☠ Ausgeknockt — zurück in Rustwater. Das Pferd ist bei dir.", 3.0)
 
 
 func _say(text: String, secs: float) -> void:

@@ -33,6 +33,7 @@ Sinnbilder.
 | Was | Wo es klemmt |
 | :-- | :-- |
 | **Fünf Sinnbilder liegen weiter ungenutzt**: `icon_hp`, `icon_xp`, `icon_ammo`, `icon_map`, `icon_backpack`. Gold, Uhr, Auftrag und Trank benutzen ihres jetzt | Bei Leben und Erfahrung habe ich es bewusst gelassen — du wolltest **weniger** in der Kopfzeile, und die Balken sagen es schon. Karte und Rucksack haben ihren Knopf bereits (Minikarte und Porträt) |
+| **Der Hund fehlt noch** — das Begleiter-System steht, er braucht nur ein Modell und eine Zeile | Eintrag in `OverworldView.BEGLEITER` (auskommentiert vorhanden) plus `dog.glb`. Rufen, Absetzen auf freiem Grund und Wiederkehr nach dem Tod gelten dann automatisch |
 | **Statusmarken** (⚡ Kurzschluss, ☣ Ätzung, ‼ Panzerung durch, ☢ Strahlung) sind Schriftzeichen | ein Bild liest sich schneller als ein Zeichen; Dateien dafür gibt es noch nicht |
 | **Praxis und Waffenlager sind Hütten mit Schild**, keine eigenen Modelle | passt fürs Erste, siehe oben unter „braucht dich" |
 

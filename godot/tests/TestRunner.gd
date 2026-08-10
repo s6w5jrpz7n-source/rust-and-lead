@@ -103,6 +103,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_wirte_vor_haus": 13,
 	"_test_gassen": 13,
 	"_test_anflug_endpunkt": 9,
+	"_test_wegpruefung": 17,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -7733,3 +7734,72 @@ func _test_anflug_endpunkt() -> void:
 		OverworldView.orbit_punkte(mitte, mitte, 250.0, 1.0, 1.0, 1.0, 5.0).is_empty())
 	_check("Und eine Fahrt ohne Dauer ebenfalls",
 		OverworldView.orbit_punkte(mitte, start, 250.0, 1.0, 1.0, 1.0, 0.0).is_empty())
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Kein Schritt springt ueber eine Wand — und der Begleiter ist rufbar
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# „mit pferd kann ich durch alles hindurchreiten, keine kollision."
+#
+# Kein fehlender Test, sondern ein zu grober: Geprueft wurde nur der ZIELPUNKT eines Schritts.
+# Zu Fuss sind 4,7 m/s bei sechzig Bildern acht Zentimeter — da liegt zwischen Start und Ziel
+# nichts. Im Sattel sind es 14,1 m/s, und auf einem Telefon mit dreissig Bildern ist ein
+# Schritt fast ein halber Meter. Eine Palisade ist kaum dicker.
+func _test_wegpruefung() -> void:
+	print("· Kein Schritt springt ueber eine Wand")
+
+	var von := Vector3(0.0, 0.0, 0.0)
+	var nach := Vector3(0.5, 0.0, 0.0)
+	var p: Array = OverworldView.weg_punkte(von, nach, OverworldView.SCHRITT_PRUEF_M)
+	_check("Ein halber Meter wird zerlegt (%d Punkte)" % p.size(), p.size() >= 2)
+	_check("Und der Zielpunkt ist immer dabei",
+		(p[p.size() - 1] as Vector3).distance_to(nach) < 0.001)
+
+	# Die eigentliche Zusage: keine Luecke groesser als der Schritt. Daran haengt alles.
+	var weit: Array = OverworldView.weg_punkte(Vector3.ZERO, Vector3(14.1, 0.0, 0.0), 0.30)
+	var groesste: float = 0.0
+	var vorher: Vector3 = Vector3.ZERO
+	for q in weit:
+		groesste = maxf(groesste, vorher.distance_to(q))
+		vorher = q
+	_check("Auch ein Reitschritt von 14,1 m hat keine Luecke ueber 0,30 m (%.3f)" % groesste,
+		groesste <= 0.3001)
+	# Keine feste Zahl: 14,1 / 0,30 sind rechnerisch genau 47, in Fliesskomma aber
+	# 47,000000000000007 — und `ceil` macht daraus 48. Eine Gleichheitspruefung waere hier
+	# eine Wette auf die letzte Stelle. Gefordert ist, was zaehlt: nicht mehr als noetig.
+	_check("Und er kostet nicht mehr Punkte als noetig (%d)" % weit.size(),
+		weit.size() <= 48)
+
+	# Ein Schritt, der kuerzer ist als das Raster, bleibt EIN Punkt — sonst zahlt der
+	# Regelfall (zu Fuss, sechzig Bilder) fuer den Ausnahmefall.
+	_check("Ein kurzer Schritt bleibt ein einzelner Punkt",
+		OverworldView.weg_punkte(Vector3.ZERO, Vector3(0.05, 0.0, 0.0), 0.30).size() == 1)
+	# Und ein Stillstand ergibt keine Endlosschleife.
+	_check("Ein Schritt ohne Weite ergibt genau einen Punkt",
+		OverworldView.weg_punkte(von, von, 0.30).size() == 1)
+	_check("Ein Raster von null ergibt keinen Absturz",
+		OverworldView.weg_punkte(von, nach, 0.0).size() == 1)
+	# Die Hoehe zaehlt NICHT mit: Sperren sind Grundflaechen, und ein Schritt einen Hang
+	# hinauf ist in der Ebene kurz.
+	_check("Die Weite wird in der Ebene gemessen, nicht im Raum",
+		OverworldView.weg_punkte(Vector3.ZERO, Vector3(0.1, 40.0, 0.0), 0.30).size() == 1)
+
+	# Das Raster muss feiner sein als das duennste Bauteil, sonst nuetzt es nichts.
+	_check("Das Raster (%.2f m) ist feiner als eine Palisadenwand"
+		% OverworldView.SCHRITT_PRUEF_M, OverworldView.SCHRITT_PRUEF_M <= 0.35)
+
+	# ── Begleiter ─────────────────────────────────────────────────────────────
+	print("· Begleiter")
+	_check("Es gibt eine Begleiter-Tabelle, kein Sonderfall fuers Pferd",
+		OverworldView.BEGLEITER.size() >= 1)
+	var pferd: Dictionary = OverworldView.BEGLEITER[0]
+	_check("Das Pferd steht darin", String(pferd.get("id", "")) == "pferd")
+	for feld in ["id", "modell", "hoehe", "name", "zeichen"]:
+		_check("Und traegt sein Feld '%s' — der Hund braucht dieselben" % feld,
+			pferd.has(feld))
+	_check("Gerufen wird aus Reichweite, nicht aus der Ferne gezaubert (%.1f m)"
+		% OverworldView.RUF_ABSTAND_M,
+		OverworldView.RUF_ABSTAND_M > 1.5 and OverworldView.RUF_ABSTAND_M < 6.0)
+	_check("Und es gibt einen Suchradius fuer den Fall, dass dort etwas steht",
+		OverworldView.RUF_SUCH_R_M > OverworldView.RUF_ABSTAND_M)
