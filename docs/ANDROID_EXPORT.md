@@ -234,6 +234,8 @@ Installieren.
 
 | Meldung | Was wirklich los ist | Was hilft |
 | :-- | :-- | :-- |
+| `Die Target-Plattform benötigt „ETC2/ASTC"-Texturkompression` | Handy-Grafikchips können die Schreibtisch-Kompression nicht | steht seit `project.godot` fest — einmal `git pull`, dann ist es weg. Von Hand: Projekteinstellungen ▸ Rendering ▸ Textures ▸ VRAM Compression ▸ **Import ETC2 ASTC** an |
+| `Der Projektname entspricht nicht den Anforderungen für das Paketnamenformat` | Das Feld **Name** ganz oben ist der Name der VOREINSTELLUNG, nicht der Paketname | im Reiter *Optionen* nach unten zu **Package** rollen: *Unique Name* = `de.rustandlead.game`, *Name* = `Rust & Lead`. Oder `docs/export_presets_android.cfg` kopieren, da steht beides drin |
 | `Export template not found` | Vorlagen fehlen oder sind aus einer anderen Godot-Version | Editor ▸ Export-Vorlagen verwalten, neu laden |
 | `Android SDK path is invalid` | auf den falschen Ordner gezeigt (z. B. auf `platform-tools` statt auf `Sdk`) | den Pfad aus dem SDK Manager abschreiben |
 | `Could not find keytool` | JDK nicht gefunden | Java SDK Path prüfen — auf den JDK-Ordner zeigen, nicht auf dessen `bin` |

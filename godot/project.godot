@@ -45,6 +45,21 @@ pointing/emulate_touch_from_mouse=false
 
 [rendering]
 
+; ── Ohne diese Zeile laesst sich das Spiel nicht auf Android exportieren ────────
+; „Die Target-Plattform benoetigt ETC2/ASTC-Texturkompression."
+;
+; Handy-Grafikchips koennen die Kompression nicht, die Godot fuer den Schreibtisch
+; erzeugt (S3TC/BPTC). Ohne ETC2/ASTC bricht der Export ab, bevor er anfaengt — es ist
+; keine Warnung, sondern ein Riegel.
+;
+; Steht hier und nicht in einer Anleitung zum Nachklicken, weil es eine
+; PROJEKT-Einstellung ist: Sie gehoert zum Spiel, nicht zum Rechner, auf dem es gebaut
+; wird. Einmal eingetragen, gilt sie fuer jeden, der das Projekt oeffnet.
+;
+; Beim ersten Start danach importiert Godot alle Texturen neu und legt zusaetzlich die
+; Handy-Fassung an. Das dauert und ist einmalig.
+textures/vram_compression/import_etc2_astc=true
+
 ; Mobile-Renderer: performant auf iPhone/iPad (Xogot) wie am Desktop.
 renderer/rendering_method="mobile"
 renderer/rendering_method.mobile="mobile"
