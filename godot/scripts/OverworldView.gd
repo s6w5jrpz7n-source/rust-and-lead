@@ -2166,7 +2166,7 @@ func _maybe_intro_flight() -> void:
 	#    Umrundung auf der anderen Seite des Ortes endet, wurde daraus ein Sprung: gut 48 m/s
 	#    gegen 14 m/s beim Hereinfliegen. Jetzt wird das Anflugtempo gemessen und der Weg damit
 	#    ausgerechnet.
-	var orbit_ende: Vector3 = punkte[punkte.size() - 1]["pos"]
+	var orbit_ende: Vector3 = flug_endpunkt(punkte[punkte.size() - 1])
 	var rueck: Vector3 = _player.position - hin * INTRO_RUECK_M \
 		+ Vector3(0.0, INTRO_RUECK_H, 0.0)
 	var v_anflug: float = maxf(auge.distance_to(start), 1.0) / INTRO_SEK_ANFLUG
@@ -6804,6 +6804,35 @@ static func orbit_punkte(um: Vector3, start: Vector3, bogen_grad: float,
 		"ziel": um + Vector3(0.0, ziel_hoehe, 0.0),
 		"sek": sek,
 	}]
+
+
+## Wo ein Wegpunkt AUFHOERT — egal, von welcher Art er ist.
+##
+## ## Der Absturz, der die Ankunft in Rustwater verschluckt hat
+##
+##     OverworldView._maybe_intro_flight: Invalid access to property or key 'pos'
+##     on a base object of type 'Dictionary'.
+##
+## `orbit_punkte` lieferte frueher sechzehn Stuetzpunkte, jeder mit einem `pos`. Beim Umbau auf
+## EINEN ausgerechneten Bogen bekam der Rueckgabewert ganz andere Felder (`um`, `radius`, `a0`,
+## `spanne`) — und `_maybe_intro_flight` griff danach weiter auf `["pos"]` zu, um zu wissen, wo
+## die Umrundung endet und der Rueckweg anfaengt.
+##
+## `_flight_frame` war mitgezogen worden, diese eine Zeile nicht. Sie steht ZWANZIG Zeilen
+## hinter dem Aufruf, mitten in einer langen Funktion, und sie laeuft nur ein einziges Mal im
+## ganzen Spiel: beim ersten Anblick der Stadt.
+##
+## Die Wirkung war schlimmer als ein fehlendes Bild. `GameState.saw_rustwater = true` steht
+## VOR der Rechnung — die Fahrt galt also als gesehen, bevor sie abstuerzte, und kam nie
+## wieder. Wer zum ersten Mal vor Rustwater stand, bekam einen Fehler und danach nichts mehr.
+##
+## Deshalb fragt jetzt eine Funktion nach dem Endpunkt, statt dass jede Stelle das Format
+## kennen muss. Wer `orbit_punkte` das naechste Mal umbaut, aendert `bogen_punkt` und diese
+## eine Zeile — und nicht jede Stelle, die zufaellig ein `pos` erwartet hat.
+static func flug_endpunkt(p: Dictionary) -> Vector3:
+	if bool(p.get("bogen", false)):
+		return bogen_punkt(p, 1.0)
+	return p.get("pos", Vector3.ZERO)
 
 
 ## Ein Punkt auf dem Bogen, `k` von 0 bis 1.

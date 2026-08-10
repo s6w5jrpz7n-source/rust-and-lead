@@ -102,6 +102,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_kopfzeile": 17,
 	"_test_wirte_vor_haus": 13,
 	"_test_gassen": 13,
+	"_test_anflug_endpunkt": 9,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -7668,3 +7669,59 @@ func _test_gassen() -> void:
 	var br2: Array = TownCollision.gassen_schliessen(reihe)
 	_check("Aus einer Huettenreihe mit 1-m-Schlitzen wird eine Wand (%d Bruecken)" % br2.size(),
 		br2.size() == 4)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Der Anflug auf Rustwater darf nicht abstuerzen
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#     OverworldView._maybe_intro_flight: Invalid access to property or key 'pos'
+#     on a base object of type 'Dictionary'.
+#
+# „wenn man zur stadt kommt … wenn man vor der stadt steht passiert nichts" und „am computer
+# stuerzt vor der animation das ganze spiel ab".
+#
+# `orbit_punkte` lieferte frueher sechzehn Stuetzpunkte mit je einem `pos`. Beim Umbau auf EINEN
+# ausgerechneten Bogen bekam der Rueckgabewert andere Felder — `_flight_frame` wurde mitgezogen,
+# eine Zeile zwanzig Zeilen weiter unten nicht. Sie laeuft genau einmal im ganzen Spiel: beim
+# ersten Anblick der Stadt. Deshalb hat sie kein Test und kein Kontrollbild je beruehrt.
+#
+# Geprueft wird deshalb nicht „stimmt der Wert", sondern „gehen beide Arten von Wegpunkt durch
+# dieselbe Tuer". Solange das gilt, kann der naechste Umbau des Bogens diese Stelle nicht mehr
+# treffen.
+func _test_anflug_endpunkt() -> void:
+	print("· Anflug auf Rustwater")
+
+	var mitte := Vector3(100.0, 0.0, -100.0)
+	var start := Vector3(140.0, 18.0, -100.0)
+	var bogen: Array = OverworldView.orbit_punkte(mitte, start, 250.0, 18.0, 11.0, 6.0, 13.3)
+	_check("Die Umrundung ist EIN Bogen, kein Punkthaufen (%d)" % bogen.size(),
+		bogen.size() == 1)
+	if bogen.size() == 1:
+		var p: Dictionary = bogen[0]
+		_check("Und er traegt kein 'pos' — genau daran ist es zerbrochen",
+			not p.has("pos"))
+		var ende: Vector3 = OverworldView.flug_endpunkt(p)
+		_check("Sein Endpunkt laesst sich trotzdem erfragen (%.1f|%.1f)" % [ende.x, ende.z],
+			ende.distance_to(OverworldView.bogen_punkt(p, 1.0)) < 0.001)
+		# Und er liegt auf dem Kreis: Der Rueckweg setzt genau dort an.
+		_check("Er liegt auf der Umrundungsbahn (%.1f m vom Mittelpunkt)"
+			% Vector2(ende.x - mitte.x, ende.z - mitte.z).length(),
+			absf(Vector2(ende.x - mitte.x, ende.z - mitte.z).length() - 40.0) < 0.01)
+		_check("Und auf der Endhoehe des Bogens (%.1f m)" % ende.y,
+			is_equal_approx(ende.y, 11.0))
+
+	# Ein gewoehnlicher Wegpunkt geht durch dieselbe Tuer.
+	var fest: Dictionary = { "pos": Vector3(3.0, 4.0, 5.0), "ziel": Vector3.ZERO, "sek": 1.0 }
+	_check("Ein fester Wegpunkt liefert seinen eigenen Punkt",
+		OverworldView.flug_endpunkt(fest) == Vector3(3.0, 4.0, 5.0))
+	# Und ein unvollstaendiger stuerzt nicht ab, sondern liefert den Ursprung. Ein fehlender
+	# Wegpunkt darf eine schiefe Kamerafahrt ergeben, niemals einen Absturz mitten im Spiel.
+	_check("Ein Wegpunkt ohne alles stuerzt nicht ab",
+		OverworldView.flug_endpunkt({}) == Vector3.ZERO)
+
+	# Ein zu kleiner Kreis ergibt gar keinen Bogen — auch das darf nicht knallen.
+	_check("Ein entarteter Kreis liefert eine leere Liste",
+		OverworldView.orbit_punkte(mitte, mitte, 250.0, 1.0, 1.0, 1.0, 5.0).is_empty())
+	_check("Und eine Fahrt ohne Dauer ebenfalls",
+		OverworldView.orbit_punkte(mitte, start, 250.0, 1.0, 1.0, 1.0, 0.0).is_empty())
