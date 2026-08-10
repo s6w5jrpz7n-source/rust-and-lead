@@ -593,6 +593,8 @@ const WACH_AUGE_M: float = 1.62
 const WACH_SEK: float = 9.0
 
 var _wach_left: float = 0.0
+## Hat der Spieler waehrend des Erwachens selbst gesteuert? Dann endet die Szenenregie.
+var _wach_gelaufen: bool = false
 var _wach_total: float = 0.0
 ## Wie lange der Aufsteh-Clip noch laeuft, bevor `idle` uebernimmt.
 var _wach_steh_t: float = 0.0
@@ -677,6 +679,7 @@ func _erwachen() -> void:
 	var zeilen: Array = _wach_zeilen()
 	_wach_total = maxf(speech_gesamt(zeilen) + 1.6, WACH_SEK)
 	_wach_left = _wach_total
+	_wach_gelaufen = false
 	# Tempo so, dass der Clip die Aufsteh-Phase ausfuellt — abzueglich der Zeit, die er
 	# stillsteht. Aus der ECHTEN Cliplaenge, damit ein neues Rig nicht neu eingestellt werden
 	# muss.
@@ -818,8 +821,9 @@ func _process_wach(delta: float) -> void:
 		_wach_steh_t -= delta
 		if _wach_steh_t <= 0.0:
 			AssetRegistry.play_clip(_player_model, "idle", true)
-	# Und er sieht sich um.
-	if _player != null:
+	# Und er sieht sich um — solange er nicht selbst geht. Sobald jemand steuert, gehoert die
+	# Blickrichtung dem Spieler; sonst dreht die Szene die Figur unter ihm weg.
+	if _player != null and not _wach_gelaufen:
 		_player.rotation.y = _wach_yaw0 + deg_to_rad(wach_blick(
 			1.0 - _wach_left / maxf(_wach_total, 0.01), _wach_ziel_grad))
 	# Das Szenenlicht geht am Ende unter, waehrend die Kamera zurueckfaehrt — sonst erloescht
@@ -4457,11 +4461,44 @@ func _load_pit(id: String) -> void:
 		if String(f.get("id", "")) == id:
 			_add_puddle(WorldManager.feature_center(f), f)
 			break
+	# Die Lache bleibt frei — und zwar auch hier.
+	#
+	# Die gerechnete Fuellung spart sie aus (`_drop_scrap`), die von Hand gebaute Grube nicht:
+	# Dort steht, was jemand hingestellt hat, und `_load_pit` hat daraus stur Sperren gemacht.
+	# In der Lache faengt aber jedes neue Spiel an. Wer dort zwischen zwei gestellten Kisten
+	# aufwacht, steht in einem Loch von einem Meter und kommt in KEINE Richtung — „start mit
+	# neuem spiel, neben der kiste, von anfang an keine bewegung".
+	#
+	# Die Teile bleiben stehen, sie sperren nur nicht. Das ist die richtige Haelfte: Ein
+	# unsichtbar entferntes Fass faellt niemandem auf, eine unbewegliche Spielfigur jedem.
+	var mitte_grube: Vector3 = Vector3.INF
+	for f2 in WorldManager.TERRAIN:
+		if String(f2.get("id", "")) == id:
+			mitte_grube = WorldManager.feature_center(f2)
+			break
 	for r in TownCollision.rects(grube, grube.transform):
 		# `deckel` ist die Oberkante ueber Grund; darunter liegt Kleinkram, ueber den man geht.
 		if float(r["deckel"]) - WorldManager.height_at(r["c"].x, r["c"].y) < PIT_BLOCK_H_M:
 			continue
+		if mitte_grube != Vector3.INF and _reicht_in_lache(r, mitte_grube):
+			continue
 		_solid_rect_rot(Vector3(r["c"].x, 0.0, r["c"].y), r["h"], float(r["yaw"]))
+
+
+## Ragt diese Sperre in die Lache, in der das Spiel anfaengt?
+##
+## Gerechnet wird mit dem naechsten Punkt des GEDREHTEN Rechtecks, nicht mit seinem
+## Mittelpunkt: Ein zwoelf Meter langes Wrack, dessen Mitte weit weg liegt, kann trotzdem mit
+## der Spitze in der Lache stecken — und genau die Spitze steht dann neben der Figur.
+##
+## Der Freiraum ist etwas groesser als der gemalte Lachenrand (`PUDDLE_R_M`), damit man nicht
+## nur steht, sondern auch losgehen kann.
+const LACHE_FREI_R_M: float = PUDDLE_R_M + 1.6
+func _reicht_in_lache(r: Dictionary, mitte: Vector3) -> bool:
+	var lokal: Vector2 = (Vector2(mitte.x, mitte.z) - Vector2(r["c"])).rotated(-float(r["yaw"]))
+	var h: Vector2 = r["h"]
+	var naechster := Vector2(clampf(lokal.x, -h.x, h.x), clampf(lokal.y, -h.y, h.y))
+	return lokal.distance_to(naechster) < LACHE_FREI_R_M
 
 
 ## Szenendatei einer von Hand gefuellten Grube ("" = es gibt keine).
@@ -4866,7 +4903,7 @@ var _marke_sumpf_bis: float = 0.0
 ## Die Regel selbst steht in `GameState`, nicht hier: Wie viel ein Trank heilt, ist eine Frage
 ## der Spielbalance und keine der Oberflaeche. Die Oberflaeche fragt nur nach und zeigt an.
 func _trank_trinken() -> void:
-	if _in_cine() or _in_flight() or _overlay_open() or _wach_left > 0.0:
+	if _in_cine() or _in_flight() or _overlay_open() or _wach_steh_t > 0.0:
 		return
 	var neu_hp: float = GameState.trank_trinken(_hp)
 	if neu_hp < 0.0:
@@ -6916,10 +6953,27 @@ func _process_movement(delta: float) -> void:
 		if _wach_left <= 0.0:
 			AssetRegistry.play_clip(_player_model, "idle")
 		return
-	if _wach_left > 0.0:
-		return   # das Erwachen gehoert der Szene; `_process_wach` zaehlt es herunter
+	# Das Erwachen sperrt nur noch das AUFSTEHEN, nicht den ganzen Monolog.
+	#
+	# Vorher galt `_wach_left > 0.0`, und das sind bei elf Zeilen Innenstimme **fuenfzig
+	# Sekunden** — gerechnet aus `speech_gesamt`, nicht geschaetzt. Fuenfzig Sekunden, in denen
+	# ein neues Spiel auf jede Eingabe nicht reagiert, und zwar als ALLERERSTES, was jemand vom
+	# Spiel zu sehen bekommt. Tippen half nicht: Es blaetterte die Zeile weiter, waehrend die
+	# Uhr unbeirrt weiterlief. Ueberspringen ging nur bei Kamerafahrt und Flug — beim Erwachen
+	# war es als einzigem nicht vorgesehen.
+	#
+	# So wurde aus einer erzaehlten Minute ein kaputtes Spiel: „start mit neuem spiel, neben
+	# der kiste, von anfang an keine bewegung."
+	#
+	# Jetzt haelt nur der Aufsteh-Clip die Figur (ein paar Sekunden, und man SIEHT, warum sie
+	# noch liegt). Danach laeuft man los, und der Monolog laeuft als Text weiter — er gehoert
+	# dem Kopf der Figur, nicht ihren Beinen.
+	if _wach_steh_t > 0.0:
+		return
 	var mv: Vector2 = _move_vector()
 	var moving: bool = mv.length() >= 0.05
+	if moving and _wach_left > 0.0:
+		_wach_gelaufen = true
 	# Animation folgt der Bewegung, sobald ein animiertes Modell da ist. Kennt das Modell den
 	# Clip nicht (oder ist es der Kapsel-Platzhalter), passiert schlicht nichts.
 	#
@@ -7013,6 +7067,15 @@ func _process_movement(delta: float) -> void:
 					and not _gegner_im_weg(slide_z) \
 					and not _zu_steil(_player.position, slide_z) and not _am_riss(slide_z):
 				next = slide_z
+			elif not steckt_fest and _blocked(next):
+				# EINGEKESSELT. Man steht selbst im Freien, aber jede Richtung ist gesperrt —
+				# ein Loch von einem Meter zwischen zwei Kisten. Der Notausgang oben greift
+				# hier nicht, denn `_blocked(_player.position)` ist falsch: Frei zu stehen und
+				# nicht weglaufen zu koennen sind zwei verschiedene Lagen mit derselben
+				# Wirkung. Also dieselbe Ausnahme, eine Stufe spaeter.
+				if _fest_gemeldet <= 0.0:
+					_say("✖ Du warst eingekesselt — geh zur Seite.", 2.0)
+					_fest_gemeldet = 8.0
 			else:
 				return   # in eine Ecke gelaufen — Position halten
 		step = next - _player.position
