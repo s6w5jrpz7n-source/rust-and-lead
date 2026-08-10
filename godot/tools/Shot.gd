@@ -251,6 +251,57 @@ func _stollen_aufbauen() -> void:
 	_wait = 30
 
 
+## Die Sperren als ZAHLEN, nicht nur als rote Platten.
+##
+## „Teils bleibt man haengen, teils auch irgendwo random in der Stadt." Ein Bild von oben zeigt,
+## WO das Rot liegt; es zeigt nicht, welcher Eintrag dahintersteckt und wie gross er ist. Beide
+## Fragen beantwortet erst die Liste — die groessten Sperren zuerst, denn eine unsichtbare Wand
+## mitten im Ort ist fast immer ein Eintrag, der viel zu weit reicht.
+##
+## Dazu eine Rasterkarte des begehbaren Bodens: ein Zeichen je Meter, gerechnet mit demselben
+## Spielerradius wie im Spiel. Darauf sieht man Loecher, die im Bild unter einem Dach liegen.
+func _sperren_messen(ow: Node) -> void:
+	var stadt: Vector3 = WorldManager.poi_scene_position("rustwater")
+	var liste: Array = []
+	for b in ow._rot_blockers:
+		var h: Vector2 = b["h"]
+		liste.append([h.x * h.y * 4.0, b])
+	liste.sort_custom(func(a, c): return a[0] > c[0])
+	print("── %d Sperren, die groessten zuerst ──" % liste.size())
+	for i in mini(12, liste.size()):
+		var b2: Dictionary = liste[i][1]
+		var rel: Vector2 = Vector2(b2["c"]) - Vector2(stadt.x, stadt.z)
+		print("   %8.1f m²  rel=(%7.2f,%7.2f) halb=(%6.2f,%6.2f) yaw=%6.1f" % [
+			liste[i][0], rel.x, rel.y, float(b2["h"].x), float(b2["h"].y),
+			rad_to_deg(float(b2["yaw"]))])
+	# In eine DATEI, nicht nur auf die Konsole: Ein Lauf, der in eine Zeitgrenze faellt,
+	# verliert seine gepufferte Ausgabe — die Datei ueberlebt.
+	var f := FileAccess.open("user://sperren.txt", FileAccess.WRITE)
+	var karte: Array[String] = []
+	karte.append("Begehbar? 1 m je Zeichen. Zeile = z, Spalte = x, relativ zur Ortsmitte.")
+	karte.append("  #  Bauwerk   ~  zu steil / nicht begehbar   ,  Riss   .  frei")
+	for z in range(-34, 46):
+		var zeile: String = ""
+		for x in range(-44, 48):
+			var p := Vector3(stadt.x + float(x), 0.0, stadt.z + float(z))
+			var rel2: Vector2 = WorldManager.scene_to_world(p)
+			if ow._blocked(p):
+				zeile += "#"
+			elif ow._am_riss(p):
+				zeile += ","
+			elif not WorldManager.is_walkable(rel2):
+				zeile += "~"
+			else:
+				zeile += "."
+		karte.append("%+4d %s" % [z, zeile])
+	for zeile2 in karte:
+		print(zeile2)
+		if f != null:
+			f.store_line(zeile2)
+	if f != null:
+		f.close()
+
+
 ## Senkrecht ueber Rustwater — der Blick, auf dem man Standorte wirklich beurteilen kann.
 func _kamera_ueber_stadt(ow: Node) -> void:
 	var rw: Vector3 = WorldManager.poi_scene_position("rustwater")
@@ -362,6 +413,7 @@ func _setup_ui(art: String) -> void:
 			mat.no_depth_test = true
 			platte.material_override = mat
 			ow.add_child(platte)
+		_sperren_messen(ow)
 	elif art == "blick":
 		# Blickrichtungspruefung: alle Figuren UNGEDREHT nebeneinander, Kamera auf +Z.
 		# Wer sein Gesicht zeigt, schaut nach +Z und braucht die 180°-Korrektur, denn Godot

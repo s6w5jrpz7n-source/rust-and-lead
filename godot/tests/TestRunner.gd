@@ -101,6 +101,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_deutsche_werte": 8,
 	"_test_kopfzeile": 17,
 	"_test_wirte_vor_haus": 13,
+	"_test_gassen": 13,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -7579,3 +7580,91 @@ func _test_wirte_vor_haus() -> void:
 		if (ersatz[wer] as Vector2).length() > OverworldView.TOWN_R:
 			weit = String(wer)
 	_check("Und der liegt im Ort", weit == "", weit)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Zu enge Gassen sind zu — sonst bleibt man darin stecken
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# „Die Kollision mit der Palisade passt nicht überall. Teils bleibt man haengen, teils auch
+# irgendwo random in der Stadt."
+#
+# Gemessen statt geraten: Eine Rasterung von Rustwater im Meterschritt (`Shot.tscn -- stadt_sperren`
+# druckt sie) hat 116 Durchlaesse von hoechstens drei Metern gezeigt, die meisten davon EINEN
+# Meter breit. Der Ort ist von Hand gebaut und dicht gestellt; zwischen zwei Huetten bleibt dabei
+# laufend ein Schlitz, der aussieht wie eine Gasse und keine ist. Ein Meter freie Bahn heisst:
+# Der Spielermittelpunkt hat einen Meter Spielraum, der Radius steckt in den Sperren schon drin.
+# Wer schraeg hineinlaeuft, klebt an der ersten Kante, rutscht mit der Ausweichlogik hinein und
+# steht zwischen zwei Waenden.
+#
+# Die Regel heisst deshalb: Was zu eng ist, um hindurchzugehen, gilt als zu. Geprueft wird sie
+# hier an gestellten Rechtecken — die Stadtszene laesst sich in der Testumgebung nicht laden,
+# und eine reine Funktion braucht sie auch nicht.
+func _test_gassen() -> void:
+	print("· Enge Gassen zumauern")
+
+	# Zwei Kaesten, 1 m Luft dazwischen, in z ueberlappend.
+	var a: Dictionary = { "c": Vector2(-3.0, 0.0), "h": Vector2(2.5, 4.0), "yaw": 0.0 }
+	var b: Dictionary = { "c": Vector2(3.0, 0.0), "h": Vector2(2.5, 4.0), "yaw": 0.0 }
+	var br: Array = TownCollision.gassen_schliessen([a, b])
+	_check("Ein Ein-Meter-Schlitz wird zugemauert (%d Bruecke)" % br.size(), br.size() == 1)
+	if br.size() == 1:
+		var f: Dictionary = br[0]
+		_check("Die Bruecke sitzt in der Luecke (x=%.2f)" % f["c"].x,
+			is_equal_approx(float(f["c"].x), 0.0))
+		_check("Und ist genau so breit wie die Luecke (%.2f m)" % (float(f["h"].x) * 2.0),
+			is_equal_approx(float(f["h"].x) * 2.0, 1.0))
+		# Und sie schliesst wirklich: Der Punkt in der Mitte der Gasse ist danach gesperrt.
+		var alle: Array = [a, b, f]
+		_check("Die Mitte der Gasse ist danach gesperrt",
+			TownCollision.blockiert(alle, Vector2(0.0, 0.0), 0.0))
+
+	# Eine ECHTE Gasse bleibt offen. Das ist die wichtigere Haelfte: Das Stadttor laesst
+	# knapp vier Meter zwischen seinen Pfosten, und wer die zumauert, sperrt den einzigen
+	# Eingang der Stadt.
+	var links: Dictionary = { "c": Vector2(-4.0, 0.0), "h": Vector2(2.0, 1.0), "yaw": 0.0 }
+	var rechts: Dictionary = { "c": Vector2(4.0, 0.0), "h": Vector2(2.0, 1.0), "yaw": 0.0 }
+	_check("Ein Vier-Meter-Durchgang bleibt offen",
+		TownCollision.gassen_schliessen([links, rechts], 0.35).is_empty())
+	# Auch mit Spielerradius: 4 m Mauerabstand minus zweimal 0,35 sind 3,3 m freie Bahn.
+	_check("Und die Grenze liegt darunter (%.2f m)" % TownCollision.MIN_GASSE_M,
+		TownCollision.MIN_GASSE_M < 3.3)
+
+	# Was sich beruehrt oder ueberlappt, braucht keine Bruecke.
+	var c1: Dictionary = { "c": Vector2(-2.0, 0.0), "h": Vector2(2.0, 2.0), "yaw": 0.0 }
+	var c2: Dictionary = { "c": Vector2(2.0, 0.0), "h": Vector2(2.0, 2.0), "yaw": 0.0 }
+	_check("Beruehrende Kaesten bekommen keine Bruecke",
+		TownCollision.gassen_schliessen([c1, c2]).is_empty())
+	# Und was ueber Eck steht, auch nicht: Dort gibt es keine Gasse, sondern eine Ecke.
+	var d1: Dictionary = { "c": Vector2(0.0, 0.0), "h": Vector2(1.0, 1.0), "yaw": 0.0 }
+	var d2: Dictionary = { "c": Vector2(2.5, 2.5), "h": Vector2(1.0, 1.0), "yaw": 0.0 }
+	_check("Ueber Eck entsteht keine Bruecke",
+		TownCollision.gassen_schliessen([d1, d2]).is_empty())
+
+	# Die Huelle eines GEDREHTEN Rechtecks ist groesser als das Rechteck — genau so soll es
+	# sein: Im Zweifel wird geschlossen, nicht offengelassen.
+	var schraeg: Dictionary = { "c": Vector2.ZERO, "h": Vector2(2.0, 2.0), "yaw": deg_to_rad(45.0) }
+	var gerade: Dictionary = { "c": Vector2.ZERO, "h": Vector2(2.0, 2.0), "yaw": 0.0 }
+	_check("Ein schraeger Kasten hat die groessere Huelle (%.2f gegen %.2f m)"
+		% [TownCollision.huelle(schraeg).size.x, TownCollision.huelle(gerade).size.x],
+		TownCollision.huelle(schraeg).size.x > TownCollision.huelle(gerade).size.x)
+	_check("Und die Huelle eines ungedrehten ist das Rechteck selbst",
+		is_equal_approx(TownCollision.huelle(gerade).size.x, 4.0))
+
+	# Der Spielerradius gehoert in die Rechnung: Zwei Huetten mit 2,2 m Mauerabstand lassen bei
+	# 0,35 m Radius genau 1,5 m Bahn — und das ist die Grenze.
+	var e1: Dictionary = { "c": Vector2(-1.6, 0.0), "h": Vector2(0.5, 3.0), "yaw": 0.0 }
+	var e2: Dictionary = { "c": Vector2(1.6, 0.0), "h": Vector2(0.5, 3.0), "yaw": 0.0 }
+	_check("Ohne Radius gerechnet bleibt der Schlitz offen (2,2 m)",
+		TownCollision.gassen_schliessen([e1, e2], 0.0).is_empty())
+	_check("Mit Radius wird er zugemauert (1,5 m Bahn)",
+		TownCollision.gassen_schliessen([e1, e2], 0.36).size() == 1)
+
+	# Und die Regel greift auch, wenn viele Sperren nebeneinanderstehen: aus einer Reihe
+	# Huetten mit Schlitzen wird eine Wand. Genau das passiert in Rustwater hinter dem Tor.
+	var reihe: Array = []
+	for i in 5:
+		reihe.append({ "c": Vector2(float(i) * 5.0, 0.0), "h": Vector2(2.0, 2.0), "yaw": 0.0 })
+	var br2: Array = TownCollision.gassen_schliessen(reihe)
+	_check("Aus einer Huettenreihe mit 1-m-Schlitzen wird eine Wand (%d Bruecken)" % br2.size(),
+		br2.size() == 4)

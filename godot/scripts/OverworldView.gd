@@ -3417,6 +3417,17 @@ func _register_town(town: Node3D) -> void:
 ## ausrechnen.
 func _register_town_rects(sperren: Array) -> void:
 	var stadt: Vector3 = WorldManager.poi_scene_position("rustwater")
+	# Zuerst die zu engen Gassen zumauern — siehe `TownCollision.gassen_schliessen`.
+	#
+	# Sie sind der Grund fuer „teils bleibt man haengen, teils auch irgendwo random in der
+	# Stadt": Zwischen zwei dicht gestellten Huetten bleibt ein Schlitz von einem Meter freier
+	# Bahn, der aussieht wie eine Gasse. Wer schraeg hineinlaeuft, rutscht mit der Ausweichlogik
+	# hinein und steht fest.
+	#
+	# Die Bruecken kommen VOR den Bauten in die Liste, damit `wer_blockiert` bei einer Meldung
+	# den Grund nennt und nicht das naechstbeste Haus.
+	for br in TownCollision.gassen_schliessen(sperren, PLAYER_RADIUS_M):
+		_solid_rect_rot(Vector3(br["c"].x, 0.0, br["c"].y), Vector2(br["h"]), float(br["yaw"]))
 	for r in sperren:
 		_solid_rect_rot(Vector3(r["c"].x, 0.0, r["c"].y), r["h"], float(r["yaw"]))
 		# Wer nachts leuchtet, entscheidet sich am Bauteil — nicht an einer Koordinatenliste.

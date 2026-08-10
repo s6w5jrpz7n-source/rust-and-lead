@@ -38,6 +38,19 @@ Sinnbilder.
 
 ---
 
+## 2b · Blender über MCP — das habe ich fallen lassen
+
+Ganz am Anfang: „Ich bekomme gerade die Connection mit Blender und Claude nicht hin." / „Über
+mcp". Darauf ist nie eine Antwort gekommen, und ich habe es nicht wieder aufgegriffen. Das
+gehört zu dem, was du meinst.
+
+Ich kann von hier aus keine MCP-Verbindung zu deinem Blender aufbauen — ich laufe in einem
+Container ohne Zugriff auf deinen Rechner. Was ich tun kann: die Einrichtung Klick für Klick
+aufschreiben (`blender-mcp` installieren, Add-on aktivieren, Server starten, in Claude Desktop
+eintragen), so wie bei Azure und Android. Sag, ob du das willst — dann schreibe ich es.
+
+---
+
 ## 3 · Auf Eis, auf deinen Wunsch
 
 * **Hörspiel** — „Das Hörspiel machen wir erst mal nicht weiter. Einfach nur Vertonung des
@@ -48,7 +61,7 @@ Sinnbilder.
 
 ## 4 · Erledigt, damit klar ist, was nicht mehr offen ist
 
-Stollen (Schießen, Ausgang, Animationen, Grubenlampen) · Fähigkeitspunkte beim Aufstieg, auch
+Enge Gassen im Ort zugemauert (die Ursache für „bleibt man hängen") · Stollen (Schießen, Ausgang, Animationen, Grubenlampen) · Fähigkeitspunkte beim Aufstieg, auch
 rückwirkend für alte Spielstände · Mabels Auftrag nur noch einmal am Tag · Gegner erwachen und
 schießen nur noch so weit, wie man sieht · weniger Gegner, langsamerer Nachschub · ✕ in Rucksack
 und Läden · Wandas Waffenlager samt Menü · Stufenanforderung je Fundstück · Tag/Nacht doppelt so

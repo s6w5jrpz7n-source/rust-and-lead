@@ -220,3 +220,102 @@ static func wer_blockiert(sperren: Array, p: Vector2, radius: float) -> String:
 		if lokal.x <= h.x and lokal.y <= h.y:
 			return String(r["name"])
 	return ""
+
+
+## Wie schmal eine Gasse sein darf, bevor sie zugemauert wird — in Metern FREIER Bahn.
+##
+## ## Wovon das handelt
+##
+## „Die Kollision mit der Palisade passt nicht überall. Teils bleibt man hängen, teils auch
+## irgendwo random in der Stadt."
+##
+## Gemessen, nicht vermutet: Eine Rasterung des Ortes im Meterschritt hat **116 Durchlässe von
+## höchstens drei Metern** ergeben, die meisten davon **einen Meter breit**. Rustwater ist von
+## Hand gebaut und dicht gestellt; zwischen zwei Hütten bleibt dabei laufend ein Schlitz, der
+## aussieht wie eine Gasse und keine ist.
+##
+## Ein Meter freie Bahn heißt: Der Spielermittelpunkt hat genau einen Meter Spielraum — der
+## Radius steckt in den Sperren schon drin. Wer schräg hineinläuft, klebt an der ersten Kante,
+## rutscht mit der Ausweichlogik in den Schlitz und steht dann zwischen zwei Wänden. Von außen
+## sieht es aus, als hätte einen mitten in der Stadt etwas Unsichtbares festgehalten.
+##
+## ## Warum zumauern und nicht die Häuser auseinanderrücken
+##
+## Auseinanderrücken hieße zwei Dutzend Knoten in `Rustwater.tscn` anfassen — und beim nächsten
+## Umbau im Editor stünde derselbe Schlitz wieder irgendwo. Diese Regel gilt dagegen für JEDE
+## Stadt, auch für die, die noch niemand gebaut hat: Was zu eng ist, um hindurchzugehen, wird
+## behandelt, als wäre es zu. Dann rutscht man daran vorbei, statt hineinzugeraten.
+##
+## Die Grenze ist knapp gewählt. Das Tor lässt drei Meter frei (`TOR_PFOSTEN_ANTEIL`) und muss
+## offen bleiben; ein Wert über zwei Metern würde den einzigen Eingang der Stadt zumauern. 1,5 m
+## schließt die Ein-Meter-Schlitze und lässt alles offen, was wirklich eine Gasse ist.
+const MIN_GASSE_M: float = 1.5
+
+
+## Achsenparalleler Kasten um eine gedrehte Sperre.
+##
+## Die Prüfung unten rechnet bewusst mit dieser groben Hülle und nicht mit dem gedrehten
+## Rechteck: Sie soll SCHLIESSEN, wenn es eng wird, und dabei lieber einmal zu viel als einmal
+## zu wenig. Ein schräg stehendes Haus bekommt so einen etwas größeren Kasten — und der Schlitz
+## daneben verschwindet, statt knapp bestehen zu bleiben.
+static func huelle(e: Dictionary) -> Rect2:
+	var h: Vector2 = e["h"]
+	var yaw: float = float(e["yaw"])
+	var c: float = absf(cos(yaw))
+	var s: float = absf(sin(yaw))
+	var halb := Vector2(h.x * c + h.y * s, h.x * s + h.y * c)
+	return Rect2(Vector2(e["c"]) - halb, halb * 2.0)
+
+
+## Zu enge Gassen zwischen zwei Sperren zumauern. Liefert die BRÜCKEN, nicht die ganze Liste.
+##
+## Zwei Kästen, die sich in einer Achse überlappen und in der anderen weniger als `MIN_GASSE_M`
+## auseinanderstehen, bekommen ein Füllstück dazwischen. Berührende oder überlappende Kästen
+## brauchen keines — dort ist ohnehin zu.
+##
+## `luft` ist der Spielerradius, den der Aufrufer auf die Sperren schlägt (`_solid_rect_rot`).
+## Er gehört in die Rechnung, weil es um die FREIE BAHN geht und nicht um den Abstand der
+## Mauern: Zwei Hütten mit 2,2 m Abstand lassen bei 0,35 m Radius genau 1,5 m Bahn.
+static func gassen_schliessen(sperren: Array, luft: float = 0.0) -> Array:
+	var kaesten: Array = []
+	for e in sperren:
+		kaesten.append(huelle(e).grow(luft))
+	var bruecken: Array = []
+	for i in kaesten.size():
+		for j in range(i + 1, kaesten.size()):
+			var a: Rect2 = kaesten[i]
+			var b: Rect2 = kaesten[j]
+			# Waagerechte Gasse: gemeinsame z-Spanne, Lücke in x.
+			var z0: float = maxf(a.position.y, b.position.y)
+			var z1: float = minf(a.end.y, b.end.y)
+			if z1 > z0:
+				var links: Rect2 = a if a.end.x <= b.position.x else b
+				var rechts: Rect2 = b if a.end.x <= b.position.x else a
+				var spalt: float = rechts.position.x - links.end.x
+				if spalt > 0.0 and spalt < MIN_GASSE_M:
+					bruecken.append(_gasse(
+						Vector2(links.end.x + spalt * 0.5, (z0 + z1) * 0.5),
+						Vector2(spalt * 0.5, (z1 - z0) * 0.5)))
+			# Senkrechte Gasse: gemeinsame x-Spanne, Lücke in z.
+			var x0: float = maxf(a.position.x, b.position.x)
+			var x1: float = minf(a.end.x, b.end.x)
+			if x1 > x0:
+				var oben: Rect2 = a if a.end.y <= b.position.y else b
+				var unten: Rect2 = b if a.end.y <= b.position.y else a
+				var spalt2: float = unten.position.y - oben.end.y
+				if spalt2 > 0.0 and spalt2 < MIN_GASSE_M:
+					bruecken.append(_gasse(
+						Vector2((x0 + x1) * 0.5, oben.end.y + spalt2 * 0.5),
+						Vector2((x1 - x0) * 0.5, spalt2 * 0.5)))
+	return bruecken
+
+
+## Ein Fuellstueck als vollwertige Sperre.
+##
+## Mit ALLEN Feldern, die eine Sperre sonst auch hat. Der erste Entwurf legte nur `c`, `h` und
+## `yaw` hinein — und `wer_blockiert` liest `name`, um sagen zu koennen, WORAN man haengt.
+## Ein halber Eintrag blockiert zwar, meldet sich aber nicht, und dann sucht man die
+## unsichtbare Wand beim naechsten Mal wieder von vorn. Der Test hat es gefunden.
+static func _gasse(c: Vector2, h: Vector2) -> Dictionary:
+	return { "c": c, "h": h, "yaw": 0.0, "deckel": 0.0, "asset": "gasse",
+		"label": "", "npc": "", "name": "Gasse zu eng" }
