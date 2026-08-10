@@ -20,15 +20,24 @@ Projekt ▸ Exportieren… ▸ Android ▸ Projekt exportieren ▸ rust-and-lead
 
 | Ding | Wozu | Größe |
 | :-- | :-- | :-- |
-| Godot **4.3** | das Projekt | 120 MB |
-| Export-Vorlagen 4.3 | der Android-Teil der App | 900 MB |
+| Godot (deine Version) | das Projekt | 120 MB |
+| Export-Vorlagen, **dieselbe** Version | der Android-Teil der App | 900 MB |
 | **JDK 17** | Godot ruft Javas Signierwerkzeug | 180 MB |
 | Android SDK (Platform-Tools + Build-Tools) | baut und signiert die APK | 1,5 GB |
 | Debug-Schlüssel | Android installiert nichts Unsigniertes | 2 KB |
 
-> **Die Version muss genau stimmen.** Export-Vorlagen aus 4.2 oder 4.4
-> funktionieren mit einem 4.3-Editor nicht — die Fehlermeldung nennt dann
-> „Export template not found" und meint „falsche Version".
+> **Die Version muss genau stimmen — mit DEINEM Editor, nicht mit einer Zahl
+> aus dieser Anleitung.** Export-Vorlagen aus 4.4 funktionieren in einem
+> 4.5-Editor nicht; die Fehlermeldung heisst dann „Export template not found"
+> und meint „falsche Version". Welche du hast, steht unter **Hilfe ▸ Über** und
+> in der Titelleiste des Projektmanagers.
+>
+> Das Projekt selbst ist mit 4.3 angelegt (`config/features` in
+> `project.godot`). Eine neuere 4.x oeffnet es und rechnet es still hoch — das
+> ist in Ordnung. Daran erkennst du es auch: Ab 4.4 legt Godot beim ersten
+> Öffnen für jedes Skript eine `.uid`-Datei an und meldet dabei einmalig
+> „Missing .uid file … re-created from cache". Das ist keine Warnung über einen
+> Fehler, sondern eine über eine Neuerung, und sie kommt genau einmal.
 
 ---
 
@@ -58,7 +67,17 @@ Projekt ▸ Exportieren… ▸ Android ▸ Projekt exportieren ▸ rust-and-lead
 
 ## 2 · Java (JDK 17)
 
-Godot 4.3 will **genau 17**. Neuer ist nicht besser: Mit JDK 21 bricht der
+**Für diesen Aufbau reicht jede aktuelle LTS-Fassung — nimm 21.** Die
+verbreitete Regel „es muss 17 sein" gilt für den *Gradle-Build*, und der ist
+hier ausgeschaltet (Schritt 6). Ohne ihn benutzt Godot vom JDK nur `keytool`,
+um den Schlüssel anzulegen und zu prüfen, und ein PKCS12-Keystore aus JDK 21
+ist derselbe wie einer aus 17.
+
+Adoptium bietet 17 auf der Startseite inzwischen nicht mehr an; es liegt unter
+*Other platforms and versions* im Versions-Auswahlfeld und unter
+`github.com/adoptium/temurin17-binaries/releases`. Brauchen wirst du es nur,
+wenn du später „Use Gradle Build" einschaltest. Dann will Godot **genau 17**;
+mit JDK 21 bricht der
 Build mit einer Gradle-Meldung ab, die nach allem klingt, nur nicht nach der
 Java-Version.
 
@@ -217,7 +236,8 @@ Installieren.
 | :-- | :-- | :-- |
 | `Export template not found` | Vorlagen fehlen oder sind aus einer anderen Godot-Version | Editor ▸ Export-Vorlagen verwalten, neu laden |
 | `Android SDK path is invalid` | auf den falschen Ordner gezeigt (z. B. auf `platform-tools` statt auf `Sdk`) | den Pfad aus dem SDK Manager abschreiben |
-| `Could not find keytool` | JDK nicht gefunden oder falsche Version | Java SDK Path prüfen; es muss **17** sein |
+| `Could not find keytool` | JDK nicht gefunden | Java SDK Path prüfen — auf den JDK-Ordner zeigen, nicht auf dessen `bin` |
+| `Missing .uid file … re-created from cache` | keine Warnung über einen Fehler: Ab Godot 4.4 bekommt jedes Skript eine `.uid`-Datei, das Projekt stammt aus 4.3 | nichts tun, kommt genau einmal. Die neuen Dateien dürfen mit eingecheckt werden |
 | `Invalid public key for APK expansion` | leeres Feld an einer Stelle, die nur mit Expansion gebraucht wird | *APK Expansion* ausschalten |
 | APK baut, Telefon sagt „App nicht installiert" | alte Version mit anderem Schlüssel drauf | alte deinstallieren |
 | Startet und bleibt schwarz | Hauptszene fehlt im Export | `run/main_scene` steht auf `res://scenes/Title.tscn`; Export-Filter auf **Alle Ressourcen im Projekt** |
