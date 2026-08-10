@@ -4,7 +4,13 @@
 > vereinbart. Sie wird bei jeder Änderung mitgeführt — genau deshalb gibt es sie: Zugesagtes,
 > das nur im Gesprächsverlauf steht, geht verloren.
 
-Stand: nach dem Umbau der Kopfzeile und der Wirte vor ihren Häusern.
+Stand: nach dem Umbau der Kopfzeile, den Wirten vor ihren Häusern und dem Einbau der gemalten
+Sinnbilder.
+
+> **Eine Korrektur an mir selbst:** In der ersten Fassung dieser Liste stand, die Porträts von
+> Mabel, Silas und Doc erschienen in keinem Gespräch. Das war falsch — `DialogBox.show_line()`
+> lädt seit Langem `portrait_<giver>`, und sie erscheinen. Nachgesehen statt behauptet ist auch
+> beim Aufschreiben die Regel.
 
 ---
 
@@ -26,9 +32,8 @@ Stand: nach dem Umbau der Kopfzeile und der Wirte vor ihren Häusern.
 
 | Was | Wo es klemmt |
 | :-- | :-- |
-| **Die Icon-Dateien liegen ungenutzt herum.** In `assets/ui/` liegen 14 fertige Sinnbilder — `icon_gold`, `icon_hp`, `icon_xp`, `icon_time_day/night`, `icon_quest`, `icon_ammo`, `icon_potion`, `icon_map`, `icon_backpack` und die Slot-Rahmen. Benutzt werden davon **vier**. Die Goldmünze in der Kopfzeile habe ich gezeichnet, obwohl `icon_gold.png` danebenliegt | reine Arbeit, keine Hürde |
-| **Portraits von Mabel, Silas und Doc** liegen ebenfalls da (`portrait_mabel/silas/doc.png`) und erscheinen in keinem Gespräch | dito |
-| **Statusmarken** (⚡ Kurzschluss, ☣ Ätzung, ‼ Panzerung durch, ☢ Strahlung) sind Schriftzeichen | ein Bild liest sich schneller als ein Zeichen |
+| **Fünf Sinnbilder liegen weiter ungenutzt**: `icon_hp`, `icon_xp`, `icon_ammo`, `icon_map`, `icon_backpack`. Gold, Uhr, Auftrag und Trank benutzen ihres jetzt | Bei Leben und Erfahrung habe ich es bewusst gelassen — du wolltest **weniger** in der Kopfzeile, und die Balken sagen es schon. Karte und Rucksack haben ihren Knopf bereits (Minikarte und Porträt) |
+| **Statusmarken** (⚡ Kurzschluss, ☣ Ätzung, ‼ Panzerung durch, ☢ Strahlung) sind Schriftzeichen | ein Bild liest sich schneller als ein Zeichen; Dateien dafür gibt es noch nicht |
 | **Praxis und Waffenlager sind Hütten mit Schild**, keine eigenen Modelle | passt fürs Erste, siehe oben unter „braucht dich" |
 
 ---

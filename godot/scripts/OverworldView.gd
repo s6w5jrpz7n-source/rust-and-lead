@@ -4819,6 +4819,8 @@ var _lv_lbl: Label = null
 ## Gold: eine gezeichnete Muenze und die Zahl dahinter, sonst nichts.
 var _gold_icon: Control = null
 var _gold_lbl: Label = null
+var _uhr_icon: Control = null
+var _quest_icon: Control = null
 ## Die Uhr. Sie bleibt, weil an ihr etwas HAENGT — Nachttiere kommen im Dunkeln heraus.
 var _uhr_lbl: Label = null
 var _spieler_marken: Label = null
@@ -4852,6 +4854,48 @@ func _trank_trinken() -> void:
 
 
 ## Ein Balken im Ton der Welt: dunkle Fassung, warme Fuellung, kein Rahmen.
+## Umriss um eine HUD-Schrift.
+##
+## Die Kopfzeile liegt UEBER der Welt, und die Welt ist mal Nachtwueste und mal Blech in der
+## Mittagssonne. Graue Schrift auf dunklem Sand liest sich gut und auf hellem Blech gar nicht:
+## Auf dem Kontrollbild bei zwoelf Uhr war die Uhrzeit unsichtbar, obwohl sie dastand. Ein
+## Umriss macht die Schrift vom Hintergrund unabhaengig — dieselbe Loesung wie bei der
+## Lebenszahl auf dem Balken, nur dass es dort um zwei Rottoene ging und hier um die halbe Welt.
+static func hud_umriss(lbl: Label, staerke: int = 4) -> void:
+	lbl.add_theme_constant_override("outline_size", staerke)
+	lbl.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.03, 0.92))
+
+
+## Ein Sinnbild in der Kopfzeile: das gemalte Bild, sonst ein leeres Control zum Selbstzeichnen.
+##
+## Die Bilder in `assets/ui/` sind weisse Silhouetten mit Alphakanal — die Farbe kommt hier
+## dazu (`modulate`). Damit dient dasselbe Bild als Muenze in Gold und, wenn es einmal
+## gebraucht wird, als graues Zeichen fuer „kein Gold".
+func _hud_sinnbild(layer: CanvasLayer, name: String, farbe: Color, wo: Vector2,
+		kante: float) -> Control:
+	var tex: Texture2D = UiAssets.texture(name)
+	if tex != null:
+		var bild := TextureRect.new()
+		bild.texture = tex
+		# `EXPAND_IGNORE_SIZE`: Sonst bestimmt die 64er-Textur die Mindestgroesse und das
+		# Sinnbild sitzt viermal zu gross in der Zeile — genau der Fehler, der den
+		# Portraetrahmen einmal 470 Punkte gross gemacht hat.
+		bild.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bild.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		bild.modulate = farbe
+		bild.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bild.position = wo
+		layer.add_child(bild)
+		hud_groesse(bild, kante, kante)
+		return bild
+	var leer := Control.new()
+	leer.position = wo
+	leer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(leer)
+	hud_groesse(leer, kante, kante)
+	return leer
+
+
 ## Ein Control auf eine feste Groesse zwingen — NACH dem Einhaengen.
 ##
 ## `size` vor `add_child` zu setzen ist wirkungslos, und das war der ganze Grund, warum der
@@ -4994,28 +5038,35 @@ func _build_hud() -> void:
 	# hinsieht, wenn man es wissen will. Was bleibt, ist Gold: die einzige Zahl, an der eine
 	# Entscheidung haengt, die man UNTERWEGS trifft.
 	var zeile_y: float = HUD_RAND + 8.0 + BALKEN_H + 4.0 + XP_BALKEN_H + 7.0
-	_gold_icon = Control.new()
-	_gold_icon.custom_minimum_size = Vector2(18.0, 18.0)
-	_gold_icon.size = Vector2(18.0, 18.0)
-	_gold_icon.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, zeile_y)
-	_gold_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Gezeichnet statt gesetzt — der Grund steht bei `HudGlyph.zeichne_muenze`.
-	_gold_icon.draw.connect(func() -> void:
-		HudGlyph.zeichne_muenze(_gold_icon, Vector2(9.0, 9.0), 8.0))
-	layer.add_child(_gold_icon)
+	# Das GEMALTE Sinnbild schlaegt das gezeichnete.
+	#
+	# In `assets/ui/` liegen vierzehn fertige Sinnbilder, und benutzt wurden davon vier — ich
+	# habe die Muenze gezeichnet, waehrend `icon_gold.png` danebenlag. Dieselbe Regel wie ueberall
+	# sonst im Projekt: Liegt die Datei da, gilt sie; fehlt sie, zeichnet der Code weiter selbst.
+	# So bleibt das Spiel ohne Grafiken vollstaendig, und eine abgelegte Datei ersetzt den
+	# Platzhalter, ohne dass hier eine Zeile geaendert werden muss.
+	_gold_icon = _hud_sinnbild(layer, "icon_gold", Color(0.98, 0.80, 0.30),
+		Vector2(HUD_RAND + PORTRAIT_PX + 10.0, zeile_y), 18.0)
+	if _gold_icon is Control and not (_gold_icon is TextureRect):
+		_gold_icon.draw.connect(func() -> void:
+			HudGlyph.zeichne_muenze(_gold_icon, Vector2(9.0, 9.0), 8.0))
 	_gold_lbl = Label.new()
 	_gold_lbl.add_theme_font_size_override("font_size", 15)
 	_gold_lbl.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + 22.0, zeile_y - 2.0)
 	_gold_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_gold_lbl)
+	hud_umriss(_gold_lbl)
 	# Die Uhr daneben, gedaempft. Sie bleibt als Einzige der alten Zeile uebrig, weil an ihr
 	# etwas HAENGT: Nachttiere kommen nur im Dunkeln heraus, und wer das weiss, plant danach.
+	_uhr_icon = _hud_sinnbild(layer, "icon_time_night", Color(0.80, 0.84, 0.95),
+		Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + 96.0, zeile_y), 17.0)
 	_uhr_lbl = Label.new()
 	_uhr_lbl.add_theme_font_size_override("font_size", 14)
 	_uhr_lbl.add_theme_color_override("font_color", Color(0.72, 0.70, 0.64))
-	_uhr_lbl.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + 96.0, zeile_y - 1.0)
+	_uhr_lbl.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + 117.0, zeile_y - 1.0)
 	_uhr_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_uhr_lbl)
+	hud_umriss(_uhr_lbl)
 	# Was gerade AN MIR frisst — rechts neben dem Lebensbalken, wohin der Blick beim Sinken
 	# ohnehin faellt.
 	#
@@ -5033,11 +5084,14 @@ func _build_hud() -> void:
 	# Was uebrig bleibt: der verfolgte Auftrag, und am Bahnsteig der Hinweis auf die Bahn.
 	# Beides sind Saetze und keine Werte — sie gehoeren in eine Zeile und nicht in eine Reihe
 	# von Zahlen.
+	_quest_icon = _hud_sinnbild(layer, "icon_quest", Color(0.98, 0.88, 0.55),
+		Vector2(HUD_RAND + PORTRAIT_PX + 10.0, zeile_y + 24.0), 15.0)
 	_hud = Label.new()
-	_hud.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0, zeile_y + 22.0)
+	_hud.position = Vector2(HUD_RAND + PORTRAIT_PX + 10.0 + 19.0, zeile_y + 22.0)
 	_hud.add_theme_font_size_override("font_size", 14)
 	_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_hud)
+	hud_umriss(_hud)
 	# Ortsschrift: Beim Betreten eines Ortes zieht sein Name gross und gesperrt ueber die Mitte
 	# und blendet wieder weg. Kostet nichts und macht aus einem Punkt auf der Karte einen Ort,
 	# an dem man ANGEKOMMEN ist — genau die Einblendung aus den Diablo-Vorlagen.
@@ -5088,6 +5142,7 @@ func _build_hud() -> void:
 	_ammo_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_ammo_lbl.add_theme_font_size_override("font_size", 15)
 	layer.add_child(_ammo_lbl)
+	hud_umriss(_ammo_lbl)
 	# ── Die Trabanten am Schussknopf ──────────────────────────────────────────
 	#
 	# Traenke standen seit jeher im Spielstand und es gab keinen Weg, sie zu benutzen. Der erste
@@ -6350,7 +6405,7 @@ func _set_cine_clean(an: bool) -> void:
 	# das ergibt genau das schlechteste Ergebnis — eine Bedienoberflaeche, die man gerade noch
 	# erkennt, in einem Augenblick, aus dem sie verschwinden sollte.
 	for c in [_portrait_btn, _portrait_rahmen, _hp_bar, _xp_bar, _spieler_marken,
-			_hp_txt, _lv_lbl, _gold_icon, _gold_lbl, _uhr_lbl]:
+			_hp_txt, _lv_lbl, _gold_icon, _gold_lbl, _uhr_lbl, _uhr_icon, _quest_icon]:
 		if c != null and is_instance_valid(c):
 			(c as CanvasItem).visible = not an
 	# Und die Lebensleisten ueber den Gegnern. In der Erstbegegnung ist das keine Kosmetik: Die
@@ -7758,13 +7813,24 @@ func _update_hud() -> void:
 	if _gold_lbl != null:
 		_gold_lbl.text = str(GameState.gold)
 	if _uhr_lbl != null:
-		_uhr_lbl.text = DayCycle.phase_label(GameState.hour)
+		# Nur die UHRZEIT, nicht mehr „☾ 20:38" — Sonne und Mond stehen als Bild daneben.
+		_uhr_lbl.text = DayCycle.clock_text(GameState.hour)
+	if _uhr_icon is TextureRect:
+		# Und das Bild wechselt mit der Tageszeit. Dieselbe Grenze wie beim Licht: `is_dark`.
+		var dunkel: bool = DayCycle.is_dark(GameState.hour)
+		(_uhr_icon as TextureRect).texture = UiAssets.texture(
+			"icon_time_night" if dunkel else "icon_time_day")
+		_uhr_icon.modulate = Color(0.80, 0.84, 0.95) if dunkel else Color(1.0, 0.90, 0.62)
 	_hud.text = ""
 	if _station_at_player() != "":
 		_hud.text = "⇄ [1-5] Iron Rail"
 	var q: String = _active_quest_line()
 	if q != "":
-		_hud.text = ("✦ " + q) if _hud.text == "" else (_hud.text + "\n✦ " + q)
+		_hud.text = q if _hud.text == "" else (_hud.text + "\n" + q)
+	# Das Sinnbild steht nur da, wenn auch etwas danebensteht — ein Stern ueber leerer Zeile
+	# sieht aus, als haette man etwas vergessen.
+	if _quest_icon != null:
+		_quest_icon.visible = q != ""
 	# Die Trabanten haengen an der LAGE des Schussknopfes, und die steht erst, wenn er selbst
 	# `_ready` durchlaufen hat. Einmal je Bild nachziehen kostet nichts und ist gegen jede
 	# Reihenfolge unempfindlich — auch gegen eine Fenstergroesse, die sich aendert.

@@ -58,6 +58,9 @@ func setzen(z: String, n: int, an: bool) -> void:
 	queue_redraw()
 
 
+const UiAssets = preload("res://scripts/UiAssets.gd")
+
+
 func druecken(an: bool) -> void:
 	if an == gedrueckt:
 		return
@@ -87,7 +90,18 @@ func _draw() -> void:
 	if zeichen == "trank":
 		var vorne: Color = rim if aktiv else Color(0.55, 0.55, 0.55, 0.7)
 		var saft: Color = Color(0.86, 0.24, 0.32, 0.85) if aktiv else Color(0.34, 0.30, 0.30, 0.5)
-		HudGlyph.zeichne_flakon(self, c, RADIUS * 0.92, vorne, saft)
+		# Das GEMALTE Sinnbild schlaegt das gezeichnete, wenn es eines gibt. `icon_potion.png`
+		# lag im Projekt und wurde von niemandem angesehen. Der gezeichnete Flakon bleibt
+		# darunter: Er ist der Grund, warum der Knopf ueberhaupt je etwas gezeigt hat, und ohne
+		# Grafiken muss das Spiel vollstaendig bleiben.
+		var bild: Texture2D = UiAssets.texture("icon_potion")
+		if bild != null:
+			var kante: float = RADIUS * 1.15
+			draw_texture_rect(bild, Rect2(c - Vector2(kante, kante) * 0.5,
+				Vector2(kante, kante)), false,
+				Color(0.94, 0.42, 0.46) if aktiv else Color(0.48, 0.44, 0.44, 0.6))
+		else:
+			HudGlyph.zeichne_flakon(self, c, RADIUS * 0.92, vorne, saft)
 	elif zeichen != "":
 		var gr: Vector2 = schrift.get_string_size(zeichen, HORIZONTAL_ALIGNMENT_LEFT, -1, 22)
 		draw_string(schrift, c - gr * 0.5 + Vector2(0.0, gr.y * 0.36), zeichen,
@@ -103,7 +117,11 @@ func _draw() -> void:
 		var t: String = str(zahl)
 		var gz: Vector2 = schrift.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
 		var wo: Vector2 = c + ZAHL_VERSATZ * RADIUS
-		draw_circle(wo, ZAHL_R, Color(0.05, 0.05, 0.05, 0.78))
+		# Dunkelbraun mit hellem Ring statt schwarzem Fleck: Der schwarze Kreis sass wie ein
+		# Loch auf dem Knopf, und die Zahl darin war auf dem Kontrollbild kaum zu lesen.
+		draw_circle(wo, ZAHL_R, Color(0.14, 0.09, 0.06, 0.92))
+		draw_arc(wo, ZAHL_R, 0.0, TAU, 20,
+			Color(0.72, 0.60, 0.36, 0.85) if aktiv else Color(0.42, 0.40, 0.38, 0.6), 1.5, true)
 		draw_string(schrift, wo - gz * 0.5 + Vector2(0.0, gz.y * 0.36), t,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
 			Color(1.0, 0.94, 0.82) if aktiv else Color(0.55, 0.55, 0.55))
