@@ -1472,13 +1472,30 @@ func _mat(color: Color, unshaded: bool = false, alpha: float = 1.0) -> StandardM
 
 
 func _box(size: Vector3, pos: Vector3, color: Color, alpha: float = 1.0) -> MeshInstance3D:
+	var mi: MeshInstance3D = _box_frei(size, pos, color, alpha)
+	add_child(mi)
+	return mi
+
+
+## Dieselbe Kiste, aber OHNE sie einzuhaengen — fuer alles, was aus mehreren Kisten besteht.
+##
+## `_box` haengt selbst in die Welt ein, und das ist fuer den Regelfall bequem. Wer daraus aber
+## eine Figur zusammensetzt und `n.add_child(_box(...))` schreibt, haengt einen Knoten um, der
+## schon einen Vater hat. Godot lehnt das ab:
+##
+##     Can't add child '@MeshInstance3D@1040' to '', already has a parent 'Overworld'.
+##
+## Und dann bleibt die Figur LEER, waehrend ihre sieben Kisten einzeln im Weltursprung liegen.
+## Genau so ist das Platzhalter-Pferd verschwunden: Es stand nie am Kraterrand, es lag in
+## Teilen bei (0|0). Wer dort hinlief, sah Kisten in der Luft; wer das Pferd suchte, fand
+## nichts.
+func _box_frei(size: Vector3, pos: Vector3, color: Color, alpha: float = 1.0) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	mi.mesh = mesh
 	mi.material_override = _mat(color, false, alpha)
 	mi.position = pos
-	add_child(mi)
 	return mi
 
 
@@ -6935,7 +6952,29 @@ func _process_movement(delta: float) -> void:
 	# geht durch denselben Test — nur ist die Blocker-Liste in der Wildnis leer, weshalb sich
 	# dort nichts anfühlt wie eine Wand. Achsenweise nachgeben, damit man an einer Hausecke
 	# entlanggleitet statt hängenzubleiben.
-	if not WorldManager.is_walkable(to_rel) or _blocked(next) or _gegner_im_weg(next) \
+	# NOTAUSGANG: Wer schon IN einer Sperre steht, darf hinaus.
+	#
+	# Der Lauftest fragt „ist das Ziel frei?" und nie „stehe ich selbst gerade im Freien?".
+	# Solange man ausserhalb aller Sperren startet, ist das dasselbe. Steht man einmal drin,
+	# ist jede Nachbarzelle ebenfalls gesperrt — und dann bewegt sich die Figur in KEINE
+	# Richtung mehr. Von aussen sieht das aus, als waere die Steuerung eingefroren.
+	#
+	# Hineingeraten kann man auf mehr Wegen, als sich alle absichern lassen: ein Modell, das
+	# im Editor auf die Figur geschoben wird; ein Rueckweg aus dem Stollen auf einen Punkt,
+	# der inzwischen bebaut ist; ein Fuellstueck, das eine Gasse schliesst, in der jemand
+	# steht (siehe `TownCollision.gassen_schliessen`); ein Spielstand von vor einem Umbau.
+	# Deshalb wird hier nicht die Ursache abgefangen, sondern die Folge: Aus einer Sperre
+	# heraus laeuft man immer, in eine hinein nie.
+	#
+	# Gelaende bleibt gesperrt (`is_walkable`, `_zu_steil`, `_am_riss`) — ein Notausgang durch
+	# eine Hauswand ist ein Notausgang; einer in den Abgrund waere ein zweites Problem.
+	_fest_gemeldet = maxf(0.0, _fest_gemeldet - delta)
+	var steckt_fest: bool = _blocked(_player.position)
+	if steckt_fest and _fest_gemeldet <= 0.0:
+		_say("✖ Du hast festgesteckt — geh zur Seite.", 2.0)
+		_fest_gemeldet = 8.0
+	if not WorldManager.is_walkable(to_rel) or (_blocked(next) and not steckt_fest) \
+			or _gegner_im_weg(next) \
 			or _zu_steil(_player.position, next) \
 			or _am_riss(next):
 		# Erst SCHRAEG zum Hang ausweichen, dann achsenweise.
@@ -6955,7 +6994,7 @@ func _process_movement(delta: float) -> void:
 			kand.x = clampf(kand.x, 2.0, WorldManager.WORLD_METERS - 2.0)
 			kand.z = clampf(kand.z, -(WorldManager.WORLD_METERS - 2.0), -2.0)
 			if WorldManager.is_walkable(WorldManager.scene_to_world(kand)) \
-					and not _blocked(kand) and not _gegner_im_weg(kand) \
+					and (steckt_fest or not _blocked(kand)) and not _gegner_im_weg(kand) \
 					and not _zu_steil(_player.position, kand) \
 					and not _am_riss(kand):
 				next = kand
@@ -6964,11 +7003,13 @@ func _process_movement(delta: float) -> void:
 		if not gefunden:
 			var slide_x: Vector3 = Vector3(next.x, 0.0, _player.position.z)
 			var slide_z: Vector3 = Vector3(_player.position.x, 0.0, next.z)
-			if WorldManager.is_walkable(WorldManager.scene_to_world(slide_x)) and not _blocked(slide_x) \
+			if WorldManager.is_walkable(WorldManager.scene_to_world(slide_x)) \
+					and (steckt_fest or not _blocked(slide_x)) \
 					and not _gegner_im_weg(slide_x) \
 					and not _zu_steil(_player.position, slide_x) and not _am_riss(slide_x):
 				next = slide_x
-			elif WorldManager.is_walkable(WorldManager.scene_to_world(slide_z)) and not _blocked(slide_z) \
+			elif WorldManager.is_walkable(WorldManager.scene_to_world(slide_z)) \
+					and (steckt_fest or not _blocked(slide_z)) \
 					and not _gegner_im_weg(slide_z) \
 					and not _zu_steil(_player.position, slide_z) and not _am_riss(slide_z):
 				next = slide_z
@@ -7573,6 +7614,8 @@ const MOUNT_SPEED_MUL: float = 3.0
 const MOUNT_RANGE_M: float = 4.0
 var _horse: Node3D = null
 var _mounted: bool = false
+## Zaehlt herunter, damit die Fest-Meldung nicht jedes Bild erscheint.
+var _fest_gemeldet: float = 0.0
 
 
 ## Tempo der Figur — zu Fuss oder im Sattel.
@@ -7612,12 +7655,12 @@ func _build_horse() -> void:
 func _horse_dummy() -> Node3D:
 	var n := Node3D.new()
 	var fell := Color(0.35, 0.24, 0.16)
-	n.add_child(_box(Vector3(0.7, 0.8, 2.1), Vector3(0.0, 1.25, 0.0), fell))
-	n.add_child(_box(Vector3(0.45, 0.8, 0.5), Vector3(0.0, 1.75, -1.0), fell))
-	n.add_child(_box(Vector3(0.4, 0.4, 0.7), Vector3(0.0, 2.05, -1.3), fell))
+	n.add_child(_box_frei(Vector3(0.7, 0.8, 2.1), Vector3(0.0, 1.25, 0.0), fell))
+	n.add_child(_box_frei(Vector3(0.45, 0.8, 0.5), Vector3(0.0, 1.75, -1.0), fell))
+	n.add_child(_box_frei(Vector3(0.4, 0.4, 0.7), Vector3(0.0, 2.05, -1.3), fell))
 	for sx in [-0.25, 0.25]:
 		for sz in [-0.75, 0.75]:
-			n.add_child(_box(Vector3(0.2, 0.9, 0.2), Vector3(sx, 0.45, sz),
+			n.add_child(_box_frei(Vector3(0.2, 0.9, 0.2), Vector3(sx, 0.45, sz),
 				fell.darkened(0.25)))
 	return n
 
