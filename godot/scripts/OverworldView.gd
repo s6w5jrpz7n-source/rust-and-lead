@@ -3547,7 +3547,14 @@ func _build_npcs() -> void:
 			# gebaut; vor dem Saloon steht acht Meter weiter eine Huette, und ein Wirt IN einer
 			# Huette ist schlimmer als einer, der zwei Schritte zu weit vorn steht.
 			p2 = _freier_fleck(p2, Vector2(c.x, c.z))
-			pos = Vector3(p2.x, 0.0, p2.y)
+			# `c.y` MITNEHMEN. Der erste Anlauf schrieb hier eine harte Null hinein — und damit
+			# stand jede Figur, deren Haus gefunden wurde, auf Meereshoehe statt auf dem Boden
+			# von Rustwater. Der Ort liegt hoeher; sie steckten also im Sand. Der Fehler ist im
+			# Kontrollbild NICHT aufgefallen, weil das eine Bild zufaellig den Doc zeigte und
+			# dessen Modell dort noch fehlt (Kapsel-Platzhalter, halb im Boden sieht aus wie
+			# eine Kapsel auf dem Boden). Genau die Sorte Fehler, gegen die eine Zahl hilft und
+			# ein huebsches Bild nicht.
+			pos = Vector3(p2.x, c.y, p2.y)
 			spot = p2 - Vector2(c.x, c.z)
 		var node := Node3D.new()
 		var asset: String = "npc_" + String(n[0])
