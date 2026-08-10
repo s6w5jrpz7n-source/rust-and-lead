@@ -1330,32 +1330,52 @@ var _weapon_model: Node3D = null     # Waffe in der Hand (optional)
 var _muzzle: Node3D = null           # Muendungspunkt, am Modell gemessen
 
 
+## Ab wann eine Aufbaustufe im Protokoll erscheint.
+const AUFBAU_LAUT_MS: int = 40
+
+
+## Die vierundzwanzig Stufen des Weltaufbaus, der Reihe nach — und wie lange jede braucht.
+##
+## Als LISTE und nicht als vierundzwanzig Aufrufe untereinander, damit die Messung nicht
+## vierundzwanzigmal danebensteht. Die Reihenfolge ist die alte und sie ist wesentlich:
+## `_build_player` braucht den Boden, `_build_npcs` braucht die Stadt.
+func _aufbau_messen() -> void:
+	var stufen: Array[StringName] = [
+		&"_build_environment", &"_build_ground_and_biomes", &"_build_sector_lines_and_rim",
+		&"_build_swamp", &"_build_railway", &"_build_pois", &"_build_township",
+		&"_scatter_decor", &"_scatter_props", &"_fill_craters", &"_build_player",
+		&"_build_hud", &"_build_npcs", &"_build_trail", &"_build_horse", &"_build_sfx",
+		&"_build_riss", &"_build_steg", &"_build_moon", &"_spawn_pack", &"_build_chests",
+		&"_dress_ausguck", &"_build_vista_marke", &"_build_stollen",
+	]
+	var gesamt0: int = Time.get_ticks_msec()
+	var laut: Array[String] = []
+	for stufe in stufen:
+		var t0: int = Time.get_ticks_msec()
+		call(stufe)
+		var ms: int = Time.get_ticks_msec() - t0
+		if ms >= AUFBAU_LAUT_MS:
+			laut.append("%6d ms  %s" % [ms, String(stufe)])
+	var gesamt: int = Time.get_ticks_msec() - gesamt0
+	print("── Weltaufbau: %d ms ──" % gesamt)
+	for z in laut:
+		print("   " + z)
+
+
 func _ready() -> void:
 	_load_or_init_save()   # vor allem Weiteren: GameState (Level/Gold/Ausrüstung) korrekt setzen
-	_build_environment()
-	_build_ground_and_biomes()
-	_build_sector_lines_and_rim()
-	_build_swamp()
-	_build_railway()
-	_build_pois()
-	_build_township()
-	_scatter_decor()
-	_scatter_props()
-	_fill_craters()
-	_build_player()
-	_build_hud()
-	_build_npcs()
-	_build_trail()
-	_build_horse()
-	_build_sfx()
-	_build_riss()
-	_build_steg()
-	_build_moon()
-	_spawn_pack()
-	_build_chests()
-	_dress_ausguck()
-	_build_vista_marke()
-	_build_stollen()
+	# Der Aufbau MISST sich selbst.
+	#
+	# „auf dem handy hatte ich extrem lange ladezeit 3 min oder mehr." Drei Minuten sind kein
+	# Wert, den man durch Nachdenken halbiert — man muss wissen, welche der vierundzwanzig
+	# Stufen sie verbraucht. Ohne Messung optimiert man die Stelle, die man zufaellig im Kopf
+	# hat, und das ist erfahrungsgemaess nicht die teure.
+	#
+	# Die Messung kostet nichts (ein `Time.get_ticks_msec()` je Stufe) und laeuft immer mit,
+	# auch im fertigen Spiel: Auf dem Geraet des Spielers sind die Zahlen andere als hier, und
+	# genau die braucht man. Ausgegeben wird nur, was ueber `AUFBAU_LAUT_MS` liegt — sonst
+	# ertraenkt die Liste ihre eigene Aussage.
+	_aufbau_messen()
 	_hp = float(PlayerStats.max_hp())
 	# Wer aus dem Stollen kommt, kommt DORT heraus, wo er hineingestiegen ist — und nicht am
 	# Startpunkt der Oberwelt, also unter Umstaenden quer ueber der Karte. Der Prolog bleibt
@@ -1726,20 +1746,49 @@ func _add_terrain_patch(f: Dictionary, mat: Material) -> void:
 	var fels: bool = bool(f.get("fels", false))
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# ── Die Gitterpunkte werden EINMAL gerechnet, nicht sechsmal ──────────────────
+	#
+	# „auf dem handy hatte ich extrem lange ladezeit 3 min oder mehr." Gemessen (der Aufbau
+	# schreibt seine Stufen jetzt selbst ins Protokoll) gingen **89 von 122 Sekunden** in
+	# `_build_ground_and_biomes`, und darin praktisch alles in diese Schleife.
+	#
+	# Der Grund stand hier im Klartext: Jede Zelle gab SECHS Eckpunkte aus, und fuer jeden
+	# wurden `height_at` und `normal_at` neu gerechnet. Ein Gitterpunkt gehoert aber zu bis zu
+	# sechs Zellen — er wurde also bis zu sechsmal ausgerechnet. Und `normal_at` ruft `height_at`
+	# selbst mehrfach auf, waehrend `height_at` ueber ALLE dreizehn Gelaendeformen laeuft.
+	# Aus 79.000 Gitterpunkten wurden so ueber eine halbe Million Auswertungen und daraus
+	# einige Millionen Formaufrufe — in GDScript, bei jedem Start.
+	#
+	# Jetzt wird das Gitter einmal durchgerechnet und dann nur noch abgelesen. Dieselben Punkte,
+	# dieselben Normalen, dasselbe Bild — der Unterschied ist reine Arbeitsersparnis.
+	var breit: int = nx + 1
+	var hoehen := PackedFloat32Array()
+	var normalen := PackedVector3Array()
+	hoehen.resize(breit * (nz + 1))
+	normalen.resize(breit * (nz + 1))
+	for iz in nz + 1:
+		var pz0: float = c.z - halb.y + float(iz) * step_z
+		for ix in breit:
+			var px0: float = c.x - halb.x + float(ix) * step_x
+			var k: int = iz * breit + ix
+			hoehen[k] = WorldManager.height_at(px0, pz0)
+			normalen[k] = WorldManager.normal_at(px0, pz0)
+	# Dieselbe umgekehrte Umlaufrichtung wie beim flachen Bodenviereck — und derselbe
+	# Grund, warum es nicht auffiel. Bei einer 66°-Wand wiegt es schwerer als beim
+	# flachen Boden: Ohne Sonne hat die Wand keine Schattierung, und dann sieht man
+	# die Grube ueberhaupt nicht mehr als Grube.
+	var ecken: Array = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1),
+		Vector2i(0, 0), Vector2i(1, 1), Vector2i(0, 1)]
 	for iz in nz:
 		for ix in nx:
-			var x0: float = c.x - halb.x + float(ix) * step_x
-			var z0: float = c.z - halb.y + float(iz) * step_z
-			# Dieselbe umgekehrte Umlaufrichtung wie beim flachen Bodenviereck — und derselbe
-			# Grund, warum es nicht auffiel. Bei einer 66°-Wand wiegt es schwerer als beim
-			# flachen Boden: Ohne Sonne hat die Wand keine Schattierung, und dann sieht man
-			# die Grube ueberhaupt nicht mehr als Grube.
-			for q in [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1),
-					Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)]:
-				var px: float = x0 + q.x * step_x
-				var pz: float = z0 + q.y * step_z
-				var py: float = WorldManager.height_at(px, pz)
-				st.set_normal(WorldManager.normal_at(px, pz))
+			for q in ecken:
+				var gx: int = ix + q.x
+				var gz: int = iz + q.y
+				var k2: int = gz * breit + gx
+				var px: float = c.x - halb.x + float(gx) * step_x
+				var pz: float = c.z - halb.y + float(gz) * step_z
+				var py: float = hoehen[k2]
+				st.set_normal(normalen[k2])
 				st.set_uv(Vector2(px, pz) / _ground_tile_m)
 				if fels:
 					st.set_color(Color.WHITE.lerp(FELS_TON,
@@ -8048,7 +8097,17 @@ const VORSPANN_SCHWARZ_SEK: float = 0.7
 ## Beides ist eine Versicherung gegen dasselbe: Godot spielt nur Ogg Theora, und ob eine Datei
 ## auf einem bestimmten Geraet wirklich dekodiert wird, entscheidet sich erst dort. Faellt das
 ## aus, kommt `finished` nie.
-const VORSPANN_ANLAUF_SEK: float = 1.5
+## Acht Sekunden statt anderthalb — und der Zaehler wird ENTSCHAERFT, sobald der Film laeuft.
+##
+## „das video hat nicht geladen. fing dann mit unserer animation an." Der Rueckfall hat also
+## getan, was er soll; nur war er gar nicht noetig. Auf einem Telefon, das drei Minuten zum
+## Aufbauen braucht, faengt ein 1280er Theora-Strom nicht in anderthalb Sekunden an zu
+## dekodieren — und der Wachhund fragte GENAU EINMAL nach, bei 1,5 s, und gab dann auf.
+##
+## Jetzt fragt er in jedem Bild: Laeuft es, ist er zufrieden und schweigt fuer immer. Laeuft es
+## bis zum Ende der Frist nicht, war es wirklich nichts. Ein Film, der spaet anfaengt, ist
+## damit kein Fehlschlag mehr; ein Film, der gar nicht kann, blockiert trotzdem nichts.
+const VORSPANN_ANLAUF_SEK: float = 8.0
 const VORSPANN_FRIST_SEK: float = 60.0
 var _vorspann: VideoStreamPlayer = null
 var _vorspann_deckel: ColorRect = null
@@ -8137,10 +8196,13 @@ func _process_vorspann(delta: float) -> void:
 	if _im_vorspann() and _vorspann_t < 0.0:
 		_vorspann_frist -= delta
 		if _vorspann_wacht > 0.0:
-			_vorspann_wacht -= delta
-			if _vorspann_wacht <= 0.0 and not _vorspann.is_playing():
-				_vorspann_abbrechen("Der Film laeuft nicht — weiter ohne ihn.")
-				return
+			if _vorspann.is_playing():
+				_vorspann_wacht = -1.0   # angelaufen — der Wachhund hat seine Arbeit getan
+			else:
+				_vorspann_wacht -= delta
+				if _vorspann_wacht <= 0.0:
+					_vorspann_abbrechen("Der Film laeuft nicht — weiter ohne ihn.")
+					return
 		if _vorspann_frist <= 0.0:
 			_vorspann_abbrechen("")
 			return

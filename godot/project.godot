@@ -64,7 +64,13 @@ textures/vram_compression/import_etc2_astc=true
 renderer/rendering_method="mobile"
 renderer/rendering_method.mobile="mobile"
 lights_and_shadows/directional_shadow/size=4096
-lights_and_shadows/directional_shadow/size.mobile=4096
+; 2048 auf dem Handy statt 4096.
+;
+; Der Schattenpuffer wird in JEDEM Bild neu gezeichnet, und 4096² ist auf einem Telefon eine
+; teure Flaeche — bei 38 m Schattenreichweite (`CAM_SHADOW_M`) bringt die vierfache Aufloesung
+; dort kaum sichtbar schaerfere Kanten, kostet aber Speicher und Fuellrate in jedem Bild.
+; Am Rechner bleibt es bei 4096.
+lights_and_shadows/directional_shadow/size.mobile=2048
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
 
 [gui]

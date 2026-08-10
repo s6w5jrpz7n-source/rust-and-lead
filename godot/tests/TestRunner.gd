@@ -2808,7 +2808,15 @@ func _test_prolog() -> void:
 	# Theora, und ob eine Datei auf einem bestimmten Geraet dekodiert wird, entscheidet sich
 	# erst dort. Faellt es aus, kommt `finished` nie.
 	_check("Ein Film, der nicht anlaeuft, haelt das Spiel nicht auf",
-		quelle.contains("_vorspann_abbrechen") and quelle.contains("not _vorspann.is_playing()"))
+		quelle.contains("_vorspann_abbrechen") and quelle.contains("_vorspann.is_playing()"))
+	# Und andersherum: Ein Film, der SPAET anlaeuft, ist kein Fehlschlag. Der Wachhund fragte
+	# frueher genau einmal nach (bei 1,5 s) und gab dann auf — auf einem Telefon, das drei
+	# Minuten zum Aufbauen braucht, faengt ein 1280er Theora-Strom nicht in anderthalb Sekunden
+	# an. Jetzt wird er entschaerft, sobald das Bild laeuft.
+	_check("Ein spaeter Anlauf entschaerft den Wachhund, statt abzubrechen",
+		quelle.contains("_vorspann_wacht = -1.0"))
+	_check("Und er wartet lange genug fuer ein langsames Geraet (%.0f s)"
+		% OW2.VORSPANN_ANLAUF_SEK, OW2.VORSPANN_ANLAUF_SEK >= 5.0)
 	_check("Und es gibt eine harte Obergrenze (%.0f s)" % OW2.VORSPANN_FRIST_SEK,
 		OW2.VORSPANN_FRIST_SEK > 20.0 and OW2.VORSPANN_FRIST_SEK < 180.0)
 	# Jeder Abbruchweg muendet ins Erwachen — sonst stuende die Figur wortlos in der Grube.
