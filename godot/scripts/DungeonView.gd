@@ -27,6 +27,28 @@ extends Node3D
 ## Verdrahtung *muss* sich unterscheiden: Draußen hält man Abstand über offenes Gelände, drinnen
 ## kommt alles durch einen 4 m breiten Gang auf einen zu.
 
+# ── Klassen ueber den PFAD holen ────────────────────────────────────────────────
+#
+# Diese Datei hat bisher alle Klassen ueber ihren globalen Namen genommen und ist damit
+# durchgekommen. Mit `CharacterScreen` (dem Rucksack) kommt eine dazu, und genau daran ist eine
+# andere Datei gerade zerbrochen:
+#
+#     Parse Error: Identifier "TownCollision" not declared in the current scope.
+#
+# Godot fuellt seinen Index globaler Klassennamen erst beim Durchsuchen des Projekts, geparst
+# wird aber vorher — beim ersten Start nach einem Pull ist eine Klasse deshalb genau einmal
+# unbekannt, und die Datei, die sie benutzt, laedt nicht. Bei einem WERKZEUG ist das aergerlich;
+# bei der Stollen-Ansicht waere es der halbe Spielinhalt.
+#
+# Ueber den Pfad aufgeloest gibt es kein Vorher und Nachher. `AssetRegistry`, `PlayerStats` und
+# `GameState` bleiben, wie sie sind — das sind Autoloads, die stehen ohnehin vor allem anderen.
+const CharacterScreen = preload("res://scripts/CharacterScreen.gd")
+const DungeonLayout = preload("res://scripts/DungeonLayout.gd")
+const CombatTarget = preload("res://scripts/CombatTarget.gd")
+const CombatEngine = preload("res://scripts/CombatEngine.gd")
+const FireButton = preload("res://scripts/FireButton.gd")
+const VirtualStick = preload("res://scripts/VirtualStick.gd")
+
 const SPIELER_TEMPO: float = 7.0
 ## Wie weit die Gürtellampe trägt. 9 m laut Plan — weit genug, um den Raum zu ahnen, zu kurz,
 ## um ihn zu überblicken.

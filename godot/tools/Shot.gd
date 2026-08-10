@@ -16,7 +16,27 @@ extends Node
 ##  • **Eigene Kamera.** Die Spielkamera folgt der Blickrichtung der Figur, und die ist nach
 ##    einem Sprung an einen Ort beliebig. Die ersten Bilder zeigten leeren Sand, waehrend
 ##    Stadt und Bahnhof hinter der Kamera lagen.
+# ── Klassen ueber den PFAD holen, nicht ueber ihren globalen Namen ──────────────
+#
+#     Parse Error: Identifier "TownCollision" not declared in the current scope.
+#     Failed to load script "res://tools/Shot.gd"
+#
+# Genau die Falle, die in `UiAssets.gd` beschrieben steht — und ich bin hineingelaufen, indem
+# ich `TownCollision.rects(…)` hier hineingeschrieben habe. Godot fuellt seinen Index globaler
+# Klassennamen erst beim Durchsuchen des Projekts, geparst wird aber vorher. Beim ersten Start
+# nach einem Pull ist eine `class_name`-Klasse deshalb genau einmal unbekannt — und diese
+# Datei damit kaputt.
+#
+# In meiner Umgebung faellt das nie auf: Dort ist der Index laengst warm. Es trifft
+# ausschliesslich den, der frisch zieht — also den Auftraggeber. Deshalb stehen sie jetzt alle
+# als `preload` da, ueber den Pfad aufgeloest, wo es kein Vorher und Nachher gibt.
 const DayCycle = preload("res://scripts/DayCycle.gd")
+const OverworldView = preload("res://scripts/OverworldView.gd")
+const TownCollision = preload("res://scripts/TownCollision.gd")
+const AssetRegistry = preload("res://scripts/AssetRegistry.gd")
+const CharacterScreen = preload("res://scripts/CharacterScreen.gd")
+const DungeonLayout = preload("res://scripts/DungeonLayout.gd")
+const PlayerStats = preload("res://scripts/PlayerStats.gd")
 const OUT: String = "user://shot"
 var _views: Array = []
 var _i: int = -1

@@ -104,6 +104,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_gassen": 13,
 	"_test_anflug_endpunkt": 9,
 	"_test_wegpruefung": 17,
+	"_test_klassen_ueber_pfad": 2,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 }
@@ -7804,3 +7805,83 @@ func _test_wegpruefung() -> void:
 		OverworldView.RUF_ABSTAND_M > 1.5 and OverworldView.RUF_ABSTAND_M < 6.0)
 	_check("Und es gibt einen Suchradius fuer den Fall, dass dort etwas steht",
 		OverworldView.RUF_SUCH_R_M > OverworldView.RUF_ABSTAND_M)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Keine Datei darf an einem globalen Klassennamen haengen
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#     Parse Error: Identifier "TownCollision" not declared in the current scope.
+#     Failed to load script "res://tools/Shot.gd"
+#
+# Godot fuellt seinen Index globaler Klassennamen (`class_name`) erst beim Durchsuchen des
+# Projekts — geparst wird aber vorher. Beim ERSTEN Start nach einem Pull ist eine frisch
+# dazugekommene Klasse deshalb genau einmal unbekannt, und jede Datei, die sie ueber ihren
+# Namen anspricht, laedt nicht.
+#
+# Das trifft nie den, der die Zeile schreibt: In seiner Umgebung ist der Index laengst warm.
+# Es trifft ausschliesslich den, der frisch zieht. Genau deshalb gehoert es in einen Test und
+# nicht in eine Erinnerung.
+#
+# Geprueft wird die Regel aus `UiAssets.gd`: Wer eine Projektklasse benutzt, holt sie ueber
+# `preload` vom Pfad. Autoloads sind ausgenommen — die stehen vor allem anderen.
+func _test_klassen_ueber_pfad() -> void:
+	print("· Klassen kommen ueber den Pfad, nicht ueber den globalen Namen")
+
+	var autoloads: Array[String] = ["GameState", "WorldManager", "QuestManager", "AssetRegistry",
+		"PlayerStats", "EquipManager", "BagManager", "SaveManager", "TycoonManager",
+		"ProgressionManager", "MemoryManager", "RiftManager", "EncounterManager", "Stimme"]
+	# Die Dateien, die eine Klasse ueber `class_name` anbieten — nur um die geht es.
+	var klassen: Array[String] = []
+	var d := DirAccess.open("res://scripts")
+	if d != null:
+		for f in d.get_files():
+			if not f.ends_with(".gd"):
+				continue
+			var q: String = FileAccess.get_file_as_string("res://scripts/" + f)
+			if q.contains("\nclass_name ") or q.begins_with("class_name "):
+				klassen.append(f.get_basename())
+	_check("Es gibt Klassen mit globalem Namen (%d)" % klassen.size(), klassen.size() > 5)
+
+	var suender: Array[String] = []
+	for ordner in ["res://scripts", "res://tools"]:
+		var dd := DirAccess.open(ordner)
+		if dd == null:
+			continue
+		for f in dd.get_files():
+			if not f.ends_with(".gd"):
+				continue
+			var pfad: String = ordner + "/" + f
+			var q: String = FileAccess.get_file_as_string(pfad)
+			for k in klassen:
+				if k == f.get_basename() or autoloads.has(k):
+					continue
+				if q.contains('preload("res://scripts/%s.gd")' % k):
+					continue
+				# Nur ECHTE Verwendung zaehlt, keine Erwaehnung im Kommentar. Dieses Projekt
+				# erklaert sich ausfuehrlich, und in den Erklaerungen stehen Klassennamen —
+				# ohne diesen Filter meldet der Test vor allem Prosa.
+				var echt: bool = false
+				for zeile in q.split("\n"):
+					var t: String = zeile.strip_edges()
+					if t.begins_with("#") or not t.contains(k + "."):
+						continue
+					echt = true
+					break
+				if echt:
+					suender.append("%s -> %s" % [f, k])
+	# ── Eine Sperrklinke, keine Generalsanierung ─────────────────────────────
+	#
+	# Der Bestand ist gewachsen und funktioniert: Wer das Projekt schon einmal geoeffnet hat,
+	# dessen Index ist warm, und fuer alte Klassen ist die Gefahr laengst vorbei. Sie besteht
+	# nur fuer FRISCH dazugekommene — und genau die soll dieser Test abfangen.
+	#
+	# Also keine Forderung „alle 40 auf einmal", sondern „keine mehr dazu". Wer eine neue
+	# Klasse ueber ihren globalen Namen anspricht, laesst die Zahl steigen und der Test schlaegt
+	# an. Wer nebenbei eine alte Stelle aufraeumt, senkt sie — dann darf die Zahl hier nach.
+	var altlast: int = 40
+	if suender.size() > altlast:
+		for z in suender:
+			print("      %s" % z)
+	_check("Keine NEUE Datei haengt am globalen Namen einer Klasse (%d, Altlast %d)"
+		% [suender.size(), altlast], suender.size() <= altlast)
