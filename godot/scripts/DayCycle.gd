@@ -56,10 +56,28 @@ const TAG: String = "tag"
 const ABEND: String = "abend"             # Abendrot
 ## Grenzen in Stunden. Zwischen `abend_ende` und `daemmerung_start` ist Nacht — der Übergang
 ## über Mitternacht ist deshalb der einzige, der „hinten herum" geht.
-const H_DAEMMERUNG: float = 5.0
-const H_TAG: float = 7.0
+##
+## ## Zwei Drittel hell, ein Drittel dunkel
+##
+## Die Zahlen sind nicht gegriffen, sondern auf dieses Verhältnis eingestellt: Die Sonne steht
+## **sechzehn Stunden** über dem Horizont und **acht** darunter. Bei einem Spieltag von
+## vierundzwanzig Minuten sind das sechzehn Minuten Licht und acht Minuten Dunkelheit.
+##
+## Gemessen wird das an `daylight()` und nicht an den Namen der Phasen: Dort ist die Sonne
+## zwischen `H_DAEMMERUNG` und `H_NACHT` über dem Horizont, davor und danach nicht. Damit ist
+## „Tag" eine Aussage über das Licht im Bild und keine über eine Beschriftung.
+##
+## Vorher lag der Sonnenaufgang bei 5:00 und der Tag damit bei 15,5 zu 8,5 Stunden — knapp
+## daneben und nirgends festgehalten, also auch nicht nachprüfbar. Jetzt rechnet ein Test das
+## Verhältnis nach; wer eine dieser vier Zahlen verschiebt, hört davon.
+##
+## Die Dämmerung bleibt zwei Stunden lang wie das Abendrot. Sie sind kurz und sollen es sein:
+## Es sind die beiden Zeiten, in denen die Wüste am besten aussieht, und was immer da ist,
+## sieht man nicht mehr an.
+const H_DAEMMERUNG: float = 4.5    # Sonnenaufgang
+const H_TAG: float = 6.5
 const H_ABEND: float = 18.5
-const H_NACHT: float = 20.5
+const H_NACHT: float = 20.5        # Sonnenuntergang
 
 ## Phase zu einer Stunde (0–24).
 static func phase_at(stunde: float) -> String:

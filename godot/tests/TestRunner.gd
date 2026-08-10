@@ -73,7 +73,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_poi_walkable": 24,
 	"_test_town_walkable": 17,
 	"_test_enemy_attacks": 20,
-	"_test_daycycle": 221,
+	"_test_daycycle": 226,
 	"_test_dialog": 22,
 	"_test_memory_manager": 29,
 	"_test_encounter_manager": 24,
@@ -2251,6 +2251,36 @@ func _test_daycycle() -> void:
 	# Tageszeit. Eine Spielstunde muss laenger dauern als ein Gespraech.
 	var sek_je_stunde: float = DayCycle.DAY_SEC / 24.0
 	_check("Eine Spielstunde dauert %.0f echte Sekunden" % sek_je_stunde, sek_je_stunde >= 55.0)
+
+	# ── Zwei Drittel hell, ein Drittel dunkel ────────────────────────────────
+	#
+	# Gemessen und nicht aus den Konstanten abgelesen: Der Tag wird in Zehntelstunden
+	# durchgegangen und gezaehlt, wo die Sonne ueber dem Horizont steht (`daylight() > 0`).
+	# Eine Pruefung, die `H_NACHT - H_DAEMMERUNG` ausrechnet, prueft nur, ob ich subtrahieren
+	# kann — sie faende es nicht, wenn `daylight` selbst andere Grenzen benutzte.
+	var hell: int = 0
+	for i in 240:
+		if DayCycle.daylight(float(i) * 0.1) > 0.0:
+			hell += 1
+	var anteil: float = float(hell) / 240.0
+	_check("Die Sonne steht zwei Drittel des Tages ueber dem Horizont (%.1f h, %.0f %%)"
+		% [float(hell) * 0.1, anteil * 100.0], absf(anteil - 2.0 / 3.0) < 0.02)
+	_check("Und ein Drittel darunter (%.1f h)" % (24.0 - float(hell) * 0.1),
+		absf((24.0 - float(hell) * 0.1) - 8.0) < 0.5)
+	# In echter Zeit: sechzehn Minuten Licht, acht Minuten Dunkelheit.
+	_check("In echter Zeit sind das %.0f Minuten Licht und %.0f Minuten Nacht"
+		% [anteil * DayCycle.DAY_SEC / 60.0, (1.0 - anteil) * DayCycle.DAY_SEC / 60.0],
+		absf(anteil * DayCycle.DAY_SEC / 60.0 - 16.0) < 0.5)
+	# Die beiden schoenen Phasen bleiben kurz und gleich lang — sie sind der Grund, warum es
+	# ueberhaupt vier Phasen gibt und nicht zwei.
+	_check("Daemmerung und Abendrot sind gleich lang (%.1f / %.1f h)"
+		% [DayCycle.H_TAG - DayCycle.H_DAEMMERUNG, DayCycle.H_NACHT - DayCycle.H_ABEND],
+		is_equal_approx(DayCycle.H_TAG - DayCycle.H_DAEMMERUNG,
+			DayCycle.H_NACHT - DayCycle.H_ABEND))
+	# Und der helle Tag selbst ist die Haelfte der Uhr — der Rest verteilt sich auf die
+	# Uebergaenge und die Nacht.
+	_check("Der helle Tag ist zwoelf Stunden (%.1f)" % (DayCycle.H_ABEND - DayCycle.H_TAG),
+		is_equal_approx(DayCycle.H_ABEND - DayCycle.H_TAG, 12.0))
 	# 9. Flammen flackern — und zwar so, dass es nicht auffaellt, WIE sie es tun.
 	_test_flacker()
 	# 10. Die Umrundung des Wasserturms ist wirklich eine.
