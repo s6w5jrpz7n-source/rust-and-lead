@@ -4,6 +4,9 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 
 | Folge | Format | Thema | Länge |
 |---|---|---|---|
+| `katze1`–`katze6` | Serie „der drang, …“ (Katze, ~9 s, Schleife, ohne Sprache) | Glas, 3 Uhr nachts, Tastatur, Karton, 5 Uhr Frühstück, Weihnachtsbaum | je ~9 s |
+| `baum1` | Trend „Tag 1 vs. später“ | Weihnachtsbaum | ~26 s |
+| `emc1` | Wissenschaft | Herleitung E = mc² (Lichtkasten) | ~72 s |
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
 | `klartext2` | KLARTEXT | Wohnungsanzeigen, ehrlich übersetzt | ~40 s |
 | `quiz2` | Quiz (gezeichnete Flaggen) | Flaggen-Quiz | ~62 s |
@@ -25,6 +28,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `render.js` | Rendert Frames mit Playwright → ffmpeg |
 | `klartext.js` | Format KLARTEXT (eigener `renderFrame`); Texte/Farben pro Folge in `<folge>/scenes.js` (`window.KT`) |
 | `quiz.js` + `quizlib.py` | Quiz-Format: Fragen stehen nur in `script.py` (`EXPORT`), Bild/Stimme lesen daraus; neue Quiz-Folge = neue Fragenliste |
+| `catlib.js` + `catsfx.py` | Katzen-Serie: Katze (sitzen, rennen, liegen, Kopf) und synthetische Geräusche (Miau, Schnurren, Klirren …) |
 | `render_ep.sh` | Nur Video neu rendern (Audio vorhanden): `./render_ep.sh quiz2` |
 | `make_video.sh` | Alles in einem Rutsch → `out/<folge>-<engine>.mp4` |
 
