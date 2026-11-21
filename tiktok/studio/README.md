@@ -6,6 +6,9 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 |---|---|---|---|
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
 | `klartext2` | KLARTEXT | Wohnungsanzeigen, ehrlich übersetzt | ~40 s |
+| `quiz2` | Quiz (gezeichnete Flaggen) | Flaggen-Quiz | ~62 s |
+| `quiz3` | Quiz (Emoji-Bilder) | Weltraum-Quiz | ~67 s |
+| `quiz4` | Quiz (Emoji-Bilder) | Körper-Quiz | ~68 s |
 | `quiz1` | Quiz-Gameshow (Ländersilhouetten, Countdown) | Hauptstädte-Quiz, 10 Fragen | ~59 s |
 | `erbe1` | Sitcom-Sketch, schwarzer Humor (Chatterbox-Stimmen) | Opas Testament | ~69 s |
 | `tod1` | Animierter Sketch, schwarzer Humor | Der Tod hat Montag | ~48 s |
@@ -21,6 +24,8 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `build_audio.py` | Stimmen (Piper lokal oder ElevenLabs), Soundeffekte, Mix, `build/<folge>/timeline.js` |
 | `render.js` | Rendert Frames mit Playwright → ffmpeg |
 | `klartext.js` | Format KLARTEXT (eigener `renderFrame`); Texte/Farben pro Folge in `<folge>/scenes.js` (`window.KT`) |
+| `quiz.js` + `quizlib.py` | Quiz-Format: Fragen stehen nur in `script.py` (`EXPORT`), Bild/Stimme lesen daraus; neue Quiz-Folge = neue Fragenliste |
+| `render_ep.sh` | Nur Video neu rendern (Audio vorhanden): `./render_ep.sh quiz2` |
 | `make_video.sh` | Alles in einem Rutsch → `out/<folge>-<engine>.mp4` |
 
 ## Rendern
