@@ -11,8 +11,8 @@ SPEAKERS = {'Q': dict(HOST['Q'], exag=0.55)}
 MUSIC = dict(bpm=96, gain=0.1)
 
 LINES = [
-    dict(id='n1', spk='Q', scene='emc', text='{E = mc².|E gleich em zeh Quadrat.} Jeder kennt die Formel. Aber woher kommt sie? Hier ist die Herleitung. In einer Minute.',
-         gap=0.4, cues=[(0, 'hook', 'hit'), (6, 'woher', None)]),
+    dict(id='n1', spk='Q', scene='emc', text='Jeder kennt sie: {E = mc².|E gleich M C Quadrat.} Aber woher kommt die Formel? Hier ist die Herleitung. In einer Minute.',
+         gap=0.4, cues=[(0, 'hook', 'hit'), (5, 'woher', None)]),
     dict(id='n2', spk='Q', scene='emc', text='Stell dir einen Kasten im leeren Weltall vor. Masse {M,|groß em,} Länge {L.|el.}',
          cues=[(3, 'box', 'whoosh_s'), (9, 'M', 'pop'), (11, 'L', 'pop')]),
     dict(id='n3', spk='Q', scene='emc', text='Links blitzt ein Lichtpuls auf, mit der Energie E.',
@@ -31,11 +31,11 @@ LINES = [
          cues=[(4, 'mass', 'pop'), (16, 'eq5', 'pop')]),
     dict(id='n10', spk='Q', scene='emc', text='Einsetzen. L und M kürzen sich weg. Übrig bleibt: {m = E/c².|em gleich E durch zeh Quadrat.}',
          cues=[(0, 'insert', 'whoosh_s'), (4, 'cancel', 'tick'), (9, 'eq6', 'pop')]),
-    dict(id='n11', spk='Q', scene='emc', text='Oder anders geschrieben:', gap=0.5, cues=[(0, 'anders', 'drum')]),
-    dict(id='n12', spk='Q', scene='emc', text='{E = mc².|E gleich em zeh Quadrat!}', gap=0.6, cues=[(0, 'reveal', 'tada')]),
+    dict(id='n12', spk='Q', scene='emc', text='Und das heißt: {E = mc²!|E gleich M C Quadrat!}', gap=0.6,
+         cues=[(0, 'anders', 'drum'), (3, 'reveal', 'tada')]),
     dict(id='n13', spk='Q', scene='emc', text='Energie hat Masse. Die Sonne verliert so jede Sekunde rund {4 Millionen|vier Millionen} Tonnen. Als Licht.',
          cues=[(0, 'sun', 'whoosh'), (9, 'tonnen', 'ding')]),
-    dict(id='n14', spk='Q', scene='emc', text='Folg mir für Teil zwei: Warum nichts schneller ist als Licht.', gap=2.0,
+    dict(id='n14', spk='Q', scene='emc', text='Folg mir für Teil zwei: Warum nichts das Licht überholen kann.', gap=2.0,
          cues=[(0, 'cta', 'whoosh_s')]),
 ]
 SCENES = ['emc']

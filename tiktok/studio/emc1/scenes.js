@@ -108,7 +108,7 @@ function boxScene(t) {
         ctx.save(); ctx.shadowColor = NEON; ctx.shadowBlur = 40; ell(px, BY, 34, 22); ctx.fillStyle = NEON; ctx.fill(); ctx.restore();
         for (let i = 1; i < 6; i++) { ell(px - i * 16, BY, 26 - i * 4, 16 - i * 2.5); ctx.fillStyle = `rgba(255,212,59,${0.4 - i * 0.07})`; ctx.fill(); }
         txt('E', px, BY - 56, 46, NEON, { weight: 900 });
-        if (t >= C('eq1')) { seg(px + 40, BY + 48, px + 140, BY + 48, 6, NEON); arrowHead(px + 150, BY + 48, 0, 16, NEON); at(px + 100, BY + 92, 1, 0, () => tex('p = \\frac{E}{c}', 0, 18, 44, NEON)); }
+        if (t >= C('eq1')) { seg(px + 44, BY, px + 130, BY, 6, NEON); arrowHead(px + 140, BY, 0, 16, NEON); at(px + 100, BY - 70, 1, 0, () => tex('p', 0, 14, 48, NEON)); }
       } else { const g = ctx.createRadialGradient(x0 + BW - 20, BY, 5, x0 + BW - 20, BY, 120); g.addColorStop(0, `rgba(255,212,59,${0.6 * (1 - prog(t, E('n6'), 1.2))})`); g.addColorStop(1, 'rgba(255,212,59,0)'); ctx.fillStyle = g; ctx.fillRect(x0 + BW - 150, BY - 150, 300, 300); }
     }
     // Beschriftung M und L
@@ -127,7 +127,7 @@ function boxScene(t) {
       const y = BY - BH / 2 - 100, a = fade(t, C('dx') - 0.05, 0.3);
       alpha(a, () => {
         seg(BX - BW / 2, y, x0, y, 5, '#ff6b6b'); arrowHead(x0 - 4, y, Math.PI, 12, '#ff6b6b');
-        at((BX - BW / 2 + x0) / 2 - 70, y - 4, 1, 0, () => tex('\\Delta x', 0, 14, 44, '#ff6b6b'));
+        at((BX - BW / 2 + x0) / 2, y - 44, 1, 0, () => tex('\\Delta x', 0, 14, 46, '#ff6b6b'));
         txt('(stark übertrieben)', BX + 160, y + 2, 26, 'rgba(255,255,255,0.6)', { weight: 700 });
       });
     }
@@ -169,16 +169,11 @@ function panel(t) {
   if (!shown.length) return;
   const a = fade(t, C('eq1') - 0.2, 0.3);
   alpha(a, () => { rr(50, 930, 980, 400, 34); ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(102,217,255,0.35)'; ctx.stroke(); });
-  const last = shown.slice(-3);
-  last.forEach((e, i) => {
-    const isLast = i === last.length - 1;
-    const y = 1040 + (i + (3 - last.length)) * 120;
-    const p = pop(t, C(e[0]) - 0.05, 0.4);
-    alpha(isLast ? 1 : 0.55, () => at(540, y, isLast ? p : 0.85, 0, () => {
-      tex(e[1], 0, 22, isLast ? 74 : 64, isLast ? NEON : WHITE, { glow: isLast ? 16 : 0, cancel: e[0] === 'insert' ? eOut(prog(t, C('cancel'), 0.5)) : 0 });
-      if (isLast) txt(e[2], 0, -52, 26, CYAN, { weight: 800 });
-    }));
-  });
+  const cur = shown[shown.length - 1], prev = shown.length > 1 ? shown[shown.length - 2] : null;
+  if (prev) alpha(0.5, () => tex(prev[1], 540, 1012, 54, WHITE, { cancel: prev[0] === 'insert' ? 1 : 0 }));
+  const p = pop(t, C(cur[0]) - 0.05, 0.4);
+  at(540, 1085, p, 0, () => txt(cur[2], 0, 0, 28, CYAN, { weight: 800 }));
+  at(540, 1205, p, 0, () => tex(cur[1], 0, 0, 84, NEON, { glow: 16, cancel: cur[0] === 'insert' ? eOut(prog(t, C('cancel'), 0.5)) : 0 }));
 }
 
 /* ---------- Finale ---------- */
