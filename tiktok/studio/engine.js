@@ -29,6 +29,10 @@ const fade = (t, t0, d = 0.3) => eOut(prog(t, t0, d));
 const rnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
 function mouthAt(t) { return TL.mouth[Math.round(t * FPS)] || 0; }
+function mouthOf(spk, t) {  // Mund eines bestimmten Sprechers, nur während seiner Zeilen
+  const l = TL.lines.find(l => l.spk === spk && t >= l.start - 0.04 && t <= l.end + 0.04);
+  return l && TL.mouths && TL.mouths[spk] ? (TL.mouths[spk][Math.round(t * FPS)] || 0) : 0;
+}
 function gLineAt(t) { return TL.lines.find(l => l.spk === 'G' && t >= l.start - 0.04 && t <= l.end + 0.04); }
 function gMouth(t) { return gLineAt(t) ? mouthAt(t) : 0; }
 function blinkAt(t, off = 0) { const ph = (t + off) % 3.3; return ph > 3.18; }
@@ -488,9 +492,11 @@ function bubble(x, y, s, str, t0, t) {
   });
 }
 function logo(t) {
+  const lbl = window.EP_LOGO === undefined ? 'DR. GURKE ERKLÄRT' : window.EP_LOGO;
+  if (!lbl) return;
   alpha(fade(t, 0.15, 0.4) * 0.95, () => {
-    at(76, 214, 0.85, -0.5, () => { rr(-14, -34, 28, 68, 14); fs(GREEN, 5); });
-    txt('DR. GURKE ERKLÄRT', 104, 216, 28, WHITE, { align: 'left', stroke: 8 });
+    if (window.EP_LOGO === undefined) at(76, 214, 0.85, -0.5, () => { rr(-14, -34, 28, 68, 14); fs(GREEN, 5); });
+    txt(lbl, window.EP_LOGO === undefined ? 104 : 60, 216, 28, WHITE, { align: 'left', stroke: 8 });
   });
 }
 
@@ -524,7 +530,11 @@ function drawCaptions(t) {
   if (!c) return;
   const size = 82, gap = 22, y = 1395, cx = 515;
   const isG = c.line.spk === 'G';
-  const hi = isG ? '#9dff6a' : YELLOW;
+  const hi = (window.EP_CAPCOL && window.EP_CAPCOL[c.line.spk]) || (isG ? '#9dff6a' : YELLOW);
+  if (window.EP_NAMES && window.EP_NAMES[c.line.spk]) {
+    const nm = window.EP_NAMES[c.line.spk];
+    alpha(fade(t, c.line.start - 0.1, 0.15), () => pill(nm, cx, y - 92, 30, hi, INK, { lw: 5 }));
+  }
   ctx.save();
   ctx.font = `900 ${size}px ${FONT}`;
   const ws = c.toks.map(tk => ctx.measureText(tk.t).width);

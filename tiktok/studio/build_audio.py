@@ -171,10 +171,9 @@ def synth_line(line):
             cursor += SENT_PAUSE
     raw = np.concatenate(pieces)
     total_in = len(raw) / sr0
-    if sp.get('pitch'):
-        af = f"rubberband=pitch={sp['pitch']}:formant=preserved,highpass=f=90"
-    else:
-        af = sp.get('af', 'highpass=f=70')
+    chain = [f"rubberband=pitch={sp['pitch']}:formant=preserved"] if sp.get('pitch') else []
+    chain.append(sp.get('af', 'highpass=f=90' if sp.get('pitch') else 'highpass=f=70'))
+    af = ','.join(chain)
     y = ffmpeg_proc(raw, sr0, af)
     scale = (len(y) / SR) / total_in
     words_t = [(a * scale, b * scale) for a, b in words_t]
@@ -278,6 +277,11 @@ def sfx(kind):
                 a0 = g + k * 0.07; m = (t >= a0) & (t < a0 + 0.045)
                 y[m] += np.sin(2 * np.pi * 4300 * t[m]) * (0.5 + 0.5 * np.sin(2 * np.pi * 220 * t[m]))
         return 0.16 * y
+    if kind == 'ring':
+        d = 1.1; t = tt(d)
+        f = np.where((t * 22).astype(int) % 2 == 0, 2100, 2550)
+        bell = np.sin(2 * np.pi * np.cumsum(f) / SR) + 0.4 * np.sin(2 * np.pi * np.cumsum(f * 2.7) / SR)
+        return 0.22 * bell * (0.6 + 0.4 * np.sign(np.sin(2 * np.pi * 22 * t))) * np.minimum(1, (d - t) * 8)
     if kind == 'type':
         y = np.zeros(int(1.2 * SR)); rng = np.random.default_rng(42)
         for i in range(15):
@@ -348,10 +352,13 @@ def main():
         prev_scene = line['scene']
     total = cursor + 1.8
     n = int(total * SR)
-    voiceN, voiceG, fx = np.zeros(n), np.zeros(n), np.zeros(n)
+    fx = np.zeros(n)
+    tracks = {}
     for start, y, spk in clips:
         a = int(start * SR)
-        (voiceN if spk == 'N' else voiceG)[a:a + len(y)] += y
+        tracks.setdefault(spk, np.zeros(n))[a:a + len(y)] += y
+    voiceN = tracks.get('N', np.zeros(n))
+    voiceG = sum((v for k, v in tracks.items() if k != 'N'), np.zeros(n))
     cues = {}
     for e in timeline:
         for c in e['cues']:
@@ -394,17 +401,22 @@ def main():
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '1', '-i', 'pipe:0',
                     '-af', 'loudnorm=I=-14:TP=-1.0:LRA=11', '-ar', str(SR), '-ac', '2', os.path.join(OUT, 'audio.wav')],
                    input=mix.astype(np.float32).tobytes(), check=True)
-    # Mundbewegung Dr. Gurke
+    # Mundbewegung (pro Sprecher; 'mouth' = alle außer Erzähler N)
     hop = SR // FPS
     nf = int(total * FPS) + 1
-    env = np.array([np.sqrt(np.mean(voiceG[i * hop:(i + 1) * hop] ** 2)) if i * hop < n else 0 for i in range(nf)])
-    ref = np.percentile(env[env > 0.005], 90) if np.any(env > 0.005) else 1
-    env = np.clip(env / ref, 0, 1) ** 0.7
-    sm, out = 0.0, []
-    for v in env:
-        sm = v if v > sm else sm * 0.55 + v * 0.45
-        out.append(round(float(sm), 3))
-    tl = dict(fps=FPS, duration=round(total, 3), lines=timeline, cues=cues, scenes=bounds, sceneOrder=SCENES, mouth=out)
+
+    def mouth_env(track):
+        env = np.array([np.sqrt(np.mean(track[i * hop:(i + 1) * hop] ** 2)) if i * hop < n else 0 for i in range(nf)])
+        ref = np.percentile(env[env > 0.005], 90) if np.any(env > 0.005) else 1
+        env = np.clip(env / ref, 0, 1) ** 0.7
+        sm, out = 0.0, []
+        for v in env:
+            sm = v if v > sm else sm * 0.55 + v * 0.45
+            out.append(round(float(sm), 3))
+        return out
+    out = mouth_env(voiceG)
+    mouths = {k: mouth_env(v) for k, v in tracks.items()}
+    tl = dict(fps=FPS, duration=round(total, 3), lines=timeline, cues=cues, scenes=bounds, sceneOrder=SCENES, mouth=out, mouths=mouths)
     with open(os.path.join(OUT, 'timeline.js'), 'w') as f:
         f.write('window.TL = ' + json.dumps(tl, ensure_ascii=False) + ';\n')
     with open(os.path.join(OUT, 'timeline.json'), 'w') as f:

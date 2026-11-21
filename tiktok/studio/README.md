@@ -6,6 +6,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 |---|---|---|---|
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
 | `klartext2` | KLARTEXT | Wohnungsanzeigen, ehrlich übersetzt | ~40 s |
+| `tod1` | Animierter Sketch, schwarzer Humor | Der Tod hat Montag | ~48 s |
 | `gurke1` | Dr. Gurke erklärt: Cartoon-Erklärvideo | Klo-Blockierer | ~93 s |
 | `gurke2` | Dr. Gurke erklärt | Der Klamottenstuhl | ~86 s |
 
@@ -14,7 +15,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 |---|---|
 | `<folge>/script.py` | Sprechertext, Sprecher (`SPEAKERS`), Musik (`MUSIC`), Cues; `{Anzeige\|gesprochen}`, `*Wort*` = hervorgehoben |
 | `<folge>/scenes.js` | Szenen der Folge (`window.EP_SCENES`) oder ein eigener `renderFrame` |
-| `engine.js` | Gemeinsam: Dr. Gurke (Stimmungen, Gurke-Cam), Primitive, Untertitel, Szenenwechsel |
+| `engine.js` | Gemeinsam: Primitive, Untertitel (Sprecher-Namen/-Farben per `EP_NAMES`/`EP_CAPCOL`), Mund pro Sprecher (`mouthOf`), Szenenwechsel, Dr. Gurke |
 | `build_audio.py` | Stimmen (Piper lokal oder ElevenLabs), Soundeffekte, Mix, `build/<folge>/timeline.js` |
 | `render.js` | Rendert Frames mit Playwright → ffmpeg |
 | `klartext.js` | Format KLARTEXT (eigener `renderFrame`); Texte/Farben pro Folge in `<folge>/scenes.js` (`window.KT`) |
@@ -48,4 +49,4 @@ zwischengespeichert, damit ein erneutes Rendern nichts mehr kostet.
 - +46 % Hämorrhoiden-Risiko bei Handy-Nutzung auf dem Klo: Ramprasad et al., PLOS ONE 2025 (n = 125), Querschnittsstudie.
 - Hocke ~51 s vs. Sitzen ~2 Min.: Sikirov, Digestive Diseases and Sciences 2003 (n = 28).
 
-`gurke2` und die KLARTEXT-Folgen sind Satire: Alle „Studien des Gurkologischen Instituts“ und Zahlen darin sind frei erfunden.
+`gurke2`, `tod1` und die KLARTEXT-Folgen sind Satire: Alle „Studien des Gurkologischen Instituts“ und Zahlen darin sind frei erfunden.
