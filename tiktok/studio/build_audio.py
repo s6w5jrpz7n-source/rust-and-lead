@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Erzeugt Stimmen (Piper), SFX, Mix und timeline.js für das Dr.-Gurke-Video."""
-import json, os, re, subprocess, sys
+import difflib, json, os, re, subprocess, sys
 import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
@@ -29,7 +29,7 @@ GAP_SAME, GAP_SCENE, START = 0.22, 0.65, 0.35
 SENT_PAUSE = 0.16
 G_PITCH = 1.24  # Dr. Gurke höher = Cartoon
 
-ENGINE = os.environ.get('ENGINE', 'piper')  # 'piper' (lokal) oder 'elevenlabs' (API)
+ENGINE = os.environ.get('ENGINE') or getattr(_mod, 'ENGINE', 'piper')  # 'piper', 'chatterbox' (lokal) oder 'elevenlabs' (API)
 _PV = {}
 
 
@@ -196,6 +196,84 @@ def synth_line(line):
     return y, tok_t, spoken
 
 
+# ---------------- Chatterbox (lokal, natürlicher) ----------------
+# Braucht ein eigenes venv (Python 3.11): uv venv -p 3.11 cbx && uv pip install chatterbox-tts faster-whisper "setuptools<81"
+# CBX_PY zeigt auf dessen python. SPEAKERS[x]['ref'] = Referenzstimme (WAV), 'exag' = Ausdruck, 'cfg' = Tempo/Treue.
+CB = {}
+
+
+def _norm(w):
+    return re.sub(r'[^a-zäöüß0-9]', '', w.lower())
+
+
+def run_chatterbox():
+    items = []
+    for line in LINES:
+        spoken, _, _ = parse(line['text'])
+        sp = SPEAKERS[line['spk']]
+        items.append(dict(id=line['id'], text=spoken, ref=os.path.join(HERE, sp['ref']),
+                          exag=line.get('exag', sp.get('exag', 0.5)), cfg=line.get('cfg', sp.get('cfg', 0.5)),
+                          seed=line.get('seed', 0)))
+    jp = os.path.join(OUT, 'cb_job.json')
+    json.dump(dict(outdir=os.path.join(OUT, 'cb_cache'), items=items), open(jp, 'w'), ensure_ascii=False)
+    subprocess.run([os.environ.get('CBX_PY', 'python3'), os.path.join(HERE, 'cb_synth.py'), jp], check=True)
+    CB.update(json.load(open(os.path.join(OUT, 'cb_cache', 'results.json'))))
+
+
+def synth_line_cb(line):
+    spoken, toks, spoken_words = parse(line['text'])
+    r, sp = CB[line['id']], SPEAKERS[line['spk']]
+    sr0 = r['sr']
+    p = subprocess.run(['ffmpeg', '-v', 'error', '-i', r['wav'], '-f', 'f32le', '-ac', '1', '-ar', str(sr0), 'pipe:1'],
+                       capture_output=True, check=True)
+    raw = np.frombuffer(p.stdout, dtype=np.float32).copy()
+    idx = np.where(np.abs(raw) > 0.02 * max(1e-6, np.abs(raw).max()))[0]
+    a0 = max(0, idx[0] - int(0.03 * sr0)) if len(idx) else 0
+    a1 = min(len(raw), idx[-1] + int(0.08 * sr0)) if len(idx) else len(raw)
+    raw = raw[a0:a1]
+    off, dur_raw = a0 / sr0, len(raw) / sr0
+    chain = [f"rubberband=pitch={sp['pitch']}:formant=preserved"] if sp.get('pitch') else []
+    chain.append(sp.get('af', 'highpass=f=70'))
+    y = ffmpeg_proc(raw, sr0, ','.join(chain))
+    scale = (len(y) / SR) / dur_raw
+    hw = [(_norm(w['w']), w['s'] - off, w['e'] - off) for w in r['words'] if _norm(w['w'])]
+    sw = [_norm(w) for w in spoken_words]
+    times = [None] * len(sw)
+    sm = difflib.SequenceMatcher(None, sw, [h[0] for h in hw], autojunk=False)
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == 'equal':
+            for k in range(i2 - i1):
+                times[i1 + k] = (hw[j1 + k][1], hw[j1 + k][2])
+        elif tag == 'replace':
+            s0, s1 = hw[j1][1], hw[j2 - 1][2]
+            w = np.array([len(x) + 1.0 for x in sw[i1:i2]]); cum = np.concatenate([[0], np.cumsum(w)]) / w.sum()
+            for k in range(i2 - i1):
+                times[i1 + k] = (s0 + cum[k] * (s1 - s0), s0 + cum[k + 1] * (s1 - s0))
+    i = 0
+    while i < len(times):
+        if times[i] is None:
+            j = i
+            while j < len(times) and times[j] is None:
+                j += 1
+            left = times[i - 1][1] if i > 0 else 0.02
+            right = times[j][0] if j < len(times) else dur_raw - 0.05
+            w = np.array([len(x) + 1.0 for x in sw[i:j]]); cum = np.concatenate([[0], np.cumsum(w)]) / w.sum()
+            for k in range(j - i):
+                times[i + k] = (left + cum[k] * (right - left), left + cum[k + 1] * (right - left))
+            i = j
+        else:
+            i += 1
+    words_t = [(max(0, a) * scale, max(0, b) * scale) for a, b in times]
+    tok_t, wi = [], 0
+    for disp, n in toks:
+        tok_t.append((disp, words_t[wi][0], words_t[wi + n - 1][1])); wi += n
+    rms = np.sqrt(np.mean(y[np.abs(y) > 0.01] ** 2)) if np.any(np.abs(y) > 0.01) else 0.1
+    y = y * (sp['rms'] / max(rms, 1e-4))
+    if r['score'] < 0.8:
+        print(f"  ! {line['id']}: Whisper-Score {r['score']} – bitte anhören: {r['hyp']}")
+    return y, tok_t, spoken
+
+
 # ---------------- SFX ----------------
 def tt(d):
     return np.arange(int(d * SR)) / SR
@@ -277,6 +355,9 @@ def sfx(kind):
                 a0 = g + k * 0.07; m = (t >= a0) & (t < a0 + 0.045)
                 y[m] += np.sin(2 * np.pi * 4300 * t[m]) * (0.5 + 0.5 * np.sin(2 * np.pi * 220 * t[m]))
         return 0.16 * y
+    if kind == 'vhs':
+        d = 0.45; t = tt(d)
+        return 0.35 * bandnoise(d, 300, 9000, 77) * np.exp(-t * 7) + 0.5 * np.sin(2 * np.pi * 60 * t) * np.exp(-t * 20)
     if kind == 'ring':
         d = 1.1; t = tt(d)
         f = np.where((t * 22).astype(int) % 2 == 0, 2100, 2550)
@@ -332,12 +413,19 @@ def make_music(total, bpm, n):
 
 # ---------------- Build ----------------
 def main():
+    if ENGINE == 'chatterbox':
+        run_chatterbox()
     timeline, cursor, prev_scene = [], START, None
     clips = []
     for i, line in enumerate(LINES):
         if prev_scene is not None and line['scene'] != prev_scene:
             cursor += GAP_SCENE - GAP_SAME
-        y, tok_t, spoken = synth_line_el(line) if ENGINE == 'elevenlabs' else synth_line(line)
+        if ENGINE == 'elevenlabs':
+            y, tok_t, spoken = synth_line_el(line)
+        elif ENGINE == 'chatterbox':
+            y, tok_t, spoken = synth_line_cb(line)
+        else:
+            y, tok_t, spoken = synth_line(line)
         dur = len(y) / SR
         start = cursor
         toks = [dict(t=d, s=round(start + a, 3), e=round(start + b, 3)) for d, a, b in tok_t]
