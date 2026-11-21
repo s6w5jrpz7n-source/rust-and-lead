@@ -5,6 +5,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | Folge | Format | Thema | Länge |
 |---|---|---|---|
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
+| `klartext2` | KLARTEXT | Wohnungsanzeigen, ehrlich übersetzt | ~40 s |
 | `gurke1` | Dr. Gurke erklärt: Cartoon-Erklärvideo | Klo-Blockierer | ~93 s |
 | `gurke2` | Dr. Gurke erklärt | Der Klamottenstuhl | ~86 s |
 
@@ -16,6 +17,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `engine.js` | Gemeinsam: Dr. Gurke (Stimmungen, Gurke-Cam), Primitive, Untertitel, Szenenwechsel |
 | `build_audio.py` | Stimmen (Piper lokal oder ElevenLabs), Soundeffekte, Mix, `build/<folge>/timeline.js` |
 | `render.js` | Rendert Frames mit Playwright → ffmpeg |
+| `klartext.js` | Format KLARTEXT (eigener `renderFrame`); Texte/Farben pro Folge in `<folge>/scenes.js` (`window.KT`) |
 | `make_video.sh` | Alles in einem Rutsch → `out/<folge>-<engine>.mp4` |
 
 ## Rendern
@@ -25,7 +27,7 @@ ENGINE=elevenlabs ./make_video.sh klartext1   # ElevenLabs-Stimmen
 ```
 Braucht: Python 3 + numpy, Node + Playwright (Chromium), ffmpeg (mit rubberband), Schrift „Inter Display“.
 
-Neue Folge: Ordner mit `script.py`, `scenes.js` und `index.html` (wie in `klartext1/`) anlegen.
+Neue KLARTEXT-Folge: `klartext2/` kopieren, in `script.py` die Liste `ITEMS` und das Outro, in `scenes.js` die Texte/Farben ändern.
 
 ## ElevenLabs-Stimmen
 1. API-Key holen: elevenlabs.io → einloggen → links unten **Developers** (bzw. Profil-Menü) →
@@ -46,4 +48,4 @@ zwischengespeichert, damit ein erneutes Rendern nichts mehr kostet.
 - +46 % Hämorrhoiden-Risiko bei Handy-Nutzung auf dem Klo: Ramprasad et al., PLOS ONE 2025 (n = 125), Querschnittsstudie.
 - Hocke ~51 s vs. Sitzen ~2 Min.: Sikirov, Digestive Diseases and Sciences 2003 (n = 28).
 
-`gurke2` und `klartext1` sind Satire: Alle „Studien des Gurkologischen Instituts“ und Zahlen darin sind frei erfunden.
+`gurke2` und die KLARTEXT-Folgen sind Satire: Alle „Studien des Gurkologischen Instituts“ und Zahlen darin sind frei erfunden.
