@@ -5,6 +5,8 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | Folge | Format | Thema | Länge |
 |---|---|---|---|
 | `katze1`–`katze6` | Serie „der drang, …“ (Katze, ~9 s, Schleife, ohne Sprache) | Glas, 3 Uhr nachts, Tastatur, Karton, 5 Uhr Frühstück, Weihnachtsbaum | je ~9 s |
+| `katze7`–`katze10` | „der drang“ mit Serien-Badge und Teilen-Aufforderung | Tür (raus und doch nicht), Videocall, Kratzbaum ignorieren, Sonnenfleck | je ~9 s |
+| `katzewissen1` | Speicher-Video „5 Katzen-Signale, die du kennen musst“ | Blinzeln, Schwanz hoch, Bauch, Treteln, Köpfchen | 17 s |
 | `baum1` | Trend „Tag 1 vs. später“ | Weihnachtsbaum | ~26 s |
 | `emc1` | Wissenschaft | Herleitung E = mc² (Lichtkasten) | ~72 s |
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |

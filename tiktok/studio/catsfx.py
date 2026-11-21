@@ -84,6 +84,33 @@ def sfx(kind, d=0.5, f=2600, seed=0):
             ff = 3500 + 1500 * np.sin(np.pi * t2 / 0.12); c = 0.05 * np.sin(2 * np.pi * np.cumsum(ff) / SR) * np.sin(np.pi * t2 / 0.12)
             y[a:a + len(c)] += c[:len(y) - a]
         return y
+    if kind == 'rain':
+        return 0.12 * lowpass(noise(d, 31), 4) * np.minimum(1, t / 0.3) * np.minimum(1, (d - t) / 0.3)
+    if kind == 'creak':
+        ff = 180 + 60 * np.sin(2 * np.pi * 3 * t)
+        return 0.18 * np.sign(np.sin(2 * np.pi * np.cumsum(ff) / SR)) * lowpass(np.abs(noise(d, 7)), 30) * np.sin(np.pi * t / d)
+    if kind == 'scratch':
+        y = np.zeros(len(t))
+        for i in range(int(d * 6)):
+            a = int(i / 6 * SR); c = 0.25 * lowpass(noise(0.12, i), 2) * np.sin(np.pi * tt(0.12) / 0.12)
+            y[a:a + len(c)] += c[:len(y) - a]
+        return y
+    if kind == 'womp':
+        y = np.zeros(len(t))
+        for i, fr in enumerate([392, 370, 349, 311]):
+            a = int(i * 0.28 * SR); dd = 0.28 if i < 3 else 0.7; t2 = tt(dd)
+            c = 0.15 * np.sign(np.sin(2 * np.pi * fr * (1 + 0.01 * np.sin(2 * np.pi * 6 * t2)) * t2)) * np.minimum(1, t2 * 20) * np.minimum(1, (dd - t2) * 10)
+            y[a:a + len(c)] += c[:len(y) - a]
+        return y
+    if kind == 'chime':
+        return 0.2 * (np.sin(2 * np.pi * 880 * t) * np.exp(-t * 6) + np.sin(2 * np.pi * 1320 * np.clip(t - 0.12, 0, None)) * np.exp(-np.clip(t - 0.12, 0, None) * 6) * (t > 0.12))
+    if kind == 'soft':
+        notes = [60, 64, 67, 71, 69, 67, 64, 62]
+        y = np.zeros(len(t))
+        for i in range(int(d / 0.5) + 1):
+            fr = 440 * 2 ** ((notes[i % 8] - 69) / 12); a = int(i * 0.5 * SR); t2 = t[:max(0, len(t) - a)]
+            if len(t2): y[a:] += 0.07 * (np.sin(2 * np.pi * fr * t2) + 0.3 * np.sin(4 * np.pi * fr * t2)) * np.exp(-t2 * 2.5)
+        return y
     raise ValueError(kind)
 
 

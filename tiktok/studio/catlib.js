@@ -64,7 +64,7 @@ function catRun(x, y, s, ph, dir = 1, o = {}) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s * dir, s);
   const st = Math.sin(ph * Math.PI * 2), ct = Math.cos(ph * Math.PI * 2);
   const by = -150 - Math.abs(st) * 30;
-  P(); ctx.moveTo(-170, by - 10); ctx.quadraticCurveTo(-300, by - 60 - ct * 30, -360, by - 140 - st * 40); ctx.lineWidth = 46; ctx.strokeStyle = CAT.line; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineWidth = 34; ctx.strokeStyle = CAT.fur; ctx.stroke();
+  P(); ctx.moveTo(-170, by - 10); if (o.tailUp) { const w = Math.sin((o.t || 0) * 3) * 14; ctx.bezierCurveTo(-250, by - 120, -200, by - 300, -215 + w, by - 430); ctx.quadraticCurveTo(-205 + w, by - 500, -150 + w, by - 480); } else ctx.quadraticCurveTo(-300, by - 60 - ct * 30, -360, by - 140 - st * 40); ctx.lineWidth = 46; ctx.strokeStyle = CAT.line; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineWidth = 34; ctx.strokeStyle = CAT.fur; ctx.stroke();
   const legs = [[-120, 1], [-90, -1], [110, -1], [140, 1]];
   for (const [lx, sg] of legs) { const a = sg * st * 0.8; limb(lx, by + 30, lx + Math.sin(a) * 110, by + 30 + Math.cos(a) * 110, 30, CAT.fur); ell(lx + Math.sin(a) * 120, by + 30 + Math.cos(a) * 118, 26, 14); fs(CAT.belly, 4, CAT.line); }
   ell(0, by, 200 + st * 20, 82); fs(CAT.fur, 6, CAT.line);
@@ -98,3 +98,40 @@ function drangCaption(lines) {
 }
 function kk(t, a, b) { return eIO(prog(t, a, b - a)); }
 function blinkLid(t, t0) { if (t < t0) return 0; const u = prog(t, t0, 0.9); return u < 0.4 ? eIO(u / 0.4) : lerp(1, 0.45, eIO(clamp((u - 0.4) / 0.6))); }
+
+/* ---------- Ergänzungen: Rückansicht, Bauchlage, Serienelemente ---------- */
+/* Katze von hinten (Ursprung = Mitte unten); o.tailUp 0..1 */
+function catBack(x, y, s, o = {}) {
+  const t = o.t || 0;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  P(); ctx.moveTo(-130, -400); ctx.bezierCurveTo(-210, -300, -230, -60, -175, 0); ctx.lineTo(175, 0); ctx.bezierCurveTo(230, -60, 210, -300, 130, -400); ctx.closePath(); fs(CAT.fur, 6, CAT.line);
+  for (let i = 0; i < 4; i++) { P(); ctx.arc(0, -320 + i * 80, 150 - i * 6, Math.PI * 0.15, Math.PI * 0.85); ctx.lineWidth = 14; ctx.strokeStyle = CAT.dark; ctx.stroke(); }
+  const sw = Math.sin(t * 3) * 30;
+  P(); ctx.moveTo(0, -40); ctx.bezierCurveTo(10, -200, sw, -360, 20 + sw, -520); ctx.lineWidth = 64; ctx.strokeStyle = CAT.line; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineWidth = 52; ctx.strokeStyle = CAT.fur; ctx.stroke();
+  for (const sd of [-1, 1]) { P(); ctx.moveTo(sd * 70, -600); ctx.lineTo(sd * 130, -760); ctx.lineTo(sd * 180, -590); ctx.closePath(); fs(CAT.fur, 6, CAT.line); }
+  ell(0, -560, 205, 170); fs(CAT.fur, 6, CAT.line);
+  for (const dx of [-50, 0, 50]) { P(); ctx.moveTo(dx, -720); ctx.quadraticCurveTo(dx * 1.1, -640, dx * 0.9, -580); ctx.lineWidth = 14; ctx.strokeStyle = CAT.dark; ctx.lineCap = 'round'; ctx.stroke(); }
+  ctx.restore();
+}
+/* Katze auf dem Rücken, Bauch nach oben (Ursprung = Mitte unten) */
+function catBelly(x, y, s, o = {}) {
+  const t = o.t || 0;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  P(); ctx.moveTo(280, -60); ctx.quadraticCurveTo(420, -40, 430, -160); ctx.lineWidth = 52; ctx.strokeStyle = CAT.line; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineWidth = 40; ctx.strokeStyle = CAT.fur; ctx.stroke();
+  for (const [lx, ly, a] of [[-140, -150, -0.4], [-40, -170, 0.2], [130, -150, -0.3], [230, -130, 0.4]]) { const w = Math.sin(t * 4 + lx) * 0.15; limb(lx, ly + 40, lx + Math.sin(a + w) * 110, ly - Math.cos(a + w) * 110, 40, CAT.fur); ell(lx + Math.sin(a + w) * 120, ly - Math.cos(a + w) * 120, 30, 22); fs(CAT.belly, 4, CAT.line); }
+  ell(60, -70, 280, 120); fs(CAT.fur, 6, CAT.line);
+  ell(60, -95, 200, 80); ctx.fillStyle = CAT.belly; ctx.fill();
+  ctx.restore();
+  catHead(x - 260 * s, y - 110 * s, s * 0.8, Object.assign({ tilt: -1.2 }, o));
+}
+function emo(e, x, y, size) { ctx.save(); ctx.font = `${size}px "Noto Color Emoji"`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e, x, y); ctx.restore(); }
+function drangBadge(n) { pill(`der drang #${n}`, 540, 168, 30, '#f08c00', WHITE, { lw: 0 }); }
+function shareBand(t, t0, text = 'schick das jemandem, dessen katze das auch macht 😼') {
+  if (t < t0) return;
+  const a = eOut(prog(t, t0, 0.25));
+  alpha(a, () => {
+    ctx.save(); ctx.font = `800 40px ${FONT}, "Noto Color Emoji"`; const w = Math.min(1000, ctx.measureText(text).width + 60); ctx.restore();
+    at(540, 1480 + (1 - a) * 40, 1, 0, () => { rr(-w / 2, -42, w, 84, 42); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
+      ctx.save(); ctx.font = `800 40px ${FONT}, "Noto Color Emoji"`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = INK; ctx.fillText(text, 0, 3); ctx.restore(); });
+  });
+}
