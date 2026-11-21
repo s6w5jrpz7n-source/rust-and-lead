@@ -67,8 +67,10 @@ function drawFlag(id, cx, cy, maxW, maxH) {
 }
 function drawEmoji(e, cx, cy, size, t) {
   const bob = Math.sin(t * 3) * 8;
+  const g = ctx.createRadialGradient(cx, cy, size * 0.1, cx, cy, size * 0.75);
+  g.addColorStop(0, 'rgba(255,255,255,0.18)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(cx - size, cy - size, size * 2, size * 2);
   ctx.save(); ctx.font = `${size}px "Noto Color Emoji", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
   ctx.fillText(e, cx, cy + bob); ctx.restore();
 }
 
@@ -117,7 +119,7 @@ function qcard(t, k, slide) {
   const c0 = q.end + 0.05, c1 = a.start - 0.05;
   if (t >= c0 && t < c1 + 0.05) {
     const p = clamp((t - c0) / (c1 - c0)), n = Math.max(1, 3 - Math.floor(p * 3));
-    at(930, 580, 1 + 0.15 * Math.exp(-(((t - c0) % ((c1 - c0) / 3)) * 10)), 0, () => { circ(0, 0, 50); fs(n === 1 ? RED : YELLOW, 6, INK); txt(String(n), 0, 3, 56, INK); });
+    at(935, 1045, 1 + 0.15 * Math.exp(-(((t - c0) % ((c1 - c0) / 3)) * 10)), 0, () => { circ(0, 0, 50); fs(n === 1 ? RED : YELLOW, 6, INK); txt(String(n), 0, 3, 56, INK); });
     rr(110, 1440, 860, 22, 11); ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fill();
     rr(110, 1440, Math.max(22, 860 * (1 - p)), 22, 11); ctx.fillStyle = p < 0.5 ? '#40c057' : p < 0.8 ? YELLOW : RED; ctx.fill();
   }

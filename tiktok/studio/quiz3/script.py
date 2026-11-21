@@ -8,13 +8,13 @@ MUSIC = dict(bpm=124, gain=0.16)
 # (Frage (Anzeige), gesprochen, Emoji, Antworten, richtig, gesprochene Auflösung)
 Q = [
     ('Welcher Planet heißt „der Rote Planet“?', 'Der rote Planet?', '🔴', ['Venus', 'Mars', 'Jupiter'], 1, 'Mars!'),
-    ('Welcher Planet ist der größte?', 'Der größte Planet?', '🪐', ['Saturn', 'Neptun', 'Jupiter'], 2, 'Jupiter!'),
+    ('Welcher Planet ist der größte?', 'Der größte Planet?', '🔭', ['Saturn', 'Neptun', 'Jupiter'], 2, 'Jupiter!'),
     ('Wie viele Planeten hat unser Sonnensystem?', 'Wie viele Planeten?', '☀️', ['7', '8', '9'], 1, 'Acht!'),
     ('Wie lange braucht Sonnenlicht bis zur Erde?', 'Sonnenlicht bis zur Erde?', '⏱️', ['8 Sekunden', '8 Minuten', '8 Stunden'], 1, 'Acht Minuten!'),
     ('Welcher Planet ist der heißeste?', 'Der heißeste Planet?', '🔥', ['Merkur', 'Venus', 'Mars'], 1, 'Venus! Nicht Merkur.'),
     ('Welcher Planet hat die meisten bekannten Monde?', 'Die meisten Monde?', '🌙', ['Saturn', 'Jupiter', 'Uranus'], 0, 'Saturn!'),
     ('Wie heißt der größte Vulkan im Sonnensystem?', 'Der größte Vulkan?', '🌋', ['Mauna Kea', 'Ätna', 'Olympus Mons'], 2, 'Olympus Mons, auf dem Mars!'),
-    ('Wie heißt der größte Mond im Sonnensystem?', 'Der größte Mond?', '🌕', ['Titan', 'Ganymed', 'Europa'], 1, 'Ganymed!'),
+    ('Wie heißt der größte Mond im Sonnensystem?', 'Der größte Mond?', '🌕', ['Titan', 'Ganymed', 'Europa'], 1, 'Ganümed!'),
     ('Welcher Stern ist der Sonne am nächsten?', 'Der nächste Stern?', '⭐', ['Sirius', 'Proxima Centauri', 'Polarstern'], 1, 'Proxima Centauri!'),
     ('Wie heißt die Grenze, ab der offiziell das Weltall beginnt?', 'Wo beginnt das Weltall?', '🚀',
      ['Kármán-Linie', 'Roche-Grenze', 'Van-Allen-Gürtel'], 0, 'Die Karman-Linie! In hundert Kilometern Höhe.'),
