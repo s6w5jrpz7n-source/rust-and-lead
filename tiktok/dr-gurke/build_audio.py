@@ -5,11 +5,14 @@ import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
-from script import LINES, SCENES  # noqa: E402
+EP = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('EP', 'folge1')
+_spec = __import__('importlib.util').util.spec_from_file_location('ep_script', os.path.join(HERE, EP, 'script.py'))
+_mod = __import__('importlib.util').util.module_from_spec(_spec); _spec.loader.exec_module(_mod)
+LINES, SCENES = _mod.LINES, _mod.SCENES
+EXTRA_CUES = getattr(_mod, 'EXTRA_CUES', [])  # (name, line_id, 'start'|'end', offset, sfx)
 
 VOICES = os.environ.get('PIPER_VOICES', os.path.join(HERE, 'voices'))
-OUT = os.path.join(HERE, 'build')
+OUT = os.path.join(HERE, 'build', EP)
 os.makedirs(OUT, exist_ok=True)
 SR = 44100
 FPS = 30
@@ -243,6 +246,31 @@ def sfx(kind):
             tone = (2 / np.pi) * np.arcsin(np.sin(2 * np.pi * f * t))  # Dreieck
             y[a:] += 0.22 * tone * np.exp(-t * 2.8) * np.minimum(1, t * 300)
         return y
+    if kind == 'sniff':
+        y = np.zeros(int(0.5 * SR))
+        for i in range(3):
+            b = bandnoise(0.09, 1200, 6000, 20 + i) * np.sin(np.pi * tt(0.09) / 0.09) * (0.25 + 0.12 * i)
+            a = int(i * 0.15 * SR); y[a:a + len(b)] += b
+        return y
+    if kind == 'swirl':
+        d = 1.8; t = tt(d); f = 700 * np.exp(-t * 1.6) + 60
+        tone = 0.25 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(2 * np.pi * 3 * t) ** 2
+        return (0.35 * bandnoise(d, 200, 2500, 31) * np.sin(np.pi * t / d) + tone) * np.minimum(1, t * 4) * np.exp(-np.maximum(0, t - 1.5) * 10)
+    if kind == 'drone':
+        d = 2.4; t = tt(d)
+        y = np.sin(2 * np.pi * 55 * t) + np.sin(2 * np.pi * 58.3 * t) + 0.5 * np.sin(2 * np.pi * 110 * t)
+        return 0.22 * y * (0.7 + 0.3 * np.sin(2 * np.pi * 5 * t)) * np.minimum(1, t * 1.5) * np.minimum(1, (d - t) * 2)
+    if kind == 'sting':
+        d = 1.2; t = tt(d)
+        y = sum(np.sign(np.sin(2 * np.pi * f * t)) * 0.3 + np.sin(2 * np.pi * f * t) for f in (311.1, 329.6, 466.2, 155.6))
+        return 0.18 * y * np.exp(-t * 3.2) * np.minimum(1, t * 600) + 0.6 * np.sin(2 * np.pi * 50 * t) * np.exp(-t * 10)
+    if kind == 'crickets':
+        d = 2.2; t = tt(d); y = np.zeros(len(t))
+        for g in (0.1, 0.9, 1.6):
+            for k in range(3):
+                a0 = g + k * 0.07; m = (t >= a0) & (t < a0 + 0.045)
+                y[m] += np.sin(2 * np.pi * 4300 * t[m]) * (0.5 + 0.5 * np.sin(2 * np.pi * 220 * t[m]))
+        return 0.16 * y
     raise ValueError(kind)
 
 
@@ -293,10 +321,11 @@ def main():
         bounds[sc] = st
         if i > 0:
             s = sfx('whoosh'); a = int((st - 0.05) * SR); fx[a:a + len(s)] += s
-    # Fast-Forward nach "Drei!"
-    m9 = next(e for e in timeline if e['id'] == 'm9')
-    cues['ff'] = round(m9['end'] + 0.15, 3)
-    s = sfx('ff'); a = int(cues['ff'] * SR); fx[a:a + len(s)] += s
+    for name, lid, where, offs, kind in EXTRA_CUES:
+        ln = next(e for e in timeline if e['id'] == lid)
+        cues[name] = round(ln[where] + offs, 3)
+        if kind:
+            s = sfx(kind); a = int(cues[name] * SR); fx[a:a + len(s)] += s[:max(0, n - a)]
     # Ende der Gurken-Zeilen + Szenengrenzen
     mix = voiceN + voiceG + 0.55 * fx
     peak = np.abs(mix).max()

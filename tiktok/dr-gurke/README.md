@@ -1,23 +1,30 @@
-# Dr. Gurke erklärt – Folge 1 (TikTok, 9:16, ~93 s)
+# Dr. Gurke erklärt – TikTok-Serie (9:16)
 
-Animiertes Erklärvideo: Warum manche ewig das Klo blockieren – Handy, Sitzhaltung,
-Beckenbodentraining und Tipps. Komplett im Code erzeugt (Canvas-Animation + Stimme + SFX).
+Animierte Erklärvideos mit Dr. Gurke, komplett im Code erzeugt (Canvas-Animation, Stimme, Soundeffekte).
 
-## Dateien
+| Folge | Thema | Länge |
+|---|---|---|
+| `folge1` | Klo-Blockierer: Handy, Sitzhaltung, Beckenbodentraining | ~93 s |
+| `folge2` | Der Klamottenstuhl: Schrödingers Pullover, Schwerkraft, der zweite Stuhl | ~86 s |
+
+## Aufbau
 | Datei | Inhalt |
 |---|---|
-| `script.py` | Sprechertext, Szenen, Cues (Untertitel-Anzeige `{Anzeige\|gesprochen}`) |
-| `build_audio.py` | Stimmen (Piper lokal oder ElevenLabs), Soundeffekte, Mix, `build/timeline.js` |
-| `scene.js` / `index.html` | Animation (1080×1920), alle Szenen, Lippen-Sync, Untertitel |
+| `folgeN/script.py` | Sprechertext, Szenen, Cues (Untertitel-Anzeige `{Anzeige\|gesprochen}`) |
+| `folgeN/scenes.js` | Szenen der Folge (`window.EP_SCENES`) |
+| `engine.js` | Gemeinsam: Dr. Gurke (Stimmungen, Gurke-Cam), Primitive, Untertitel, Szenenwechsel |
+| `build_audio.py` | Stimmen (Piper lokal oder ElevenLabs), Soundeffekte, Mix, `build/<folge>/timeline.js` |
 | `render.js` | Rendert Frames mit Playwright → ffmpeg |
-| `make_video.sh` | Alles in einem Rutsch → `out/dr-gurke-folge-1-<engine>.mp4` |
+| `make_video.sh` | Alles in einem Rutsch → `out/dr-gurke-<folge>-<engine>.mp4` |
 
 ## Rendern
 ```bash
-./make_video.sh                     # Piper-Stimmen (kostenlos, lokal)
-ENGINE=elevenlabs ./make_video.sh   # ElevenLabs-Stimmen
+./make_video.sh folge2                     # Piper-Stimmen (kostenlos, lokal)
+ENGINE=elevenlabs ./make_video.sh folge2   # ElevenLabs-Stimmen
 ```
 Braucht: Python 3 + numpy, Node + Playwright (Chromium), ffmpeg (mit rubberband), Schrift „Inter Display“.
+
+Neue Folge: `folge3/` mit `script.py`, `scenes.js` und `index.html` (wie in `folge2/`) anlegen.
 
 ## ElevenLabs-Stimmen
 1. API-Key holen: elevenlabs.io → einloggen → links unten **Developers** (bzw. Profil-Menü) →
@@ -27,13 +34,15 @@ Braucht: Python 3 + numpy, Node + Playwright (Chromium), ffmpeg (mit rubberband)
    - Claude-Code-Cloud: Umgebungsmenü in der Titelleiste der Session → **Edit** →
      **Network secrets**: Host `api.elevenlabs.io`, Header `xi-api-key`, Wert = Key.
    - lokal: `export ELEVENLABS_API_KEY=...`
-3. `ENGINE=elevenlabs ./make_video.sh`
+3. `ENGINE=elevenlabs ./make_video.sh folge2`
 
 Stimmen/Modell per Umgebungsvariable änderbar: `EL_VOICE_N` (Erzähler, Standard „Claas“),
 `EL_VOICE_G` (Dr. Gurke, Standard „Tyrax“), `EL_MODEL` (Standard `eleven_v3`).
-Kosten ca. 1.600 Credits pro kompletter Vertonung; Antworten werden in `build/el_cache/`
+Kosten ca. 1.500–1.600 Credits pro Folge; Antworten werden in `build/el_cache/`
 zwischengespeichert, damit ein erneutes Rendern nichts mehr kostet.
 
-## Quellen der Zahlen
+## Quellen der Zahlen (Folge 1)
 - +46 % Hämorrhoiden-Risiko bei Handy-Nutzung auf dem Klo: Ramprasad et al., PLOS ONE 2025 (n = 125), Querschnittsstudie.
 - Hocke ~51 s vs. Sitzen ~2 Min.: Sikirov, Digestive Diseases and Sciences 2003 (n = 28).
+
+Folge 2 ist Satire: Alle „Studien des Gurkologischen Instituts“ und Zahlen darin sind frei erfunden.

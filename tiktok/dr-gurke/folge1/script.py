@@ -94,3 +94,6 @@ LINES = [
 ]
 
 SCENES = ['hook', 'problem', 'phone', 'posture', 'method', 'tips', 'outro']
+
+# Zusätzliche Cues: Vorspulen nach "Drei!"
+EXTRA_CUES = [('ff', 'm9', 'end', 0.15, 'ff')]
