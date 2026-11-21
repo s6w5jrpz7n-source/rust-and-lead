@@ -11,8 +11,13 @@ torch.set_num_threads(os.cpu_count() or 4)
 model = whisper = None
 
 
+ZAHLEN = {'1': 'eins', '2': 'zwei', '3': 'drei', '4': 'vier', '5': 'fünf', '6': 'sechs', '7': 'sieben', '8': 'acht', '9': 'neun',
+          '10': 'zehn', '11': 'elf', '12': 'zwölf', '20': 'zwanzig', '30': 'dreißig', '100': 'hundert'}
+
+
 def norm(s):
-    return re.sub(r'[^a-zäöüß0-9 ]', '', s.lower().replace('-', ' '))
+    s = re.sub(r'\b(\d+)\b', lambda m: ZAHLEN.get(m.group(1), m.group(1)), s.lower())
+    return re.sub(r'[^a-zäöüß0-9 ]', '', s.replace('-', ' '))
 
 
 results = {}

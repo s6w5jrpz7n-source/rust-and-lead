@@ -230,6 +230,9 @@ def synth_line_cb(line):
     idx = np.where(np.abs(raw) > 0.02 * max(1e-6, np.abs(raw).max()))[0]
     a0 = max(0, idx[0] - int(0.03 * sr0)) if len(idx) else 0
     a1 = min(len(raw), idx[-1] + int(0.08 * sr0)) if len(idx) else len(raw)
+    if r['words']:  # Nachklang/Artefakte nach dem letzten erkannten Wort abschneiden
+        a1 = min(a1, int((r['words'][-1]['e'] + 0.3) * sr0))
+        a0 = max(a0, int((r['words'][0]['s'] - 0.15) * sr0))
     raw = raw[a0:a1]
     off, dur_raw = a0 / sr0, len(raw) / sr0
     chain = [f"rubberband=pitch={sp['pitch']}:formant=preserved"] if sp.get('pitch') else []

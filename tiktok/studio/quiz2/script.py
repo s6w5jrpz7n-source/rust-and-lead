@@ -19,7 +19,8 @@ Q = [
     ('MCO', ['Indonesien', 'Polen', 'Monaco'], 2, 'Monaco! Indonesiens Flagge ist breiter.'),
 ]
 LINES, EXTRA_CUES = quiz_lines('Zehn Flaggen. Jede schwerer als die davor. Wer alle zehn erkennt, ist ein Genie. Los geht’s!',
-                               [dict(say=f'Flagge {ZAHL[i]}!', answer=a) for i, (_, _, _, a) in enumerate(Q)])
+                               [dict(say=f'Flagge {ZAHL[i]}!', answer=a, qextra=dict(seed=11) if i in (2, 5) else {})
+                                for i, (_, _, _, a) in enumerate(Q)])
 SCENES = ['quiz']
 EXPORT = dict(
     title='FLAGGEN-QUIZ', sub='Nur Genies schaffen 10/10', theme=['#12204a', '#060b24'], hot=['#3b0a1e', '#170410'],
