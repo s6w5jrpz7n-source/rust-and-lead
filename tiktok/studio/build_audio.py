@@ -5,11 +5,19 @@ import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-EP = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('EP', 'folge1')
+EP = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('EP', 'gurke1')
 _spec = __import__('importlib.util').util.spec_from_file_location('ep_script', os.path.join(HERE, EP, 'script.py'))
 _mod = __import__('importlib.util').util.module_from_spec(_spec); _spec.loader.exec_module(_mod)
 LINES, SCENES = _mod.LINES, _mod.SCENES
 EXTRA_CUES = getattr(_mod, 'EXTRA_CUES', [])  # (name, line_id, 'start'|'end', offset, sfx)
+MUSIC = getattr(_mod, 'MUSIC', None)  # z. B. dict(bpm=100, gain=0.2)
+# Sprecher: Piper-Modell, Tempo, Tonhöhe, Ziel-Lautheit. Eine Folge kann SPEAKERS ergänzen/überschreiben.
+SPEAKERS = {
+    'N': dict(model='de_DE-thorsten-high', length=0.9, noise=0.6, noise_w=0.8, pitch=None, rms=0.13,
+              af='highpass=f=70,equalizer=f=3000:t=q:w=1:g=2'),
+    'G': dict(model='de_DE-thorsten_emotional-medium', emo='angry', length=0.93, noise=0.667, noise_w=0.8, pitch=1.24, rms=0.14),
+}
+SPEAKERS.update(getattr(_mod, 'SPEAKERS', {}))
 
 VOICES = os.environ.get('PIPER_VOICES', os.path.join(HERE, 'voices'))
 OUT = os.path.join(HERE, 'build', EP)
@@ -100,7 +108,7 @@ def synth_line_el(line):
     for disp, n in toks:
         tok_t.append((disp, words_t[wi][0], words_t[wi + n - 1][1])); wi += n
     rms = np.sqrt(np.mean(y[np.abs(y) > 0.01] ** 2)) if np.any(np.abs(y) > 0.01) else 0.1
-    y = y * ((0.13 if line['spk'] == 'N' else 0.14) / max(rms, 1e-4))
+    y = y * (SPEAKERS[line['spk']]['rms'] / max(rms, 1e-4))
     return y, tok_t, spoken
 
 
@@ -109,7 +117,7 @@ def parse(text):
     toks, spoken = [], []
     for m in re.finditer(r'\{([^|}]*)\|([^}]*)\}|(\S+)', text):
         if m.group(3):
-            toks.append((m.group(3), 1)); spoken.append(m.group(3))
+            toks.append((m.group(3), 1)); spoken.append(m.group(3).replace('*', ''))
         else:
             sw = m.group(2).split()
             toks.append((m.group(1), len(sw))); spoken += sw
@@ -137,11 +145,10 @@ def phon_weight(p):
 
 def synth_line(line):
     spoken, toks, spoken_words = parse(line['text'])
-    if line['spk'] == 'N':
-        voice, cfg = piper_voice('de_DE-thorsten-high'), SynthesisConfig(length_scale=0.9, noise_scale=0.6, noise_w_scale=0.8)
-    else:
-        voice, cfg = piper_voice('de_DE-thorsten_emotional-medium'), SynthesisConfig(speaker_id=EMO[line.get('emo', 'angry')], length_scale=0.93,
-                                         noise_scale=0.667, noise_w_scale=0.8)
+    sp = SPEAKERS[line['spk']]
+    sid = EMO[line.get('emo', sp.get('emo', 'neutral'))] if 'emotional' in sp['model'] else None
+    voice = piper_voice(sp['model'])
+    cfg = SynthesisConfig(speaker_id=sid, length_scale=sp['length'], noise_scale=sp['noise'], noise_w_scale=sp['noise_w'])
     chunks = list(voice.synthesize(spoken, syn_config=cfg))
     sr0 = chunks[0].sample_rate
     pieces, words_t, cursor = [], [], 0.0
@@ -164,10 +171,10 @@ def synth_line(line):
             cursor += SENT_PAUSE
     raw = np.concatenate(pieces)
     total_in = len(raw) / sr0
-    if line['spk'] == 'G':
-        af = f'rubberband=pitch={G_PITCH}:formant=preserved,highpass=f=90'
+    if sp.get('pitch'):
+        af = f"rubberband=pitch={sp['pitch']}:formant=preserved,highpass=f=90"
     else:
-        af = 'highpass=f=70,equalizer=f=3000:t=q:w=1:g=2'
+        af = sp.get('af', 'highpass=f=70')
     y = ffmpeg_proc(raw, sr0, af)
     scale = (len(y) / SR) / total_in
     words_t = [(a * scale, b * scale) for a, b in words_t]
@@ -185,7 +192,7 @@ def synth_line(line):
         wi += n
     # Lautheit angleichen
     rms = np.sqrt(np.mean(y[np.abs(y) > 0.01] ** 2)) if np.any(np.abs(y) > 0.01) else 0.1
-    target = 0.13 if line['spk'] == 'N' else 0.14
+    target = sp['rms']
     y = y * (target / max(rms, 1e-4))
     return y, tok_t, spoken
 
@@ -271,7 +278,52 @@ def sfx(kind):
                 a0 = g + k * 0.07; m = (t >= a0) & (t < a0 + 0.045)
                 y[m] += np.sin(2 * np.pi * 4300 * t[m]) * (0.5 + 0.5 * np.sin(2 * np.pi * 220 * t[m]))
         return 0.16 * y
+    if kind == 'type':
+        y = np.zeros(int(1.2 * SR)); rng = np.random.default_rng(42)
+        for i in range(15):
+            a = int((i * 0.072 + rng.uniform(0, 0.02)) * SR); c = bandnoise(0.025, 1800, 9000, 60 + i) * np.exp(-tt(0.025) * 260) * rng.uniform(0.18, 0.3)
+            y[a:a + len(c)] += c
+        return y
+    if kind == 'glitch':
+        d = 0.22; t = tt(d); rng = np.random.default_rng(7)
+        nz = np.repeat(rng.uniform(-1, 1, int(len(t) / 40) + 1), 40)[:len(t)]
+        nz = np.round(nz * 3) / 3
+        sq = np.sign(np.sin(2 * np.pi * np.where(t < 0.1, 880, 220) * t))
+        hit = np.sin(2 * np.pi * 52 * t) * np.exp(-t * 9)
+        return 0.28 * nz * np.exp(-t * 9) + 0.12 * sq * (t < 0.14) + 0.7 * hit
+    if kind == 'hit':
+        t = tt(0.45)
+        return 0.8 * np.sin(2 * np.pi * (48 + 40 * np.exp(-t * 30)) * t) * np.exp(-t * 8) + 0.25 * bandnoise(0.45, 100, 3000, 3) * np.exp(-t * 40)
+    if kind == 'notif':
+        y = np.zeros(int(0.7 * SR))
+        for i, f in enumerate([1318.5, 1975.5]):
+            a = int(i * 0.13 * SR); t = np.arange(len(y) - a) / SR
+            y[a:] += 0.25 * np.sin(2 * np.pi * f * t) * np.exp(-t * 7) * np.minimum(1, t * 400)
+        return y
     raise ValueError(kind)
+
+
+def make_music(total, bpm, n):
+    beat = 60.0 / bpm
+    y = np.zeros(n)
+
+    def add(sig, t0):
+        a = int(t0 * SR)
+        if a < n:
+            y[a:a + len(sig)] += sig[:n - a]
+    t = tt(0.35); kick = np.sin(2 * np.pi * np.cumsum(110 * np.exp(-t * 18) + 45) / SR) * np.exp(-t * 7)
+    t = tt(0.18); snare = 0.45 * bandnoise(0.18, 1500, 7000, 91) * np.exp(-t * 22) + 0.3 * np.sin(2 * np.pi * 190 * t) * np.exp(-t * 25)
+    t = tt(0.05); hat = 0.22 * bandnoise(0.05, 6000, 14000, 92) * np.exp(-t * 80)
+    notes = [55.0, 55.0, 43.65, 49.0]
+    for b in range(int(total / beat) + 1):
+        tb = b * beat
+        if b % 4 in (0, 2): add(kick, tb)
+        if b % 4 in (1, 3): add(snare, tb)
+        add(hat, tb); add(0.6 * hat, tb + beat / 2)
+        if b % 2 == 0:
+            f0 = notes[(b // 4) % 4]; t = tt(beat * 1.9)
+            add(0.32 * sum(np.sin(2 * np.pi * f0 * k * t) / k for k in range(1, 5)) * np.exp(-t * 1.3) * np.minimum(1, t * 200), tb)
+    return y
 
 
 # ---------------- Build ----------------
@@ -328,6 +380,14 @@ def main():
             s = sfx(kind); a = int(cues[name] * SR); fx[a:a + len(s)] += s[:max(0, n - a)]
     # Ende der Gurken-Zeilen + Szenengrenzen
     mix = voiceN + voiceG + 0.55 * fx
+    if MUSIC:
+        mus = make_music(total, MUSIC.get('bpm', 100), n)
+        v = np.abs(voiceN + voiceG)
+        k = int(0.08 * SR)
+        env = np.convolve(v, np.ones(k) / k, mode='same')
+        duck = 1 - 0.6 * np.clip(env / 0.05, 0, 1)
+        fade_out = np.clip((total - np.arange(n) / SR) / 1.2, 0, 1)
+        mix = mix + MUSIC.get('gain', 0.2) * mus * duck * fade_out
     peak = np.abs(mix).max()
     mix = np.tanh(mix / max(peak, 1e-6) * 1.4) / np.tanh(1.4) * 0.95
     raw = os.path.join(OUT, 'mix_raw.wav')

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Rendert eine Folge von "Dr. Gurke erklärt" komplett neu.
-#   ./make_video.sh folge2                     -> Piper-Stimmen (lokal, kostenlos)
-#   ENGINE=elevenlabs ./make_video.sh folge2   -> ElevenLabs-Stimmen (API-Key nötig, siehe README)
+# Rendert eine Folge komplett neu.
+#   ./make_video.sh klartext1                     -> Piper-Stimmen (lokal, kostenlos)
+#   ENGINE=elevenlabs ./make_video.sh klartext1   -> ElevenLabs-Stimmen (API-Key nötig, siehe README)
 set -euo pipefail
 cd "$(dirname "$0")"
-EP="${1:-folge1}"
+EP="${1:?Folge angeben, z. B. klartext1}"
 ENGINE="${ENGINE:-piper}"; export ENGINE
 pip install -q piper-tts >/dev/null
 VOICES="${PIPER_VOICES:-voices}"; export PIPER_VOICES="$VOICES"
@@ -27,7 +27,7 @@ for i in 0 1 2 3; do
 done
 wait
 printf "file 'p0.mp4'\nfile 'p1.mp4'\nfile 'p2.mp4'\nfile 'p3.mp4'\n" > parts/list.txt
-OUTF="out/dr-gurke-$EP-$ENGINE.mp4"
+OUTF="out/$EP-$ENGINE.mp4"
 ffmpeg -y -v error -f concat -safe 0 -i parts/list.txt -i "build/$EP/audio.wav" -map 0:v -map 1:a \
   -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart "$OUTF"
 echo "Fertig: $OUTF"
