@@ -505,6 +505,7 @@ def main():
     out = mouth_env(voiceG)
     mouths = {k: mouth_env(v) for k, v in tracks.items()}
     tl = dict(fps=FPS, duration=round(total, 3), lines=timeline, cues=cues, scenes=bounds, sceneOrder=SCENES, mouth=out, mouths=mouths)
+    tl['data'] = getattr(_mod, 'EXPORT', None)  # frei verwendbare Folgen-Daten für die Szenen (z. B. Quizfragen)
     with open(os.path.join(OUT, 'timeline.js'), 'w') as f:
         f.write('window.TL = ' + json.dumps(tl, ensure_ascii=False) + ';\n')
     with open(os.path.join(OUT, 'timeline.json'), 'w') as f:
