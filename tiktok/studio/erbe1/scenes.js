@@ -121,7 +121,7 @@ function polaroid(x, y, s, t, wink) {
   at(x, y, s, 0.12 + Math.sin(t * 2) * 0.03, () => {
     rr(-120, -150, 240, 290, 8); fs(WHITE, 6);
     ctx.save(); rr(-100, -130, 200, 200, 4); ctx.clip(); ctx.fillStyle = '#ffd8a8'; ctx.fillRect(-100, -130, 200, 200);
-    person(0, 250, 0.5, { t, mood: 'smug', hair: 'curls', hairCol: '#ced4da', lips: '#e03131', glasses: true, skin: SKIN_OLD, shirt: '#ae3ec9', noLegs: true, wink });
+    person(0, 150, 0.5, { t, mood: 'smug', hair: 'curls', hairCol: '#ced4da', lips: '#e03131', glasses: true, skin: SKIN_OLD, shirt: '#ae3ec9', noLegs: true, wink });
     ctx.restore();
     txt('Gerda ♥', 0, 110, 30, INK, { weight: 800 });
   });
