@@ -6,6 +6,8 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 |---|---|---|---|
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
 | `klartext2` | KLARTEXT | Wohnungsanzeigen, ehrlich übersetzt | ~40 s |
+| `quiz1` | Quiz-Gameshow (Ländersilhouetten, Countdown) | Hauptstädte-Quiz, 10 Fragen | ~59 s |
+| `erbe1` | Sitcom-Sketch, schwarzer Humor (Chatterbox-Stimmen) | Opas Testament | ~69 s |
 | `tod1` | Animierter Sketch, schwarzer Humor | Der Tod hat Montag | ~48 s |
 | `gurke1` | Dr. Gurke erklärt: Cartoon-Erklärvideo | Klo-Blockierer | ~93 s |
 | `gurke2` | Dr. Gurke erklärt | Der Klamottenstuhl | ~86 s |
@@ -29,6 +31,16 @@ ENGINE=elevenlabs ./make_video.sh klartext1   # ElevenLabs-Stimmen
 Braucht: Python 3 + numpy, Node + Playwright (Chromium), ffmpeg (mit rubberband), Schrift „Inter Display“.
 
 Neue KLARTEXT-Folge: `klartext2/` kopieren, in `script.py` die Liste `ITEMS` und das Outro, in `scenes.js` die Texte/Farben ändern.
+
+## Natürlichere lokale Stimmen (Chatterbox)
+Folgen mit `ENGINE = 'chatterbox'` im Skript nutzen Chatterbox Multilingual (MIT-Lizenz) mit Referenzstimmen aus `refs/`.
+Jede Zeile wird mit Whisper gegengeprüft und bei Fehlern bis zu 3× neu erzeugt; die Wortzeiten für Untertitel
+stammen aus der Transkription.
+```bash
+uv venv -p 3.11 cbx && uv pip install --extra-index-url https://download.pytorch.org/whl/cpu chatterbox-tts faster-whisper "setuptools<81"
+CBX_PY=$PWD/cbx/bin/python ./make_video.sh erbe1
+```
+Rechenzeit auf 4 CPU-Kernen: etwa 7× Echtzeit (60 s Sprache ≈ 7–10 min).
 
 ## ElevenLabs-Stimmen
 1. API-Key holen: elevenlabs.io → einloggen → links unten **Developers** (bzw. Profil-Menü) →

@@ -32,7 +32,8 @@ for i, (land, iso, ans, opts, k) in enumerate(QUESTIONS, 1):
     if i == 10:
         LINES.append(dict(id='h10', spk='Q', scene='quiz', text='Letzte Frage. Nur für Genies.', gap=0.15, cues=[(0, 'last', 'hit')]))
     q = '{Türkei?|Die Türkei?}' if land == 'Türkei' else f'{land}?'
-    LINES.append(dict(id=f'q{i}', spk='Q', scene='quiz', text=q, gap=COUNTDOWN, cues=[(0, f'q{i}', 'whoosh_s')]))
+    extra = dict(exag=0.45, seed=7) if land == 'Burkina Faso' else {}
+    LINES.append(dict(id=f'q{i}', spk='Q', scene='quiz', text=q, gap=COUNTDOWN, cues=[(0, f'q{i}', 'whoosh_s')], **extra))
     a = ans if '{' in ans else f'{ans}!'
     LINES.append(dict(id=f'a{i}', spk='Q', scene='quiz', text=a, gap=0.4, cues=[(0, f'a{i}', 'ding')]))
     EXTRA_CUES += [(f'tk{i}_{j}', f'q{i}', 'end', 0.12 + j * 0.72, 'tick') for j in range(3)]

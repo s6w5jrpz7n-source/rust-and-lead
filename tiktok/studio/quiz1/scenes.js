@@ -65,7 +65,8 @@ function drawShape(iso, cx, cy, maxW, maxH, col, t, capP, capLabel) {
       P(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-30, -40, -30, -80, 0, -80); ctx.bezierCurveTo(30, -80, 30, -40, 0, 0); fs(RED, 5, INK);
       circ(0, -58, 11); fs(WHITE, 0);
     });
-    if (capP > 0.5) at(px, py - 118, pop(t, 0, 1) * eOut(clamp((capP - 0.5) * 2)), 0, () => pill(capLabel, 0, 0, 32, WHITE, INK, { lw: 5 }));
+    const side = s.cap[0] > 0.55 ? -1 : 1, lw = tw(capLabel, 34) + 40;
+    if (capP > 0.5) at(px + side * (lw / 2 + 34), py - 52, eOut(clamp((capP - 0.5) * 2)), 0, () => pill(capLabel, 0, 0, 34, WHITE, INK, { lw: 5 }));
   }
 }
 function questionCard(t, k, slide) {
@@ -73,25 +74,25 @@ function questionCard(t, k, slide) {
   const q = L['q' + k], a = L['a' + k];
   const revealed = t >= a.start - 0.05;
   ctx.save(); ctx.translate(slide * W, 0);
-  rr(50, 520, 980, 500, 40); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.stroke();
+  rr(50, 520, 980, 590, 40); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.stroke();
   txt(`FRAGE ${k}/10`, 100, 565, 30, '#b197fc', { align: 'left', weight: 900 });
   txt('Hauptstadt von …', 540, 600, 40, '#dee2e6', { weight: 800 });
   at(540, 675, pop(t, q.start - 0.1, 0.35), 0, () => txt(land, 0, 0, 104, WHITE, { stroke: 14, maxW: 900 }));
   const col = k >= 9 ? ['#ff8787', '#c92a2a'] : k >= 7 ? ['#ffc078', '#e8590c'] : k >= 4 ? ['#ffe066', '#f08c00'] : ['#8ce99a', '#2f9e44'];
-  at(0, 0, 1, 0, () => drawShape(iso, 540, 860, 520, 250, col, t, revealed ? prog(t, a.start, 0.45) : 0, opts[right]));
+  at(0, 0, 1, 0, () => drawShape(iso, 540, 905, 640, 330, col, t, revealed ? prog(t, a.start, 0.45) : 0, opts[right]));
   // Countdown
   const c0 = q.end + 0.05, c1 = a.start - 0.05;
   if (t >= c0 && t < c1 + 0.05) {
     const p = clamp((t - c0) / (c1 - c0));
     const n = Math.max(1, 3 - Math.floor(p * 3));
     at(930, 580, 1 + 0.15 * Math.exp(-(((t - c0) % ((c1 - c0) / 3)) * 10)), 0, () => { circ(0, 0, 50); fs(n === 1 ? RED : YELLOW, 6, INK); txt(String(n), 0, 3, 56, INK); });
-    rr(110, 1340, 860, 22, 11); ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fill();
+    rr(110, 1440, 860, 22, 11); ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fill();
     const bc = p < 0.5 ? '#40c057' : p < 0.8 ? YELLOW : RED;
-    rr(110, 1340, Math.max(22, 860 * (1 - p)), 22, 11); ctx.fillStyle = bc; ctx.fill();
+    rr(110, 1440, Math.max(22, 860 * (1 - p)), 22, 11); ctx.fillStyle = bc; ctx.fill();
   }
   // Antworten
   opts.forEach((o, i) => {
-    const y = 1060 + i * 92;
+    const y = 1140 + i * 96;
     const appear = pop(t, q.start + 0.05 + i * 0.07, 0.3);
     const isRight = i === right;
     let bg = '#ffffff', fg = INK, sc = 1;
@@ -121,7 +122,7 @@ function banner(t, id, text, col) {
 }
 function intro(t) {
   const go = C('go');
-  const outP = eIn(prog(t, go - 0.1, 0.3));
+  const outP = eIn(prog(t, T('q1') - 0.32, 0.22));
   alpha(1 - outP, () => {
     at(540, 760, 1.04 - 0.04 * eOut(prog(t, 0, 0.8)) + 0.03 * beatPulse(t), 0, () => {
       txt('10 FRAGEN', 0, -120, 150, WHITE, { stroke: 18 });
@@ -150,7 +151,7 @@ window.renderFrame = function (t) {
   qbg(t, k >= 8);
   header(t);
   if (k === 0) intro(t);
-  else {
+  else if (t < C('outro') + 0.2) {
     const a = L['a' + k];
     progressDots(t, k, t >= a.start - 0.05);
     const slideIn = 1 - eOut(prog(t, T('q' + k) - 0.12, 0.3));
