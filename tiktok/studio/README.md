@@ -9,6 +9,8 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `katzewissen1` | Speicher-Video „5 Katzen-Signale, die du kennen musst“ | Blinzeln, Schwanz hoch, Bauch, Treteln, Köpfchen | 17 s |
 | `philo1`–`philo3` | Philosophie-Serie im Stil griechischer Vasenmalerei (`antik.js`, Lyra-Musik) | Diogenes, Epiktet, Schiff des Theseus | je ~60 s |
 | `hist1`, `hist2` | Geschichte, Zweiteiler mit Cliffhanger (`see.js`, Drama-Musik) | Titanic-Bäcker Charles Joughin → Violet Jessop „die Unsinkbare“ | ~75 s |
+| `comedy1` | Archivfilm-Comedy „Lehrfilm 1950 – ehrlich synchronisiert“ (gemeinfreier Prelinger-Film, `film_cut.py`) | Familienessen | ~56 s |
+| `sk1`–`sk5` | Animierte Sketche nach Nutzer-Skript (`sitcom.js`) | Ein letztes Mal, Die Hölle hat sich verändert, Gemeinsame Interessen, Omas Lieblingsenkel, Bis dass der Tod uns scheidet | 13–21 s |
 | `baum1` | Trend „Tag 1 vs. später“ | Weihnachtsbaum | ~26 s |
 | `emc1` | Wissenschaft | Herleitung E = mc² (Lichtkasten) | ~72 s |
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
@@ -30,6 +32,8 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `engine.js` | Gemeinsam: Primitive, Untertitel (Sprecher-Namen/-Farben per `EP_NAMES`/`EP_CAPCOL`), Mund pro Sprecher (`mouthOf`), Szenenwechsel, Dr. Gurke |
 | `build_audio.py` | Stimmen (Piper lokal oder ElevenLabs), Soundeffekte, Mix, `build/<folge>/timeline.js` |
 | `storylib.py` | Erzähl-Folgen: Zeilen mit Inline-Cues (`^name:sfx` vor einem Wort) und Erzähler-Stimmen |
+| `film_cut.py` | Schneidet Archivfilm passend zur Timeline (ein JPG pro Frame; Film vorher nach `build/` laden) |
+| `sitcom.js` | Sitcom-Figuren (stehend/sitzend, Geist, Teufel, Frisuren), Kamera-Zooms, Schnitte, Titel- und Endkarte |
 | `antik.js`, `see.js` | Zeichen-Baukästen: Vasenmalerei (Figuren, Pithos, Säulen, Galeere) bzw. Schiffe, Meer, Cartoon-Figuren |
 | `render.js` | Rendert Frames mit Playwright → ffmpeg |
 | `klartext.js` | Format KLARTEXT (eigener `renderFrame`); Texte/Farben pro Folge in `<folge>/scenes.js` (`window.KT`) |
