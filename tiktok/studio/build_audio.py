@@ -470,6 +470,30 @@ def sfx(kind):
     if kind == 'ghost':
         d = 1.6; t = tt(d); f = 420 + 120 * np.sin(2 * np.pi * 0.8 * t) + 15 * np.sin(2 * np.pi * 6 * t)
         return 0.18 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / d) + 0.05 * bandnoise(d, 300, 3000, 71) * np.sin(np.pi * t / d)
+    if kind == 'hupe':  # fröhliche Doppelhupe
+        y = np.zeros(int(0.6 * SR))
+        for a in (0.0, 0.22):
+            t = tt(0.16); c = 0.3 * sum(np.sign(np.sin(2 * np.pi * f * t)) for f in (440, 554)) * np.minimum(1, (0.16 - t) * 60) * np.minimum(1, t * 200)
+            c = np.convolve(c, np.ones(12) / 12, 'same'); i = int(a * SR); y[i:i + len(c)] += c
+        return y
+    if kind == 'siren':
+        d = 1.6; t = tt(d); f = np.where((t * 2.5).astype(int) % 2 == 0, 740, 560)
+        return 0.16 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.minimum(1, t * 8) * np.minimum(1, (d - t) * 6)
+    if kind == 'engine':
+        d = 1.2; t = tt(d); f = 55 + 40 * np.minimum(1, t / 0.6)
+        return 0.35 * np.convolve(np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)), np.ones(40) / 40, 'same') * np.minimum(1, t * 10) * np.minimum(1, (d - t) * 5)
+    if kind == 'spray':
+        d = 1.8; t = tt(d); return 0.3 * bandnoise(d, 1500, 9000, 81) * np.minimum(1, t * 10) * np.minimum(1, (d - t) * 4)
+    if kind == 'squish':
+        d = 0.5; t = tt(d); return 0.5 * bandnoise(d, 100, 1200, 82) * np.exp(-t * 7) + 0.3 * np.sin(2 * np.pi * (180 - 120 * t) * t) * np.exp(-t * 8)
+    if kind == 'spin':  # Räder drehen durch
+        d = 1.4; t = tt(d); f = 300 + 80 * np.sin(2 * np.pi * 7 * t)
+        return 0.2 * np.sin(2 * np.pi * np.cumsum(f) / SR) * (0.6 + 0.4 * np.sign(np.sin(2 * np.pi * 14 * t))) + 0.25 * bandnoise(d, 300, 3000, 83) * np.abs(np.sin(2 * np.pi * 7 * t))
+    if kind == 'sparkle':
+        y = np.zeros(int(1.0 * SR))
+        for i, f in enumerate([1568, 2093, 2637, 3136]):
+            t = tt(0.4); c = 0.15 * np.sin(2 * np.pi * f * t) * np.exp(-t * 9); a = int(i * 0.07 * SR); y[a:a + len(c)] += c
+        return y
     if kind == 'pluck':  # Lyra-Akkord
         y = np.zeros(int(1.6 * SR))
         for i, f in enumerate([146.8, 220.0, 293.7, 349.2]):
@@ -563,6 +587,26 @@ def music_romance(total, bpm, n):
     return y
 
 
+def music_kids(total, bpm, n):
+    """Verspielt: Marimba-Melodie, Pizzicato-Bass, Holzblock und Shaker in C-Dur."""
+    beat = 60.0 / bpm; y = np.zeros(n)
+    def add(sig, t0):
+        a = int(t0 * SR)
+        if 0 <= a < n: y[a:a + len(sig)] += sig[:n - a]
+    mel = [72, 76, 79, 76, 74, 77, 81, 77, 72, 76, 79, 84, 83, 79, 74, 79]
+    bass = [48, 55, 50, 57, 53, 55, 48, 43]
+    for b in range(int(total / beat * 2) + 1):
+        tb = b * beat / 2; f = 440 * 2 ** ((mel[b % 16] - 69) / 12)
+        if b % 16 not in (7, 15):
+            t = tt(0.4); add(0.11 * (np.sin(2 * np.pi * f * t) + 0.35 * np.sin(2 * np.pi * f * 4 * t) * np.exp(-t * 30)) * np.exp(-t * 9) * np.minimum(1, t * 400), tb)
+        if b % 2 == 0:
+            fb = 440 * 2 ** ((bass[(b // 2) % 8] - 69) / 12); t = tt(0.3)
+            add(0.22 * np.sin(2 * np.pi * fb * t) * np.exp(-t * 10) * np.minimum(1, t * 300), tb)
+        if b % 4 == 2: t = tt(0.06); add(0.18 * np.sin(2 * np.pi * 1200 * t) * np.exp(-t * 80), tb)
+        add(0.04 * bandnoise(0.06, 5000, 12000, 90 + b % 3) * np.exp(-tt(0.06) * 50), tb)
+    return y
+
+
 def music_drama(total, bpm, n):
     """Dramatisch: Klavier-Arpeggien in d-Moll über Streicherfläche."""
     beat = 60.0 / bpm; y = np.zeros(n); tN = np.arange(n) / SR
@@ -646,7 +690,7 @@ def main():
             cues[c['name']] = c['t']
             if c['sfx']:
                 s = sfx(c['sfx'])
-                off = -0.05 if c['sfx'] in ('stamp', 'pop', 'tick', 'ding', 'tada', 'boing', 'smash', 'splash', 'boom', 'pluck', 'crack', 'recscratch', 'rimshot', 'click', 'doorbell', 'slam') else -0.15
+                off = -0.05 if c['sfx'] in ('stamp', 'pop', 'tick', 'ding', 'tada', 'boing', 'smash', 'splash', 'boom', 'pluck', 'crack', 'recscratch', 'rimshot', 'click', 'doorbell', 'slam', 'hupe', 'squish', 'sparkle') else -0.15
                 if c['sfx'] == 'drum':
                     off = 0.0
                 a = max(0, int((c['t'] + off) * SR)); fx[a:a + len(s)] += s[:max(0, n - a)]
@@ -669,7 +713,7 @@ def main():
     # Ende der Gurken-Zeilen + Szenengrenzen
     mix = voiceN + voiceG + 0.55 * fx
     if MUSIC:
-        mus = {'lyra': music_lyra, 'drama': music_drama, 'retro': music_retro, 'organ': music_organ, 'romance': music_romance}.get(MUSIC.get('style'), make_music)(total, MUSIC.get('bpm', 100), n)
+        mus = {'lyra': music_lyra, 'drama': music_drama, 'retro': music_retro, 'organ': music_organ, 'romance': music_romance, 'kids': music_kids}.get(MUSIC.get('style'), make_music)(total, MUSIC.get('bpm', 100), n)
         v = np.abs(voiceN + voiceG)
         k = int(0.08 * SR)
         env = np.convolve(v, np.ones(k) / k, mode='same')
