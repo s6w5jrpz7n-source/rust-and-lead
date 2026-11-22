@@ -24,3 +24,4 @@ LINES = [
     L('v12', '^cta:whoosh_s Wärst du nach der Titanic noch mal auf ein Schiff gestiegen? Schreib’s in die Kommentare.', H, gap=2.0),
 ]
 SCENES = ['s']
+next(l for l in LINES if l['id'] == 'v4')['seed'] = 7  # neuer Take: „Unglück zwei“ war undeutlich
