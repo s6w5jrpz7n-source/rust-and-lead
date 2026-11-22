@@ -179,11 +179,11 @@ function child(x, y, s, o = {}) { fig(x, y, s * 0.62, Object.assign({ beard: fal
 function ground(y) { seg(40, y, 1040, y, 6, BLK); for (let x = 60; x < 1040; x += 90) seg(x, y + 14, x + 40, y + 14, 3, TERRA_D); }
 /* Szenenumschalter: [[zeilenId oder Zeit, fn]], fn(t, lt) */
 function sceneAt(t, list) {
-  let cur = list[0], st = 0;
-  for (const it of list) { const s0 = typeof it[0] === 'number' ? it[0] : T(it[0]) - 0.12; if (t >= s0) { cur = it; st = s0; } }
-  const lt = t - st;
-  cur[1](t, lt);
-  if (lt < 0.25 && st > 0) alpha(1 - lt / 0.25, () => { ctx.fillStyle = TERRA; ctx.fillRect(0, 430, W, 820); });
+  const st = list.map((it, i) => i === 0 ? 0 : (typeof it[0] === 'number' ? it[0] : T(it[0]) - 0.12));
+  let ci = 0; st.forEach((s, i) => { if (t >= s) ci = i; });
+  list[ci][1](t, t - st[ci]);
+  const lt = t - st[ci], D = 0.35;
+  if (ci > 0 && lt < D) alpha(1 - eIO(lt / D), () => { ctx.fillStyle = TERRA; ctx.fillRect(0, 432, W, 830); list[ci - 1][1](t, t - st[ci - 1]); });
 }
 function chainIcon(x, y, s, broken = 0) {
   at(x, y, s, 0, () => {

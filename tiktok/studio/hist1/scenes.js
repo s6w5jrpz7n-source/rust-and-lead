@@ -144,6 +144,11 @@ const SCN = [['j1', hook], ['j2', intro], ['j3', eis], ['j4', boot], ['j5', kabi
 window.renderFrame = function (t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
   sceneAtH(t, SCN);
+  const ec = prog(t, E('j12') + 0.4, 0.5);
+  if (ec > 0) {
+    alpha(ec * 0.93, () => { ctx.fillStyle = '#050b16'; ctx.fillRect(0, 0, W, H); });
+    at(540, 760, pop(t, E('j12') + 0.4, 0.45), 0, () => { pill('FORTSETZUNG FOLGT', 0, -60, 44, GOLDH, OUT, { lw: 0 }); stxtH('Teil 2: „die Unsinkbare“', 0, 50, 64, PAPER, { stroke: 10 }); stxtH('jetzt auf meinem Profil ▶', 0, 140, 44, PAPER, { stroke: 8 }); });
+  }
   grain(t);
   headerH('GESCHICHTE · TEIL 1', 'Der betrunkene Bäcker der Titanic');
   drawCaptions(t);

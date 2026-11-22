@@ -193,8 +193,9 @@ function deckChair(x, y, s, rot) {
   at(x, y, s, rot, () => { seg(-50, 30, 40, -40, 10, '#8d5524'); seg(-50, -10, 50, 30, 10, '#8d5524'); seg(40, -40, 60, -10, 8, '#8d5524'); });
 }
 function sceneAtH(t, list) {
-  let cur = list[0], st = 0;
-  for (const it of list) { const s0 = typeof it[0] === 'number' ? it[0] : T(it[0]) - 0.12; if (t >= s0) { cur = it; st = s0; } }
-  cur[1](t, t - st);
-  if (t - st < 0.22 && st > 0) alpha(1 - (t - st) / 0.22, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
+  const st = list.map((it, i) => i === 0 ? 0 : (typeof it[0] === 'number' ? it[0] : T(it[0]) - 0.12));
+  let ci = 0; st.forEach((s, i) => { if (t >= s) ci = i; });
+  list[ci][1](t, t - st[ci]);
+  const lt = t - st[ci], D = 0.35;  // weiche Überblendung statt Schwarzblende
+  if (ci > 0 && lt < D) alpha(1 - eIO(lt / D), () => list[ci - 1][1](t, t - st[ci - 1]));
 }

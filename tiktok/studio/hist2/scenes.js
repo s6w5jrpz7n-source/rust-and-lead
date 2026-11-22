@@ -150,6 +150,11 @@ const SCN = [['v1', hook], ['v2', name], ['v3', u1], ['v4', u2], ['v5', morgen],
 window.renderFrame = function (t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
   sceneAtH(t, SCN);
+  const ec = prog(t, E('v12') + 0.4, 0.5);
+  if (ec > 0) {
+    alpha(ec * 0.93, () => { ctx.fillStyle = '#050b16'; ctx.fillRect(0, 0, W, H); });
+    at(540, 760, pop(t, E('v12') + 0.4, 0.45), 0, () => { stxtH('ENDE', 0, -40, 110, GOLDH, { stroke: 12, weight: 900 }); stxtH('Teil 1 verpasst? → Profil', 0, 70, 46, PAPER, { stroke: 8 }); });
+  }
   grain(t);
   headerH('GESCHICHTE · TEIL 2', 'Die Frau, die nicht sinken wollte');
   drawCaptions(t);
