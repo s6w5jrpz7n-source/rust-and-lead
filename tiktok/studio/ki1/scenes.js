@@ -99,7 +99,7 @@ async function scene(t) {
     at(540, 1120, 1, 0, () => pill('🔊 KI-Sprachmodell (kostenlos)', 0, 0, 38, '#fff', INK, { lw: 0 }));
     if (t > C('musik')) for (let i = 0; i < 8; i++) { const u = ((t - C('musik')) * 0.8 + i / 8) % 1; alpha(Math.sin(u * Math.PI), () => emo(['🎵', '🎶', '💥', '🥁'][i % 4], 140 + i * 110, 1450 - u * 380, 60)); }
   } else if (id === 'ki7') {
-    bigText(t, L1.start, 'Schritt 4', 'Bild für Bild rendern');
+    bigText(t, L1.start, 'Schritt 4', 'Bild für Bild zum Video');
     const fw = 260, fh = 462, off = (lt * 340) % (fw + 30);
     ctx.fillStyle = '#111'; ctx.fillRect(0, 640, W, fh + 80);
     for (let i = -1; i < 6; i++) {
@@ -122,7 +122,7 @@ async function scene(t) {
       rr(-150, -300, 300, 420, 20); ctx.fillStyle = '#2b2b33'; ctx.fill(); txt('🎬', 0, -100, 90, '#fff');
       const press = t > pst && t < pst + 0.25 ? 0.92 : 1; at(0, 300, press, 0, () => { rr(-170, -50, 340, 100, 50); ctx.fillStyle = '#fe2c55'; ctx.fill(); txt('Posten', 0, 3, 44, '#fff'); }); });
     bigText(t, L1.start, 'Komplett ohne Arbeit?', null);
-    if (t > C('fast')) bigText(t, C('fast'), '', 'Fast. 😅', 410);
+    if (t > C('fast')) at(540, 400, pop(t, C('fast'), 0.35), -0.04, () => txt('Fast. 😅', 0, 0, 60, CORAL, { stroke: 12, sc: DARK }));
     if (t > pst - 0.4) { const u = eOut(prog(t, pst - 0.4, 0.4)); emo('👆', PX + 60, lerp(1500, PY + 330, u), 110); }
   } else {
     const im = await clipFrame('auto', lt);

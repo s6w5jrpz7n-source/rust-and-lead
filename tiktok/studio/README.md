@@ -13,6 +13,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `sk1`–`sk5` | Animierte Sketche nach Nutzer-Skript (`sitcom.js`) | Ein letztes Mal, Die Hölle hat sich verändert, Gemeinsame Interessen, Omas Lieblingsenkel, Bis dass der Tod uns scheidet | 13–21 s |
 | `iw1` | Parodie „Wie Infinity War hätte enden sollen“ (eigene Cartoon-Figuren, keine Filmbilder/-musik) | Titan-Szene: Handschuh ab, bevor Star-Lord zuschlägt | ~46 s |
 | `auto1` | Kinder-Serie „Die Rettungsflitzer“ (eigene Auto-Figuren, `autos.js`, verspielte Musik) | Folge 1: Flitzi steckt fest | ~44 s |
+| `ki1` | KI-Video „Ich lasse eine KI meine TikToks machen“ (Ausschnitte eigener Videos via `ki1/clips.py`) | Hinter den Kulissen dieses Studios | ~53 s |
 | `baum1` | Trend „Tag 1 vs. später“ | Weihnachtsbaum | ~26 s |
 | `emc1` | Wissenschaft | Herleitung E = mc² (Lichtkasten) | ~72 s |
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |

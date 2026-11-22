@@ -19,7 +19,7 @@ const path = require('path');
     const times = arg[0].split(',').map(Number);
     const dir = path.join(__dirname, 'stills', ep); require('fs').mkdirSync(dir, { recursive: true });
     for (const t of times) {
-      await page.evaluate(t => window.renderFrame(t), t);
+      await page.evaluate(async t => { await window.renderFrame(t); }, t);
       await canvas.screenshot({ path: path.join(dir, `t_${t.toFixed(2)}.png`) });
     }
   } else {
