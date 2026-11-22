@@ -11,6 +11,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `hist1`, `hist2` | Geschichte, Zweiteiler mit Cliffhanger (`see.js`, Drama-Musik) | Titanic-Bäcker Charles Joughin → Violet Jessop „die Unsinkbare“ | ~75 s |
 | `comedy1` | Archivfilm-Comedy „Lehrfilm 1950 – ehrlich synchronisiert“ (gemeinfreier Prelinger-Film, `film_cut.py`) | Familienessen | ~56 s |
 | `sk1`–`sk5` | Animierte Sketche nach Nutzer-Skript (`sitcom.js`) | Ein letztes Mal, Die Hölle hat sich verändert, Gemeinsame Interessen, Omas Lieblingsenkel, Bis dass der Tod uns scheidet | 13–21 s |
+| `iw1` | Parodie „Wie Infinity War hätte enden sollen“ (eigene Cartoon-Figuren, keine Filmbilder/-musik) | Titan-Szene: Handschuh ab, bevor Star-Lord zuschlägt | ~46 s |
 | `baum1` | Trend „Tag 1 vs. später“ | Weihnachtsbaum | ~26 s |
 | `emc1` | Wissenschaft | Herleitung E = mc² (Lichtkasten) | ~72 s |
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
