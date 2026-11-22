@@ -20,10 +20,12 @@ LINES = [
     L('n7', '^tot:sting Und dass der Hund gestern gestorben ist.', 'I', gap=0.5),
     L('n8', '^lw:rimshot An Langeweile.', 'I', gap=0.6),
     L('n9', '^pudel:boing Er stand da wie ein vollgeschissener Pudel und hat nur Hä gesagt.', 'I', gap=0.4),
-    L('n10', '^bro:pop Keine Sorge, Bro. Du bist immer noch der Nice Guy. ^niemand:stamp Nur halt der, den niemand will.', 'I', gap=0.5),
+    L('n10', '^bro:pop Keine Sorge, Bro. Du bist immer noch der {Nice Guy.|Neis Gai.} ^niemand:stamp Nur halt der, den niemand will.', 'I', gap=0.5),
     L('n11', '^weg:whoosh Dann bin ich gegangen. ^schrei:hit Er hat hinter mir hergeschrien.', 'I', gap=0.3),
     L('n12', '^finger:pop Ich hab nur den Mittelfinger gehoben und gedacht:', 'I', gap=0.35),
     L('n13', '^fried:drone Manche Menschen sind so nutzlos, ^ablehn:stamp dass selbst der Friedhof sie ablehnen würde.', 'I', gap=2.0),
 ]
 SCENES = ['s']
 EXPORT = dict(names={'K': 'KOLLEGE'})
+for _id, _seed in (('k2', 3), ('n4', 3)):
+    next(l for l in LINES if l['id'] == _id)['seed'] = _seed  # neue Takes: undeutlich bzw. Nachklang
