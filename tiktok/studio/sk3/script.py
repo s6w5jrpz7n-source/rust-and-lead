@@ -9,7 +9,7 @@ SPEAKERS = {
 }
 MUSIC = dict(style='romance', bpm=84, gain=0.3, stop='d4')
 LINES = [
-    L('d1', '^start:pop Ich schlafe jeden Abend mit {True-Crime-Podcasts|Tru-Kreim-Podcasts} ein.', 'F', gap=0.45),
+    L('d1', '^start:pop Ich schlafe jeden Abend mit {True-Crime-Podcasts|Truu-Kraim-Podcasts} ein.', 'F', gap=0.45),
     L('d2', '^cut:click Ich höre die auch. Aber diese Recherchefehler nerven.', 'M', gap=0.4),
     L('d3', 'Was für Fehler?', 'F', gap=0.7),
     L('d4', '^zwei:sting Bei mir haben sie zwei vergessen.', 'M', gap=1.5),
@@ -17,3 +17,4 @@ LINES = [
 ]
 SCENES = ['s']
 EXPORT = dict(names={'F': 'SIE', 'M': 'ER'})
+next(l for l in LINES if l['id'] == 'd3')['seed'] = 5  # neuer Take: „Was für Fehler?“ war undeutlich
