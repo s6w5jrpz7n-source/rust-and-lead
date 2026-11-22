@@ -18,7 +18,7 @@ function hook(t, lt) {
   swimJ(540, WY, 1.0, t, { eye: t > C('betr') ? 'drunk' : 'open', blush: t > C('betr') });
   thermo(170, 760, '−2 °C', pop(t, 0.4, 0.4));
   clockH(900, 700, 2 * clamp((t - 0.4) / 3.5), pop(t, 0.6, 0.4), '2 Std.');
-  if (t >= C('betr') - 0.05) { const b = Math.sin(t * 3) * 8; at(790, WY - 10 + b, pop(t, C('betr') - 0.05, 0.35), 0.5, () => heldItem('bottle', 0, 0)); at(380, 640, pop(t, C('betr'), 0.3), -0.1, () => stxtH('hicks!', 0, 0, 56, PAPER, { stroke: 8 })); }
+  if (t >= C('betr') - 0.05) { const b = Math.sin(t * 3) * 8; at(790, WY - 10 + b, pop(t, C('betr') - 0.05, 0.35), 0.5, () => heldItem('bottle', 0, 0)); if (!TL.cues.sagt || t < C('sagt') - 0.05) at(380, 640, pop(t, C('betr'), 0.3), -0.1, () => stxtH('hicks!', 0, 0, 56, PAPER, { stroke: 8 })); }
   stampH('ÜBERLEBT', 540, 520, prog(t, C('ueber') - 0.05, 0.3), '#69db7c', -0.08, 84);
   if (TL.cues.sagt && t >= C('sagt') - 0.05) tag('… sagt er zumindest.', 560, 650, pop(t, C('sagt') - 0.05, 0.35), { rot: 0.05, size: 36 });
 }
