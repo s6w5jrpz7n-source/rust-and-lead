@@ -8,19 +8,18 @@ function crackLines(x, y, p) { alpha(p, () => { for (let i = 0; i < 8; i++) { co
 
 function hook(t, lt) {
   ground(GY);
-  const kn = C('knack'), broken = t >= kn;
+  const kn = C('knack'), broken = t >= kn, tw = t > T('e1') + 0.4 && !broken;
   stool(330);
-  // Epiktet sitzt, Bein nach vorn gestreckt
-  fig(300, GY, 1.0, Object.assign({}, EPI, { pose: 'sit', legOut: broken ? 60 : 30 + 15 * Math.sin(t * 6) * (t > T('e1') + 0.4 ? 1 : 0), aF: [1.0, 1.2], eye: 'calm', mouth: 0 }));
-  if (broken) { seg(410, GY - 140, 470, GY - 20, 30, BLK); }
-  // Herr (größer, purpur), greift nach dem Fuß
-  fig(700, GY, 1.15, { dir: -1, beard: 'short', robe: PURP, aF: [2.2, 0.9], aB: [2.0, 1.2], eye: broken ? 'wide' : 'open' });
-  if (!broken && t > T('e1') + 0.4) for (let i = 0; i < 2; i++) { const a = t * 5 + i * Math.PI; P(); ctx.arc(460, GY - 60, 70, a, a + 1.6); ctx.lineWidth = 7; ctx.strokeStyle = CREAM; ctx.stroke(); }
-  if (t >= C('ruhig') - 0.05 && !broken) sbubble(['Wenn du so weitermachst,', 'brichst du es.'], 400, 640, pop(t, C('ruhig') - 0.05, 0.4), { size: 46, tail: -80, tdx: -20 });
+  // Epiktet sitzt, Bein wird hochgehalten und verdreht
+  fig(300, GY, 1.0, Object.assign({}, EPI, { pose: 'sit', legOut: broken ? 70 : 140, footY: broken ? -20 : -120, aF: [1.0, 1.2], eye: 'calm', mouth: 0 }));
+  // Herr (größer, purpur), beugt sich vor und hält den Fuß
+  at(730, GY, 1, broken ? -0.15 : -0.35, () => fig(0, 0, 1.15, { dir: -1, beard: 'short', robe: PURP, aF: broken ? [0.3, 0.2] : [0.55, 0.25], aB: broken ? [0.1, 0.2] : [0.45, 0.35], eye: broken ? 'wide' : 'open' }));
+  if (tw) for (let i = 0; i < 2; i++) { const a = t * 5 + i * Math.PI; P(); ctx.arc(560, GY - 120, 62, a, a + 1.6); ctx.lineWidth = 7; ctx.strokeStyle = CREAM; ctx.stroke(); }
+  if (t >= C('ruhig') - 0.05 && !broken) sbubble(['Wenn du so weitermachst,', 'brichst du es.'], 380, 620, pop(t, C('ruhig') - 0.05, 0.4), { size: 46, tail: -80, tdx: -20 });
   if (broken) {
-    crackLines(470, GY - 80, 1 - prog(t, kn + 0.4, 0.4));
-    at(700, 560, pop(t, kn - 0.05, 0.3), 0.1, () => stxt('KNACK!', 0, 0, 96, CREAM, { stroke: 14 }));
-    if (t >= C('gesagt') - 0.05) sbubble('Hab ich doch gesagt.', 380, 700, pop(t, C('gesagt') - 0.05, 0.4), { size: 50, tail: -80, tdx: -20 });
+    crackLines(500, GY - 60, 1 - prog(t, kn + 0.4, 0.4));
+    at(760, 540, pop(t, kn - 0.05, 0.3), 0.1, () => stxt('KNACK!', 0, 0, 96, CREAM, { stroke: 14 }));
+    if (t >= C('gesagt') - 0.05) sbubble('Hab ich doch gesagt.', 360, 680, pop(t, C('gesagt') - 0.05, 0.4), { size: 50, tail: -80, tdx: -20 });
   }
 }
 function intro(t, lt) {
@@ -36,8 +35,7 @@ function intro(t, lt) {
 function frei(t, lt) {
   ground(GY);
   for (let i = 0; i < 5; i++) column(150 + i * 195, GY, 600, 0.75);
-  rr(60, GY - 640, 960, 70, 6); fs(CREAM, 5, BLK); stxt('STOA', 540, GY - 604, 44, BLK, { ls: 16 });
-  fig(420, GY, 1.0, Object.assign({}, EPI, { hold: 'staff', aF: [0.9, 0.6], aB: [1.6, -0.6], eye: 'open', mouth: 0.3 * (Math.sin(t * 9) > 0.3) }));
+  fig(420, GY, 1.0, Object.assign({}, EPI, { hold: 'staff', aF: [1.5, 0.3], aB: [0.2, 0.3], eye: 'open', mouth: 0.3 * (Math.sin(t * 9) > 0.3) }));
   child(700, GY, 1.1, { pose: 'sit', dir: -1, eye: 'open' }); child(860, GY, 1.1, { pose: 'sit', dir: -1, eye: 'open', robe: PURP });
   const br = eOut(prog(t, C('frei'), 0.6));
   if (br < 1) chainIcon(540, 760, 0.7, br);
@@ -60,7 +58,7 @@ function macht(t, lt) {
   const drop = (list, x, dark) => list.forEach(([cue, e, label], i) => {
     if (!TL.cues[cue] || t < C(cue) - 0.08) return;
     const p = eOut(prog(t, C(cue) - 0.08, 0.35)), y = lerp(480, 720 + i * 170, p);
-    alpha(clamp(p * 2), () => { emoji(e, x - 120, y, 84); stxt(label, x + 50, y + 4, label.length > 12 ? 30 : 40, dark ? CREAM : BLK, { maxW: 250 }); });
+    alpha(clamp(p * 2), () => { emoji(e, x - 150, y, 80); stxt(label, x + 45, y + 4, 40, dark ? CREAM : BLK, { maxW: 270 }); });
   });
   drop(ITEMS_J, 290, false); drop(ITEMS_N, 790, true);
 }

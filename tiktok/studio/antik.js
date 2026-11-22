@@ -81,7 +81,7 @@ function fig(x, y, s, o = {}) {
     const sw = pose === 'walk' ? Math.sin(ph * Math.PI * 2) * 0.45 : 0.08;
     for (const k of [-1, 1]) { const a = sw * k, fx = Math.sin(a) * 200, fy = hipY + Math.cos(a) * 200; bl(0, hipY, fx, fy, 30); ell(fx + 22, fy - 4, 34, 12); ctx.fillStyle = BLK; ctx.fill(); }
   } else if (pose === 'sit') {
-    bl(0, hipY, 110, hipY + 10, 34); bl(110, hipY + 10, 120 + (o.legOut || 0), -10, 30); ell(140 + (o.legOut || 0), -6, 32, 12); ctx.fillStyle = BLK; ctx.fill();
+    const fy = o.footY ?? -10; bl(0, hipY, 110, hipY + 10, 34); bl(110, hipY + 10, 120 + (o.legOut || 0), fy, 30); ell(140 + (o.legOut || 0), fy + 4, 32, 12); ctx.fillStyle = BLK; ctx.fill();
   }
   if (o.cloak) { P(); ctx.moveTo(-20, -350); ctx.quadraticCurveTo(-140 - Math.sin(ph * 6) * 10, -250, -110, -110); ctx.lineTo(-30, -130); ctx.closePath(); ctx.fillStyle = o.cloak; ctx.fill(); }
   // Gewand (Chiton/Himation)

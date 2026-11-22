@@ -54,10 +54,10 @@ function you(x, y, s, label, o = {}) {
 }
 function hook(t, lt) {
   ground(GY);
-  you(300, GY - 40, 0.8, 'du, vor 10 Jahren', { robe: TERRA_D });
-  you(760, GY - 40, 1.05, 'du, heute', { robe: BLK });
+  you(290, GY - 40, 1.0, 'du, vor 10 Jahren', { robe: TERRA_D });
+  you(770, GY - 40, 1.25, 'du, heute', { robe: BLK });
   at(530, 900, pop(t, 0.5, 0.4), 0, () => stxt('= ?', 0, 0, 120, CREAM, { stroke: 12 }));
-  if (t >= C('raetsel') - 0.05) at(540, 560, pop(t, C('raetsel') - 0.05, 0.4), 0, () => pill('ein 2.400 Jahre altes Rätsel', 0, 0, 38, BLK, GOLD, { lw: 0 }));
+  if (t >= C('raetsel') - 0.05) at(540, 480, pop(t, C('raetsel') - 0.05, 0.4), 0, () => pill('ein antikes Rätsel', 0, 0, 38, BLK, GOLD, { lw: 0 }));
 }
 function fahrt(t, lt) {
   temple(880, 1000, 0.8 * pop(t, T('t2') + 1.2, 0.5));
@@ -73,20 +73,20 @@ function museum(t, lt) {
   for (const k of [-1, 1]) { P(); ctx.moveTo(540 + k * 220 - 60, GY); ctx.lineTo(540 + k * 220, GY - 120); ctx.lineTo(540 + k * 220 + 60, GY); ctx.closePath(); fs(CREAM, 5, BLK); }
   galley(540, GY - 150, 0.95, { t: 0, oars: false, planks: planksAt(t), rot2: TL.cues.morsch && t > C('morsch') ? clamp((t - C('morsch')) * 2) : 0 });
   if (t < T('t4')) {
-    at(540, 520, pop(t, T('t3'), 0.4), 0, () => pill('aufbewahrt in Athen', 0, 0, 36, BLK, CREAM, { lw: 0 }));
-    if (t >= C('jahre') - 0.05) at(540, 610, pop(t, C('jahre') - 0.05, 0.4), 0, () => stxt('Jahrhundertelang ⏳', 0, 0, 56, CREAM, { stroke: 10 }));
-  } else pct(t, 540, 520);
+    at(540, 480, pop(t, T('t3'), 0.4), 0, () => pill('aufbewahrt in Athen', 0, 0, 36, BLK, CREAM, { lw: 0 }));
+    if (t >= C('jahre') - 0.05) at(540, 570, pop(t, C('jahre') - 0.05, 0.4), 0, () => stxt('Jahrhundertelang ⏳', 0, 0, 56, CREAM, { stroke: 10 }));
+  } else pct(t, 540, 480);
   // neue Planke fliegt ein
   for (const c of ['p1', 'p2', 'p3']) if (TL.cues[c] && t >= C(c) - 0.3 && t < C(c) + 0.3) { const u = prog(t, C(c) - 0.3, 0.3); at(lerp(1000, 540, u), lerp(560, GY - 150, u), 1, u * 3, () => { rr(-30, -60, 60, 120, 4); fs(NEWW, 4, BLK); }); }
   if (t >= T('t5')) {
-    if (t >= C('null') - 0.05 && planksAt(t).every(v => v)) at(840, 640, pop(t, T('t5') + 1.5, 0.3), -0.15, () => { rr(-120, -56, 240, 112, 12); fs(null, 10, PURP); stxt('0 %', 0, 4, 80, PURP); });
-    if (t >= C('frage') - 0.05) at(540, 690, pop(t, C('frage') - 0.05, 0.4), 0, () => stxt('Noch das Schiff des Theseus?', 0, 0, 54, CREAM, { stroke: 10 }));
+    if (t >= C('null') - 0.05 && planksAt(t).every(v => v)) at(880, 800, pop(t, T('t5') + 1.5, 0.3), -0.15, () => { rr(-120, -56, 240, 112, 12); fs(null, 10, PURP); stxt('0 %', 0, 4, 80, PURP); });
+    if (t >= C('frage') - 0.05) at(540, 572, pop(t, C('frage') - 0.05, 0.4), 0, () => stxt('Noch das Schiff des Theseus?', 0, 0, 54, CREAM, { stroke: 10 }));
   }
 }
 function zwei(t, lt) {
   const bt = C('b'), u = eOut(prog(t, T('t6'), 0.6));
-  at(540, 520, pop(t, T('t6') + 0.2, 0.4), 0, () => pill('Thomas Hobbes, 1655', 0, 0, 34, BLK, CREAM, { lw: 0 }));
-  galley(540, lerp(GY - 150, 760, u), lerp(0.95, 0.62, u), { t, oars: false, allNew: true });
+  if (!TL.cues.ab || t < C('ab') - 0.05) at(540, 475, pop(t, T('t6') + 0.2, 0.4), 0, () => pill('Thomas Hobbes, 1655', 0, 0, 34, BLK, CREAM, { lw: 0 }));
+  galley(540, lerp(GY - 150, 800, u), lerp(0.95, 0.62, u), { t, oars: false, allNew: true });
   ground(GY);
   if (t >= bt - 0.05) {
     const v = prog(t, bt, 1.4);
@@ -98,9 +98,9 @@ function zwei(t, lt) {
     if (v > 0.6) alpha(clamp((v - 0.6) * 3), () => galley(540, GY - 110, 0.62, { t, oars: false, mast: v > 0.9 }));
   }
   const lab = (c, x, y, s) => { if (TL.cues[c] && t >= C(c) - 0.05) at(x, y, pop(t, C(c) - 0.05, 0.35), 0, () => { circ(0, 0, 58); fs(GOLD, 8, BLK); stxt(s, 0, 4, 76, BLK); }); };
-  lab('a', 870, 700, 'A'); lab('bb', 870, GY - 160, 'B');
-  if (TL.cues.ab && t >= C('ab') - 0.05) at(300, 640, pop(t, C('ab') - 0.05, 0.4), -0.06, () => stxt('Welches ist echt?', 0, 0, 52, CREAM, { stroke: 10 }));
-  if (TL.cues.a && t >= C('a') - 0.05) { stxt('neue Planken', 540, 880, 30, BLK); }
+  lab('a', 870, 740, 'A'); lab('bb', 870, GY - 160, 'B');
+  if (TL.cues.ab && t >= C('ab') - 0.05) at(540, 478, pop(t, C('ab') - 0.05, 0.4), 0, () => stxt('Welches ist echt?', 0, 0, 56, CREAM, { stroke: 10 }));
+  if (TL.cues.a && t >= C('a') - 0.05) { stxt('neue Planken', 540, 900, 30, BLK); }
   if (TL.cues.bb && t >= C('bb') - 0.05) { stxt('alte Planken', 540, GY + 30, 30, BLK); }
 }
 /* Mensch mit Zellen */
@@ -115,7 +115,7 @@ function cells(x, y, s, t, t0, rate) {
 }
 function du(t, lt) {
   const t0 = T('t8') + 0.8;
-  cells(540, GY - 10, 1.0, t, t0, (E('t8') - t0) * 1.4);
+  cells(540, GY - 10, 0.9, t, t0, (E('t8') - t0) * 1.4);
   at(540, 470, pop(t, T('t8') + 0.2, 0.4), 0, () => pill('dein Körper', 0, 0, 36, BLK, CREAM, { lw: 0 }));
   if (t >= C('haut') - 0.05) at(840, 820, pop(t, C('haut') - 0.05, 0.4), 0.08, () => { rr(-150, -70, 300, 140, 20); fs(GOLD, 6, BLK); stxt('Haut:', 0, -26, 36, BLK); stxt('alle paar Wochen neu', 0, 24, 30, BLK, { maxW: 270 }); });
 }
@@ -123,14 +123,14 @@ function version(t, lt) {
   const g = t >= C('version') && t < C('version') + 0.35;
   const gx = g ? Math.sin(t * 90) * 14 : 0;
   ctx.save(); ctx.translate(gx, 0);
-  cells(330, GY - 10, 0.78, t, -99, 0); cells(750, GY - 10, 0.78, t, 99, 0);
+  cells(330, GY - 10, 0.7, t, -99, 0); cells(750, GY - 10, 0.7, t, 99, 0);
   ctx.restore();
   if (g) alpha(0.4, () => { ctx.fillStyle = '#00e5ff'; ctx.fillRect(0, 600 + Math.sin(t * 40) * 200, W, 30); ctx.fillStyle = '#ff2d75'; ctx.fillRect(0, 820 + Math.cos(t * 37) * 200, W, 22); });
   pill('DU 1.0', 330, GY + 30, 30, BLK, CREAM, { lw: 0 }); pill('DU 2.0', 750, GY + 30, 30, PURP, CREAM, { lw: 0 });
   if (TL.cues.erinn && t >= C('erinn') - 0.05) {
     const p = pop(t, C('erinn') - 0.05, 0.4);
-    at(540, 600, p, 0, () => { emoji('📸', -90, 0, 80); emoji('🧠', 0, 0, 80); emoji('💌', 90, 0, 80); });
-    at(540, 700, p, 0, () => stxt('gleiche Erinnerungen', 0, 0, 44, CREAM, { stroke: 8 }));
+    at(540, 515, p, 0, () => { emoji('📸', -90, 0, 70); emoji('🧠', 0, 0, 70); emoji('💌', 90, 0, 70); });
+    at(540, 600, p, 0, () => stxt('gleiche Erinnerungen', 0, 0, 44, CREAM, { stroke: 8 }));
   }
 }
 function cta(t, lt) {

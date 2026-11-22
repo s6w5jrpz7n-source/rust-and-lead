@@ -24,7 +24,7 @@ function name(t, lt) {
     ctx.save(); rr(-300, -360, 600, 560, 8); ctx.clip(); person(0, 560, 1.35, Object.assign({}, VI, { aF: [0.3, 0.4], eye: 'open' })); ctx.restore();
     stxtH('Violet Jessop', 0, 268, 58, OUT); stxtH('Stewardess · 1887 – 1971', 0, 336, 32, SEPIA);
   });
-  stampH('MISS UNSINKABLE', 600, 1130, prog(t, C('spitz') - 0.05, 0.3), '#c92a2a', -0.1, 60);
+  stampH('MISS UNSINKABLE', 560, 720, prog(t, C('spitz') - 0.05, 0.3), '#c92a2a', -0.1, 60);
 }
 function u1(t, lt) {
   const [sx, sy] = shakeAt(t, [C('crash')]);
@@ -102,12 +102,16 @@ function sog(t, lt) {
   daySky();
   // Wasser mit Querschnitt
   const wy = 880;
-  ctx.fillStyle = '#1864ab'; ctx.fillRect(0, wy, W, H);
-  // Heck + Schrauben
-  P(); ctx.moveTo(-40, 560); ctx.lineTo(380, 560); ctx.quadraticCurveTo(430, 760, 360, 1060); ctx.lineTo(-40, 1060); ctx.closePath(); fs('#f4f4f0', 6, OUT);
-  ctx.fillStyle = '#2b8a3e'; ctx.fillRect(-40, wy, 410, 180);
-  for (const [px, py] of [[400, 980], [330, 1120]]) at(px, py, 1, t * 9, () => { for (let k = 0; k < 3; k++) { ctx.rotate(Math.PI * 2 / 3); ell(0, -50, 22, 52); fs('#c9a227', 4, OUT); } circ(0, 0, 14); fs('#868e96', 4, OUT); });
-  seaSurface(wy, t, { c1: '#1c7ed6', c2: '#1864ab' });
+  seaSurface(wy, t, { c1: '#1c7ed6', c2: '#0b4a85' });
+  // Heck der Britannic (weiß, grünes Band, rotes Kreuz) + Schrauben
+  P(); ctx.moveTo(-40, 560); ctx.lineTo(380, 560); ctx.quadraticCurveTo(440, 760, 380, 1080); ctx.lineTo(-40, 1080); ctx.closePath(); fs('#f4f4f0', 6, OUT);
+  ctx.fillStyle = '#2f9e44'; ctx.fillRect(-40, 790, 405, 22);
+  for (let i = 0; i < 6; i++) { circ(20 + i * 60, 640, 8); ctx.fillStyle = '#495057'; ctx.fill(); }
+  rr(150, 670, 90, 90, 6); ctx.fillStyle = '#fff'; ctx.fill(); ctx.fillStyle = '#e03131'; ctx.fillRect(160, 702, 70, 26); ctx.fillRect(182, 680, 26, 70);
+  seg(390, 990, 450, 990, 10, '#868e96'); seg(350, 1130, 420, 1130, 10, '#868e96');
+  for (const [px, py] of [[460, 990], [430, 1130]]) at(px, py, 1, t * 9, () => { for (let k = 0; k < 3; k++) { ctx.rotate(Math.PI * 2 / 3); ell(0, -50, 22, 52); fs('#e0b12a', 4, OUT); } circ(0, 0, 14); fs('#868e96', 4, OUT); });
+  ctx.fillStyle = 'rgba(16,90,160,0.38)'; ctx.fillRect(0, wy + 4, W, H - wy);
+  for (let i = 0; i < 3; i++) { const u = (t * 1.2 + i / 3) % 1; alpha(1 - u, () => { seg(900 - u * 320, 940 + i * 60, 860 - u * 320, 940 + i * 60, 6, '#dbe4ff'); arrowHead(860 - u * 320, 940 + i * 60, Math.PI, 14, '#dbe4ff'); }); }
   // Boot wird angesogen
   const bx = lerp(900, 560, eIn(prog(t, T('v9'), Math.max(0.5, sp - T('v9') + 0.6))));
   lifeboat(bx, wy - 6, 0.9, { people: 3, rot: Math.sin(t * 6) * 0.06 });
@@ -122,7 +126,7 @@ function sog(t, lt) {
 }
 function ueberlebt(t, lt) {
   daySky(); seaSurface(1080, t, { c1: '#1c7ed6', c2: '#1864ab' });
-  clipAbove(1098, () => person(540, 1080 + 380, 1.3, Object.assign({}, VN, { role: 'woman', pose: 'swim', hairLong: true, hair: '#7a3b1e', aF: [2.2, 0.5], eye: 'open' })));
+  clipAbove(1098, () => person(540, 1080 + 380, 1.3, Object.assign({}, VN, { role: 'woman', coat: '#f8f9fa', pose: 'swim', hairLong: true, hair: '#7a3b1e', aF: [2.2, 0.5], eye: 'open' })));
   stampH('ÜBERLEBT', 540, 560, prog(t, C('ueberlebt') - 0.05, 0.3), '#2f9e44', -0.08, 84);
   if (t >= C('haare') - 0.05) tag('dicke Haare als Polster', 540, 700, pop(t, C('haare') - 0.05, 0.4), { size: 42, bg: GOLDH });
 }

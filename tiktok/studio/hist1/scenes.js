@@ -20,7 +20,7 @@ function hook(t, lt) {
   clockH(900, 700, 2 * clamp((t - 0.4) / 3.5), pop(t, 0.6, 0.4), '2 Std.');
   if (t >= C('betr') - 0.05) { const b = Math.sin(t * 3) * 8; at(790, WY - 10 + b, pop(t, C('betr') - 0.05, 0.35), 0.5, () => heldItem('bottle', 0, 0)); at(380, 640, pop(t, C('betr'), 0.3), -0.1, () => stxtH('hicks!', 0, 0, 56, PAPER, { stroke: 8 })); }
   stampH('ÜBERLEBT', 540, 520, prog(t, C('ueber') - 0.05, 0.3), '#69db7c', -0.08, 84);
-  if (TL.cues.sagt && t >= C('sagt') - 0.05) tag('… sagt er zumindest.', 700, 640, pop(t, C('sagt') - 0.05, 0.35), { rot: 0.05, size: 36 });
+  if (TL.cues.sagt && t >= C('sagt') - 0.05) tag('… sagt er zumindest.', 560, 650, pop(t, C('sagt') - 0.05, 0.35), { rot: 0.05, size: 36 });
 }
 function intro(t, lt) {
   nightSky(t); seaSurface(1000, t);
@@ -125,20 +125,20 @@ function morgen(t, lt) {
 }
 function alk(t, lt) {
   sky('#0a1220', '#1d2b3a');
-  at(540, 950, 1.9 * pop(t, T('j11'), 0.4), Math.sin(t * 2) * 0.08, () => heldItem('bottle', 0, 0));
+  at(540, 1000, 3.0 * pop(t, T('j11'), 0.4), Math.sin(t * 2) * 0.08, () => heldItem('bottle', 0, 0));
   tag('Alkohol = Rettung?', 540, 560, pop(t, C('alk') - 0.05, 0.4), { size: 50 });
   stampH('HISTORIKER ZWEIFELN', 540, 760, prog(t, C('mythos') - 0.05, 0.3), '#ff6b6b', -0.1, 58);
   if (t >= C('mythos') + 0.8 && t < C('raetsel')) tag('Alkohol → schneller unterkühlt', 540, 1180, pop(t, C('mythos') + 0.8, 0.4), { size: 34, bg: GOLDH });
   if (t >= C('raetsel') - 0.05) at(800, 960, pop(t, C('raetsel') - 0.05, 0.4), 0, () => stxtH('?', 0, 0, 260, GOLDH, { stroke: 14, weight: 900 }));
 }
 function teaser(t, lt) {
-  nightSky(t); seaSurface(1000, t);
+  nightSky(t); seaSurface(900, t);
   const ships = [['Olympic', {}], ['Titanic', {}], ['Britannic', { hull: 'white', crosses: true }]];
-  ships.forEach(([n, o], i) => { const x = 200 + i * 340; liner(x, 900 + i * 10, 0.28, Object.assign({ t, smoke: false }, o)); tag(n, x, 960 + i * 10, 1, { size: 26 });
-    if (TL.cues.drei && t >= C('drei') + i * 0.25) at(x, 720, pop(t, C('drei') + i * 0.25, 0.3), 0, () => stxtH('!', 0, 0, 90, '#ff6b6b', { stroke: 10, weight: 900 })); });
-  person(540, 1330, 1.0, { role: 'stew', eye: 'open', aF: [0.3, 0.6], hair: '#7a3b1e' });
-  if (TL.cues.teil2 && t >= C('teil2') - 0.05) { const p = pop(t, C('teil2') - 0.05, 0.45); at(540, 560, p, 0, () => { pill('TEIL 2 ▶', 0, 0, 56, GOLDH, OUT, { lw: 0 }); }); at(540, 660, p, 0, () => stxtH('„die Unsinkbare“', 0, 0, 56, PAPER, { stroke: 9, italic: true })); }
-  else tag('eine junge Stewardess …', 540, 560, pop(t, T('j12') + 1.0, 0.4), { size: 40 });
+  ships.forEach(([n, o], i) => { const x = 200 + i * 340; liner(x, 800, 0.28, Object.assign({ t, smoke: false }, o)); tag(n, x, 855, 1, { size: 26 });
+    if (TL.cues.drei && t >= C('drei') + i * 0.25) at(x, 660, pop(t, C('drei') + i * 0.25, 0.3), 0, () => stxtH('!', 0, 0, 90, '#ff6b6b', { stroke: 10, weight: 900 })); });
+  person(540, 1370, 0.92, { role: 'stew', eye: 'open', aF: [0.3, 0.6], hair: '#7a3b1e' });
+  if (TL.cues.teil2 && t >= C('teil2') - 0.05) { const p = pop(t, C('teil2') - 0.05, 0.45); at(540, 490, p, 0, () => { pill('TEIL 2 ▶', 0, 0, 56, GOLDH, OUT, { lw: 0 }); }); at(540, 575, p, 0, () => stxtH('„die Unsinkbare“', 0, 0, 56, PAPER, { stroke: 9, italic: true })); }
+  else tag('eine junge Stewardess …', 540, 520, pop(t, T('j12') + 1.0, 0.4), { size: 40 });
 }
 const SCN = [['j1', hook], ['j2', intro], ['j3', eis], ['j4', boot], ['j5', kabine], ['j6', stuehle], ['j7', heck], ['j8', kopf], ['j9', kalt], ['j10', morgen], ['j11', alk], ['j12', teaser]];
 window.renderFrame = function (t) {

@@ -132,7 +132,7 @@ function lifeboat(x, y, s, o = {}) {
 const SKINH = '#f1c9a5';
 function person(x, y, s, o = {}) {
   const d = o.dir || 1, role = o.role || 'man', fem = ['stew', 'nurse', 'woman'].includes(role);
-  const coat = { baker: '#f8f9fa', stew: '#22313f', nurse: '#f8f9fa', woman: '#7b4b94', man: '#3b4a5a', officer: '#1d2b3a' }[role];
+  const coat = o.coat || { baker: '#f8f9fa', stew: '#22313f', nurse: '#f8f9fa', woman: '#7b4b94', man: '#3b4a5a', officer: '#1d2b3a' }[role];
   ctx.save(); ctx.translate(x, y); ctx.scale(s * d, s);
   const limbC = (x1, y1, x2, y2, w, c) => { seg(x1, y1, x2, y2, w + 8, OUT); seg(x1, y1, x2, y2, w, c); };
   // Beine / Rock

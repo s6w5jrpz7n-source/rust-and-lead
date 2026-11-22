@@ -15,12 +15,12 @@ function alexFig(x, t, o = {}) {
 }
 
 function hook(t, lt) {
-  sunDisc(200, 560, 70, t, 1 - 0.7 * (t > C('sonne') ? 0 : 0));
+  sunDisc(930, 590, 62, t);
   ground(GY);
   shadowWedge(780, 1);
   dioLying(330, t, { eye: t > C('sonne') - 0.1 ? 'open' : 'calm' });
   alexFig(800, t, { aF: [1.3, 0.1], mouth: t < C('sonne') ? 0.4 * (Math.sin(t * 18) > 0) : 0 });
-  if (lt < C('sonne') - T('d1')) sbubble('Wünsch dir was!', 760, 610, pop(t, 0.3, 0.35), { tail: 40, tdx: 30 });
+  if (lt < C('sonne') - T('d1')) sbubble('Wünsch dir was!', 640, 630, pop(t, 0.3, 0.35), { tail: 40, tdx: 30 });
   if (t >= C('sonne') - 0.05) {
     sbubble(['Geh mir aus', 'der Sonne.'], 330, 760, pop(t, C('sonne') - 0.05, 0.4), { size: 58, tail: -40, tdx: -10 });
   }
@@ -89,18 +89,18 @@ function platon(t, lt) {
   }
 }
 function alex(t, lt) {
-  sunDisc(200, 560, 70, t);
+  sunDisc(930, 590, 62, t);
   ground(GY);
   const inn = eOut(prog(t, T('d7') + 0.2, 1.6));
   const ax = lerp(1250, 800, inn);
   if (inn > 0.4) shadowWedge(ax - 20, clamp((inn - 0.4) * 2));
   dioLying(330, t, { eye: 'calm' });
   alexFig(ax, t, { pose: inn < 1 ? 'walk' : 'stand', ph: t * 1.3, aF: t > C('wunsch') ? [1.4, 0.1] : [0.5, -0.6], mouth: t > C('wunsch') && t < E('d7') ? 0.4 * (Math.sin(t * 18) > 0) : 0 });
-  at(800, 470, pop(t, T('d7') + 0.6, 0.4), 0, () => pill('ALEXANDER DER GROSSE', 0, 0, 34, BLK, GOLD, { lw: 0 }));
-  if (t >= C('wunsch') - 0.05) sbubble(['Wünsch dir,', 'was du willst!'], 720, 640, pop(t, C('wunsch') - 0.05, 0.4), { tail: 60, tdx: 40 });
+  at(420, 480, pop(t, T('d7') + 0.6, 0.4), 0, () => pill('ALEXANDER DER GROSSE', 0, 0, 34, BLK, GOLD, { lw: 0 }));
+  if (t >= C('wunsch') - 0.05) sbubble(['Wünsch dir,', 'was du willst!'], 660, 650, pop(t, C('wunsch') - 0.05, 0.4), { tail: 60, tdx: 40 });
 }
 function aus(t, lt) {
-  sunDisc(200, 560, 70, t);
+  sunDisc(930, 590, 62, t);
   ground(GY);
   shadowWedge(780, 1);
   dioLying(330, t, { eye: t > C('blinz') + 0.2 ? 'open' : 'calm' });
@@ -108,7 +108,7 @@ function aus(t, lt) {
   if (t >= C('aus') - 0.05) sbubble(['Geh mir ein bisschen', 'aus der Sonne.'], 380, 760, pop(t, C('aus') - 0.05, 0.4), { size: 50, tail: -60, tdx: -10 });
 }
 function quote(t, lt) {
-  sunDisc(200, 560, 70, t);
+  sunDisc(930, 590, 62, t);
   ground(GY);
   dioLying(330, t, { eye: 'calm' });
   const step = eOut(prog(t, T('d9'), 0.8));
