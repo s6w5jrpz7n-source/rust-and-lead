@@ -6,6 +6,7 @@ function figur(x, y, s, o) {
   ctx.save(); ctx.translate(x, y); if (o.rot) ctx.rotate(o.rot); ctx.scale(s, s);
   if (o.ghost) { ctx.globalAlpha *= o.ghost; }
   if (o.tail) { P(); ctx.moveTo(60, 0); ctx.bezierCurveTo(220, 40, 200, -160, 260 + Math.sin(t * 3) * 20, -200); ctx.lineWidth = 14; ctx.strokeStyle = INK; ctx.stroke(); ctx.lineWidth = 8; ctx.strokeStyle = '#c92a2a'; ctx.stroke(); P(); ctx.moveTo(240 + Math.sin(t * 3) * 20, -200); ctx.lineTo(290 + Math.sin(t * 3) * 20, -250); ctx.lineTo(284 + Math.sin(t * 3) * 20, -186); ctx.closePath(); fs('#c92a2a', 5); }
+  if (o.cape) { P(); ctx.moveTo(-110, -250); ctx.quadraticCurveTo(-200 - Math.sin(t * 3) * 10, 0, -190, o.stand ? 280 : 120); ctx.lineTo(190, o.stand ? 280 : 120); ctx.quadraticCurveTo(200 + Math.sin(t * 3) * 10, 0, 110, -250); ctx.closePath(); fs(o.cape, 7); }
   if (o.ghost) { P(); ctx.moveTo(-116, -40); for (let i = 0; i <= 8; i++) ctx.lineTo(-116 + i * 29, 160 + Math.sin(t * 6 + i) * 18 + (i % 2) * 30); ctx.lineTo(116, -40); ctx.closePath(); fs(o.shirt || '#dbe4ff', 7); }
   else if (o.stand) {
     const sw = o.walk ? Math.sin(t * 9) * 26 : 0;
@@ -20,6 +21,9 @@ function figur(x, y, s, o) {
   rr(-116, -262, 232, 280, 76); fs(o.shirt || '#868e96', 7);
   if (o.collar) { P(); ctx.moveTo(-40, -250); ctx.lineTo(0, -200); ctx.lineTo(40, -250); ctx.closePath(); fs(o.collar, 5); }
   if (o.tie) { P(); ctx.moveTo(-12, -232); ctx.lineTo(12, -232); ctx.lineTo(18, -120); ctx.lineTo(0, -100); ctx.lineTo(-18, -120); ctx.closePath(); fs(o.tie, 5); }
+  if (o.reactor) { ctx.save(); ctx.shadowColor = '#74c0fc'; ctx.shadowBlur = 30; circ(0, -170, 30); fs('#e7f5ff', 6, '#1c7ed6'); ctx.restore(); rr(-90, -250, 180, 30, 10); fs('#f6c445', 5); }
+  if (o.pads) for (const sd of [-1, 1]) { ell(sd * 110, -236, 56, 34, sd * 0.3); fs(o.pads, 6); }
+  if (o.spidersuit) { ctx.save(); rr(-116, -262, 232, 280, 76); ctx.clip(); ctx.fillStyle = '#1c4fa1'; ctx.fillRect(-120, -270, 50, 300); ctx.fillRect(70, -270, 50, 300); ctx.restore(); for (let i = 0; i < 4; i++) seg(-60, -230 + i * 50, 60, -230 + i * 50, 2, '#7a0d0d'); }
   if (o.hood) { P(); ctx.ellipse(0, -258, 80, 34, 0, 0, Math.PI); fs(o.hood, 6); seg(-24, -230, -30, -150, 5, '#dee2e6'); seg(24, -230, 30, -150, 5, '#dee2e6'); }
   const hl = o.handL || [-130, -40], hr = o.handR || [130, -40];
   limb(-104, -224, hl[0], hl[1], 30, o.shirt || '#868e96'); limb(104, -224, hr[0], hr[1], 30, o.shirt || '#868e96');
@@ -31,6 +35,7 @@ function figur(x, y, s, o) {
     for (let i = -3; i <= 2; i++) for (let j = -4; j <= 1; j++) { ctx.fillStyle = ['#e8b89a', '#d9a383', '#f2c7a5', '#c98f6f'][Math.floor(rnd(i * 7 + j * 13 + f) * 4)]; ctx.fillRect(hr[0] + i * 20, hr[1] + j * 20, 20, 20); }
   } else { circ(hr[0], hr[1], 24); fs(skin, 6); }
   if (o.holdR) o.holdR(hr[0], hr[1]);
+  if (o.gauntlet) { circ(hr[0], hr[1], 40); fs('#e8b923', 7, '#7a5c00'); const cols = ['#e03131', '#1c7ed6', '#f59f00', '#9c36b5', '#2f9e44', '#fd7e14']; cols.forEach((c, i) => { const a2 = -Math.PI * 0.9 + i * 0.36; circ(hr[0] + Math.cos(a2) * 26, hr[1] + Math.sin(a2) * 26, 8); ctx.fillStyle = c; ctx.fill(); }); }
   rr(-30, -296, 60, 56, 20); fs(skin, 6);
   for (const sd of [-1, 1]) { ell(sd * 92, -356, 17, 26); fs(skin, 6); }
   if (o.earrings) for (const sd of [-1, 1]) { circ(sd * 94, -318, 12); fs('#fcc419', 5); }
@@ -52,10 +57,21 @@ function figur(x, y, s, o) {
     P(); ctx.arc(0, -392, 96, Math.PI, Math.PI * 2); ctx.closePath(); fs(o.hairCol, 6);
     rr(-104, -404, 208, 26, 10); fs(o.hairCol, 5); rr(50, -420, 90, 24, 10); fs(o.hairCol, 5);
   }
+  if (o.antennae) for (const sd of [-1, 1]) { P(); ctx.moveTo(sd * 30, -460); ctx.quadraticCurveTo(sd * 60, -540, sd * 40, -580); fs(null, 6); circ(sd * 40, -584, 10); fs('#f6c445', 4); }
+  if (o.mask === 'spider') {
+    ell(0, -360, 92, 106); fs('#d62828', 7);
+    ctx.save(); ell(0, -360, 90, 104); ctx.clip(); ctx.strokeStyle = 'rgba(40,0,0,0.55)'; ctx.lineWidth = 2.5;
+    for (let i = 0; i < 12; i++) { const a2 = i / 12 * Math.PI * 2; P(); ctx.moveTo(0, -330); ctx.lineTo(Math.cos(a2) * 160, -330 + Math.sin(a2) * 160); ctx.stroke(); }
+    for (let r = 30; r < 150; r += 30) { P(); ctx.arc(0, -330, r, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.restore();
+    for (const sd of [-1, 1]) { P(); ctx.moveTo(sd * 12, -360); ctx.quadraticCurveTo(sd * 70, -430, sd * 74, -380); ctx.quadraticCurveTo(sd * 60, -340, sd * 12, -360); ctx.closePath(); fs('#f8f9fa', 7, INK); }
+    ctx.restore(); return;
+  }
   // Augen
   const ey = -372, bigEye = mood === 'shocked' || mood === 'sabShock';
   for (const sd of [-1, 1]) {
     const ex = sd * 34;
+    if (o.bugEyes) { ell(ex, ey, 26, 30); fs('#111', 5); circ(ex - 8, ey - 10, 7); fs('#fff', 0); continue; }
     if (mood === 'dead' || mood === 'calm') { P(); ctx.arc(ex, ey - 2, 16, Math.PI * 0.15, Math.PI * 0.85); fs(null, 6); continue; }
     if (mood === 'excited') { P(); ctx.arc(ex, ey + 6, 16, Math.PI * 1.1, Math.PI * 1.9); fs(null, 7); continue; }
     if (mood === 'sick') { seg(ex - 14, ey - 6, ex + 14, ey + 4, 6); seg(ex - 14, ey + 4, ex + 14, ey - 6, 6); continue; }
@@ -77,6 +93,9 @@ function figur(x, y, s, o) {
   }
   ell(0, -334, 15, 19); ctx.fillStyle = 'rgba(160,80,60,0.25)'; ctx.fill();
   if (o.stubble) { ctx.fillStyle = 'rgba(80,60,50,0.35)'; for (let i = 0; i < 40; i++) { const a = Math.PI * (0.15 + 0.7 * rnd(i)); circ(Math.cos(a) * 78 * rnd(i + 3) ** 0.3, -360 + Math.sin(a) * 96 * (0.6 + 0.4 * rnd(i + 7)), 2.5); ctx.fill(); } }
+  if (o.chin) for (let i = -2; i <= 2; i++) seg(i * 14, -286, i * 16, -262, 5, 'rgba(60,20,80,0.6)');
+  if (o.beard) { P(); ctx.moveTo(-86, -340); ctx.quadraticCurveTo(-90, -240, 0, -226); ctx.quadraticCurveTo(90, -240, 86, -340); ctx.quadraticCurveTo(40, -290, 0, -300); ctx.quadraticCurveTo(-40, -290, -86, -340); ctx.closePath(); fs(o.beard, 6); }
+  if (o.goatee) { P(); ctx.moveTo(-24, -276); ctx.quadraticCurveTo(0, -226, 24, -276); ctx.closePath(); fs(o.goatee, 5); }
   // Mund
   const my = -300, lc = o.lips || '#7a1f2b';
   if (m > 0.07) { ell(0, my + 4, 26 + 10 * m, 6 + 26 * m); fs('#4a1018', 6); if (o.lips) { ell(0, my + 4, 26 + 10 * m, 6 + 26 * m); fs(null, 6, o.lips); } }
