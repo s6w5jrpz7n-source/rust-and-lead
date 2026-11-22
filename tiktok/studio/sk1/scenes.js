@@ -29,13 +29,13 @@ function coffin(t, front) {
 }
 function wide(t, lt, o = {}) {
   hall(t);
-  if (o.sister !== false) figur(965, 900, 0.6, Object.assign({ t, mood: 'bored', mouth: 0, lookX: -1, handR: t >= C('sister') ? [60, -360] : [120, -40], holdR: t >= C('sister') ? (hx, hy) => phoneR(hx, hy - 20, 0.7, 0.1) : undefined }, SIS));
+  if (o.sister !== false) figur(940, 900, 0.6, Object.assign({ t, mood: 'bored', mouth: 0, lookX: -1, handL: t >= C('sister') ? [lerp(-130, -190, eOut(prog(t, C('sister'), 0.3))), lerp(-40, -300, eOut(prog(t, C('sister'), 0.3)))] : [-130, -40], holdL: t >= C('sister') ? (hx, hy) => phoneR(hx, hy - 30, 0.75, -0.1) : undefined }, SIS));
   coffin(t, false);
   const reach = o.reach ?? 1;
   figur(260, 1150, 0.82, Object.assign({ t, mood: o.sonMood || 'sad', mouth: mouthOf('S', t), lookX: 1, handR: [lerp(130, 300, reach), lerp(-40, -260, reach)],
     holdR: (hx, hy) => phoneR(hx + 20, hy - 30, 0.8, -0.3, t > C('fail') && t < C('fail') + 0.6 ? '#ff6b6b' : '#4dabf7') }, SON));
   coffin(t, true);
-  if (t >= C('sister') && o.sister !== false) at(965, 470, pop(t, C('sister'), 0.3), 0, () => emo('👀', 0, 0, 80));
+  if (t >= C('sister') && o.sister !== false) at(940, 470, pop(t, C('sister'), 0.3), 0, () => emo('👀', 0, 0, 80));
 }
 function faceCU(t, lt) {
   cam(520, 860, 2.0, () => wide(t, lt, { sister: false }));
@@ -83,7 +83,7 @@ window.renderFrame = function (t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
   cutAt(t, SHOTS());
   sketchTitle(t, 'Ein letztes Mal', '⚰️', 2.2);
-  endCard(t, TL.duration - 1.3, 'Ein letztes Mal ⚰️', 'Folg für mehr schwarzen Humor');
+  endCard(t, TL.duration - 1.0, 'Ein letztes Mal ⚰️', 'Folg für mehr schwarzen Humor');
   drawCaptions(t);
 };
 window.EP_SCENES = {};
