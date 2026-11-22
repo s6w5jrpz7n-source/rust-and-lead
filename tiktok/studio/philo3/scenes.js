@@ -100,8 +100,8 @@ function zwei(t, lt) {
   const lab = (c, x, y, s) => { if (TL.cues[c] && t >= C(c) - 0.05) at(x, y, pop(t, C(c) - 0.05, 0.35), 0, () => { circ(0, 0, 58); fs(GOLD, 8, BLK); stxt(s, 0, 4, 76, BLK); }); };
   lab('a', 870, 740, 'A'); lab('bb', 870, GY - 160, 'B');
   if (TL.cues.ab && t >= C('ab') - 0.05) at(540, 478, pop(t, C('ab') - 0.05, 0.4), 0, () => stxt('Welches ist echt?', 0, 0, 56, CREAM, { stroke: 10 }));
-  if (TL.cues.a && t >= C('a') - 0.05) { stxt('neue Planken', 540, 900, 30, BLK); }
-  if (TL.cues.bb && t >= C('bb') - 0.05) { stxt('alte Planken', 540, GY + 30, 30, BLK); }
+  if (TL.cues.a && t >= C('a') - 0.05) { stxt('neue Planken', 870, 820, 30, BLK); }
+  if (TL.cues.bb && t >= C('bb') - 0.05) { stxt('alte Planken', 870, GY - 76, 30, BLK); }
 }
 /* Mensch mit Zellen */
 function bodyPath(x, y, s) { P(); ctx.arc(x, y - 640 * s, 80 * s, 0, Math.PI * 2); ctx.roundRect(x - 130 * s, y - 540 * s, 260 * s, 320 * s, 60 * s); ctx.roundRect(x - 120 * s, y - 240 * s, 100 * s, 240 * s, 40 * s); ctx.roundRect(x + 20 * s, y - 240 * s, 100 * s, 240 * s, 40 * s); }
