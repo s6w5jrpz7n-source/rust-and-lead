@@ -388,7 +388,97 @@ def sfx(kind):
             a = int(i * 0.13 * SR); t = np.arange(len(y) - a) / SR
             y[a:] += 0.25 * np.sin(2 * np.pi * f * t) * np.exp(-t * 7) * np.minimum(1, t * 400)
         return y
+    if kind == 'splash':
+        d = 0.9; t = tt(d)
+        return 0.6 * bandnoise(d, 200, 6000, 41) * np.exp(-t * 5) * np.minimum(1, t * 60) + 0.4 * np.sin(2 * np.pi * (90 + 120 * np.exp(-t * 20)) * t) * np.exp(-t * 12)
+    if kind == 'horn':  # Schiffshorn
+        d = 1.6; t = tt(d)
+        y = sum(np.sign(np.sin(2 * np.pi * f * t)) * a for f, a in [(98, 1), (123.5, 0.7), (196, 0.3)])
+        return 0.16 * np.convolve(y, np.ones(18) / 18, 'same') * np.minimum(1, t * 6) * np.minimum(1, (d - t) * 4)
+    if kind == 'boom':
+        d = 1.8; t = tt(d)
+        return 0.9 * np.sin(2 * np.pi * (35 + 70 * np.exp(-t * 6)) * t) * np.exp(-t * 2.5) + 0.5 * bandnoise(d, 40, 1800, 13) * np.exp(-t * 3.5) * np.minimum(1, t * 200)
+    if kind == 'glug':
+        y = np.zeros(int(0.9 * SR))
+        for i in range(4):
+            t = tt(0.16); f = 260 + 180 * (t / 0.16)
+            c = 0.35 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / 0.16)
+            a = int(i * 0.2 * SR); y[a:a + len(c)] += c
+        return y
+    if kind == 'groan':  # Stahl ächzt
+        d = 1.6; t = tt(d); f = 70 + 25 * np.sin(2 * np.pi * 0.8 * t) + 10 * np.sin(2 * np.pi * 7 * t)
+        return 0.3 * np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)) * bandnoise(d, 60, 900, 17) ** 2 * 3 * np.sin(np.pi * t / d)
+    if kind == 'bubbles':
+        y = np.zeros(int(1.2 * SR)); rng = np.random.default_rng(5)
+        for i in range(14):
+            t = tt(0.07); f = rng.uniform(500, 1400) * (1 + 2 * t / 0.07)
+            c = 0.18 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / 0.07)
+            a = int(rng.uniform(0, 1.1) * SR); y[a:a + len(c)] += c[:len(y) - a]
+        return y
+    if kind == 'smash':  # Tonschale zerbricht
+        d = 0.7; t = tt(d); y = 0.5 * bandnoise(d, 800, 9000, 23) * np.exp(-t * 9)
+        for i in range(8):
+            a = int(i * 0.04 * SR); t2 = t[:len(t) - a]
+            y[a:] += 0.15 * np.sin(2 * np.pi * (1800 + 400 * i) * t2) * np.exp(-t2 * 25)
+        return y
+    if kind == 'crack':  # Knochen/Holz knackt
+        d = 0.35; t = tt(d)
+        return 0.9 * bandnoise(d, 1500, 9000, 29) * np.exp(-t * 60) + 0.5 * np.sin(2 * np.pi * 140 * t) * np.exp(-t * 30)
+    if kind == 'pluck':  # Lyra-Akkord
+        y = np.zeros(int(1.6 * SR))
+        for i, f in enumerate([146.8, 220.0, 293.7, 349.2]):
+            c = ks_pluck(f, 1.5); a = int(i * 0.05 * SR); y[a:a + len(c)] += 0.3 * c[:len(y) - a]
+        return y
     raise ValueError(kind)
+
+
+def ks_pluck(f, d, decay=0.996, seed=1):
+    """Karplus-Strong-Saite, blockweise vektorisiert."""
+    n, N = int(d * SR), max(2, int(SR / f))
+    y = np.zeros(n + N + 1)
+    y[:N + 1] = np.random.default_rng(seed).uniform(-1, 1, N + 1)
+    i = N + 1
+    while i < n:
+        j = min(n, i + N)
+        y[i:j] = decay * 0.5 * (y[i - N:j - N] + y[i - N - 1:j - N - 1])
+        i = j
+    out = y[:n]
+    return out * np.minimum(1, np.arange(n) / 40)
+
+
+def music_lyra(total, bpm, n):
+    """Antik: Lyra-Arpeggien in D-Dorisch, Bordun, Rahmentrommel."""
+    beat = 60.0 / bpm; y = np.zeros(n); tN = np.arange(n) / SR
+    y += 0.05 * (np.sin(2 * np.pi * 73.4 * tN) + 0.6 * np.sin(2 * np.pi * 110 * tN)) * (0.8 + 0.2 * np.sin(2 * np.pi * 0.2 * tN))
+    pats = [[293.7, 349.2, 440, 349.2], [261.6, 329.6, 392, 329.6], [293.7, 349.2, 440, 523.3], [246.9, 293.7, 392, 293.7]]
+    cache = {}
+    for b in range(int(total / beat * 2) + 1):
+        tb = b * beat / 2; f = pats[(b // 8) % 4][b % 4]
+        if f not in cache: cache[f] = ks_pluck(f, 1.4, 0.995, int(f))
+        c = cache[f] * (0.22 if b % 2 == 0 else 0.15); a = int(tb * SR)
+        if a < n: y[a:a + len(c)] += c[:n - a]
+        if b % 4 == 0:
+            t = tt(0.4); dr = 0.5 * np.sin(2 * np.pi * (70 + 50 * np.exp(-t * 25)) * t) * np.exp(-t * 9)
+            if a < n: y[a:a + len(dr)] += dr[:n - a]
+    return y
+
+
+def music_drama(total, bpm, n):
+    """Dramatisch: Klavier-Arpeggien in d-Moll über Streicherfläche."""
+    beat = 60.0 / bpm; y = np.zeros(n); tN = np.arange(n) / SR
+    chords = [[146.8, 174.6, 220.0], [116.5, 146.8, 174.6], [174.6, 220.0, 261.6], [130.8, 164.8, 196.0]]
+    bar = beat * 4
+    for k in range(int(total / bar) + 1):
+        ch = chords[k % 4]; a = int(k * bar * SR); t = tt(bar + 0.3)
+        pad = sum(np.convolve(np.sign(np.sin(2 * np.pi * f / 2 * t + i)), np.ones(30) / 30, 'same') for i, f in enumerate(ch))
+        pad *= 0.05 * np.minimum(1, t / 0.8) * np.minimum(1, (bar + 0.3 - t) / 0.4)
+        if a < n: y[a:a + len(pad)] += pad[:n - a]
+        for j in range(8):
+            f = ch[j % 3] * (2 if j >= 3 else 2) * (2 if j in (3, 7) else 1); t = tt(1.6)
+            note = 0.12 * (np.sin(2 * np.pi * f * t) + 0.3 * np.sin(4 * np.pi * f * t) + 0.1 * np.sin(6 * np.pi * f * t)) * np.exp(-t * 3) * np.minimum(1, t * 300)
+            b = a + int(j * beat / 2 * SR)
+            if b < n: y[b:b + len(note)] += note[:n - b]
+    return y
 
 
 def make_music(total, bpm, n):
@@ -456,7 +546,7 @@ def main():
             cues[c['name']] = c['t']
             if c['sfx']:
                 s = sfx(c['sfx'])
-                off = -0.05 if c['sfx'] in ('stamp', 'pop', 'tick', 'ding', 'tada', 'boing') else -0.15
+                off = -0.05 if c['sfx'] in ('stamp', 'pop', 'tick', 'ding', 'tada', 'boing', 'smash', 'splash', 'boom', 'pluck', 'crack') else -0.15
                 if c['sfx'] == 'drum':
                     off = 0.0
                 a = max(0, int((c['t'] + off) * SR)); fx[a:a + len(s)] += s[:max(0, n - a)]
@@ -479,7 +569,7 @@ def main():
     # Ende der Gurken-Zeilen + Szenengrenzen
     mix = voiceN + voiceG + 0.55 * fx
     if MUSIC:
-        mus = make_music(total, MUSIC.get('bpm', 100), n)
+        mus = {'lyra': music_lyra, 'drama': music_drama}.get(MUSIC.get('style'), make_music)(total, MUSIC.get('bpm', 100), n)
         v = np.abs(voiceN + voiceG)
         k = int(0.08 * SR)
         env = np.convolve(v, np.ones(k) / k, mode='same')
