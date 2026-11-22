@@ -12,6 +12,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `comedy1` | Archivfilm-Comedy „Lehrfilm 1950 – ehrlich synchronisiert“ (gemeinfreier Prelinger-Film, `film_cut.py`) | Familienessen | ~56 s |
 | `sk1`–`sk5` | Animierte Sketche nach Nutzer-Skript (`sitcom.js`) | Ein letztes Mal, Die Hölle hat sich verändert, Gemeinsame Interessen, Omas Lieblingsenkel, Bis dass der Tod uns scheidet | 13–21 s |
 | `iw1` | Parodie „Wie Infinity War hätte enden sollen“ (eigene Cartoon-Figuren, keine Filmbilder/-musik) | Titan-Szene: Handschuh ab, bevor Star-Lord zuschlägt | ~46 s |
+| `auto1` | Kinder-Serie „Die Rettungsflitzer“ (eigene Auto-Figuren, `autos.js`, verspielte Musik) | Folge 1: Flitzi steckt fest | ~44 s |
 | `baum1` | Trend „Tag 1 vs. später“ | Weihnachtsbaum | ~26 s |
 | `emc1` | Wissenschaft | Herleitung E = mc² (Lichtkasten) | ~72 s |
 | `klartext1` | KLARTEXT: dunkle Übersetzer-App, zynisch | Stellenanzeigen, ehrlich übersetzt | ~41 s |
@@ -34,6 +35,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 | `build_audio.py` | Stimmen (Piper lokal oder ElevenLabs), Soundeffekte, Mix, `build/<folge>/timeline.js` |
 | `storylib.py` | Erzähl-Folgen: Zeilen mit Inline-Cues (`^name:sfx` vor einem Wort) und Erzähler-Stimmen |
 | `film_cut.py` | Schneidet Archivfilm passend zur Timeline (ein JPG pro Frame; Film vorher nach `build/` laden) |
+| `autos.js` | Rettungsflitzer: Autos mit Augen/Mund (Mini, Abschleppwagen, Feuerwehr), Räderstadt, Matsch, Wasserstrahl, Regenbogen |
 | `sitcom.js` | Sitcom-Figuren (stehend/sitzend, Geist, Teufel, Frisuren), Kamera-Zooms, Schnitte, Titel- und Endkarte |
 | `antik.js`, `see.js` | Zeichen-Baukästen: Vasenmalerei (Figuren, Pithos, Säulen, Galeere) bzw. Schiffe, Meer, Cartoon-Figuren |
 | `render.js` | Rendert Frames mit Playwright → ffmpeg |
