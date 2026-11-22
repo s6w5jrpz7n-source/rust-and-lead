@@ -424,6 +424,52 @@ def sfx(kind):
     if kind == 'crack':  # Knochen/Holz knackt
         d = 0.35; t = tt(d)
         return 0.9 * bandnoise(d, 1500, 9000, 29) * np.exp(-t * 60) + 0.5 * np.sin(2 * np.pi * 140 * t) * np.exp(-t * 30)
+    if kind == 'recscratch':  # Plattenkratzer
+        d = 0.55; t = tt(d); f = 900 * np.abs(np.sin(2 * np.pi * 2.2 * t)) + 150
+        return 0.5 * bandnoise(d, 300, 5000, 33) * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 3)
+    if kind == 'rimshot':  # Ba-dum-tss
+        y = np.zeros(int(1.4 * SR))
+        for a, fr in [(0.0, 180), (0.16, 140)]:
+            t = tt(0.25); c = 0.6 * np.sin(2 * np.pi * fr * t) * np.exp(-t * 20) + 0.4 * bandnoise(0.25, 1500, 6000, 5) * np.exp(-t * 25)
+            i = int(a * SR); y[i:i + len(c)] += c
+        t = tt(1.0); c = 0.35 * bandnoise(1.0, 5000, 15000, 9) * np.exp(-t * 4)
+        i = int(0.34 * SR); y[i:i + len(c)] += c
+        return y
+    if kind == 'buzz':  # Handy vibriert / Fehler
+        y = np.zeros(int(0.7 * SR))
+        for a in (0.0, 0.3):
+            t = tt(0.22); c = 0.4 * np.sign(np.sin(2 * np.pi * 150 * t)) * np.convolve(np.ones(len(t)), np.ones(1), 'same') * np.minimum(1, (0.22 - t) * 40)
+            c = np.convolve(c, np.ones(30) / 30, 'same'); i = int(a * SR); y[i:i + len(c)] += c
+        return y
+    if kind == 'doorbell':
+        y = np.zeros(int(1.6 * SR))
+        for a, f in ((0.0, 659.3), (0.45, 523.3)):
+            t = tt(1.1); c = 0.3 * (np.sin(2 * np.pi * f * t) + 0.4 * np.sin(2 * np.pi * f * 2.76 * t)) * np.exp(-t * 3.5)
+            i = int(a * SR); y[i:i + len(c)] += c
+        return y
+    if kind == 'jingle':  # fröhliche Firmen-Melodie
+        y = np.zeros(int(2.6 * SR))
+        for i, (n, d) in enumerate([(72, .2), (76, .2), (79, .2), (84, .4), (81, .2), (84, .6)]):
+            f = 440 * 2 ** ((n - 69) / 12); t = tt(0.9); c = 0.22 * (np.sin(2 * np.pi * f * t) + 0.5 * np.sin(4 * np.pi * f * t)) * np.exp(-t * 6)
+            a = int(sum(x[1] for x in [(72, .2), (76, .2), (79, .2), (84, .4), (81, .2), (84, .6)][:i]) * SR); y[a:a + len(c)] += c[:len(y) - a]
+        return y
+    if kind == 'click':
+        t = tt(0.05); return 0.5 * bandnoise(0.05, 1500, 8000, 61) * np.exp(-t * 120)
+    if kind == 'flicker':
+        y = np.zeros(int(1.0 * SR)); rng = np.random.default_rng(4)
+        for a in rng.uniform(0, 0.9, 7):
+            t = tt(0.04); c = 0.3 * bandnoise(0.04, 2000, 9000, int(a * 100)) * np.exp(-t * 80); i = int(a * SR); y[i:i + len(c)] += c
+        t = tt(1.0); y += 0.05 * np.sin(2 * np.pi * 100 * t) * (np.sin(2 * np.pi * 9 * t) > 0)
+        return y
+    if kind == 'slam':  # Schranktüren fliegen auf
+        y = np.zeros(int(1.3 * SR))
+        for k, a in enumerate((0.0, 0.07, 0.13, 0.2)):
+            t = tt(0.5); c = 0.7 * np.sin(2 * np.pi * (70 + 40 * k) * t) * np.exp(-t * 14) + 0.4 * bandnoise(0.5, 200, 3000, 70 + k) * np.exp(-t * 20)
+            i = int(a * SR); y[i:i + len(c)] += c
+        return y
+    if kind == 'ghost':
+        d = 1.6; t = tt(d); f = 420 + 120 * np.sin(2 * np.pi * 0.8 * t) + 15 * np.sin(2 * np.pi * 6 * t)
+        return 0.18 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / d) + 0.05 * bandnoise(d, 300, 3000, 71) * np.sin(np.pi * t / d)
     if kind == 'pluck':  # Lyra-Akkord
         y = np.zeros(int(1.6 * SR))
         for i, f in enumerate([146.8, 220.0, 293.7, 349.2]):
@@ -460,6 +506,60 @@ def music_lyra(total, bpm, n):
         if b % 4 == 0:
             t = tt(0.4); dr = 0.5 * np.sin(2 * np.pi * (70 + 50 * np.exp(-t * 25)) * t) * np.exp(-t * 9)
             if a < n: y[a:a + len(dr)] += dr[:n - a]
+    return y
+
+
+def music_retro(total, bpm, n):
+    """50er-Jahre: Swing mit Walking Bass, Besen-Snare, Vibraphon-Akkorden + Plattenknistern."""
+    beat = 60.0 / bpm; y = np.zeros(n)
+    def add(sig, t0):
+        a = int(t0 * SR)
+        if 0 <= a < n: y[a:a + len(sig)] += sig[:n - a]
+    prog_ = [[261.6, 329.6, 392.0, 440.0], [293.7, 349.2, 440.0, 523.3], [293.7, 349.2, 440.0, 523.3], [246.9, 293.7, 349.2, 440.0]]
+    bass = [[65.4, 82.4, 98.0, 110.0], [73.4, 87.3, 110.0, 98.0], [73.4, 87.3, 110.0, 130.8], [98.0, 87.3, 82.4, 73.4]]
+    for b in range(int(total / beat) + 1):
+        tb = b * beat; bar = (b // 4) % 4; k = b % 4
+        t = tt(beat * 0.95); f = bass[bar][k]
+        add(0.32 * (np.sin(2 * np.pi * f * t) + 0.3 * np.sin(4 * np.pi * f * t)) * np.exp(-t * 3.5) * np.minimum(1, t * 300), tb)
+        if k in (1, 3): add(0.12 * bandnoise(0.18, 2000, 9000, 40 + b % 7) * np.exp(-tt(0.18) * 14), tb)
+        add(0.05 * bandnoise(0.05, 7000, 14000, 50) * np.exp(-tt(0.05) * 60), tb)
+        add(0.035 * bandnoise(0.05, 7000, 14000, 51) * np.exp(-tt(0.05) * 60), tb + beat * 0.66)
+        if k in (0, 2):
+            t = tt(beat * 1.6)
+            ch = sum(np.sin(2 * np.pi * fr * t) for fr in prog_[bar]) * (1 + 0.3 * np.sin(2 * np.pi * 5.5 * t))
+            add(0.05 * ch * np.exp(-t * 2.2) * np.minimum(1, t * 200), tb + (beat * 0.66 if k == 2 else 0))
+    rng = np.random.default_rng(3)
+    hiss = 0.012 * bandnoise(min(total, 30), 1000, 9000, 77); reps = int(np.ceil(n / len(hiss)))
+    y += np.tile(hiss, reps)[:n]
+    for i in rng.integers(0, n - 200, int(total * 7)):
+        y[i:i + 60] += rng.uniform(0.05, 0.25) * np.exp(-np.arange(60) / 8) * rng.choice([-1, 1])
+    return y
+
+
+def music_organ(total, bpm, n):
+    """Trauerhallen-Orgel: langsame Mollakkorde."""
+    y = np.zeros(n); bar = 60.0 / bpm * 4
+    chords = [[110.0, 130.8, 164.8, 220.0], [87.3, 110.0, 130.8, 174.6], [98.0, 123.5, 146.8, 196.0], [82.4, 103.8, 123.5, 164.8]]
+    for k in range(int(total / bar) + 1):
+        t = tt(bar + 0.4); a = int(k * bar * SR)
+        c = sum(sum(np.sin(2 * np.pi * f * h * t) / h for h in (1, 2, 3, 4)) for f in chords[k % 4])
+        c *= 0.035 * np.minimum(1, t / 0.5) * np.minimum(1, (bar + 0.4 - t) / 0.5) * (1 + 0.04 * np.sin(2 * np.pi * 5 * t))
+        if a < n: y[a:a + len(c)] += c[:n - a]
+    return y
+
+
+def music_romance(total, bpm, n):
+    """Restaurant: sanftes Jazz-Klavier (Maj7-Akkorde)."""
+    y = np.zeros(n); beat = 60.0 / bpm
+    chords = [[261.6, 329.6, 392.0, 493.9], [220.0, 261.6, 329.6, 392.0], [293.7, 349.2, 440.0, 523.3], [196.0, 246.9, 293.7, 349.2]]
+    for b in range(int(total / beat) + 1):
+        ch = chords[(b // 4) % 4]; t = tt(beat * 2.2)
+        if b % 2 == 0: c = sum(np.sin(2 * np.pi * f * t) + 0.25 * np.sin(4 * np.pi * f * t) for f in ch) * 0.05 * np.exp(-t * 1.8) * np.minimum(1, t * 300)
+        else: f = ch[(b // 2) % 4] * 2; c = 0.07 * np.sin(2 * np.pi * f * t) * np.exp(-t * 3) * np.minimum(1, t * 300)
+        a = int(b * beat * SR)
+        if a < n: y[a:a + len(c)] += c[:n - a]
+        bt = tt(0.3); bs = 0.2 * np.sin(2 * np.pi * ch[0] / 2 * bt) * np.exp(-bt * 6)
+        if a < n: y[a:a + len(bs)] += bs[:n - a]
     return y
 
 
@@ -546,7 +646,7 @@ def main():
             cues[c['name']] = c['t']
             if c['sfx']:
                 s = sfx(c['sfx'])
-                off = -0.05 if c['sfx'] in ('stamp', 'pop', 'tick', 'ding', 'tada', 'boing', 'smash', 'splash', 'boom', 'pluck', 'crack') else -0.15
+                off = -0.05 if c['sfx'] in ('stamp', 'pop', 'tick', 'ding', 'tada', 'boing', 'smash', 'splash', 'boom', 'pluck', 'crack', 'recscratch', 'rimshot', 'click', 'doorbell', 'slam') else -0.15
                 if c['sfx'] == 'drum':
                     off = 0.0
                 a = max(0, int((c['t'] + off) * SR)); fx[a:a + len(s)] += s[:max(0, n - a)]
@@ -569,12 +669,15 @@ def main():
     # Ende der Gurken-Zeilen + Szenengrenzen
     mix = voiceN + voiceG + 0.55 * fx
     if MUSIC:
-        mus = {'lyra': music_lyra, 'drama': music_drama}.get(MUSIC.get('style'), make_music)(total, MUSIC.get('bpm', 100), n)
+        mus = {'lyra': music_lyra, 'drama': music_drama, 'retro': music_retro, 'organ': music_organ, 'romance': music_romance}.get(MUSIC.get('style'), make_music)(total, MUSIC.get('bpm', 100), n)
         v = np.abs(voiceN + voiceG)
         k = int(0.08 * SR)
         env = np.convolve(v, np.ones(k) / k, mode='same')
         duck = 1 - 0.6 * np.clip(env / 0.05, 0, 1)
         fade_out = np.clip((total - np.arange(n) / SR) / 1.2, 0, 1)
+        if MUSIC.get('stop'):  # Musik bricht an einer Zeile ab (Pointe)
+            ts = next(e['start'] for e in timeline if e['id'] == MUSIC['stop']) - 0.25
+            mus = mus * np.clip((ts - np.arange(n) / SR) / 0.12, 0, 1)
         mix = mix + MUSIC.get('gain', 0.2) * mus * duck * fade_out
     peak = np.abs(mix).max()
     mix = np.tanh(mix / max(peak, 1e-6) * 1.4) / np.tanh(1.4) * 0.95
