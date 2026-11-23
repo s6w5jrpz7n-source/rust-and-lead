@@ -135,6 +135,21 @@ def sfx(kind, d=0.5, f=2600, seed=0):
     if kind == 'tinymeow':
         f0 = 900 + 300 * np.sin(np.pi * np.clip(t / d, 0, 1)); ph = 2 * np.pi * np.cumsum(f0) / SR
         return 0.14 * sum(np.sin(k * ph) / k for k in range(1, 6)) * np.minimum(1, t / 0.03) * np.minimum(1, (d - t) / 0.08)
+    if kind == 'yawn':  # Mini-Gähnen
+        f0 = 700 * np.exp(-t * 1.8) + 250; ph = 2 * np.pi * np.cumsum(f0) / SR
+        return 0.1 * sum(np.sin(k * ph) / k for k in range(1, 5)) * np.sin(np.pi * np.clip(t / d, 0, 1)) + 0.05 * lowpass(noise(d, 70), 8) * np.sin(np.pi * t / d)
+    if kind == 'nom':  # Knuspern am Napf
+        y = np.zeros(len(t))
+        for i in range(int(d / 0.22) + 1):
+            c = 0.22 * lowpass(noise(0.07, 80 + i), 2) * np.exp(-tt(0.07) * 60); a = int(i * 0.22 * SR); y[a:a + len(c)] += c[:len(y) - a]
+        return y
+    if kind == 'lick':
+        y = np.zeros(len(t))
+        for i in range(int(d / 0.3) + 1):
+            c = 0.12 * lowpass(noise(0.12, 90 + i), 5) * np.sin(np.pi * tt(0.12) / 0.12); a = int(i * 0.3 * SR); y[a:a + len(c)] += c[:len(y) - a]
+        return y
+    if kind == 'roll':  # Wollknäuel rollt
+        return 0.08 * lowpass(noise(d, 95), 30) * (0.6 + 0.4 * np.sin(2 * np.pi * 5 * t)) * np.sin(np.pi * t / d)
     raise ValueError(kind)
 
 
