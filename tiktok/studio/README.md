@@ -6,6 +6,7 @@ Kurzvideos komplett im Code: Canvas-Animation, Stimmen, Soundeffekte, Musik.
 |---|---|---|---|
 | `katze1`–`katze6` | Serie „der drang, …“ (Katze, ~9 s, Schleife, ohne Sprache) | Glas, 3 Uhr nachts, Tastatur, Karton, 5 Uhr Frühstück, Weihnachtsbaum | je ~9 s |
 | `katze7`–`katze10` | „der drang“ mit Serien-Badge und Teilen-Aufforderung | Tür (raus und doch nicht), Videocall, Kratzbaum ignorieren, Sonnenfleck | je ~9 s |
+| `katze11` | Süßes Katzenvideo (Kätzchen, Spieluhr-Musik, Schleife) | Ihr erster Schnee ❄️ | 14,5 s |
 | `katzewissen1` | Speicher-Video „5 Katzen-Signale, die du kennen musst“ | Blinzeln, Schwanz hoch, Bauch, Treteln, Köpfchen | 17 s |
 | `philo1`–`philo3` | Philosophie-Serie im Stil griechischer Vasenmalerei (`antik.js`, Lyra-Musik) | Diogenes, Epiktet, Schiff des Theseus | je ~60 s |
 | `hist1`, `hist2` | Geschichte, Zweiteiler mit Cliffhanger (`see.js`, Drama-Musik) | Titanic-Bäcker Charles Joughin → Violet Jessop „die Unsinkbare“ | ~75 s |

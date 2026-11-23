@@ -111,6 +111,30 @@ def sfx(kind, d=0.5, f=2600, seed=0):
             fr = 440 * 2 ** ((notes[i % 8] - 69) / 12); a = int(i * 0.5 * SR); t2 = t[:max(0, len(t) - a)]
             if len(t2): y[a:] += 0.07 * (np.sin(2 * np.pi * fr * t2) + 0.3 * np.sin(4 * np.pi * fr * t2)) * np.exp(-t2 * 2.5)
         return y
+    if kind == 'musicbox':  # Spieluhr-Melodie (eigene Melodie, C-Dur)
+        mel = [76, 79, 84, 83, 79, 76, 77, 81, 79, 76, 74, 76, 72, 74, 76, 79]
+        y = np.zeros(len(t)); step = 0.35
+        for i in range(int(d / step) + 1):
+            f = 440 * 2 ** ((mel[i % 16] - 69) / 12); a = int(i * step * SR); t2 = t[:max(0, len(t) - a)]
+            if len(t2): y[a:] += 0.09 * (np.sin(2 * np.pi * f * t2) + 0.4 * np.sin(2 * np.pi * f * 3.01 * t2) * np.exp(-t2 * 6)) * np.exp(-t2 * 3.5)
+            if i % 4 == 0 and len(t2): fb = 440 * 2 ** ((mel[i % 16] - 24 - 69) / 12); y[a:] += 0.05 * np.sin(2 * np.pi * fb * t2) * np.exp(-t2 * 2)
+        return y * np.minimum(1, t / 0.3) * np.minimum(1, (d - t) / 0.5)
+    if kind == 'sneeze':  # Mini-Hatschi
+        y = np.zeros(len(t)); n1 = int(0.25 * SR)
+        y[:n1] = 0.12 * lowpass(noise(0.25, 41), 6) * np.linspace(0, 1, n1)
+        b = tt(0.18); burst = 0.5 * lowpass(noise(0.18, 42), 3) * np.exp(-b * 18) + 0.15 * np.sin(2 * np.pi * (900 - 2000 * b) * b) * np.exp(-b * 20)
+        a = int(0.3 * SR); y[a:a + len(burst)] += burst[:len(y) - a]
+        return y
+    if kind == 'crunch':  # Schritte im Schnee
+        y = np.zeros(len(t))
+        for i in range(int(d / 0.28) + 1):
+            c = 0.25 * lowpass(noise(0.12, 50 + i), 4) * np.exp(-tt(0.12) * 25); a = int(i * 0.28 * SR); y[a:a + len(c)] += c[:len(y) - a]
+        return y
+    if kind == 'poof':  # Sprung in den Schneehaufen
+        return 0.5 * lowpass(noise(d, 60), 10) * np.exp(-t * 6) * np.minimum(1, t * 80)
+    if kind == 'tinymeow':
+        f0 = 900 + 300 * np.sin(np.pi * np.clip(t / d, 0, 1)); ph = 2 * np.pi * np.cumsum(f0) / SR
+        return 0.14 * sum(np.sin(k * ph) / k for k in range(1, 6)) * np.minimum(1, t / 0.03) * np.minimum(1, (d - t) / 0.08)
     raise ValueError(kind)
 
 
