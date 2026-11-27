@@ -159,6 +159,34 @@ Nur SCENE wird getauscht. Das ist der ganze Grund, warum zwanzig Bilder zusammen
 werden: Nicht der Stil im Prompt hält sie zusammen, sondern dass dreiviertel des Prompts
 identisch ist.
 
+### Die drei Richtungen zur Wahl
+
+Gerendert mit `tools/StilProbe.gd` — derselbe Ort, dreimal behandelt. Was die Proben zeigen:
+Helligkeitsverteilung, Kontrastumfang, wie viel kühler Akzent, ob die Figur lesbar bleibt.
+Was sie nicht zeigen: Pinselduktus — den entscheidet das Bildmodell, nicht der Zeichner.
+
+| | **A — Gaslicht** | **B — Ölschwarz** | **C — Blaupause** |
+| :-- | :-- | :-- | :-- |
+| Gebäudemasse | mittlere Töne (0,42) | fast Silhouette (0,08) | mittlere Töne (0,38) |
+| Gegenlichtsaum | schwach (0,18) | stark (0,85) | schwach (0,22) |
+| Vignette | 0,22 | 0,58 | 0,24 |
+| Lesbarkeit der Hotspots | am besten | am schlechtesten | gut |
+| Passt zu Titelbild/Intro | mittel | **genau** | mittel |
+| Aufwand je Bild | normal | normal | höher (Linienebene) |
+| Risiko | wirkt weniger grim-dark | halbes Bild verschwindet auf dem Handy bei Sonne | kann überladen wirken |
+
+**Prompt-Zusatz je Richtung** (ersetzt bzw. ergänzt den COLOUR-Absatz der Vorlage):
+
+* **A:** `Evenly lit, mid-tone painting. Shadows are soft and open, never crushed. Objects
+  separate by local contrast and silhouette, not by darkness. Overcast dusty daylight.`
+* **B:** `Strong backlight. Foreground architecture reads as near-black mass against a hot
+  ochre sky; windows glow warm from inside. Deep crushed shadows, bright rim light on every
+  edge facing the horizon. Heavy vignette.`
+* **C:** `As A, plus a thin cyan technical overlay (#4a86a0, low opacity): dimension lines,
+  gear schematics and survey grid drawn over the painting as if on a glass plate, plus a
+  company stamp frame in one corner. The overlay is faint — it must never compete with the
+  painting.`
+
 ### Welcher Dienst
 
 Egal. Die Vorlage ist dienstneutral, und genau dafür steht sie hier.

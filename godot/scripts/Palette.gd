@@ -136,7 +136,28 @@ static func keil_bei(anteil: float) -> Color:
 static func abheben(f: Color, grund: Color) -> Color:
 	if trennt_genug(f, grund):
 		return f
-	var ziel: Color = RUSS if helligkeit(grund) > 0.5 else SANDLICHT
+	# Die Richtung wird gemessen, nicht geraten — und das hat zwei Anlaeufe gebraucht.
+	#
+	# Erster Versuch: `RUSS if helligkeit(grund) > 0.5 else SANDLICHT`. Falsch herum. Vor
+	# mittelhellem Boden (0.22) wurde der oelschwarze Mantel (0.05) aufgehellt, und die Figur
+	# stand als heller Klecks in der Wueste statt als Silhouette.
+	#
+	# Zweiter Versuch: in die Richtung, auf der die Farbe schon liegt. Auch falsch — vor
+	# fast schwarzem Grund (0.047) gibt es nach unten keinen Platz mehr, RUSS liegt nur 0.03
+	# darunter. Die Figur blieb unsichtbar.
+	#
+	# Richtig ist: **beide Spielraeume ausrechnen.** Reicht der Weg nach unten, bleibt die
+	# Figur dunkel — eine Silhouette soll eine Silhouette bleiben. Reicht er nicht, muss sie
+	# ins Licht, auch wenn sie dann heller ist als gedacht. Besser ein heller Mantel als gar
+	# keine Figur.
+	var h_grund: float = helligkeit(grund)
+	var platz_dunkel: float = h_grund - helligkeit(RUSS)
+	var platz_hell: float = helligkeit(SANDLICHT) - h_grund
+	var ziel: Color = SANDLICHT
+	if platz_dunkel >= ABSTAND_MIN and helligkeit(f) <= h_grund:
+		ziel = RUSS            # genug Platz nach unten, und die Farbe gehoert dorthin
+	elif platz_dunkel >= ABSTAND_MIN and platz_hell < ABSTAND_MIN:
+		ziel = RUSS            # nach oben reicht es nicht, nach unten schon
 	var raus: Color = f
 	# In zwanzig Schritten in Richtung Gegenpol, bis der Abstand reicht. Eine Schleife und keine
 	# Formel, weil `lerp` auf Farben nicht linear in der Helligkeit ist.
