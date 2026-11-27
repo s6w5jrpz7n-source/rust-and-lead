@@ -132,33 +132,103 @@ Ein Bild nachzureichen ändert keine Zeile Logik.
 Ablage: `godot/assets/orte/<kennung>.webp`, Seitenverhältnis 16:9, mindestens 1280×720.
 Die Kennung steht im Feld `bild` in `scripts/OrtDaten.gd`.
 
+### Warum erzeugte Hintergründe billig aussehen
+
+Das ist der Teil, der über die Qualität entscheidet, und er steht vor der Vorlage, weil die
+Vorlage ihn umsetzt. Ein Bildmodell liefert auf „painted adventure background" ein
+Konzeptbild: hübsch, flach, ohne Bühne. Was fehlt, ist immer dasselbe:
+
+1. **Keine Tiefenstaffelung.** Ein Spielhintergrund hat drei Ebenen — einen **Vordergrund**,
+   der angeschnitten am Bildrand steht (Balken, Torbogen, Fasskante, Wagenrad), dunkel und
+   unscharf; die **Mittelebene**, in der gespielt wird; und einen **Hintergrund**, der Raum
+   dahinter öffnet. Der angeschnittene Vordergrund ist der größte einzelne Unterschied
+   zwischen „KI-Bild" und „Adventure-Hintergrund". Baphomets Fluch hat ihn in fast jeder Szene.
+2. **Kein Licht, nur Helligkeit.** Eine benannte Lichtrichtung, in allen Bildern dieselbe,
+   mit Schlagschatten, die in dieselbe Richtung fallen. Ohne das sieht jeder Ort aus wie aus
+   einem anderen Spiel.
+3. **Überall gleich viel Detail.** Dicht in der Mittelebene, **ruhig im Laufstreifen** und
+   ruhig im Himmel. Ein gleichmäßig durchdetailliertes Bild ermüdet und verschluckt die Figur.
+4. **Kein Blickpunkt.** Ein Ort hat eine Sache, auf die das Auge zuerst fällt.
+5. **Symmetrie.** Mittig gebaute Bilder wirken wie Kulissen. Die Flucht sitzt außerhalb der
+   Mitte, die Massen links und rechts sind ungleich.
+
 ### Die Vorlage
 
+Vier Absätze. **COMPOSITION, LIGHT, COLOUR und das Schluss-NO bleiben wortgleich bei jedem
+Ort** — nur SCENE wird getauscht. Das ist der Grund, warum die Bilder später zusammenpassen:
+nicht der Stil im Prompt hält sie zusammen, sondern dass drei Viertel des Prompts identisch
+sind.
+
 > Hand-painted 2D background plate for a classic point-and-click adventure game, in the
-> visual tradition of Revolution Software's "Broken Sword" — painted gouache backdrop,
-> visible brushwork, clean readable shapes, cinematic but illustrative. NOT photorealistic,
-> NOT a 3D render, NOT pixel art.
+> visual tradition of Revolution Software's "Broken Sword" — painted backdrop with genuine
+> architectural perspective, rich material detail, cinematic staging. NOT photorealistic,
+> NOT a 3D render, NOT pixel art, NOT flat vector art, NOT concept art.
 >
-> SCENE: *(hier der Ort — was steht wo, woraus ist es, was ist kaputt)*
+> SCENE: *(hier der Ort — siehe unten)*
 >
-> COMPOSITION: flat stage-like perspective, camera at adult standing eye level, only
-> slightly elevated. NO isometric view, NO top-down, NO bird's eye. Shallow depth, like a
-> painted theatre backdrop. Architecture fills the upper two thirds as a backdrop wall; the
-> lower third is an open, unobstructed strip of ground running left to right, kept clear for
-> characters to walk on. 16:9 widescreen.
+> COMPOSITION: one-point perspective with a clear vanishing point placed off-centre, camera
+> at adult standing eye level and only slightly elevated. Buildings set at an angle so their
+> facades recede into depth. THREE DEPTH LAYERS: a dark out-of-focus foreground element
+> cropped by the edge of the frame (a beam, an archway, a barrel rim, a cart wheel); the
+> midground, which is the playable set and carries the detail; and a background that opens
+> real distance behind it. Keep an open, unobstructed strip of ground across the lower third
+> for characters to walk on — quiet, low detail, no clutter. Asymmetric: unequal masses left
+> and right. 16:9 widescreen.
+>
+> LIGHT: a single low sun from the left, late afternoon, raking across the facades. All cast
+> shadows fall to the right and are long. Soft bounced light fills the shadows — they are
+> open and readable, never crushed to black. Dust hangs in the air and catches the light.
 >
 > COLOUR: strictly limited to one warm ochre/rust ramp, no other hues — #090201 #140a06
 > #1e110b #2b1b13 #3f291b #583d27 #6f4c31 #865c3c #a57950 #c19769 #e2bf91. Evenly lit,
-> mid-tone painting. Shadows are soft and open, never crushed to black. Objects separate by
-> local contrast and silhouette, not by darkness. Overcast dusty daylight, hazy pale-gold sky
-> at the horizon. Sun-bleached and grim, but readable. At most one single cool accent.
+> mid-tone painting. Objects separate by local contrast and silhouette, not by darkness.
+> Hazy pale-gold sky at the horizon. Sun-bleached and grim, but readable. At most one single
+> cool accent.
 >
-> NO people, NO characters, NO animals, NO readable lettering anywhere. Empty set only.
+> NO people, NO characters, NO animals, NO readable lettering, NO lens flare, NO modern
+> objects, NO symmetrical composition, NO empty foreground. Empty set only.
 
-Die drei Absätze COMPOSITION, COLOUR und das Schluss-NO bleiben **wortgleich** bei jedem Ort.
-Nur SCENE wird getauscht. Das ist der ganze Grund, warum zwanzig Bilder zusammenpassen
-werden: Nicht der Stil im Prompt hält sie zusammen, sondern dass dreiviertel des Prompts
-identisch ist.
+### Die sieben SCENE-Absätze
+
+> **kippe** — A vast slag heap of scrap metal at the rim of a desert crater, late afternoon.
+> Twisted sheet steel, broken boiler drums, the ribcage of a gutted mechanical automaton with
+> its chest plate cut open, gears spilled in the dust. A bleached enamel sign bolted to a bent
+> post. The ground falls away to the right towards a track far below. Foreground: the rusted
+> curve of a boiler drum, cropped by the left edge.
+>
+> **piste** — A rutted desert track running left to right through flat scrub, late afternoon.
+> A broken-axled steam cart listing on the verge, its boiler still breathing. A rock ridge
+> rises above the track on the right, high enough to overlook it. Bones and a single boot at
+> the roadside. A palisade gate of railway sleepers closes the far end. Foreground: a thorn
+> bush, cropped by the right edge.
+>
+> **platz** — The central square of a small frontier town at the bottom of a desert crater,
+> late afternoon. A dry stone well in the middle. A cast-iron kinetoscope viewing pillar with
+> a crank on the left. A notice board thick with nailed-up papers on the right. Behind them,
+> set at an angle: a two-storey saloon with swinging doors and a gatling barrel hung over the
+> entrance, an open forge shed with glowing coals, a field-hospital tent on a stone
+> foundation. Foreground: a hitching rail, cropped by the lower left corner.
+>
+> **saloon** — The interior of a frontier saloon, lit by low sun through a dusty window on the
+> left. A long plank bar on two barrels, names carved into the wood and crossed out. A
+> self-playing mechanical piano with an exposed brass-pinned roller. Tables, a staircase up
+> into shadow, a corner table set against the back wall with a clear view of the door.
+> Foreground: the back of a chair, cropped by the lower edge.
+>
+> **schmiede** — An open blacksmith's shed, late afternoon, the forge coals the brightest
+> thing in frame. An anvil, a bellows, a workbench crowded with tongs and files and a heavy
+> unbolted bench vice. A technical drawing nailed to the plank wall showing a joint in
+> section. Racks of stock steel. Foreground: hanging chain, cropped by the upper left corner.
+>
+> **lazarett** — A field hospital under canvas on a stone foundation, low sun through the tent
+> flap. A stretcher with leather straps worn through from the inside. An instrument cabinet
+> whose lowest shelf holds engineers' tools, not surgeons': thread cutters, a feeler gauge, a
+> hex key. A basin of grey water. Foreground: a tent pole and guy rope, cropped by the left edge.
+>
+> **vorschacht** — The head of a mine shaft cut into the crater wall, late afternoon light
+> reaching only a few metres in. An iron cage hoist, chocked from above. A gallery mouth that
+> goes black after ten metres. A chalked tin sign nailed to a prop. Scree, a dropped crowbar,
+> abandoned tools. Foreground: a pit prop, cropped by the right edge.
 
 ### Entschieden: **A — Gaslicht**
 

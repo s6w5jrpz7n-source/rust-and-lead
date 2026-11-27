@@ -58,34 +58,60 @@ const RAHMEN: Vector2 = Vector2(1280.0, 720.0)
 
 # ── Die Buehne (Bauform Baphomets Fluch) ──────────────────────────────────────
 #
-# Das ist KEINE isometrische Ansicht. Baphomets Fluch stellt die Kamera auf Augenhoehe eines
-# Erwachsenen, hoechstens eine Handbreit darueber, und malt den Ort wie eine Theaterbuehne:
-# eine Rueckwand mit Architektur, davor ein schmaler Streifen Boden, auf dem gelaufen wird.
-# Die Figur steht in Dreiviertelansicht davor. Daraus folgen drei Masse, und sie gelten
-# fuer jeden Ort dieses Spiels:
+# **Korrektur gegenueber der ersten Fassung.** Hier stand: "flache Theaterkulisse, eine
+# Rueckwand mit Architektur, davor ein schmaler Streifen Boden, hoechstens 20 % Tiefe". Das
+# war falsch, und es war die Sorte Fehler, die man nicht am Code merkt, sondern erst daran,
+# dass die Bilder billig aussehen.
 #
-#  * **Der Laufstreifen liegt im unteren Drittel.** Oberhalb von y=430 wird nicht gelaufen,
-#    dort steht das Bild. Wer die begehbare Flaeche hoeher zieht, bekommt die Iso-Ansicht
-#    zurueck, die wir gerade verlassen haben.
+# Baphomets Fluch ist keine Theaterkulisse. Es hat **echte Architekturperspektive**: Gassen
+# fluchten weg, Fassaden stehen schraeg im Raum, Innenraeume haben Ecken und eine Decke, und
+# die Figur wird auf dem Weg nach hinten deutlich kleiner. Eine Pariser Strasse dort ist ein
+# Raum, in den man hineinsieht -- nicht eine bemalte Wand.
 #
-#  * **Die Figur ist gross.** Rund 210 px bei Massstab 1.0, also knapp ein Drittel der
-#    Bildhoehe. In einem Iso-Spiel ist die Figur klein, weil man die Umgebung ueberblicken
-#    muss; in einem Adventure ist sie gross, weil man ihr Gesicht sehen soll.
+# Mit der alten Regel KONNTE ein Hintergrund gar nicht gut aussehen. Wer einem Bildmodell
+# "flat stage-like backdrop, shallow depth" vorgibt, bekommt genau das: eine Wand mit
+# aufgeklebten Haeusern. Die Regeln lauten jetzt:
 #
-#  * **Die Tiefe ist flach.** Zwischen hinterster und vorderster Standposition liegen
-#    hoechstens 20 % Groessenunterschied. Baphomets Fluch skaliert kaum — ein Ort ist ein
-#    Raum, keine Landschaft. Die alten Werte (0.62 bis 1.15, also 85 %) waren fuer eine
-#    Kamera gedacht, die von schraeg oben auf eine Wueste sieht.
+#  * **Ein Fluchtpunkt.** Jeder Ort hat einen, er steht in `flucht` und liegt auf oder nahe
+#    der Augenhoehe der Kamera. An ihm richtet sich die gemalte Architektur aus, und an ihm
+#    rechnet sich die Tiefenstaffelung aus.
+#
+#  * **Die Kamera steht auf Augenhoehe eines Erwachsenen**, hoechstens eine Handbreit
+#    darueber. Das bleibt -- es ist der Unterschied zur Iso-Ansicht, und es ist der Grund,
+#    warum man den Figuren ins Gesicht sieht.
+#
+#  * **Die Figur ist gross**: rund 210 px bei Massstab 1.0, knapp ein Drittel der Bildhoehe,
+#    vorn an der Rampe. Hinten darf sie auf die Haelfte schrumpfen.
+#
+#  * **Die Tiefe ist echt.** Bis zu 50 % Groessenunterschied zwischen vorderster und
+#    hinterster Standposition. Die alten 20 % waren zu wenig fuer einen Raum, in den man
+#    hineinsieht; die noch aelteren 85 % waren die Iso-Kamera. Der Wert je Ort wird an der
+#    GEMALTEN Perspektive eingemessen, nicht geschaetzt -- zwei Punkte im fertigen Bild,
+#    vorne und hinten, an denen eine Figur stehen koennte.
+#
+#  * **Die begehbare Flaeche ist ein Vieleck** (`flaeche`), keine Rechtecke mehr. Eine
+#    wegfluchtende Gasse ist ein Trapez, ein Zimmer mit Ecke ist ein L. Rechtecke zwingen
+#    jeden Ort in dieselbe waagerechte Bank -- und damit wieder in die Theaterkulisse.
+#    `gehfeld` (Rechtecke) bleibt als Rueckfall fuer Orte, die noch nicht eingemessen sind.
+#
+# Eingemessen wird ERST, wenn das gemalte Bild da ist. Eine begehbare Flaeche vorher
+# festzulegen heisst, dem Maler vorzuschreiben, wo die Gasse langgeht -- und dann passen
+# Bild und Flaeche genau so wenig zusammen wie jetzt.
 
-## Hoehe der Figur in Pixeln bei Massstab 1.0.
+## Hoehe der Figur in Pixeln bei Massstab 1.0 (vorne an der Rampe).
 const FIGUR_HOEHE: float = 210.0
 
-## Oberhalb dieser Linie wird nicht gelaufen — dort steht das gemalte Bild.
+## Wo die Figur frueheste stehen darf, wenn ein Ort nichts anderes sagt. Kein Verbot mehr,
+## sondern eine Vorgabe: Ein eingemessener Ort darf seine Flaeche weiter hinaufziehen, wenn
+## die gemalte Perspektive es hergibt.
 const BUEHNE_HORIZONT: float = 430.0
 
 ## Wie klein die Figur hinten und wie gross vorne, wenn ein Ort keine eigene `tiefe` angibt.
-## Flach, siehe oben: 0.88 bis 1.08 sind 20 % ueber den ganzen Laufstreifen.
-const TIEFE_STANDARD: Array = [450.0, 665.0, 0.88, 1.08]
+const TIEFE_STANDARD: Array = [430.0, 665.0, 0.74, 1.06]
+
+## Wie viel Groessenunterschied ein Ort hoechstens haben darf (0.5 = 50 %).
+## Darueber kippt es in die Iso-Ansicht zurueck.
+const TIEFE_MAX: float = 0.50
 
 ## Die Orte des ersten Aktes. Reihenfolge ist die Reihenfolge der Geschichte, nicht Alphabet —
 ## wer hier liest, soll den Weg des Spielers sehen.
@@ -226,7 +252,18 @@ const ORTE: Dictionary = {
 		"name": "Rustwater — Platz",
 		"bild": "res://assets/orte/platz.webp",
 		"farben": [Color(0.50, 0.42, 0.32), Color(0.33, 0.29, 0.26), Color(0.21, 0.19, 0.17)],
-		"gehfeld": [Rect2(80.0, 460.0, 1120.0, 210.0), Rect2(520.0, 435.0, 260.0, 45.0)],
+		# Der erste eingemessene Ort. Die begehbare Flaeche ist ein Trapez: vorne an der
+		# Rampe ueber die ganze Bildbreite, nach hinten auf gut die Haelfte zusammenlaufend.
+		# Das ist der Platz, in den man HINEINsieht -- nicht eine Bank vor einer bemalten
+		# Wand. Die Werte sind an der Perspektive eingemessen, die das gemalte Bild haben
+		# soll; wenn es da ist, werden sie daran nachgezogen.
+		"flaeche": [
+			Vector2(60.0, 668.0), Vector2(1220.0, 668.0),
+			Vector2(980.0, 452.0), Vector2(300.0, 452.0),
+		],
+		"gehfeld": [Rect2(80.0, 460.0, 1120.0, 210.0)],
+		"flucht": Vector2(640.0, 300.0),
+		"tiefe": [452.0, 668.0, 0.72, 1.06],
 		"start": Vector2(640.0, 600.0),
 		"punkte": {
 			"brunnen": {
@@ -282,7 +319,7 @@ const ORTE: Dictionary = {
 			"raus": {
 				"name": "Tor nach draußen",
 				"rect": Rect2(0.0, 460.0, 80.0, 210.0),
-				"hin": Vector2(85.0, 590.0),
+				"hin": Vector2(165.0, 600.0),
 				"ansehen": "Zurück auf die Piste. Die Wüste wartet, sie hat Zeit.",
 				"ziel": "piste",
 				"dort": "von_platz",
@@ -298,7 +335,7 @@ const ORTE: Dictionary = {
 			"schmiede": {
 				"name": "Schmiede",
 				"rect": Rect2(960.0, 250.0, 230.0, 180.0),
-				"hin": Vector2(1050.0, 480.0),
+				"hin": Vector2(985.0, 487.0),
 				"ansehen": "Ein offener Schuppen mit Esse. Der Hammerschlag kommt in einem Takt, der sich seit dreißig Jahren nicht geändert hat.",
 				"ziel": "schmiede",
 				"dort": "von_platz",
@@ -306,7 +343,7 @@ const ORTE: Dictionary = {
 			"schacht": {
 				"name": "Weg zum Vorschacht",
 				"rect": Rect2(1180.0, 460.0, 100.0, 210.0),
-				"hin": Vector2(1190.0, 600.0),
+				"hin": Vector2(1115.0, 612.0),
 				"ansehen": "Hinter der Schmiede führt ein ausgetretener Pfad zum Schachtkopf. Früher gingen dort morgens vierzig Mann hinunter. Heute steht der Förderkorb oben und niemand daneben.",
 				"ziel": "vorschacht",
 				"dort": "von_platz",
@@ -566,13 +603,46 @@ static func punkte_alle(kennung: String) -> Dictionary:
 	return raus
 
 
-## Die begehbare Flaeche als Liste von Rechtecken.
+## Die begehbare Flaeche als Liste von Rechtecken (Rueckfall fuer nicht eingemessene Orte).
 static func gehfeld(kennung: String) -> Array:
 	return ort(kennung).get("gehfeld", []) as Array
 
 
+## Die begehbare Flaeche als Vieleck, oder leer.
+##
+## Das ist die Form, die ein eingemessener Ort benutzt: eine wegfluchtende Gasse ist ein
+## Trapez, ein Zimmer mit Ecke ein L. Rechtecke koennen beides nicht und zwingen jeden Ort in
+## dieselbe waagerechte Bank.
+static func flaeche(kennung: String) -> PackedVector2Array:
+	var f: Variant = ort(kennung).get("flaeche", null)
+	if f is PackedVector2Array:
+		return f as PackedVector2Array
+	if f is Array:
+		var raus: PackedVector2Array = PackedVector2Array()
+		for p in f as Array:
+			raus.append(p as Vector2)
+		return raus
+	return PackedVector2Array()
+
+
+## Der Fluchtpunkt des Ortes -- woran sich die gemalte Architektur ausrichtet.
+##
+## Liegt auf oder nahe der Augenhoehe der Kamera. Wird beim Einmessen des fertigen Bildes
+## eingetragen und dient als Angabe fuer den Maler, nicht als Rechengroesse: Die
+## Tiefenstaffelung kommt aus `tiefe`, weil die an zwei echten Standpunkten eingemessen wird
+## und damit auch dann stimmt, wenn das Bild nicht perfekt konstruiert ist.
+static func fluchtpunkt(kennung: String) -> Vector2:
+	return ort(kennung).get("flucht", Vector2(RAHMEN.x * 0.5, 360.0)) as Vector2
+
+
 ## Darf die Figur hier stehen?
+##
+## Vieleck schlaegt Rechtecke. Ein Ort, der beides hat, ist eingemessen -- dann gilt das
+## Vieleck, und die Rechtecke sind nur noch Altlast.
 static func begehbar(kennung: String, wo: Vector2) -> bool:
+	var poly: PackedVector2Array = flaeche(kennung)
+	if poly.size() >= 3:
+		return Geometry2D.is_point_in_polygon(wo, poly)
 	for r in gehfeld(kennung):
 		if (r as Rect2).has_point(wo):
 			return true
@@ -588,6 +658,19 @@ static func naechster_punkt(kennung: String, wo: Vector2) -> Vector2:
 		return wo
 	var beste: Vector2 = wo
 	var abstand: float = INF
+	var poly: PackedVector2Array = flaeche(kennung)
+	if poly.size() >= 3:
+		# Auf die naechste Kante projizieren. Ohne das rutscht die Figur beim Klick neben die
+		# Gasse auf deren Mitte statt an den Rand, und das sieht aus wie ein Sprung.
+		for i in range(poly.size()):
+			var a: Vector2 = poly[i]
+			var b: Vector2 = poly[(i + 1) % poly.size()]
+			var p: Vector2 = Geometry2D.get_closest_point_to_segment(wo, a, b)
+			var d: float = p.distance_to(wo)
+			if d < abstand:
+				abstand = d
+				beste = p
+		return beste
 	for r in gehfeld(kennung):
 		var rect: Rect2 = r as Rect2
 		var p: Vector2 = Vector2(

@@ -115,7 +115,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_klassen_ueber_pfad": 2,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
-	"_test_abenteuer_welt": 240,
+	"_test_abenteuer_welt": 243,
 	"_test_abenteuer_gespraeche": 435,
 	"_test_abenteuer_missionen": 137,
 	"_test_abenteuer_welt_logik": 22,
@@ -7941,26 +7941,39 @@ func _test_abenteuer_welt() -> void:
 		_check("Ort %s: Startpunkt liegt im Gehfeld" % kennung,
 			OrtDaten.begehbar(kennung, start), "Start %s" % str(start))
 
-	# Buehnenregel (Baphomets Fluch): Es wird im unteren Drittel gelaufen, nicht im Bild.
-	# Ein Gehfeld, das darueber hinausragt, ist der Rueckfall in die Iso-Ansicht.
+	# Die begehbare Flaeche bleibt im Bild. Die Hoehengrenze von frueher ist WEG: Ein Ort mit
+	# echter Perspektive darf seine Gasse weiter hinaufziehen, und genau das soll er. Was
+	# bleibt, ist die Forderung, dass die Flaeche ueberhaupt im Rahmen liegt.
 	for o in OrtDaten.alle():
 		var kennung2: String = str(o)
 		for r in OrtDaten.gehfeld(kennung2):
 			var rect: Rect2 = r as Rect2
-			_check("Ort %s: Gehfeld beginnt unterhalb des Buehnenhorizonts" % kennung2,
-				rect.position.y >= OrtDaten.BUEHNE_HORIZONT,
-				"y=%.0f, erlaubt ab %.0f" % [rect.position.y, OrtDaten.BUEHNE_HORIZONT])
 			_check("Ort %s: Gehfeld bleibt im Rahmen" % kennung2,
 				rect.end.y <= OrtDaten.RAHMEN.y and rect.position.x >= 0.0
 					and rect.end.x <= OrtDaten.RAHMEN.x)
+		var poly: PackedVector2Array = OrtDaten.flaeche(kennung2)
+		if poly.size() > 0:
+			_check("Ort %s: Vieleck hat mindestens drei Ecken" % kennung2, poly.size() >= 3)
+			for punkt in poly:
+				_check("Ort %s: Vieleck-Ecke liegt im Rahmen" % kennung2,
+					punkt.x >= 0.0 and punkt.x <= OrtDaten.RAHMEN.x
+						and punkt.y >= 0.0 and punkt.y <= OrtDaten.RAHMEN.y, str(punkt))
 
-	# Flache Tiefe: hoechstens 25 % Groessenunterschied ueber den ganzen Laufstreifen.
+	# Echte Tiefe, aber keine Iso-Ansicht: bis 50 % Groessenunterschied.
+	#
+	# Die frueheren 25 % waren zu wenig. Sie stammten aus der Annahme, Baphomets Fluch sei
+	# eine flache Theaterkulisse -- ist es nicht, es hat Architekturperspektive, und die Figur
+	# wird auf dem Weg nach hinten deutlich kleiner. Mit 25 % kann ein Hintergrund gar nicht
+	# nach Raum aussehen, weil die Figur die Tiefe nicht bestaetigt, die das Bild behauptet.
 	for o in OrtDaten.alle():
 		var kennung3: String = str(o)
 		var t: Array = OrtDaten.ort(kennung3).get("tiefe", OrtDaten.TIEFE_STANDARD) as Array
 		var spanne: float = float(t[3]) / maxf(float(t[2]), 0.01) - 1.0
-		_check("Ort %s: Tiefe ist flach (%.0f %%)" % [kennung3, spanne * 100.0],
-			spanne <= 0.25, "mehr als 25 %% waere wieder Iso")
+		_check("Ort %s: Tiefe bleibt unter %.0f %% (%.0f %%)"
+			% [kennung3, OrtDaten.TIEFE_MAX * 100.0, spanne * 100.0],
+			spanne <= OrtDaten.TIEFE_MAX, "darueber kippt es in die Iso-Ansicht")
+		_check("Ort %s: die Figur wird nach hinten kleiner" % kennung3,
+			float(t[3]) > float(t[2]), "sonst stimmt die Richtung der Staffelung nicht")
 
 	# Jeder Hotspot: Name, Ansehen-Text, erreichbarer Standpunkt.
 	for o in OrtDaten.alle():
