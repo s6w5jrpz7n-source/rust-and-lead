@@ -23,6 +23,11 @@ extends Node3D
 ## keinen Sonderzustand mehr zu kennen — die Flagge dafür ist mit diesem Entwurf weggefallen.
 
 const OVERWORLD := preload("res://scenes/Overworld.tscn")
+## Das Punkt-und-Klick-Abenteuer -- seit der Umstellung auf die Bauform von Baphomets Fluch
+## ist DAS das Spiel. Die Action-Fassung bleibt im Menue erreichbar, weil sie fertig ist und
+## niemandem nuetzt, wenn sie nur noch im Versionsverlauf steht.
+const ABENTEUER := preload("res://scenes/Abenteuer.tscn")
+const Welt = preload("res://scripts/Welt.gd")
 const TITELBILD := preload("res://assets/ui/titelbild.webp")
 const SAVE_SLOT: int = 0
 
@@ -124,9 +129,10 @@ func _bau_oberflaeche() -> void:
 func _menue() -> Array:
 	var hat_stand: bool = SaveManager.has_slot(SAVE_SLOT)
 	var eintraege: Array = [
-		["neu", "Neues Spiel", false],
+		["abenteuer", "Neues Spiel", false],
 		["laden", "Spiel laden", not hat_stand],
-		["tutorial", "Tutorial", false],
+		["neu", "Action-Fassung (alt)", false],
+		["tutorial", "Tutorial (Action-Fassung)", false],
 		["einstellungen", "Einstellungen", false],
 		["steuerung", "Steuerung", false],
 		["credits", "Credits", false],
@@ -138,6 +144,8 @@ func _menue() -> Array:
 
 func _gewaehlt(kennung: String) -> void:
 	match kennung:
+		"abenteuer":
+			_abenteuer_starten()
 		"neu":
 			_starten(true, false)
 		"laden":
@@ -148,6 +156,20 @@ func _gewaehlt(kennung: String) -> void:
 			get_tree().quit()
 		_:
 			_blatt_zeigen(kennung)
+
+
+## Ins Abenteuer.
+##
+## Kein Ladebildschirm, und das ist kein Versaeumnis: Die Buehne baut sich aus einer Tabelle
+## auf, nicht aus Gelaendeflicken und Streuung. Was beim Start der Action-Fassung Sekunden
+## dauert, ist hier ein Dictionary-Zugriff -- ein Ladebildschirm waere kuerzer sichtbar, als
+## das Auge braucht, um ihn zu bemerken.
+func _abenteuer_starten() -> void:
+	SaveManager.delete_slot(SAVE_SLOT)
+	GameState.neu_beginnen()
+	Welt.neu()
+	GameState.current_chapter = 1
+	get_tree().change_scene_to_packed(ABENTEUER)
 
 
 ## Ins Spiel. `frisch` setzt den Prolog zurück, `tutorial` schaltet zusätzlich die Hinweistafeln

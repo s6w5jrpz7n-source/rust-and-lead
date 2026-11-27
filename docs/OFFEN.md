@@ -4,8 +4,29 @@
 > vereinbart. Sie wird bei jeder Änderung mitgeführt — genau deshalb gibt es sie: Zugesagtes,
 > das nur im Gesprächsverlauf steht, geht verloren.
 
-Stand: nach dem Umbau der Kopfzeile, den Wirten vor ihren Häusern und dem Einbau der gemalten
-Sinnbilder.
+Stand: nach der Umstellung auf das **Punkt-und-Klick-Abenteuer** in der Bauform von
+Baphomets Fluch. Beschreibung in `docs/ABENTEUER.md`.
+
+---
+
+## 0 · Das Abenteuer — was als Nächstes dran ist
+
+**Erledigt in dieser Runde:** Bühne, Laufen, Hotspots, Inventar mit Kombinieren, Gespräche mit
+Sinnbildern, Tagebuch, Kapitelstruktur, Farbraum ausgemessen und festgeschrieben, Kapitel 1
+ausgespielt und als durchspielbar nachgewiesen (2675 Prüfungen grün).
+
+| Was | Zustand |
+| :-- | :-- |
+| **Hintergrundbilder** (7 Orte) | fehlen. Das Spiel läuft mit gezeichneten Platzhaltern. Rezeptur in `docs/ABENTEUER.md` §6. **Der ElevenLabs-Verbinder darf zur Zeit keine Bilder erzeugen** („requires additional permissions") — in den Verbinder-Einstellungen auf claude.ai neu verbinden. |
+| **Figurengrafik** | fehlt. Dreiviertelansicht, Lauf links/rechts, ~210 px, durchsichtiger Grund. Solange: Silhouette mit Hut. |
+| Portraits `quentin`, `dolores` | fehlen (`held`, `mabel`, `silas`, `doc` sind da) |
+| Kapitel 2 | Orte und Rätsel stehen teilweise (`vorschacht`), Schlussszene fehlt |
+| Kapitel 3–12 | nur Gerüst in `KapitelDaten.gd` (Titel, Schlussort) |
+| Vertonung der neuen Zeilen | `python3 docs/build_spiel_stimmen.py` + `azure_tts.py --spiel`; braucht den Azure-Schlüssel |
+| Alte Stollen-Fehler (Inventar, „Stollen verlassen" stürzt ab) | betreffen die **Action-Fassung**. Im Abenteuer gibt es diesen Bildschirm nicht mehr. |
+| `tools/Durchlauf.gd` | parst nicht (verweist auf Quest `q_stollen`, die es nicht gibt) — bestand schon vorher |
+
+---
 
 > **Eine Korrektur an mir selbst:** In der ersten Fassung dieser Liste stand, die Porträts von
 > Mabel, Silas und Doc erschienen in keinem Gespräch. Das war falsch — `DialogBox.show_line()`

@@ -34,6 +34,12 @@ static func serialize() -> Dictionary:
 		"fog": GameState.fog.duplicate(),
 		"economy": GameState.economy.duplicate(true),
 		"kills": GameState.kills,
+		"ort": GameState.ort,
+		"flaggen": GameState.flaggen.duplicate(true),
+		"beutel": GameState.beutel.duplicate(),
+		"zaehler": GameState.zaehler.duplicate(true),
+		"besucht": GameState.besucht.duplicate(),
+		"notizen": GameState.notizen.duplicate(),
 		"quests": GameState.quests.duplicate(true),
 		"tracked_quest": GameState.tracked_quest,
 		"weapons": GameState.weapons.duplicate(),
@@ -99,6 +105,22 @@ static func deserialize(data: Dictionary) -> void:
 			GameState.fog[int(k)] = 1
 	GameState.economy = _int_dict_with_defaults(data.get("economy", {}), { "saloon": 0, "forge": 0, "distillery": 0, "laboratory": 0 })
 	GameState.kills = maxi(0, int(data.get("kills", 0)))
+	# Abenteuer-Welt. Altstaende haben die Felder nicht; dann gilt der Anfang, und das ist
+	# richtig -- ein Spielstand aus dem Action-Spiel hat kein Adventure begonnen.
+	GameState.ort = str(data.get("ort", "kippe"))
+	GameState.flaggen = {}
+	for k in (data.get("flaggen", {}) as Dictionary):
+		GameState.flaggen[str(k)] = true
+	GameState.beutel = []
+	for gegenstand in (data.get("beutel", []) as Array):
+		GameState.beutel.append(str(gegenstand))
+	GameState.zaehler = _int_dict(data.get("zaehler", {}))
+	GameState.besucht = []
+	for o in (data.get("besucht", []) as Array):
+		GameState.besucht.append(str(o))
+	GameState.notizen = []
+	for n in (data.get("notizen", []) as Array):
+		GameState.notizen.append(str(n))
 	GameState.quests = (data.get("quests", {}) as Dictionary).duplicate(true)
 	GameState.tracked_quest = String(data.get("tracked_quest", ""))
 	GameState.weapons = Array(data.get("weapons", []))
