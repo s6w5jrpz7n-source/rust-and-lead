@@ -120,7 +120,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_abenteuer_missionen": 137,
 	"_test_abenteuer_welt_logik": 22,
 	"_test_abenteuer_kapitel": 33,
-	"_test_abenteuer_bild_und_farbe": 181,
+	"_test_abenteuer_bild_und_farbe": 209,
 	"_test_abenteuer_kapitel1_durchspielen": 30,
 }
 
@@ -8315,6 +8315,32 @@ func _test_abenteuer_bild_und_farbe() -> void:
 	# Ableitung, auf die sich der Spieler verlassen koennen muss.
 	_check("Eine beendende Antwort bekommt die Tuer",
 		Sinnbild.fuer_antwort({"text": "(Gehen)"}) == "weg")
+
+	# Die Stilentscheidung als Zahl: **Gaslicht, nicht Oelschwarz.**
+	#
+	# Gewaehlt wurde die Behandlung mit offenen Schatten -- Mitteltoene tragen das Bild,
+	# getrennt wird ueber Silhouette und lokalen Kontrast, nicht ueber Dunkelheit. Der Grund
+	# ist kein Geschmack: In der Oelschwarz-Variante liegt die untere Bildhaelfte bei einer
+	# Helligkeit um 0,03, und genau dort sitzen die anklickbaren Dinge. Auf einem Telefon bei
+	# Sonne findet sie dann niemand mehr.
+	#
+	# Diese Pruefung haelt die Platzhalterfarben in dem Band. Ohne sie driftet das beim
+	# Ergaenzen neuer Orte unbemerkt ins Dunkle -- jeder einzelne Ort nur ein bisschen, und
+	# nach zehn Orten ist es ein anderes Spiel.
+	for o in OrtDaten.alle():
+		var farben: Array = OrtDaten.ort(str(o)).get("farben", []) as Array
+		_check("Ort %s hat drei Platzhalterfarben" % str(o), farben.size() == 3)
+		if farben.size() != 3:
+			continue
+		var boden_h: float = Palette.helligkeit(farben[2] as Color)
+		_check("Ort %s: der Boden ist nicht abgesoffen (%.3f)" % [str(o), boden_h],
+			boden_h >= 0.09,
+			"unter 0,09 ist Oelschwarz -- dort sind die Hotspots nicht mehr zu finden")
+		_check("Ort %s: der Boden ist nicht ausgewaschen (%.3f)" % [str(o), boden_h],
+			boden_h <= 0.40, "heller als das waere kein grim-dark mehr")
+		var mitte_h: float = Palette.helligkeit(farben[1] as Color)
+		_check("Ort %s: die Ferne ist heller als der Boden" % str(o), mitte_h > boden_h,
+			"%.3f gegen %.3f -- sonst kippt die Tiefenstaffelung" % [mitte_h, boden_h])
 
 	# Der Farbkeil: aufsteigend, und die Enden weit genug auseinander.
 	for i in range(Palette.KEIL.size() - 1):

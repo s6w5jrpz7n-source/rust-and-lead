@@ -148,9 +148,10 @@ Die Kennung steht im Feld `bild` in `scripts/OrtDaten.gd`.
 > characters to walk on. 16:9 widescreen.
 >
 > COLOUR: strictly limited to one warm ochre/rust ramp, no other hues — #090201 #140a06
-> #1e110b #2b1b13 #3f291b #583d27 #6f4c31 #865c3c #a57950 #c19769 #e2bf91. Deep near-black
-> shadows, mid rust-browns, bright sandy ochre highlights, hazy pale-gold sky at the horizon.
-> Dusty, sun-bleached, grim. At most one single cool accent.
+> #1e110b #2b1b13 #3f291b #583d27 #6f4c31 #865c3c #a57950 #c19769 #e2bf91. Evenly lit,
+> mid-tone painting. Shadows are soft and open, never crushed to black. Objects separate by
+> local contrast and silhouette, not by darkness. Overcast dusty daylight, hazy pale-gold sky
+> at the horizon. Sun-bleached and grim, but readable. At most one single cool accent.
 >
 > NO people, NO characters, NO animals, NO readable lettering anywhere. Empty set only.
 
@@ -159,7 +160,25 @@ Nur SCENE wird getauscht. Das ist der ganze Grund, warum zwanzig Bilder zusammen
 werden: Nicht der Stil im Prompt hält sie zusammen, sondern dass dreiviertel des Prompts
 identisch ist.
 
-### Die drei Richtungen zur Wahl
+### Entschieden: **A — Gaslicht**
+
+Mitteltöne tragen das Bild, Schatten bleiben offen, Trennung über Silhouette und lokalen
+Kontrast statt über Dunkelheit. Das ist die Behandlung, die dem echten Baphomets Fluch am
+nächsten kommt, und die einzige, bei der die Hotspots im unteren Drittel auf einem Telefon
+bei Tageslicht zuverlässig zu finden sind. Die COLOUR-Vorlage oben enthält sie bereits.
+
+Verworfen, mit Grund:
+
+* **B — Ölschwarz** hätte das Intro exakt getroffen (schwarze Massen, glühende Fenster, harter
+  Lichtsaum), aber in Ölschwarz liegt die untere Bildhälfte bei einer Helligkeit um 0,03 —
+  und genau dort liegen die anklickbaren Dinge. Eine Atmosphäre, die das Spiel unbedienbar
+  macht, ist keine.
+* **C — Blaupause** (A plus cyanfarbene Konzern-Risszeichnung) war der eigenständigste Look,
+  kostet aber je Bild eine zweite Ebene und bricht die Regel „höchstens ein kühler Akzent".
+  Die Idee bleibt verfügbar: Als **einzelner** Ort — das Walzen-Archiv in Kapitel 12 — wäre
+  sie stark, gerade weil sie dann nicht überall ist.
+
+### Die drei Richtungen im Vergleich
 
 Gerendert mit `tools/StilProbe.gd` — derselbe Ort, dreimal behandelt. Was die Proben zeigen:
 Helligkeitsverteilung, Kontrastumfang, wie viel kühler Akzent, ob die Figur lesbar bleibt.
