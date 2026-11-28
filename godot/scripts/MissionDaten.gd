@@ -11,7 +11,9 @@ extends RefCounted
 ##
 ## ## Die vier Tabellen
 ##
-## * `GEGENSTAENDE` — was man tragen kann. `kombi` sagt, worauf es angewendet werden darf.
+## * `GEGENSTAENDE` — was man tragen kann. `kombi` sagt, worauf es angewendet werden darf,
+##   `bild` ist das freigestellte Sprite für die Inventarleiste (fehlt es, zeichnet
+##   `Sinnbild` ein Ersatzzeichen).
 ## * `MISSIONEN` — Aufträge mit Schritten. Ein Schritt ist erfüllt, wenn seine `bedingung`
 ##   zutrifft; die Mission ist fertig, wenn alle Schritte erfüllt sind.
 ## * `NOTIZEN` — was der Held über die Welt weiß. Das ist kein Flavour: Im dritten Akt hängen
@@ -29,20 +31,24 @@ extends RefCounted
 const GEGENSTAENDE: Dictionary = {
 	"revolver": {
 		"name": "Abgegriffener Revolver",
+		"bild": "res://assets/dinge/revolver.webp",
 		"text": "Sechs Kammern, zwei geladen. Der Griff hat die Form einer Hand, die nicht meine ist — und doch liegt er richtig.",
 	},
 	"schraubstock": {
 		"name": "Schwerer Schraubstock",
+		"bild": "res://assets/dinge/schraubstock.webp",
 		"text": "Gusseisen, zwölf Pfund, nicht festgeschraubt. Silas wird ihn vermissen, aber nicht bald.",
 		"kombi": ["karre"],
 	},
 	"grubenstahl": {
 		"name": "Grubenstahl",
+		"bild": "res://assets/dinge/grubenstahl.webp",
 		"text": "Drei Barren aus dem Vorschacht. Kalt, schwer, und an einer Kante klebt etwas, das nicht Erz ist.",
 		"kombi": ["esse"],
 	},
 	"linse": {
 		"name": "Kinetoskop-Linse",
+		"bild": "res://assets/dinge/linse.webp",
 		"text": "Eine geschliffene Linse aus der Guckloch-Säule, handtellergroß. Sie bündelt, was hinter ihr brennt, zu einem Strahl, der weiter trägt als jede Lampe.",
 		"kombi": ["oellampe"],
 		"verbinden": {
@@ -53,34 +59,41 @@ const GEGENSTAENDE: Dictionary = {
 	},
 	"signallampe": {
 		"name": "Signallampe",
+		"bild": "res://assets/dinge/signallampe.webp",
 		"text": "Grubenlampe mit Kinetoskop-Linse davor. Damit leuchtet man nicht, damit meldet man — und zwar in dem Takt, den der Konzern seinen Patrouillen beigebracht hat.",
 		"kombi": ["felsen", "stollen_dunkel"],
 	},
 	"akte_mantel": {
 		"name": "Akte „Projekt Mantel“",
+		"bild": "res://assets/dinge/akte.webp",
 		"text": "Eine Krankenakte ohne Namen. PROJEKT MANTEL — EINHEIT 7. Letzter Eintrag vor drei Wochen: Erinnerungswalze getauscht.",
 	},
 	"walze": {
 		"name": "Gesprungene Musikwalze",
+		"bild": "res://assets/dinge/walze.webp",
 		"text": "Eine Holzwalze mit Messingstiften. Ein Drittel der Stifte fehlt, der Rest sitzt schief. Darin steckt das Lied einer Toten.",
 		"kombi": ["silas", "dolores"],
 	},
 	"beweis_wegelagerer": {
 		"name": "Acht Halstücher",
+		"bild": "res://assets/dinge/halstuecher.webp",
 		"text": "Acht rote Tücher, jedes mit einem eingenähten Zeichen. Wegelagerer markieren ihre Beute, damit sich die Banden nicht gegenseitig bestehlen. Jetzt markieren sie sich selbst.",
 	},
 	"oellampe": {
 		"name": "Grubenlampe",
+		"bild": "res://assets/dinge/oellampe.webp",
 		"text": "Messing, verbeult, der Docht noch feucht. Brennt lange genug für einen Weg hinein und nicht lange genug für einen zurück.",
 		"kombi": ["stollen_dunkel", "linse"],
 	},
 	"brecheisen": {
 		"name": "Brecheisen",
+		"bild": "res://assets/dinge/brecheisen.webp",
 		"text": "Eine Elle Flachstahl mit Klaue. Der Griff ist mit Lappen umwickelt, damit die Hand nicht friert. Wer das gewickelt hat, hat hier Winter erlebt.",
 		"kombi": ["foerderkorb", "schrank", "truhe"],
 	},
 	"kesselschluessel": {
 		"name": "Sechskantschlüssel",
+		"bild": "res://assets/dinge/kesselschluessel.webp",
 		"text": "Aus Doc Aris' unterster Schublade. Für Verschlüsse, die nicht in Fleisch vorkommen.",
 		"kombi": ["bahre", "kadaver"],
 	},

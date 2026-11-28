@@ -108,6 +108,10 @@ var _hintergrund: Texture2D = null
 ## Bildflaeche und sieht nie so gut aus.
 var _vordergrund: Texture2D = null
 
+## Geladene Sprites, nach Pfad. Ohne den Zwischenspeicher laedt jedes Bild bei jedem
+## `queue_redraw` neu -- und das sind bei einer laufenden Figur sechzig Mal in der Sekunde.
+var _sprites: Dictionary = {}
+
 ## Die Figur in drei Haltungen, oder leer.
 ##
 ## Der Massstab kommt aus der STEHENDEN Haltung und gilt fuer alle drei. Jede einzeln auf
@@ -472,7 +476,7 @@ func _leiste_klick(wo: Vector2) -> void:
 
 func _draw() -> void:
 	_zeichne_buehne()
-	_zeichne_figur()
+	_zeichne_bevoelkerung()
 	if _vordergrund != null:
 		draw_texture_rect(_vordergrund, Rect2(Vector2.ZERO, OrtDaten.RAHMEN), false)
 	_zeichne_hotspot_name()
@@ -518,6 +522,75 @@ func _zeichne_buehne() -> void:
 ##
 ## Kein Platzhalter-Rechteck. Eine Gestalt mit Hut liest sich auf den ersten Blick als Mensch,
 ## und man sieht sofort, ob Grösse und Standpunkt stimmen — ein Rechteck zeigt das nicht.
+## Alles, was auf dem Boden steht, in der richtigen Reihenfolge zeichnen.
+##
+## **Sortiert wird nach dem Fusspunkt, nicht nach der Reihenfolge in der Tabelle.** Das ist
+## der ganze Trick an dieser Bauform: Wer weiter vorn steht, verdeckt den, der weiter hinten
+## steht. Ohne das laeuft der Held durch Mabel hindurch -- oder, schlimmer, sie durch ihn,
+## je nachdem wie die Tabelle gerade sortiert ist.
+func _zeichne_bevoelkerung() -> void:
+	var liste: Array = []
+	for eintrag in OrtDaten.sprites(_ort, Welt.sicht_pruefer()):
+		liste.append(eintrag)
+	liste.append({"kennung": "", "held": true, "fuss": _figur_pos})
+	liste.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return (a["fuss"] as Vector2).y < (b["fuss"] as Vector2).y)
+
+	for e in liste:
+		var eintrag: Dictionary = e as Dictionary
+		if bool(eintrag.get("held", false)):
+			_zeichne_figur()
+		else:
+			_zeichne_sprite(eintrag)
+
+
+## Ein Sprite zeichnen -- Person oder Gegenstand.
+##
+## Eine Person wird wie der Held in der Tiefe skaliert, damit Mabel hinter der Theke kleiner
+## ist als der Held davor. Ein Gegenstand fuellt sein Rechteck: Das steht schon an der
+## richtigen Stelle im gemalten Bild und braucht keine zweite Rechnung.
+func _zeichne_sprite(eintrag: Dictionary) -> void:
+	var bild: Texture2D = _sprite_laden(str(eintrag["bild"]))
+	if bild == null or bild.get_height() <= 0:
+		return
+	var fuss: Vector2 = eintrag["fuss"] as Vector2
+
+	if bool(eintrag.get("person", false)):
+		var hoehe: float = OrtDaten.FIGUR_HOEHE * float(eintrag.get("groesse", 1.0)) \
+			* OrtDaten.groesse_bei(_ort, fuss.y)
+		var breite: float = hoehe * float(bild.get_width()) / float(bild.get_height())
+		draw_set_transform(fuss, 0.0, Vector2(1.0, 0.26))
+		draw_circle(Vector2.ZERO, breite * 0.40, Color(0.0, 0.0, 0.0, 0.28))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		draw_texture_rect(bild, Rect2(fuss - Vector2(breite * 0.5, hoehe),
+			Vector2(breite, hoehe)), false)
+		return
+
+	# Gegenstand: ins Rechteck, Seitenverhaeltnis behalten, unten mittig verankert.
+	var r: Rect2 = eintrag["rect"] as Rect2
+	var verhaeltnis: float = float(bild.get_width()) / float(bild.get_height())
+	var h2: float = r.size.y
+	var b2: float = h2 * verhaeltnis
+	if b2 > r.size.x:
+		b2 = r.size.x
+		h2 = b2 / verhaeltnis
+	draw_texture_rect(bild, Rect2(
+		Vector2(r.position.x + (r.size.x - b2) * 0.5, r.end.y - h2),
+		Vector2(b2, h2)), false)
+
+
+## Ein Sprite laden und merken. Fehlt die Datei, bleibt es bei `null` und es wird nichts
+## gezeichnet -- der Hotspot bleibt anklickbar, nur unsichtbar.
+func _sprite_laden(pfad: String) -> Texture2D:
+	if _sprites.has(pfad):
+		return _sprites[pfad] as Texture2D
+	var t: Texture2D = null
+	if pfad != "" and ResourceLoader.exists(pfad):
+		t = load(pfad) as Texture2D
+	_sprites[pfad] = t
+	return t
+
+
 ## Welche Haltung gerade gilt.
 func _haltung() -> String:
 	if not _geht:
@@ -618,8 +691,19 @@ func _zeichne_leiste() -> void:
 			0.5 if gewaehlt else 0.25), true)
 		draw_rect(feld, Palette.SANDLICHT if gewaehlt else Palette.RAHMEN, false,
 			3.0 if gewaehlt else 1.5)
-		Sinnbild.zeichne(self, "ding:" + g, feld.position + feld.size * 0.5, 44.0,
-			Palette.SANDLICHT if gewaehlt else Palette.SAND)
+		var bild: Texture2D = _sprite_laden(str(MissionDaten.gegenstand(g).get("bild", "")))
+		if bild != null and bild.get_height() > 0:
+			var verh: float = float(bild.get_width()) / float(bild.get_height())
+			var hh: float = 52.0
+			var bb: float = hh * verh
+			if bb > 56.0:
+				bb = 56.0
+				hh = bb / verh
+			draw_texture_rect(bild, Rect2(feld.position + (feld.size - Vector2(bb, hh)) * 0.5,
+				Vector2(bb, hh)), false)
+		else:
+			Sinnbild.zeichne(self, "ding:" + g, feld.position + feld.size * 0.5, 44.0,
+				Palette.SANDLICHT if gewaehlt else Palette.SAND)
 
 
 ## Schrift mit dunklem Umriss.

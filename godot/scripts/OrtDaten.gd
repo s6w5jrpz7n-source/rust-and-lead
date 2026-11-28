@@ -46,6 +46,9 @@ extends RefCounted
 ## | `sicht`     | Welt-Flagge; ohne sie ist der Hotspot nicht da |
 ## | `weg`       | Welt-Flagge; MIT ihr ist der Hotspot nicht mehr da |
 ## | `person`    | Kennung der Figur fuer Portrait und Stimme |
+## | `sprite`    | freigestelltes Bild, das im Ort gezeichnet wird |
+## | `steht`     | Fusspunkt des Sprites — NUR fuer Personen. Mit `steht` wird in der Tiefe skaliert wie der Held, ohne `steht` fuellt das Sprite sein `rect` |
+## | `groesse`   | Hoehe einer Person im Verhaeltnis zum Helden (1.0 = gleich gross) |
 ##
 ## ## Aufbau eines Ausgangs (`ausgaenge`)
 ##
@@ -161,6 +164,7 @@ const ORTE: Dictionary = {
 				"benutzen": "kadaver_pluendern",
 			},
 			"revolver": {
+				"sprite": "res://assets/dinge/revolver.webp",
 				"name": "Revolver im Staub",
 				"rect": Rect2(700.0, 545.0, 110.0, 60.0),
 				"hin": Vector2(760.0, 625.0),
@@ -168,6 +172,7 @@ const ORTE: Dictionary = {
 				"nehmen": "revolver",
 			},
 			"brecheisen": {
+				"sprite": "res://assets/dinge/brecheisen.webp",
 				"name": "Brecheisen im Schrott",
 				"rect": Rect2(555.0, 480.0, 125.0, 55.0),
 				"hin": Vector2(620.0, 550.0),
@@ -218,6 +223,9 @@ const ORTE: Dictionary = {
 				"braucht": "schraubstock",
 			},
 			"quentin": {
+				"sprite": "res://assets/figuren/quentin.webp",
+				"steht": Vector2(485.0, 558.0),
+				"groesse": 1.00,
 				"name": "Quentin Vale",
 				"rect": Rect2(430.0, 330.0, 110.0, 230.0),
 				"hin": Vector2(520.0, 580.0),
@@ -352,6 +360,9 @@ const ORTE: Dictionary = {
 				"benutzen": "brett_lesen",
 			},
 			"dolores": {
+				"sprite": "res://assets/figuren/dolores.webp",
+				"steht": Vector2(487.0, 548.0),
+				"groesse": 0.85,
 				"name": "Dolores am Brunnenrand",
 				"rect": Rect2(440.0, 400.0, 95.0, 150.0),
 				"hin": Vector2(480.0, 560.0),
@@ -422,6 +433,9 @@ const ORTE: Dictionary = {
 		"start": Vector2(700.0, 650.0),
 		"punkte": {
 			"mabel": {
+				"sprite": "res://assets/figuren/mabel.webp",
+				"steht": Vector2(250.0, 655.0),
+				"groesse": 0.95,
 				"name": "Mamma „Rusty“ Mabel",
 				"rect": Rect2(150.0, 330.0, 200.0, 300.0),
 				"hin": Vector2(540.0, 672.0),
@@ -444,6 +458,9 @@ const ORTE: Dictionary = {
 				"benutzen": "klavier_walze",
 			},
 			"gideon": {
+				"sprite": "res://assets/figuren/gideon.webp",
+				"steht": Vector2(930.0, 575.0),
+				"groesse": 1.05,
 				"name": "Gideon Cross",
 				"rect": Rect2(855.0, 400.0, 210.0, 160.0),
 				"hin": Vector2(840.0, 640.0),
@@ -489,6 +506,9 @@ const ORTE: Dictionary = {
 		"start": Vector2(640.0, 665.0),
 		"punkte": {
 			"silas": {
+				"sprite": "res://assets/figuren/silas.webp",
+				"steht": Vector2(625.0, 660.0),
+				"groesse": 0.95,
 				"name": "Silas „Kupferauge“ Finch",
 				"rect": Rect2(545.0, 390.0, 160.0, 290.0),
 				"hin": Vector2(660.0, 658.0),
@@ -547,6 +567,9 @@ const ORTE: Dictionary = {
 		"start": Vector2(620.0, 692.0),
 		"punkte": {
 			"doc": {
+				"sprite": "res://assets/figuren/doc.webp",
+				"steht": Vector2(920.0, 665.0),
+				"groesse": 1.00,
 				"name": "Doc Aris",
 				"rect": Rect2(860.0, 330.0, 150.0, 300.0),
 				"hin": Vector2(905.0, 678.0),
@@ -569,6 +592,7 @@ const ORTE: Dictionary = {
 				"benutzen": "schrank_oeffnen",
 			},
 			"akte": {
+				"sprite": "res://assets/dinge/akte.webp",
 				"name": "Aufgeschlagene Akte",
 				"rect": Rect2(1010.0, 560.0, 180.0, 90.0),
 				"hin": Vector2(985.0, 692.0),
@@ -820,6 +844,38 @@ static func hingehen(kennung: String, punkt_kennung: String) -> Vector2:
 		return naechster_punkt(kennung, p["hin"] as Vector2)
 	var r: Rect2 = p.get("rect", Rect2()) as Rect2
 	return naechster_punkt(kennung, Vector2(r.position.x + r.size.x * 0.5, r.end.y))
+
+
+## Die Sprites eines Ortes, als Liste von Eintraegen zum Zeichnen.
+##
+## Jeder Eintrag: {kennung, bild, fuss, rect, person, groesse}. `fuss` ist der Punkt, an dem
+## das Sprite auf dem Boden steht (nur bei Personen gesetzt); fuer Gegenstaende ist es die
+## Unterkante des Rechtecks, damit die Reihenfolge trotzdem stimmt.
+##
+## Warum hier und nicht in der Ansicht: Die Reihenfolge, in der gezeichnet wird, haengt an
+## der Tiefe, und die Tiefe ist eine Eigenschaft des Ortes. Die Ansicht soll sortieren und
+## zeichnen, nicht entscheiden, was wo steht.
+static func sprites(kennung: String, sichtbar: Callable = Callable()) -> Array:
+	var raus: Array = []
+	var alle_p: Dictionary = punkte_alle(kennung)
+	for k in alle_p:
+		var p: Dictionary = alle_p[k] as Dictionary
+		if str(p.get("sprite", "")) == "":
+			continue
+		if sichtbar.is_valid() and not bool(sichtbar.call(str(k), p)):
+			continue
+		var rect: Rect2 = p.get("rect", Rect2()) as Rect2
+		var ist_person: bool = p.has("steht")
+		raus.append({
+			"kennung": str(k),
+			"bild": str(p["sprite"]),
+			"person": ist_person,
+			"fuss": (p["steht"] as Vector2) if ist_person else Vector2(
+				rect.position.x + rect.size.x * 0.5, rect.end.y),
+			"rect": rect,
+			"groesse": float(p.get("groesse", 1.0)),
+		})
+	return raus
 
 
 ## Welcher Punkt liegt unter `wo`?

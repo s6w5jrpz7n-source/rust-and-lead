@@ -122,6 +122,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_abenteuer_kapitel": 33,
 	"_test_abenteuer_bild_und_farbe": 209,
 	"_test_abenteuer_kapitel1_durchspielen": 30,
+	"_test_abenteuer_sprites": 85,
 }
 
 
@@ -8477,3 +8478,74 @@ func _test_abenteuer_kapitel1_durchspielen() -> void:
 	Welt.neu()
 	GameState.quests = quests_vorher
 	GameState.gold = gold_vorher
+
+
+## Die Sprites: Personen und Gegenstaende, die im Ort gezeichnet werden.
+##
+## Geprueft wird die Erklaerung, nicht die Datei. Ob ein Bild schon gemalt ist, ist eine Frage
+## des Vorrats; ob der Ort weiss, wo die Person steht und wie gross sie ist, ist eine Frage des
+## Bauplans -- und nur die gehoert in eine Testsuite. Fehlt die Datei, bleibt der Hotspot
+## anklickbar und die Person unsichtbar; fehlt der Fusspunkt, stuende sie im Nichts.
+func _test_abenteuer_sprites() -> void:
+	for o in OrtDaten.alle():
+		var kennung: String = str(o)
+		for k in OrtDaten.punkte_alle(kennung):
+			var p: Dictionary = OrtDaten.punkte_alle(kennung)[k] as Dictionary
+
+			# Wer ein Gesicht hat, braucht auch einen Koerper -- ausser dem Helden selbst.
+			# `kippe/haende` traegt `person: "held"`, damit im Selbstgespraech sein Portrait
+			# erscheint; ein zweites Sprite waere er ein zweites Mal im Bild.
+			if p.has("person") and str(p["person"]) != "held":
+				_check("%s/%s hat ein Sprite" % [kennung, k], str(p.get("sprite", "")) != "",
+					"eine Person ohne Sprite ist im Ort unsichtbar")
+				_check("%s/%s hat einen Fusspunkt" % [kennung, k], p.has("steht"),
+					"ohne `steht` weiss niemand, wo sie steht")
+
+			if str(p.get("sprite", "")) != "":
+				var pfad: String = str(p["sprite"])
+				_check("%s/%s: Sprite liegt im richtigen Ordner" % [kennung, k],
+					pfad.begins_with("res://assets/figuren/")
+						or pfad.begins_with("res://assets/dinge/"), pfad)
+				_check("%s/%s: Sprite ist eine .webp" % [kennung, k], pfad.ends_with(".webp"))
+
+			if p.has("steht"):
+				var fuss: Vector2 = p["steht"] as Vector2
+				_check("%s/%s: Fusspunkt liegt im Rahmen" % [kennung, k],
+					fuss.x >= 0.0 and fuss.x <= OrtDaten.RAHMEN.x
+						and fuss.y >= 0.0 and fuss.y <= OrtDaten.RAHMEN.y, str(fuss))
+				# Eine Person, die oberhalb des Buehnenhorizonts steht, waere winzig oder
+				# schwebte -- ein Zahlendreher im Fusspunkt sieht genau so aus.
+				_check("%s/%s: Fusspunkt liegt unten im Bild" % [kennung, k],
+					fuss.y >= 400.0, "y=%.0f -- schwebt sie?" % fuss.y)
+				var gr: float = float(p.get("groesse", 1.0))
+				_check("%s/%s: Groesse ist plausibel" % [kennung, k],
+					gr >= 0.5 and gr <= 1.5, "%.2f" % gr)
+
+	# Jeder Gegenstand, den man tragen kann, hat ein Bild fuer die Inventarleiste.
+	for g in MissionDaten.GEGENSTAENDE:
+		var gd: Dictionary = MissionDaten.GEGENSTAENDE[g] as Dictionary
+		_check("Gegenstand %s hat ein Inventarbild" % str(g), str(gd.get("bild", "")) != "")
+		if str(gd.get("bild", "")) != "":
+			_check("Gegenstand %s: Bild liegt in assets/dinge" % str(g),
+				str(gd["bild"]).begins_with("res://assets/dinge/"))
+
+	# `sprites()` liefert, was die Ansicht braucht -- und nur das Sichtbare.
+	var liste: Array = OrtDaten.sprites("saloon")
+	_check("Im Saloon gibt es Sprites", not liste.is_empty())
+	for e in liste:
+		var eintrag: Dictionary = e as Dictionary
+		for feld in ["kennung", "bild", "person", "fuss", "rect", "groesse"]:
+			_check("Sprite-Eintrag hat das Feld %s" % String(feld), eintrag.has(feld))
+
+	# Ein aufgenommener Gegenstand verschwindet aus dem Ort. Das ist die Probe darauf, dass
+	# Sichtbarkeit und Zeichnen dieselbe Regel benutzen -- sonst laege der Revolver nach dem
+	# Einstecken weiter im Staub.
+	var vorher: Array = GameState.beutel.duplicate()
+	Welt.neu()
+	var mit: int = OrtDaten.sprites("kippe", Welt.sicht_pruefer()).size()
+	Welt.nehmen("revolver")
+	var ohne: int = OrtDaten.sprites("kippe", Welt.sicht_pruefer()).size()
+	_check("Der Revolver liegt vorher im Ort", mit > ohne, "%d gegen %d" % [mit, ohne])
+	_check("und nach dem Einstecken nicht mehr", ohne == mit - 1)
+	Welt.neu()
+	GameState.beutel = vorher
