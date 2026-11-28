@@ -132,6 +132,10 @@ Ein Bild nachzureichen ändert keine Zeile Logik.
 Ablage: `godot/assets/orte/<kennung>.webp`, Seitenverhältnis 16:9, mindestens 1280×720.
 Die Kennung steht im Feld `bild` in `scripts/OrtDaten.gd`.
 
+> **Die fertigen Prompts stehen in [`PROMPTS_ORTE.md`](PROMPTS_ORTE.md)** — sieben Stück,
+> einer je Ort, jeder vollständig und zum direkten Kopieren. Hier unten steht, *warum* sie so
+> aussehen, wie sie aussehen. Wer nur Bilder erzeugen will, braucht nur die andere Datei.
+
 ### Warum erzeugte Hintergründe billig aussehen
 
 Das ist der Teil, der über die Qualität entscheidet, und er steht vor der Vorlage, weil die
