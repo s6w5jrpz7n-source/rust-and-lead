@@ -198,6 +198,20 @@ Zwei Fallen dabei:
   und Werkzeugleiste Faktoren zwischen 1,1 und 1,7. Dann gilt das Ding, das der Spieler
   unmittelbar neben der Figur sieht — hier der Amboss —, nicht der Mittelwert.
 
+**Und dann kommt noch ein Faktor obendrauf.** Die Rechnung an den Bezugsobjekten liefert die
+*physikalisch* richtige Größe — und die wirkt in diesen Bildern zu klein. Der Grund: Erzeugte
+Hintergründe malen Requisiten überlebensgroß. Wer sich exakt an Brunnenring und Amboss hält,
+bekommt eine Figur, die im Bild verschwindet.
+
+Dafür gibt es keine Formel, nur Hinsehen. Also wurden drei Stufen nebeneinander ins selbe
+Bild gesetzt — gleiche Tiefe, nur der Faktor verschieden — und verglichen: **×1,35 über der
+gerechneten Größe.** Darunter wirkt die Figur verloren, darüber (×1,70) stößt sie in der
+Schmiede an den Dachbalken. Die Stufenbilder erzeugt derselbe ffmpeg-Aufruf, nur mit drei
+Figuren und `drawtext` als Beschriftung.
+
+Damit steht die Figur vorn bei 43 % (Piste) bis 82 % (Lazarett) der Bildhöhe. Die Spanne ist
+kein Fehler: Ein Zelt ist eng gerahmt, eine Wüstenpiste weit.
+
 Verglichen wird in einem zusammengesetzten Bild, nicht im Kopf: `ffmpeg` legt die Figur in
 der Größe, die `OrtDaten.groesse_bei()` liefert, auf den Hintergrund.
 

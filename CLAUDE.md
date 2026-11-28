@@ -131,10 +131,13 @@ Jeder hier hat echte Zeit gekostet. Die Liste ist der eigentliche Wert dieser Da
 16. **Eine Sicht-Flagge, die niemand setzt, lässt eine Figur nie erscheinen.** Dolores stand
     hinter `sicht: "dolores_da"` — und diese Flagge gab es nirgends.
 
-17. **Figurgröße nie schätzen.** In jedem Hintergrund ein Ding mit bekanntem Maß suchen
-    (Tür, Fass, Amboss, Brunnenring) und nachrechnen — und dabei die Tiefe mitrechnen, sonst
-    täuscht der Augenschein. Beim ersten Durchgang war die Figur in jedem Ort zu klein, am
-    Marktplatz um 45 %. Geprüft wird in einem mit `ffmpeg` zusammengesetzten Bild.
+17. **Figurgröße nie schätzen — aber auch nicht nur rechnen.** Erst an einem Ding mit
+    bekanntem Maß nachrechnen (Tür, Fass, Amboss, Brunnenring), die Tiefe mitrechnen.
+    Dann **×1,35 obendrauf**: Erzeugte Hintergründe malen Requisiten überlebensgroß, und die
+    physikalisch richtige Figur wirkt darin verloren. Das hat zwei Runden gekostet — erst war
+    sie geschätzt und zu klein, dann gerechnet und immer noch zu klein.
+    Bei Zweifeln drei Stufen nebeneinander ins selbe Bild setzen und hinsehen, statt eine
+    weitere Runde zu raten.
 
 18. **Angefangene Sätze gehören zum alten Ort.** Beim Ortswechsel und beim Öffnen eines
     Gesprächs leeren, sonst steht im Saloon „Die Schrottkippe".
