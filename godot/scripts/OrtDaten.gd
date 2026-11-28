@@ -429,7 +429,12 @@ const ORTE: Dictionary = {
 			Vector2(640.0, 580.0), Vector2(520.0, 650.0),
 		],
 		"sperren": [Rect2(885.0, 515.0, 165.0, 205.0), Rect2(1040.0, 580.0, 240.0, 140.0), Rect2(450.0, 525.0, 115.0, 125.0), Rect2(855.0, 425.0, 205.0, 135.0),],
-		"tiefe": [505.0, 700.0, 1.47, 2.46],
+		"tiefe": [505.0, 700.0, 1.18, 1.97],
+		# Im Saloon widersprechen sich die Massstaebe: Die Klaviatur rechnet auf 463 px,
+		# die Faesser an der Theke auf 350, der Stuhl im Vordergrund auf 369. Erst war die
+		# Klaviatur massgeblich, und die Figur wurde zu gross -- das Klavier steht weiter
+		# hinten, als es aussieht. Jetzt gilt die Theke, an der die Figur tatsaechlich
+		# steht: 371 px.
 		"start": Vector2(700.0, 650.0),
 		"punkte": {
 			"mabel": {

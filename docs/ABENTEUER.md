@@ -194,6 +194,10 @@ Zwei Fallen dabei:
 * **Die Tiefe mitrechnen.** Der Brunnenring schien auf Brusthöhe zu stehen und wirkte deshalb
   zu hoch — bis man merkt, dass die Figur *vor* dem Brunnen steht und er darum kleiner
   erscheint. Zwei Bezugsobjekte an verschiedenen Tiefen rechnen, dann stimmt es.
+* **Das Bezugsobjekt muss dort stehen, wo die Figur steht.** Im Saloon rechnet die Klaviatur
+  auf 463 px, die Fässer an der Theke auf 350, der Stuhl im Vordergrund auf 369. Maßgeblich
+  war erst die Klaviatur — und die Figur wurde zu groß, weil das Klavier weiter hinten steht,
+  als es aussieht. Richtig ist das Objekt, neben dem die Figur tatsächlich zu stehen kommt.
 * **Erzeugte Bilder sind in sich nicht maßstabsgetreu.** In der Schmiede ergaben Esse, Amboss
   und Werkzeugleiste Faktoren zwischen 1,1 und 1,7. Dann gilt das Ding, das der Spieler
   unmittelbar neben der Figur sieht — hier der Amboss —, nicht der Mittelwert.
