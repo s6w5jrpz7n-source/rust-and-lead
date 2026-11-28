@@ -521,6 +521,13 @@ Deshalb holt `TitleScreen.gd` die Action-Welt per `load()` beim Klick und fragt 
 Was die exe **nicht** hat: eigenes Symbol und Versionsinfo. Das setzt `rcedit`, ein
 Windows-Werkzeug, das hier nicht läuft. Godot warnt darüber und exportiert normal weiter.
 
+### Oder im Browser
+
+Der Web-Export laeuft, Artefakt-Seite eingeschlossen. Das braucht einen Kniff, weil eine
+solche Seite hoechstens 15 MB je Binaerdatei nimmt und Godots Export aus genau zwei Dateien
+besteht, die darueber liegen (33,7 MB Engine, 24,3 MB Spiel). Beide werden zersaegt und im
+Browser wieder zusammengesetzt. Wie, steht in `web/LIESMICH.md`.
+
 ### Oder aus dem Editor
 
 1. Godot **4.3** holen (godotengine.org), es ist ein einzelnes Programm ohne Installation.
