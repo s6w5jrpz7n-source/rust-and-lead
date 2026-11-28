@@ -67,6 +67,26 @@ GEGENSTÄNDE
 Einzelnes Objekt, leicht von oben im Dreiviertelwinkel, so wie es in der Welt liegen oder
 stehen würde. Quadratisch oder leicht breiter, Objekt möglichst formatfüllend.
 
+AM ENDE
+Wenn ich alle Motive durch habe, sage ich „fertig". Dann packst du mir ALLE erzeugten
+Bilder in EIN zip-Archiv mit genau dieser Ordnerstruktur und gibst es mir zum
+Herunterladen:
+
+  godot/assets/figuren/   mabel.png silas.png doc.png gideon.png quentin.png dolores.png
+  godot/assets/dinge/     revolver.png brecheisen.png schraubstock.png oellampe.png
+                          linse.png signallampe.png walze.png akte.png grubenstahl.png
+                          halstuecher.png kesselschluessel.png psalm_rolle.png
+                          kinderjacke.png
+  godot/assets/ui/        portrait_gideon.png portrait_jack.png
+
+Die Dateinamen müssen exakt so lauten — sie stehen so im Quelltext des Spiels. Die
+Ordner müssen im Archiv enthalten sein, nicht nur die Dateien. Transparenz (Alpha)
+muss dabei erhalten bleiben; pack die Bilder unverändert ein, skaliere oder
+komprimiere sie nicht nach.
+
+Falls du an die erzeugten Bilder zum Packen nicht herankommst, sag mir das bitte
+ehrlich, statt ein leeres oder unvollständiges Archiv zu bauen.
+
 Bestätige mir kurz, dass du das übernommen hast. Danach schicke ich dir die Motive einzeln.
 ```
 
@@ -314,6 +334,26 @@ where his right arm should be, venting pressure.
 
 ---
 
+## TEIL E — wenn alle Bilder da sind
+
+Einfügen, sobald du alle Motive durch hast:
+
+```text
+fertig — bitte jetzt das zip-Archiv wie oben vereinbart, mit der Ordnerstruktur
+godot/assets/figuren/, godot/assets/dinge/ und godot/assets/ui/, Dateinamen exakt wie
+angegeben, Transparenz erhalten.
+```
+
+**Falls ChatGPT das Archiv nicht bauen kann** — das kommt vor, je nachdem ob die erzeugten
+Bilder in seiner Arbeitsumgebung liegen oder nur im Chat hängen —, lad die Bilder einzeln
+herunter und pack sie selbst. Wichtig ist nur die Struktur: Die drei Ordner müssen im
+Archiv enthalten sein, nicht bloß die Dateien nebeneinander.
+
+Dann schick mir das Archiv hier. Ich entpacke es, prüfe Maße und Alpha, wandle nach `.webp`
+und messe jede Figur an ihrem Ort ein — genau wie bei den Hintergründen.
+
+---
+
 ## Danach
 
 Ablage, Dateiname **exakt** so wie oben (die Namen stehen so im Code):
@@ -328,7 +368,8 @@ godot/assets/dinge/     revolver.webp  brecheisen.webp  schraubstock.webp
                         kesselschluessel.webp  psalm_rolle.webp  kinderjacke.webp
 ```
 
-PNG ist in Ordnung — ich wandle nach `.webp` um und behalte dabei das Alpha.
+PNG ist richtig so — schick es als PNG, ich wandle nach `.webp` um und behalte dabei
+das Alpha. Umwandeln vor dem Verschicken bringt nichts und kostet nur Qualität.
 
 
 Du musst **nicht alle zwanzig** auf einmal machen. Jedes einzelne Bild erscheint sofort
