@@ -17,7 +17,13 @@ ausgespielt und als durchspielbar nachgewiesen (2675 Prüfungen grün).
 
 | Was | Zustand |
 | :-- | :-- |
-| **Hintergrundbilder** (7 Orte) | fehlen. Das Spiel läuft mit gezeichneten Platzhaltern. Rezeptur in `docs/ABENTEUER.md` §6. **Der ElevenLabs-Verbinder darf zur Zeit keine Bilder erzeugen** („requires additional permissions") — in den Verbinder-Einstellungen auf claude.ai neu verbinden. |
+| **Hintergrundbilder** (7 Orte) | **da und eingemessen.** Alle 1280×720, also 1:1 zum Spielrahmen. Fläche, Sperren, Tiefe und jeder Hotspot sind am Bild abgemessen (`tools/EinmessProbe.gd`). |
+| **Figur** | **da** — stehend, Lauf links, Lauf rechts, freigestellt. Im Spiel eingebaut, Maßstab aus dem Standbild. |
+| Portraits `quentin`, `dolores` | **da**, liegen als `assets/ui/portrait_*.webp`. |
+| **NPC-Figuren** (mabel, silas, doc, gideon, dolores, quentin) | fehlen. Sie gehören NICHT ins Gemälde, sondern als freigestellte Sprites davor — so macht es Baphomets Fluch auch. Ihre Hotspots stehen schon, sie sind nur unsichtbar. |
+| **Gegenstands-Sprites** (Revolver, Brecheisen, Akte, Walze …) | fehlen, aus demselben Grund: Was man aufheben kann, darf nicht im Hintergrund festgemalt sein. |
+| **Vordergrund-Freisteller** | fehlen. `bild_vorn` ist eingebaut; solange nichts da ist, spart die Lauffläche den angeschnittenen Vordergrund aus und kostet Bildfläche. |
+| (alt) Hintergrundbilder | ~~fehlen.~~ Das Spiel läuft mit gezeichneten Platzhaltern. Rezeptur in `docs/ABENTEUER.md` §6. **Der ElevenLabs-Verbinder darf zur Zeit keine Bilder erzeugen** („requires additional permissions") — in den Verbinder-Einstellungen auf claude.ai neu verbinden. |
 | **Figurengrafik** | fehlt. Dreiviertelansicht, Lauf links/rechts, ~210 px, durchsichtiger Grund. Solange: Silhouette mit Hut. |
 | Portraits `quentin`, `dolores` | fehlen (`held`, `mabel`, `silas`, `doc` sind da) |
 | Kapitel 2 | Orte und Rätsel stehen teilweise (`vorschacht`), Schlussszene fehlt |

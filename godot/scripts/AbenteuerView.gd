@@ -59,6 +59,9 @@ const LEISTE_FANG: float = 26.0
 ## Wie lange ein Druck dauern muss, um als „ansehen" zu gelten (Telefon).
 const HALTEN_SEK: float = 0.45
 
+## Wie hoch die stehende Figur bei Massstab 1.0 gezeichnet wird.
+const FIGUR_HOEHE_SOLL: float = OrtDaten.FIGUR_HOEHE
+
 ## Wie lange ein Satz mindestens steht, und wie viel Zeit je Zeichen dazukommt.
 const SATZ_MIN: float = 1.4
 const SATZ_JE_ZEICHEN: float = 0.045
@@ -105,11 +108,35 @@ var _hintergrund: Texture2D = null
 ## Bildflaeche und sieht nie so gut aus.
 var _vordergrund: Texture2D = null
 
+## Die Figur in drei Haltungen, oder leer.
+##
+## Der Massstab kommt aus der STEHENDEN Haltung und gilt fuer alle drei. Jede einzeln auf
+## `FIGUR_HOEHE` zu ziehen waere falsch: Die Laufbilder sind im Schritt ein paar Prozent
+## niedriger als das Standbild, und genau so gehoert es sich -- wer sie alle gleich hoch
+## macht, laesst die Figur beim Stehenbleiben wachsen.
+var _figur_bild: Dictionary = {}
+var _figur_faktor: float = 1.0
+
+## Woher der Massstab kommt. Steht die Datei nicht da, bleibt es bei der Silhouette.
+const FIGUR_ORDNER: String = "res://assets/figuren/"
+
 
 func _ready() -> void:
+	_figuren_laden()
 	set_process(true)
 	set_process_unhandled_input(true)
 	betreten(GameState.ort if GameState.ort != "" else "kippe")
+
+
+## Die drei Haltungen einmalig laden.
+func _figuren_laden() -> void:
+	for haltung in ["stand", "walk_left", "walk_right"]:
+		var pfad: String = FIGUR_ORDNER + "held_" + haltung + ".webp"
+		if ResourceLoader.exists(pfad):
+			_figur_bild[haltung] = load(pfad) as Texture2D
+	var steht: Texture2D = _figur_bild.get("stand", null) as Texture2D
+	if steht != null and steht.get_height() > 0:
+		_figur_faktor = FIGUR_HOEHE_SOLL / float(steht.get_height())
 
 
 # ── Ort betreten ──────────────────────────────────────────────────────────────
@@ -491,8 +518,30 @@ func _zeichne_buehne() -> void:
 ##
 ## Kein Platzhalter-Rechteck. Eine Gestalt mit Hut liest sich auf den ersten Blick als Mensch,
 ## und man sieht sofort, ob Grösse und Standpunkt stimmen — ein Rechteck zeigt das nicht.
+## Welche Haltung gerade gilt.
+func _haltung() -> String:
+	if not _geht:
+		return "stand"
+	return "walk_left" if (_ziel.x < _figur_pos.x) else "walk_right"
+
+
 func _zeichne_figur() -> void:
 	var m: float = OrtDaten.groesse_bei(_ort, _figur_pos.y)
+
+	# Gemalte Figur, wenn es sie gibt.
+	var bild: Texture2D = _figur_bild.get(_haltung(), null) as Texture2D
+	if bild != null:
+		var breite: float = float(bild.get_width()) * _figur_faktor * m
+		var hoehe: float = float(bild.get_height()) * _figur_faktor * m
+		# Schatten zuerst, sonst liegt er auf den Stiefeln.
+		draw_set_transform(_figur_pos, 0.0, Vector2(1.0, 0.26))
+		draw_circle(Vector2.ZERO, breite * 0.42, Color(0.0, 0.0, 0.0, 0.30))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		# Verankert an den Fuessen, mittig -- `_figur_pos` ist der Standpunkt, nicht die Mitte.
+		draw_texture_rect(bild, Rect2(_figur_pos - Vector2(breite * 0.5, hoehe),
+			Vector2(breite, hoehe)), false)
+		return
+
 	var h: float = OrtDaten.FIGUR_HOEHE * m
 	var b: float = h * 0.34
 	var fuss: Vector2 = _figur_pos

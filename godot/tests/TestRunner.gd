@@ -115,7 +115,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_klassen_ueber_pfad": 2,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
-	"_test_abenteuer_welt": 247,
+	"_test_abenteuer_welt": 300,
 	"_test_abenteuer_gespraeche": 435,
 	"_test_abenteuer_missionen": 137,
 	"_test_abenteuer_welt_logik": 22,
