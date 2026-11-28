@@ -5,6 +5,14 @@ const PaperDoll = preload("res://scripts/PaperDoll.gd")
 const TownCollision = preload("res://scripts/TownCollision.gd")
 const DayCycle = preload("res://scripts/DayCycle.gd")
 const DialogData = preload("res://scripts/DialogData.gd")
+const OrtDaten = preload("res://scripts/OrtDaten.gd")
+const GespraechDaten = preload("res://scripts/GespraechDaten.gd")
+const MissionDaten = preload("res://scripts/MissionDaten.gd")
+const KapitelDaten = preload("res://scripts/KapitelDaten.gd")
+const Palette = preload("res://scripts/Palette.gd")
+const Sinnbild = preload("res://scripts/Sinnbild.gd")
+const Welt = preload("res://scripts/Welt.gd")
+const GespraechView = preload("res://scripts/GespraechView.gd")
 ## TestRunner — abhängigkeitsfreie headless Test-Suite für das gesamte Backend.
 ##
 ## Ausführen (kein GUT-Addon nötig):  godot --headless --path godot
@@ -50,7 +58,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_ammo": 12,
 	"_test_reload": 18,
 	"_test_weapons": 13,
-	"_test_titel_und_erster": 76,
+	"_test_titel_und_erster": 77,
 	"_test_steg_und_biome": 23,
 	"_test_riss": 15,
 	"_test_terrain": 25,
@@ -73,7 +81,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_poi_walkable": 24,
 	"_test_town_walkable": 17,
 	"_test_enemy_attacks": 20,
-	"_test_daycycle": 226,
+	"_test_daycycle": 228,
 	"_test_dialog": 22,
 	"_test_memory_manager": 29,
 	"_test_encounter_manager": 24,
@@ -103,10 +111,20 @@ const TEST_UMFANG: Dictionary = {
 	"_test_wirte_vor_haus": 13,
 	"_test_gassen": 13,
 	"_test_anflug_endpunkt": 9,
-	"_test_wegpruefung": 17,
+	"_test_wegpruefung": 18,
 	"_test_klassen_ueber_pfad": 2,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
+	"_test_abenteuer_welt": 532,
+	"_test_abenteuer_gespraeche": 611,
+	"_test_abenteuer_missionen": 218,
+	"_test_abenteuer_welt_logik": 22,
+	"_test_abenteuer_kapitel": 42,
+	"_test_abenteuer_bild_und_farbe": 291,
+	"_test_abenteuer_kapitel1_durchspielen": 30,
+	"_test_abenteuer_sprites": 89,
+	"_test_abenteuer_kapitel2_durchspielen": 33,
+	"_test_abenteuer_kapitel34_durchspielen": 41,
 }
 
 
@@ -1064,8 +1082,10 @@ func _test_titel_und_erster() -> void:
 	# verschwindet, laesst den ganzen Bildschirm springen.
 	_check("Spiel laden wird ausgegraut statt versteckt",
 		q.contains('["laden", "Spiel laden", not hat_stand]'))
-	for eintrag in ["Neues Spiel", "Spiel laden", "Tutorial", "Einstellungen", "Steuerung",
-			"Credits"]:
+	# Seit der Umstellung auf das Punkt-und-Klick-Abenteuer ist "Neues Spiel" das Abenteuer;
+	# die fertige Action-Fassung steht als eigener Eintrag daneben, statt geloescht zu werden.
+	for eintrag in ["Neues Spiel", "Spiel laden", "Action-Fassung (alt)",
+			"Tutorial (Action-Fassung)", "Einstellungen", "Steuerung", "Credits"]:
 		_check("Es gibt den Eintrag %s" % String(eintrag),
 			q.contains('"%s"' % String(eintrag)))
 	# „Beenden" nur auf dem Rechner: Auf dem Handy beendet man Apps anders, und ein Knopf, der
@@ -1111,9 +1131,24 @@ func _test_titel_und_erster() -> void:
 	# dazwischen: Das erste beendet nur den laufenden Durchlauf, gezeichnet wird am Ende des
 	# zweiten.
 	_check("Es gibt einen Ladebildschirm", q.contains("func _laden_zeigen"))
+	# Geprueft wird der Rumpf von `_starten`, nicht die ganze Datei.
+	#
+	# Vorher stand hier ein Vergleich von Fundstellen ueber den gesamten Quelltext. Das ging
+	# gut, solange es genau einen Szenenwechsel gab. Mit dem Abenteuer kam ein zweiter dazu,
+	# und weil dessen Funktion weiter oben steht, war die erste Fundstelle ploetzlich die
+	# falsche -- der Test meldete einen Fehler, den es nicht gab, und zwar an einer Stelle,
+	# die mit ihm nichts zu tun hat. Ein Test, der von der Reihenfolge der Funktionen in einer
+	# Datei abhaengt, prueft nicht das Spiel, sondern das Scrollen.
+	#
+	# Das Abenteuer braucht uebrigens keinen Ladebildschirm: Seine Buehne baut sich aus einer
+	# Tabelle auf, nicht aus Gelaendeflicken.
+	var rumpf_start: int = q.find("func _starten(")
+	var rumpf: String = q.substr(rumpf_start, q.find("\nfunc ", rumpf_start + 10) - rumpf_start) \
+		if rumpf_start >= 0 else ""
 	_check("Und er wird gezeichnet, bevor der Aufbau blockiert",
-		q.find("_laden_zeigen()") < q.find("change_scene_to_packed")
-		and q.count("await get_tree().process_frame") >= 2)
+		rumpf != "" and rumpf.find("_laden_zeigen()") < rumpf.find("change_scene_to_packed")
+		and rumpf.count("await get_tree().process_frame") >= 2,
+		"in _starten() fehlt der Ladebildschirm vor dem Szenenwechsel")
 	# Kein Fortschrittsbalken: Er muesste wissen, wie weit er ist, und das weiss hier niemand.
 	# Einer, der bei 30 % stehenbleibt und dann springt, behauptet etwas, das er nicht halten
 	# kann.
@@ -7885,3 +7920,848 @@ func _test_klassen_ueber_pfad() -> void:
 			print("      %s" % z)
 	_check("Keine NEUE Datei haengt am globalen Namen einer Klasse (%d, Altlast %d)"
 		% [suender.size(), altlast], suender.size() <= altlast)
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  PUNKT-UND-KLICK-ABENTEUER
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Diese Tests pruefen den Bauplan, nicht einen Spielstand: Hat jeder Ausgang ein Ziel, kommt
+# man aus jedem Gespraechsknoten wieder heraus, liegt jeder Hotspot in Reichweite. Das sind
+# genau die Fehler, die man beim Bauen eines Adventures macht und beim Spielen erst drei
+# Stunden spaeter merkt -- und bis dahin hat man zehn weitere gebaut.
+
+
+## Die Welt: Orte, Wege, Hotspots.
+func _test_abenteuer_welt() -> void:
+	# Jeder Ort hat einen Namen, eine begehbare Flaeche und einen Startpunkt darin.
+	for o in OrtDaten.alle():
+		var kennung: String = str(o)
+		var ort: Dictionary = OrtDaten.ort(kennung)
+		_check("Ort %s hat einen Namen" % kennung, str(ort.get("name", "")) != "")
+		# Vieleck ODER Rechtecke -- eingemessene Orte haben nur noch das Vieleck.
+		_check("Ort %s hat eine begehbare Flaeche" % kennung,
+			OrtDaten.flaeche(kennung).size() >= 3
+				or not (ort.get("gehfeld", []) as Array).is_empty())
+		var start: Vector2 = ort.get("start", Vector2.ZERO) as Vector2
+		_check("Ort %s: Startpunkt liegt im Gehfeld" % kennung,
+			OrtDaten.begehbar(kennung, start), "Start %s" % str(start))
+
+	# Die begehbare Flaeche bleibt im Bild. Die Hoehengrenze von frueher ist WEG: Ein Ort mit
+	# echter Perspektive darf seine Gasse weiter hinaufziehen, und genau das soll er. Was
+	# bleibt, ist die Forderung, dass die Flaeche ueberhaupt im Rahmen liegt.
+	for o in OrtDaten.alle():
+		var kennung2: String = str(o)
+		for r in OrtDaten.gehfeld(kennung2):
+			var rect: Rect2 = r as Rect2
+			_check("Ort %s: Gehfeld bleibt im Rahmen" % kennung2,
+				rect.end.y <= OrtDaten.RAHMEN.y and rect.position.x >= 0.0
+					and rect.end.x <= OrtDaten.RAHMEN.x)
+		var poly: PackedVector2Array = OrtDaten.flaeche(kennung2)
+		if poly.size() > 0:
+			_check("Ort %s: Vieleck hat mindestens drei Ecken" % kennung2, poly.size() >= 3)
+			for punkt in poly:
+				_check("Ort %s: Vieleck-Ecke liegt im Rahmen" % kennung2,
+					punkt.x >= 0.0 and punkt.x <= OrtDaten.RAHMEN.x
+						and punkt.y >= 0.0 and punkt.y <= OrtDaten.RAHMEN.y, str(punkt))
+
+	# Echte Tiefe, aber keine Iso-Ansicht: bis 50 % Groessenunterschied.
+	#
+	# Die frueheren 25 % waren zu wenig. Sie stammten aus der Annahme, Baphomets Fluch sei
+	# eine flache Theaterkulisse -- ist es nicht, es hat Architekturperspektive, und die Figur
+	# wird auf dem Weg nach hinten deutlich kleiner. Mit 25 % kann ein Hintergrund gar nicht
+	# nach Raum aussehen, weil die Figur die Tiefe nicht bestaetigt, die das Bild behauptet.
+	for o in OrtDaten.alle():
+		var kennung3: String = str(o)
+		var t: Array = OrtDaten.ort(kennung3).get("tiefe", OrtDaten.TIEFE_STANDARD) as Array
+		var spanne: float = float(t[3]) / maxf(float(t[2]), 0.01) - 1.0
+		_check("Ort %s: Tiefe bleibt unter %.0f %% (%.0f %%)"
+			% [kennung3, OrtDaten.TIEFE_MAX * 100.0, spanne * 100.0],
+			spanne <= OrtDaten.TIEFE_MAX, "darueber kippt es in die Iso-Ansicht")
+		_check("Ort %s: die Figur wird nach hinten kleiner" % kennung3,
+			float(t[3]) > float(t[2]), "sonst stimmt die Richtung der Staffelung nicht")
+
+	# Jeder Hotspot: Name, Ansehen-Text, erreichbarer Standpunkt.
+	for o in OrtDaten.alle():
+		var kennung4: String = str(o)
+		for k in OrtDaten.punkte_alle(kennung4):
+			var p: Dictionary = OrtDaten.punkte_alle(kennung4)[k] as Dictionary
+			_check("%s/%s hat einen Namen" % [kennung4, k], str(p.get("name", "")) != "")
+			_check("%s/%s hat einen Ansehen-Text" % [kennung4, k],
+				str(p.get("ansehen", "")) != "",
+				"Ein Hotspot ohne Ansehen ist ein Loch in der Welt")
+			var hin: Vector2 = OrtDaten.hingehen(kennung4, str(k))
+			_check("%s/%s: Standpunkt liegt im Gehfeld" % [kennung4, k],
+				OrtDaten.begehbar(kennung4, hin), "hin=%s" % str(hin))
+			var rect2: Rect2 = p.get("rect", Rect2()) as Rect2
+			_check("%s/%s: Trefferflaeche ist nicht leer" % [kennung4, k],
+				rect2.size.x > 0.0 and rect2.size.y > 0.0)
+
+	# Jeder Ausgang zeigt auf einen Ort, den es gibt.
+	for o in OrtDaten.alle():
+		var kennung5: String = str(o)
+		for k in (OrtDaten.ort(kennung5).get("ausgaenge", {}) as Dictionary):
+			var a: Dictionary = (OrtDaten.ort(kennung5)["ausgaenge"] as Dictionary)[k] as Dictionary
+			var ziel: String = str(a.get("ziel", ""))
+			_check("%s/%s fuehrt nach %s, und den Ort gibt es" % [kennung5, k, ziel],
+				not OrtDaten.ort(ziel).is_empty())
+
+	# Kein Ort ist eine Sackgasse ohne Rueckweg, und jeder ist erreichbar. Eine Insel in der
+	# Karte faellt beim Bauen nie auf -- man springt zum Testen ja direkt hin.
+	var erreichbar: Dictionary = {"kippe": true}
+	var welle: Array = ["kippe"]
+	while not welle.is_empty():
+		var jetzt: String = str(welle.pop_front())
+		for k in (OrtDaten.ort(jetzt).get("ausgaenge", {}) as Dictionary):
+			var ziel2: String = str(((OrtDaten.ort(jetzt)["ausgaenge"] as Dictionary)[k]
+				as Dictionary).get("ziel", ""))
+			if ziel2 != "" and not erreichbar.has(ziel2):
+				erreichbar[ziel2] = true
+				welle.append(ziel2)
+	for o in OrtDaten.alle():
+		_check("Ort %s ist vom Anfang aus erreichbar" % str(o), erreichbar.has(str(o)),
+			"kein Weg von der Kippe dorthin")
+
+	# Der kleinste Treffer gewinnt: Mabel steht hinter der Theke und muss trotzdem
+	# anklickbar sein. Genau dafuer ist die Regel da, also wird sie geprueft.
+	var mabel_mitte: Vector2 = (OrtDaten.punkte_alle("saloon")["mabel"] as Dictionary)["rect"].get_center()
+	_check("Im Saloon trifft ein Klick auf Mabel sie und nicht die Theke",
+		OrtDaten.punkt_bei("saloon", mabel_mitte) == "mabel",
+		"getroffen: %s" % OrtDaten.punkt_bei("saloon", mabel_mitte))
+
+
+## Die Gespraeche: Baeume ohne Sackgassen, Ziele die es gibt, Sprecher die einen Namen haben.
+func _test_abenteuer_gespraeche() -> void:
+	for b in GespraechDaten.alle():
+		var baum: String = str(b)
+		var start: String = str(GespraechDaten.baum(baum).get("start", ""))
+		_check("Gespraech %s hat einen Startknoten, den es gibt" % baum,
+			not GespraechDaten.knoten(baum, start).is_empty(), "start=%s" % start)
+
+		for k in (GespraechDaten.baum(baum).get("knoten", {}) as Dictionary):
+			var knoten: String = str(k)
+			var kn: Dictionary = GespraechDaten.knoten(baum, knoten)
+
+			# Sackgassen-Pruefung. Der haeufigste Fehler beim Schreiben von Dialogbaeumen,
+			# und der einzige, aus dem der Spieler nur ueber das Hauptmenue herauskommt.
+			_check("%s/%s hat einen Ausweg" % [baum, knoten],
+				GespraechDaten.hat_ausweg(baum, knoten),
+				"keine Antwort fuehrt weg von diesem Knoten")
+
+			_check("%s/%s sagt etwas" % [baum, knoten],
+				not (kn.get("sagt", []) as Array).is_empty())
+
+			var wer: String = GespraechDaten.person_im_knoten(baum, knoten)
+			_check("%s/%s: Sprecher %s hat einen ausgeschriebenen Namen" % [baum, knoten, wer],
+				GespraechView.NAMEN.has(wer), "fehlt in GespraechView.NAMEN")
+
+			for a in kn.get("antworten", []) as Array:
+				var ant: Dictionary = a as Dictionary
+				_check("%s/%s: Antwort hat Text" % [baum, knoten],
+					str(ant.get("text", "")) != "")
+				if ant.has("ziel"):
+					_check("%s/%s: Antwort fuehrt nach %s, und den Knoten gibt es"
+						% [baum, knoten, str(ant["ziel"])],
+						not GespraechDaten.knoten(baum, str(ant["ziel"])).is_empty())
+				if ant.has("hat"):
+					_check("%s/%s: verlangter Gegenstand %s existiert"
+						% [baum, knoten, str(ant["hat"])],
+						not MissionDaten.gegenstand(str(ant["hat"])).is_empty())
+				if ant.has("tut"):
+					var w: Dictionary = ant["tut"] as Dictionary
+					if w.has("quest"):
+						_check("%s/%s: vergebene Mission %s existiert"
+							% [baum, knoten, str(w["quest"])],
+							not MissionDaten.mission(str(w["quest"])).is_empty())
+					if w.has("notiz"):
+						_check("%s/%s: Notiz %s existiert" % [baum, knoten, str(w["notiz"])],
+							not MissionDaten.notiz(str(w["notiz"])).is_empty())
+
+	# Jeder Hotspot, der auf ein Gespraech zeigt, muss eines finden.
+	for o in OrtDaten.alle():
+		for k in OrtDaten.punkte_alle(str(o)):
+			var p: Dictionary = OrtDaten.punkte_alle(str(o))[k] as Dictionary
+			if p.has("reden"):
+				_check("%s/%s spricht %s an, und den Baum gibt es" % [str(o), k, str(p["reden"])],
+					not GespraechDaten.baum(str(p["reden"])).is_empty())
+
+
+## Missionen, Gegenstaende, Wirkungen -- und dass jedes Raetsel an etwas haengt.
+func _test_abenteuer_missionen() -> void:
+	# Jede Mission gehoert zu genau einem Kapitel. Eine, die zu keinem gehoert, kann der
+	# Spieler annehmen und nie abschliessen, weil kein Kapitel sie verlangt.
+	for m in MissionDaten.alle_missionen():
+		var kap: int = KapitelDaten.kapitel_von(str(m))
+		_check("Mission %s gehoert zu einem Kapitel" % str(m), kap > 0,
+			"in keinem Kapitel eingetragen")
+		var mission: Dictionary = MissionDaten.mission(str(m))
+		_check("Mission %s hat einen Titel" % str(m), str(mission.get("titel", "")) != "")
+		_check("Mission %s hat Schritte" % str(m),
+			not (mission.get("schritte", []) as Array).is_empty())
+		for s in mission.get("schritte", []) as Array:
+			var schritt: Dictionary = s as Dictionary
+			_check("Mission %s: Schritt hat Text" % str(m), str(schritt.get("text", "")) != "")
+			var b: Dictionary = schritt.get("bedingung", {}) as Dictionary
+			_check("Mission %s: Schritt hat eine Bedingung" % str(m), not b.is_empty())
+			if b.has("gegenstand"):
+				_check("Mission %s verlangt %s, und den gibt es"
+					% [str(m), str(b["gegenstand"])],
+					not MissionDaten.gegenstand(str(b["gegenstand"])).is_empty())
+			if b.has("ort"):
+				_check("Mission %s verlangt Ort %s, und den gibt es" % [str(m), str(b["ort"])],
+					not OrtDaten.ort(str(b["ort"])).is_empty())
+
+	# Kein Missionsschritt darf am BESITZ eines Gegenstands haengen, den eine Wirkung
+	# spaeter verbraucht. Sonst faellt der Schritt wieder auf, sobald der naechste erfuellt
+	# ist, und weil Schritte eine Reihenfolge sind, wird die Mission nie fertig. Genau so
+	# war `q_walze` gebaut, und es ist beim Lesen nicht zu sehen -- nur beim Durchspielen.
+	var verbrauchte: Dictionary = {}
+	for wv in MissionDaten.WIRKUNGEN:
+		var wvd: Dictionary = MissionDaten.WIRKUNGEN[wv] as Dictionary
+		if wvd.has("verbraucht"):
+			verbrauchte[str(wvd["verbraucht"])] = str(wv)
+	for mv in MissionDaten.alle_missionen():
+		for sv in MissionDaten.mission(str(mv)).get("schritte", []) as Array:
+			var bv: Dictionary = (sv as Dictionary).get("bedingung", {}) as Dictionary
+			if bv.has("gegenstand"):
+				_check("Mission %s: Schritt haengt nicht am Besitz von %s, der verbraucht wird"
+					% [str(mv), str(bv["gegenstand"])],
+					not verbrauchte.has(str(bv["gegenstand"])),
+					"%s verbraucht ihn -- der Schritt faellt danach wieder auf"
+						% str(verbrauchte.get(str(bv["gegenstand"]), "")))
+
+	# Jede Mission muss auch vergeben werden koennen. Eine Mission, die in keinem Gespraech
+	# und in keiner Wirkung vorkommt, steht im Tagebuch und ist nie annehmbar.
+	var vergeben: Dictionary = {}
+	for b2 in GespraechDaten.alle():
+		for k in (GespraechDaten.baum(str(b2)).get("knoten", {}) as Dictionary):
+			for a in GespraechDaten.knoten(str(b2), str(k)).get("antworten", []) as Array:
+				var w: Dictionary = (a as Dictionary).get("tut", {}) as Dictionary
+				if w.has("quest"):
+					vergeben[str(w["quest"])] = true
+	for w2 in MissionDaten.WIRKUNGEN:
+		var wd: Dictionary = MissionDaten.WIRKUNGEN[w2] as Dictionary
+		if wd.has("quest"):
+			vergeben[str(wd["quest"])] = true
+	for m2 in MissionDaten.alle_missionen():
+		_check("Mission %s wird irgendwo vergeben" % str(m2), vergeben.has(str(m2)),
+			"kein Gespraech und keine Wirkung gibt sie aus")
+
+	# Jede Wirkung, auf die ein Hotspot zeigt, muss es geben -- und jeder verlangte
+	# Gegenstand ebenso.
+	for o in OrtDaten.alle():
+		for k in OrtDaten.punkte_alle(str(o)):
+			var p: Dictionary = OrtDaten.punkte_alle(str(o))[k] as Dictionary
+			if p.has("benutzen"):
+				_check("%s/%s nutzt Wirkung %s, und die gibt es" % [str(o), k, str(p["benutzen"])],
+					not MissionDaten.wirkung(str(p["benutzen"])).is_empty())
+			if p.has("nehmen"):
+				_check("%s/%s gibt %s, und den gibt es" % [str(o), k, str(p["nehmen"])],
+					not MissionDaten.gegenstand(str(p["nehmen"])).is_empty())
+			for noetig_p in MissionDaten.braucht_liste(p):
+				_check("%s/%s verlangt %s, und den gibt es" % [str(o), k, str(noetig_p)],
+					not MissionDaten.gegenstand(str(noetig_p)).is_empty())
+
+	for w3 in MissionDaten.WIRKUNGEN:
+		var wd2: Dictionary = MissionDaten.WIRKUNGEN[w3] as Dictionary
+		_check("Wirkung %s hat einen Text" % str(w3), str(wd2.get("text", "")) != "")
+		if wd2.has("gegenstand"):
+			_check("Wirkung %s gibt %s, und den gibt es" % [str(w3), str(wd2["gegenstand"])],
+				not MissionDaten.gegenstand(str(wd2["gegenstand"])).is_empty())
+		if wd2.has("notiz"):
+			_check("Wirkung %s notiert %s, und die gibt es" % [str(w3), str(wd2["notiz"])],
+				not MissionDaten.notiz(str(wd2["notiz"])).is_empty())
+		var noetig: Array = MissionDaten.braucht_liste(wd2)
+		if not noetig.is_empty():
+			_check("Wirkung %s verlangt %s, und sie sagt was, wenn er fehlt" % [str(w3), str(noetig)],
+				str(wd2.get("text_fehlt", "")) != "",
+				"ohne text_fehlt steht der Spieler vor einer stummen Wand")
+			for noetig_g in noetig:
+				# Jeder Gegenstand, der irgendwo angewendet werden soll, braucht eine
+				# `kombi`-Liste, sonst liegt er im Inventar und ist nirgends benutzbar.
+				var g: Dictionary = MissionDaten.gegenstand(str(noetig_g))
+				_check("Gegenstand %s existiert" % str(noetig_g), not g.is_empty())
+				_check("Gegenstand %s ist irgendwo kombinierbar" % str(noetig_g),
+					not (g.get("kombi", []) as Array).is_empty())
+
+
+## Der Weltzustand: wirken, einmal wirken, Missionen abschliessen.
+func _test_abenteuer_welt_logik() -> void:
+	var gold_vorher: int = GameState.gold
+	Welt.neu()
+	GameState.quests = {}
+
+	# Ansehen aendert nichts, Benutzen schon.
+	_check("Am Anfang ist der Beutel leer", GameState.beutel.is_empty())
+	_check("Am Anfang gibt es keine Notizen", GameState.notizen.is_empty())
+
+	# Der Kaktus zahlt 14 Gold -- und zwar genau einmal. Das ist die Regel, die ein
+	# Doppelklick sonst zum Gelddrucker macht.
+	var g0: int = GameState.gold
+	var t1: String = Welt.wirken("kaktus_durchsuchen")
+	_check("Kaktus: erster Griff bringt Text", t1 != "")
+	_check("Kaktus: 14 Gold dazu", GameState.gold == g0 + 14,
+		"%d statt %d" % [GameState.gold, g0 + 14])
+	var t2: String = Welt.wirken("kaktus_durchsuchen")
+	_check("Kaktus: zweiter Griff bringt anderen Text", t2 != t1)
+	_check("Kaktus: zweiter Griff bringt KEIN Gold", GameState.gold == g0 + 14,
+		"%d -- `einmal` greift nicht" % GameState.gold)
+
+	# Ein Raetsel mit fehlendem Gegenstand darf NICHTS aendern, auch keine Flagge.
+	Welt.neu()
+	var vorher_flagge: bool = Welt.flagge("achse_gerichtet")
+	var fehl: String = Welt.wirken("karre_flicken")
+	_check("Karre ohne Schraubstock: Hinweis statt Wirkung", fehl.contains("Schraubstock"))
+	_check("Karre ohne Schraubstock: keine Flagge gesetzt",
+		Welt.flagge("achse_gerichtet") == vorher_flagge,
+		"ein fehlender Gegenstand darf keinen Schritt abschliessen")
+
+	# Mit Gegenstand laeuft dieselbe Wirkung durch.
+	Welt.nehmen("schraubstock")
+	var klappt: String = Welt.wirken("karre_flicken")
+	_check("Karre mit Schraubstock: Wirkung tritt ein", klappt != "")
+	_check("Karre mit Schraubstock: Flagge gesetzt", Welt.flagge("achse_gerichtet"))
+
+	# Die ganze Mission q_achse durchspielen.
+	Welt.neu()
+	GameState.quests = {}
+	Welt.mission_annehmen("q_achse")
+	_check("q_achse laeuft", Welt.mission_laeuft("q_achse"))
+	var f0: Array = Welt.fortschritt("q_achse")
+	_check("q_achse: noch kein Schritt erledigt", int(f0[0]) == 0, "%d" % int(f0[0]))
+	Welt.nehmen("schraubstock")
+	var f1: Array = Welt.fortschritt("q_achse")
+	_check("q_achse: erster Schritt erledigt", int(f1[0]) == 1, "%d" % int(f1[0]))
+	_check("q_achse: noch nicht fertig", Welt.missionen_pruefen().is_empty())
+	Welt.wirken("karre_flicken")
+	var fertig: Array = Welt.missionen_pruefen()
+	_check("q_achse wird als fertig gemeldet", "q_achse" in fertig, str(fertig))
+	_check("q_achse steht auf done", Welt.mission_fertig("q_achse"))
+
+	# Schritte sind eine Reihenfolge: Der zweite zaehlt nicht, solange der erste offen ist.
+	Welt.neu()
+	GameState.quests = {}
+	Welt.mission_annehmen("q_walze")
+	Welt.flagge_setzen("walze_gerichtet")
+	var fw: Array = Welt.fortschritt("q_walze")
+	_check("q_walze: Schritt 2 ohne Schritt 1 zaehlt nicht", int(fw[0]) == 0,
+		"%d -- Schritte muessen der Reihe nach gelten" % int(fw[0]))
+
+	# Sichtbarkeit: Ein genommener Gegenstand verschwindet aus der Welt.
+	Welt.neu()
+	var revolver: Dictionary = OrtDaten.punkte_alle("kippe")["revolver"] as Dictionary
+	_check("Der Revolver liegt am Anfang da", Welt.sichtbar(revolver))
+	Welt.nehmen("revolver")
+	_check("Der Revolver liegt nicht mehr da, wenn man ihn hat", not Welt.sichtbar(revolver))
+
+	# `sicht`-Flagge: Die Akte ist erst da, wenn Doc sich verraten hat.
+	Welt.neu()
+	var akte: Dictionary = OrtDaten.punkte_alle("lazarett")["akte"] as Dictionary
+	_check("Die Akte ist am Anfang nicht sichtbar", not Welt.sichtbar(akte))
+	Welt.wirken("bahre_ansehen")
+	_check("Nach der Bahre ist die Akte sichtbar", Welt.sichtbar(akte))
+	_check("Die Bahre hinterlaesst die Notiz, dass Doc luegt", Welt.hat_notiz("doc_luegt"))
+
+	Welt.neu()
+	GameState.quests = {}
+	GameState.gold = gold_vorher
+
+
+## Die Kapitelstruktur: alle Straenge Pflicht, Schlussszene erst danach.
+func _test_abenteuer_kapitel() -> void:
+	for n in KapitelDaten.KAPITEL:
+		var nummer: int = int(n)
+		_check("Kapitel %d hat einen Titel" % nummer, KapitelDaten.titel(nummer) != "")
+		var s: Dictionary = KapitelDaten.schluss(nummer)
+		_check("Kapitel %d hat eine Schlussszene mit Ort" % nummer,
+			str(s.get("ort", "")) != "")
+		if KapitelDaten.ausgespielt(nummer):
+			_check("Kapitel %d: der Schlussort existiert" % nummer,
+				not OrtDaten.ort(str(s.get("ort", ""))).is_empty())
+			_check("Kapitel %d: die Schlussszene hat ein Gespraech, das es gibt" % nummer,
+				not GespraechDaten.baum(str(s.get("gespraech", ""))).is_empty(),
+				"gespraech=%s" % str(s.get("gespraech", "")))
+			_check("Kapitel %d hat mindestens einen Strang" % nummer,
+				not KapitelDaten.missionen(nummer).is_empty())
+
+	# Kapitel 1 im Durchlauf: Die Schlussszene geht erst auf, wenn ALLE Straenge stehen --
+	# der Hauptstrang allein reicht ausdruecklich nicht.
+	var quests_vorher: Dictionary = GameState.quests.duplicate(true)
+	GameState.quests = {}
+	var fertig_pruefer: Callable = func(id: String) -> bool: return Welt.mission_fertig(id)
+
+	_check("Kapitel 1: Schluss ist am Anfang zu",
+		not KapitelDaten.schluss_frei(1, fertig_pruefer))
+	_check("Kapitel 1: drei Straenge insgesamt",
+		KapitelDaten.missionen(1).size() == 3, str(KapitelDaten.missionen(1)))
+
+	GameState.quests["q_wegelagerer"] = "done"
+	_check("Kapitel 1: Hauptstrang allein oeffnet den Schluss NICHT",
+		not KapitelDaten.schluss_frei(1, fertig_pruefer),
+		"Seitenstraenge sind Pflicht, sonst waeren sie Beiwerk")
+	_check("Kapitel 1: noch zwei offen",
+		KapitelDaten.offen(1, fertig_pruefer).size() == 2,
+		str(KapitelDaten.offen(1, fertig_pruefer)))
+
+	GameState.quests["q_achse"] = "done"
+	GameState.quests["q_walze"] = "done"
+	_check("Kapitel 1: mit allen Straengen geht der Schluss auf",
+		KapitelDaten.schluss_frei(1, fertig_pruefer))
+	_check("Kapitel 1: nichts mehr offen",
+		KapitelDaten.offen(1, fertig_pruefer).is_empty())
+
+	GameState.quests = quests_vorher
+
+
+## Die Sinnbilder -- und die Farbregel, von der die Lesbarkeit abhaengt.
+func _test_abenteuer_bild_und_farbe() -> void:
+	# Jede Antwort bekommt ein Sinnbild, auch ohne Eintrag in der Tabelle.
+	for b in GespraechDaten.alle():
+		for k in (GespraechDaten.baum(str(b)).get("knoten", {}) as Dictionary):
+			for a in GespraechDaten.knoten(str(b), str(k)).get("antworten", []) as Array:
+				var sb: String = Sinnbild.fuer_antwort(a as Dictionary)
+				_check("%s/%s: Antwort hat ein Sinnbild" % [str(b), str(k)], sb != "")
+				if sb.begins_with("ding:"):
+					_check("%s/%s: Sinnbild zeigt auf einen Gegenstand, den es gibt"
+						% [str(b), str(k)],
+						not MissionDaten.gegenstand(sb.substr(5)).is_empty(), sb)
+				if sb.begins_with("person:"):
+					_check("%s/%s: Sinnbild zeigt auf eine bekannte Person"
+						% [str(b), str(k)],
+						GespraechView.NAMEN.has(sb.substr(7)), sb)
+
+	# Eine Antwort, die das Gespraech beendet, bekommt immer die Tuer. Das ist die einzige
+	# Ableitung, auf die sich der Spieler verlassen koennen muss.
+	_check("Eine beendende Antwort bekommt die Tuer",
+		Sinnbild.fuer_antwort({"text": "(Gehen)"}) == "weg")
+
+	# Die Stilentscheidung als Zahl: **Gaslicht, nicht Oelschwarz.**
+	#
+	# Gewaehlt wurde die Behandlung mit offenen Schatten -- Mitteltoene tragen das Bild,
+	# getrennt wird ueber Silhouette und lokalen Kontrast, nicht ueber Dunkelheit. Der Grund
+	# ist kein Geschmack: In der Oelschwarz-Variante liegt die untere Bildhaelfte bei einer
+	# Helligkeit um 0,03, und genau dort sitzen die anklickbaren Dinge. Auf einem Telefon bei
+	# Sonne findet sie dann niemand mehr.
+	#
+	# Diese Pruefung haelt die Platzhalterfarben in dem Band. Ohne sie driftet das beim
+	# Ergaenzen neuer Orte unbemerkt ins Dunkle -- jeder einzelne Ort nur ein bisschen, und
+	# nach zehn Orten ist es ein anderes Spiel.
+	for o in OrtDaten.alle():
+		var farben: Array = OrtDaten.ort(str(o)).get("farben", []) as Array
+		_check("Ort %s hat drei Platzhalterfarben" % str(o), farben.size() == 3)
+		if farben.size() != 3:
+			continue
+		var boden_h: float = Palette.helligkeit(farben[2] as Color)
+		_check("Ort %s: der Boden ist nicht abgesoffen (%.3f)" % [str(o), boden_h],
+			boden_h >= 0.09,
+			"unter 0,09 ist Oelschwarz -- dort sind die Hotspots nicht mehr zu finden")
+		_check("Ort %s: der Boden ist nicht ausgewaschen (%.3f)" % [str(o), boden_h],
+			boden_h <= 0.40, "heller als das waere kein grim-dark mehr")
+		var mitte_h: float = Palette.helligkeit(farben[1] as Color)
+		_check("Ort %s: die Ferne ist heller als der Boden" % str(o), mitte_h > boden_h,
+			"%.3f gegen %.3f -- sonst kippt die Tiefenstaffelung" % [mitte_h, boden_h])
+
+	# Der Farbkeil: aufsteigend, und die Enden weit genug auseinander.
+	for i in range(Palette.KEIL.size() - 1):
+		_check("Farbkeil Stufe %d ist dunkler als %d" % [i, i + 1],
+			Palette.helligkeit(Palette.KEIL[i] as Color)
+				< Palette.helligkeit(Palette.KEIL[i + 1] as Color))
+	_check("Farbkeil: Russ und Sandlicht trennen genug",
+		Palette.trennt_genug(Palette.RUSS, Palette.SANDLICHT))
+
+	# `abheben` muss liefern, was es verspricht -- fuer JEDE Stufe des Keils. Das ist die
+	# Funktion, die die Figur vor dunklem wie vor hellem Grund sichtbar haelt, und wenn sie
+	# fuer eine Stufe versagt, ist die Figur in genau einem Ort unsichtbar.
+	for stufe in Palette.KEIL:
+		var grund: Color = stufe as Color
+		var figur: Color = Palette.abheben(Palette.OELSCHWARZ, grund)
+		_check("Figur hebt sich von %s ab" % grund.to_html(false),
+			Palette.trennt_genug(figur, grund),
+			"Abstand %.3f" % absf(Palette.helligkeit(figur) - Palette.helligkeit(grund)))
+
+
+## Kapitel 1 einmal von vorn bis zur Schlussszene durchspielen.
+##
+## Der wichtigste Test dieser Gruppe, und der einzige, der die Frage beantwortet, auf die es
+## ankommt: **Ist das Kapitel ueberhaupt loesbar?** Alle anderen pruefen Einzelteile -- ob ein
+## Ausgang ein Ziel hat, ob ein Knoten einen Ausweg hat. Keiner davon faellt aus, wenn ein
+## Raetsel eine Zutat verlangt, die es nirgends gibt. Genau das war zweimal der Fall: Zwei
+## Missionen zaehlten Abschuesse, die in einem Adventure niemand erzielen kann, und `q_walze`
+## verlangte zwei Flaggen, die kein Gespraech und keine Wirkung setzte.
+##
+## Gespielt wird auf der Datenebene -- keine Szene, kein Klick. Was hier durchlaeuft, laeuft
+## auch mit der Maus durch, denn `AbenteuerView` ruft genau diese Funktionen auf.
+func _test_abenteuer_kapitel1_durchspielen() -> void:
+	var gold_vorher: int = GameState.gold
+	var quests_vorher: Dictionary = GameState.quests.duplicate(true)
+	Welt.neu()
+	GameState.quests = {}
+
+	# ── Schrottkippe ──────────────────────────────────────────────────────────
+	Welt.wirken("kadaver_pluendern")
+	_check("Kippe: der Automat gibt die Grubenlampe her", Welt.im_beutel("oellampe"))
+	Welt.nehmen("brecheisen")
+	_check("Kippe: das Brecheisen liegt da", Welt.im_beutel("brecheisen"))
+
+	# ── Seitenstrang Quentin ──────────────────────────────────────────────────
+	Welt.wirken({"quest": "q_achse"})
+	_check("q_achse ist angenommen", Welt.mission_laeuft("q_achse"))
+	var ohne: String = Welt.wirken("karre_flicken")
+	_check("Karre ohne Werkzeug: nur ein Hinweis", ohne.contains("Schraubstock"))
+	_check("Karre ohne Werkzeug: nichts passiert", not Welt.flagge("achse_gerichtet"))
+	Welt.nehmen("schraubstock")
+	Welt.wirken("karre_flicken")
+	_check("Karre mit Werkzeug: Achse gerichtet", Welt.flagge("achse_gerichtet"))
+	_check("q_achse wird fertig gemeldet", "q_achse" in Welt.missionen_pruefen())
+
+	# ── Hauptstrang: die acht auf der Piste ───────────────────────────────────
+	Welt.wirken({"quest": "q_wegelagerer"})
+	var felsen_frueh: String = Welt.wirken("felsen_leuchten")
+	_check("Felsen ohne Signallampe: nur ein Hinweis", felsen_frueh.contains("Revolver"))
+	_check("Felsen ohne Signallampe: niemand geht weg", not Welt.flagge("wegelagerer_weg"))
+
+	Welt.wirken("kinetoskop_kurbeln")
+	_check("Kinetoskop: der Betrug ist gesehen", Welt.flagge("kinetoskop_gesehen"))
+	_check("Kinetoskop: die Notiz steht im Tagebuch", Welt.hat_notiz("mantel"))
+	var linse: Dictionary = OrtDaten.punkte_alle("platz")["linse"] as Dictionary
+	_check("Die Linse ist erst nach dem Kurbeln sichtbar", Welt.sichtbar(linse))
+	Welt.wirken("linse_brechen")
+	_check("Die Linse ist heraus", Welt.im_beutel("linse"))
+
+	var bau: String = Welt.verbinden("oellampe", "linse")
+	_check("Lampe und Linse lassen sich verbinden", bau != "")
+	_check("Daraus wird die Signallampe", Welt.im_beutel("signallampe"))
+	_check("Und die Einzelteile sind weg",
+		not Welt.im_beutel("oellampe") and not Welt.im_beutel("linse"))
+
+	Welt.wirken("felsen_leuchten")
+	_check("Mit der Signallampe raeumen die acht die Felsen", Welt.flagge("wegelagerer_weg"))
+	Welt.wirken({"flagge": "q_wegelagerer_abgegeben"})
+	_check("q_wegelagerer wird fertig gemeldet", "q_wegelagerer" in Welt.missionen_pruefen())
+
+	# ── Seitenstrang Dolores ──────────────────────────────────────────────────
+	Welt.wirken({"quest": "q_walze"})
+	Welt.wirken("klavier_walze")
+	_check("Die gesprungene Walze liegt beim Klavier", Welt.im_beutel("walze"))
+
+	# Die falsche Reihenfolge MUSS folgenlos bleiben. Gaebe man Dolores die gesprungene
+	# Walze, waere sie weg, und `walze_gerichtet` nie erreichbar -- ein Spielstand, in dem
+	# man weiterspielen, aber nicht mehr gewinnen kann.
+	var zu_frueh: String = Welt.wirken("walze_dolores")
+	_check("Walze zu frueh an Dolores: es gibt einen eigenen Satz dafuer", zu_frueh != "")
+	_check("Walze zu frueh an Dolores: sie bleibt im Beutel", Welt.im_beutel("walze"),
+		"sonst ist das Spiel ab hier nicht mehr zu gewinnen")
+	_check("Walze zu frueh an Dolores: keine Flagge", not Welt.flagge("walze_zurueck"))
+
+	Welt.wirken("walze_silas")
+	_check("Silas setzt die Stifte", Welt.flagge("walze_gerichtet"))
+	Welt.wirken("walze_dolores")
+	_check("Dolores bekommt ihre Walze", Welt.flagge("walze_zurueck"))
+	_check("Und behaelt sie auch", not Welt.im_beutel("walze"))
+	_check("q_walze wird fertig gemeldet", "q_walze" in Welt.missionen_pruefen())
+
+	# ── Die Schlussszene steht offen ──────────────────────────────────────────
+	var fertig_pruefer: Callable = func(id: String) -> bool: return Welt.mission_fertig(id)
+	_check("Alle drei Straenge von Kapitel 1 sind erledigt",
+		KapitelDaten.offen(1, fertig_pruefer).is_empty(),
+		str(KapitelDaten.offen(1, fertig_pruefer)))
+	_check("Die Schlussszene von Kapitel 1 geht auf",
+		KapitelDaten.schluss_frei(1, fertig_pruefer))
+
+	# ── Und man hat sich nicht ausgesperrt ────────────────────────────────────
+	#
+	# Die Grubenlampe ist in der Signallampe aufgegangen. Der Vorschacht in Kapitel 2 braucht
+	# Licht. Wenn die Signallampe dort nicht zaehlt, ist das Spiel nach Kapitel 1 vorbei --
+	# und zwar fuer jeden, der das Raetsel geloest hat.
+	Welt.wirken("gang_hinab")
+	_check("Die Signallampe taugt auch im Vorschacht", Welt.im_beutel("grubenstahl"),
+		"wer die Lampe verbaut hat, kaeme sonst in Kapitel 2 nicht weiter")
+	_check("Und der Psalm steht im Tagebuch", Welt.hat_notiz("psalm"))
+
+	Welt.neu()
+	GameState.quests = quests_vorher
+	GameState.gold = gold_vorher
+
+
+## Die Sprites: Personen und Gegenstaende, die im Ort gezeichnet werden.
+##
+## Geprueft wird die Erklaerung, nicht die Datei. Ob ein Bild schon gemalt ist, ist eine Frage
+## des Vorrats; ob der Ort weiss, wo die Person steht und wie gross sie ist, ist eine Frage des
+## Bauplans -- und nur die gehoert in eine Testsuite. Fehlt die Datei, bleibt der Hotspot
+## anklickbar und die Person unsichtbar; fehlt der Fusspunkt, stuende sie im Nichts.
+func _test_abenteuer_sprites() -> void:
+	for o in OrtDaten.alle():
+		var kennung: String = str(o)
+		for k in OrtDaten.punkte_alle(kennung):
+			var p: Dictionary = OrtDaten.punkte_alle(kennung)[k] as Dictionary
+
+			# Wer ein Gesicht hat, braucht auch einen Koerper -- ausser dem Helden selbst.
+			# `kippe/haende` traegt `person: "held"`, damit im Selbstgespraech sein Portrait
+			# erscheint; ein zweites Sprite waere er ein zweites Mal im Bild.
+			if p.has("person") and str(p["person"]) != "held":
+				_check("%s/%s hat ein Sprite" % [kennung, k], str(p.get("sprite", "")) != "",
+					"eine Person ohne Sprite ist im Ort unsichtbar")
+				_check("%s/%s hat einen Fusspunkt" % [kennung, k], p.has("steht"),
+					"ohne `steht` weiss niemand, wo sie steht")
+
+			if str(p.get("sprite", "")) != "":
+				var pfad: String = str(p["sprite"])
+				_check("%s/%s: Sprite liegt im richtigen Ordner" % [kennung, k],
+					pfad.begins_with("res://assets/figuren/")
+						or pfad.begins_with("res://assets/dinge/"), pfad)
+				_check("%s/%s: Sprite ist eine .webp" % [kennung, k], pfad.ends_with(".webp"))
+
+			if p.has("steht"):
+				var fuss: Vector2 = p["steht"] as Vector2
+				_check("%s/%s: Fusspunkt liegt im Rahmen" % [kennung, k],
+					fuss.x >= 0.0 and fuss.x <= OrtDaten.RAHMEN.x
+						and fuss.y >= 0.0 and fuss.y <= OrtDaten.RAHMEN.y, str(fuss))
+				# Eine Person, die oberhalb des Buehnenhorizonts steht, waere winzig oder
+				# schwebte -- ein Zahlendreher im Fusspunkt sieht genau so aus.
+				_check("%s/%s: Fusspunkt liegt unten im Bild" % [kennung, k],
+					fuss.y >= 400.0, "y=%.0f -- schwebt sie?" % fuss.y)
+				var gr: float = float(p.get("groesse", 1.0))
+				_check("%s/%s: Groesse ist plausibel" % [kennung, k],
+					gr >= 0.5 and gr <= 1.5, "%.2f" % gr)
+
+	# Jeder Gegenstand, den man tragen kann, hat ein Bild fuer die Inventarleiste.
+	for g in MissionDaten.GEGENSTAENDE:
+		var gd: Dictionary = MissionDaten.GEGENSTAENDE[g] as Dictionary
+		_check("Gegenstand %s hat ein Inventarbild" % str(g), str(gd.get("bild", "")) != "")
+		if str(gd.get("bild", "")) != "":
+			_check("Gegenstand %s: Bild liegt in assets/dinge" % str(g),
+				str(gd["bild"]).begins_with("res://assets/dinge/"))
+
+	# `sprites()` liefert, was die Ansicht braucht -- und nur das Sichtbare.
+	var liste: Array = OrtDaten.sprites("saloon")
+	_check("Im Saloon gibt es Sprites", not liste.is_empty())
+	for e in liste:
+		var eintrag: Dictionary = e as Dictionary
+		for feld in ["kennung", "bild", "person", "fuss", "rect", "groesse"]:
+			_check("Sprite-Eintrag hat das Feld %s" % String(feld), eintrag.has(feld))
+
+	# Ein aufgenommener Gegenstand verschwindet aus dem Ort. Das ist die Probe darauf, dass
+	# Sichtbarkeit und Zeichnen dieselbe Regel benutzen -- sonst laege der Revolver nach dem
+	# Einstecken weiter im Staub.
+	var vorher: Array = GameState.beutel.duplicate()
+	Welt.neu()
+	var mit: int = OrtDaten.sprites("kippe", Welt.sicht_pruefer()).size()
+	Welt.nehmen("revolver")
+	var ohne: int = OrtDaten.sprites("kippe", Welt.sicht_pruefer()).size()
+	_check("Der Revolver liegt vorher im Ort", mit > ohne, "%d gegen %d" % [mit, ohne])
+	_check("und nach dem Einstecken nicht mehr", ohne == mit - 1)
+	Welt.neu()
+	GameState.beutel = vorher
+
+
+## Kapitel 2 durchspielen -- und den Uebergang aus Kapitel 1 pruefen.
+##
+## Kapitel 1 war bis hierher eine Sackgasse: Die Schlussszene stand, aber nichts loeste sie
+## aus und nichts zaehlte das Kapitel weiter. Dieser Test deckt beides ab -- erst die
+## Bedingungen, unter denen die Schlussszene aufgeht, dann der zweite Strang bis zu seiner
+## eigenen.
+func _test_abenteuer_kapitel2_durchspielen() -> void:
+	var quests_vorher: Dictionary = GameState.quests.duplicate(true)
+	var kapitel_vorher: int = GameState.current_chapter
+	var gold_vorher: int = GameState.gold
+	Welt.neu()
+	GameState.quests = {}
+	var fertig: Callable = func(id: String) -> bool: return Welt.mission_fertig(id)
+
+	# ── Der Uebergang ─────────────────────────────────────────────────────────
+	_check("Kapitel 2 ist ausgespielt", KapitelDaten.ausgespielt(2))
+	# Nicht auf eine feste Zahl pruefen: Die waechst mit jedem ausgespielten Kapitel, und
+	# ein Test, der beim Fertigwerden rot wird, erzieht nur dazu, ihn zu ignorieren.
+	_check("Es sind mindestens zwei Kapitel ausgespielt",
+		KapitelDaten.letztes_ausgespieltes() >= 2,
+		"%d" % KapitelDaten.letztes_ausgespieltes())
+	for n in range(1, KapitelDaten.letztes_ausgespieltes() + 1):
+		var sch: Dictionary = KapitelDaten.schluss(int(n))
+		_check("Kapitel %d: Schlussgespraech existiert" % int(n),
+			not GespraechDaten.baum(str(sch.get("gespraech", ""))).is_empty())
+		_check("Kapitel %d: Schlussort existiert" % int(n),
+			not OrtDaten.ort(str(sch.get("ort", ""))).is_empty())
+		# Der Schlussort muss erreichbar sein, sonst haengt das Kapitel.
+		_check("Kapitel %d: der Schlussort ist ein Ort, den man betreten kann" % int(n),
+			OrtDaten.flaeche(str(sch["ort"])).size() >= 3
+				or not OrtDaten.gehfeld(str(sch["ort"])).is_empty())
+
+	# ── Kapitel 2, Hauptstrang: Grubenstahl ───────────────────────────────────
+	GameState.current_chapter = 2
+	_check("Kapitel 2 hat zwei Straenge", KapitelDaten.missionen(2).size() == 2,
+		str(KapitelDaten.missionen(2)))
+	_check("Kapitel 2: Schluss ist am Anfang zu", not KapitelDaten.schluss_frei(2, fertig))
+
+	Welt.wirken({"quest": "q_grubenstahl"})
+	Welt.wirken("kadaver_pluendern")
+	_check("Die Grubenlampe ist da", Welt.im_beutel("oellampe"))
+	var ohne_licht: String = Welt.wirken("gang_hinab")
+	_check("Der Gang sagt, was fehlt, wenn die Lampe fehlt",
+		ohne_licht == "" or Welt.im_beutel("oellampe"))
+	Welt.betreten("vorschacht")
+	_check("Der Vorschacht zaehlt als besucht", Welt.war_schon("vorschacht"))
+	Welt.wirken("gang_hinab")
+	_check("Unten liegt Grubenstahl", Welt.im_beutel("grubenstahl"))
+	_check("Und der Psalm steht im Tagebuch", Welt.hat_notiz("psalm"))
+	Welt.wirken("esse_benutzen")
+	_check("Silas nimmt den Stahl an", Welt.flagge("q_grubenstahl_abgegeben"))
+	_check("q_grubenstahl wird fertig gemeldet", "q_grubenstahl" in Welt.missionen_pruefen())
+
+	# ── Kapitel 2, Seitenstrang: die Rohre ────────────────────────────────────
+	Welt.wirken({"quest": "q_ratten"})
+	var rohr_frueh: String = Welt.wirken("rohr_zusetzen")
+	_check("Das Rohr ohne Brecheisen: nur ein Hinweis", rohr_frueh.contains("Hebel"))
+	_check("Das Rohr ohne Brecheisen: nichts passiert", not Welt.flagge("rohr_zu"))
+	Welt.wirken("brunnen_steigen")
+	_check("Der Brunnen zeigt, wo sie herkommen", Welt.flagge("brunnen_gesehen"))
+	Welt.nehmen("brecheisen")
+	Welt.wirken("rohr_zusetzen")
+	_check("Das Gitter ist verkeilt", Welt.flagge("rohr_zu"))
+	Welt.wirken({"flagge": "q_ratten_abgegeben"})
+	_check("q_ratten wird fertig gemeldet", "q_ratten" in Welt.missionen_pruefen())
+
+	# ── Die Schlussszene steht offen ──────────────────────────────────────────
+	_check("Kapitel 2: nichts mehr offen", KapitelDaten.offen(2, fertig).is_empty(),
+		str(KapitelDaten.offen(2, fertig)))
+	_check("Kapitel 2: die Schlussszene geht auf", KapitelDaten.schluss_frei(2, fertig))
+	_check("Sie spielt im Lazarett", KapitelDaten.schluss_ort(2) == "lazarett")
+
+	# Die Szene selbst: Sie darf nicht an einer Flagge haengen, die man verpassen kann --
+	# der Weg ueber `riemen` ist bedingt, der ueber `schlecht` nicht.
+	var start: String = str(GespraechDaten.baum("schluss_k2").get("start", ""))
+	_check("schluss_k2 hat einen Startknoten", not GespraechDaten.knoten("schluss_k2", start).is_empty())
+	var offen_ohne_flaggen: Array = GespraechDaten.antworten("schluss_k2", start, false,
+		func(_f: String) -> bool: return false, func(_g: String) -> bool: return false)
+	_check("schluss_k2 ist auch ohne gesetzte Flaggen spielbar", not offen_ohne_flaggen.is_empty(),
+		"sonst steht der Spieler in der Schlussszene vor einer leeren Auswahl")
+
+	Welt.neu()
+	GameState.quests = quests_vorher
+	GameState.current_chapter = kapitel_vorher
+	GameState.gold = gold_vorher
+
+
+## Kapitel 3 und 4 durchspielen -- bis in den Spiegel.
+##
+## Der letzte Durchlauf-Test, und der einzige, der die Frage beantwortet, auf die es am Ende
+## ankommt: Kommt man vom ersten Bild bis zu dem Moment, in dem der Spieler erfaehrt, was er
+## die ganze Zeit war? Alles andere ist Vorbereitung darauf.
+##
+## Geprueft wird dabei auch das, was man nur hier sieht: dass der Reveal an GENAU einer
+## Antwort haengt, dass er `is_revealed` setzt, und dass der zerschlagene Hintergrund danach
+## gilt.
+func _test_abenteuer_kapitel34_durchspielen() -> void:
+	var quests_vorher: Dictionary = GameState.quests.duplicate(true)
+	var kapitel_vorher: int = GameState.current_chapter
+	var enthuellt_vorher: bool = GameState.is_revealed
+	Welt.neu()
+	GameState.quests = {}
+	GameState.is_revealed = false
+	var fertig: Callable = func(id: String) -> bool: return Welt.mission_fertig(id)
+
+	# ── Kapitel 3: hinunter ───────────────────────────────────────────────────
+	GameState.current_chapter = 3
+	_check("Kapitel 3 hat zwei Straenge", KapitelDaten.missionen(3).size() == 2,
+		str(KapitelDaten.missionen(3)))
+
+	# Der Weg in die Mine oeffnet sich erst, nachdem man mit Licht unten war.
+	var hinab: Dictionary = OrtDaten.punkte_alle("vorschacht")["hinab"] as Dictionary
+	_check("Der Weg in die Mine ist anfangs zu", not Welt.sichtbar(hinab))
+	Welt.wirken("kadaver_pluendern")
+	Welt.wirken("gang_hinab")
+	_check("Nach dem ersten Gang mit Licht ist er offen", Welt.sichtbar(hinab))
+
+	Welt.wirken({"quest": "q_psalm"})
+	Welt.betreten("mine_ebene1")
+	Welt.wirken("psalm_kisten")
+	_check("Die PSALM-Kisten sind von innen geoeffnet", Welt.hat_notiz("psalm"))
+	Welt.betreten("mine_ebene2")
+	Welt.wirken("zeichnung_ansehen")
+	_check("Die Zeichnung steht im Tagebuch", Welt.hat_notiz("familie"))
+	Welt.wirken("hunt_durchsuchen")
+	_check("Die Kinderjacke liegt im Hunt", Welt.im_beutel("kinderjacke"))
+	Welt.betreten("mine_ebene3")
+	Welt.wirken("schacht_lauschen")
+	Welt.wirken("kiste_oeffnen")
+	_check("Die Rolle liegt in der zerdrueckten Kiste", Welt.im_beutel("psalm_rolle"))
+	_check("Und die Dreizehn steht im Tagebuch", Welt.hat_notiz("dreizehn"))
+
+	var ohne_rolle: bool = Welt.flagge("rolle_gezeigt")
+	_check("Silas hat die Rolle noch nicht gesehen", not ohne_rolle)
+	Welt.wirken("rolle_silas")
+	_check("Silas sieht sich die Rolle an", Welt.flagge("rolle_gezeigt"))
+	_check("q_psalm wird fertig gemeldet", "q_psalm" in Welt.missionen_pruefen())
+
+	# Seitenstrang: die Jacke
+	Welt.wirken({"quest": "q_jacke"})
+	Welt.wirken("jacke_dolores")
+	_check("Dolores bekommt die Jacke", Welt.flagge("jacke_abgegeben"))
+	_check("Und behaelt sie", not Welt.im_beutel("kinderjacke"))
+	_check("q_jacke wird fertig gemeldet", "q_jacke" in Welt.missionen_pruefen())
+	_check("Kapitel 3: die Schlussszene geht auf", KapitelDaten.schluss_frei(3, fertig))
+	_check("Sie spielt in der Schmiede", KapitelDaten.schluss_ort(3) == "schmiede")
+
+	# ── Kapitel 4: der Zug ────────────────────────────────────────────────────
+	GameState.current_chapter = 4
+	GameState.quests = {}
+	# Was die Schlussszene von Kapitel 3 ausloest:
+	Welt.wirken({"flaggen": ["zug_bekannt", "kapitel_3_fertig"], "quest": "q_zug", "notiz": "zug"})
+	_check("Der Zug ist bekannt", Welt.flagge("zug_bekannt"))
+	_check("q_zug laeuft", Welt.mission_laeuft("q_zug"))
+
+	# Das Depot ist beleuchtet. Aufspringen geht erst, wenn es dunkel ist.
+	var aufspringen: Dictionary = OrtDaten.punkte_alle("zugdepot")["zug"] as Dictionary
+	_check("Der Sprung auf den Zug ist gesperrt", aufspringen.has("sperre"))
+	_check("und die Sperre nennt die Flagge, die sie loest",
+		str(aufspringen.get("frei", "")) == "lampen_aus")
+	_check("Die Lampen sind noch an", not Welt.flagge("lampen_aus"))
+
+	Welt.wirken("steg_ansehen")
+	_check("Der Steg zeigt, woher das Licht kommt", Welt.flagge("licht_problem"))
+	_check("und vergibt dabei den Auftrag", Welt.mission_laeuft("q_dunkel"))
+	var ohne_schluessel: String = Welt.wirken("wasserturm_oeffnen")
+	_check("Der Wasserturm ohne Schluessel: nur ein Hinweis", ohne_schluessel.contains("Sechskant"))
+	_check("Der Wasserturm ohne Schluessel: nichts passiert", not Welt.flagge("lampen_aus"))
+	Welt.wirken("schrank_oeffnen")
+	_check("Der Sechskantschluessel liegt bei Doc", Welt.im_beutel("kesselschluessel"))
+	Welt.wirken("wasserturm_oeffnen")
+	_check("Das Wasser loescht die Lampen", Welt.flagge("lampen_aus"))
+	_check("q_dunkel wird fertig gemeldet", "q_dunkel" in Welt.missionen_pruefen())
+
+	Welt.betreten("zug_dach")
+	Welt.wirken("siegel_lesen")
+	_check("Der Waggon mit der Dreizehn ist gefunden", Welt.flagge("waggon_dreizehn"))
+	Welt.betreten("spiegel_wagen")
+	_check("q_zug wird fertig gemeldet", "q_zug" in Welt.missionen_pruefen())
+	_check("Kapitel 4: die Schlussszene geht auf", KapitelDaten.schluss_frei(4, fertig))
+	_check("Sie spielt im Salonwaggon", KapitelDaten.schluss_ort(4) == "spiegel_wagen")
+
+	# ── Der Reveal ────────────────────────────────────────────────────────────
+	_check("Vorher ist nichts enthuellt", not GameState.is_revealed)
+	_check("Vorher ist der Spiegel heil", not Welt.flagge("spiegel_zerbrochen"))
+	# Genau die eine Antwort in schluss_k4, an der die Ramme trifft.
+	var treffer: Dictionary = {}
+	for a in GespraechDaten.knoten("schluss_k4", "ramme").get("antworten", []) as Array:
+		var w: Dictionary = (a as Dictionary).get("tut", {}) as Dictionary
+		if bool(w.get("enthuellen", false)):
+			treffer = w
+	_check("In schluss_k4 gibt es genau eine Antwort, die enthuellt", not treffer.is_empty())
+	Welt.wirken(treffer)
+	_check("Der Reveal setzt is_revealed", GameState.is_revealed)
+	_check("und zerschlaegt den Spiegel", Welt.flagge("spiegel_zerbrochen"))
+
+	# Der Hintergrund wechselt daraufhin -- das ist der Zweck von `bild_wenn`.
+	var tausch: Dictionary = OrtDaten.ort("spiegel_wagen").get("bild_wenn", {}) as Dictionary
+	_check("Der Salonwaggon hat einen zweiten Hintergrund", not tausch.is_empty())
+	_check("Er haengt an genau dieser Flagge", str(tausch.get("flagge", "")) == "spiegel_zerbrochen")
+	_check("Und die Datei dafuer ist angemeldet",
+		str(tausch.get("bild", "")).ends_with("spiegel_wagen_zerbrochen.webp"))
+
+	# Nach dem Reveal reden alle anders. Die Probe: Mabel hat enthuellte Zeilen.
+	var vorher: Array = GespraechDaten.saetze("mabel_saloon", "erst", false)
+	var nachher: Array = GespraechDaten.saetze("mabel_saloon", "erst", true)
+	_check("Mabel sagt nach dem Reveal etwas anderes", vorher != nachher)
+
+	Welt.neu()
+	GameState.quests = quests_vorher
+	GameState.current_chapter = kapitel_vorher
+	GameState.is_revealed = enthuellt_vorher

@@ -1,0 +1,301 @@
+<title>Rust &amp; Lead</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,600;0,800;1,400&family=Inter:wght@400;500;600&display=swap">
+
+<style>
+/* Ein Raum, kein Dokument: Startkarte mittig ueber dunklem Grund, danach fuellt die
+   Leinwand alles. Einthemig dunkel mit Absicht -- das Spiel bringt seinen eigenen
+   Farbraum mit, und ein heller Rahmen drumherum waere ein zweiter. */
+:root {
+  --grund:    #090201;   /* dunkelster Ton des gemessenen Farbraums */
+  --tiefe:    #1b0c05;
+  --kante:    #4a2a16;
+  --rost:     #b4541f;
+  --sand:     #e2bf91;   /* hellster Ton des gemessenen Farbraums */
+  --schrift:  #d8c3a5;
+  --gedaempft:#9a7f63;
+  --display: 'Bitter', 'Iowan Old Style', Georgia, serif;
+  --text: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--grund);
+  color: var(--schrift);
+  font-family: var(--text);
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* ── Startkarte ──────────────────────────────────────────────────────────── */
+
+#karte {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.75rem;
+  padding-block: 2rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  overflow-y: auto;
+  background:
+    radial-gradient(120% 80% at 50% 0%, #2a1408 0%, var(--grund) 70%);
+}
+
+.mitte { width: 100%; max-width: 44rem; margin-inline: auto; }
+
+h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2.4rem, 9vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--sand);
+  text-wrap: balance;
+}
+.unter {
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--gedaempft);
+  margin: 0.6rem 0 0;
+  font-size: clamp(1rem, 2.6vw, 1.15rem);
+}
+
+.linie { height: 1px; background: linear-gradient(90deg, var(--kante), transparent); margin: 1.6rem 0; }
+
+/* Die Zahlen sind echt und gemessen, nicht geschmueckt. */
+.zahlen { display: flex; flex-wrap: wrap; gap: 1.6rem 2.4rem; margin: 0; padding: 0; list-style: none; }
+.zahlen div { display: flex; flex-direction: column; gap: 0.15rem; }
+.zahl {
+  font-family: var(--display); font-weight: 600;
+  font-size: 1.5rem; color: var(--sand);
+  font-variant-numeric: tabular-nums;
+}
+.wofuer { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--gedaempft); }
+
+.hinweis { font-size: 0.92rem; line-height: 1.55; color: var(--gedaempft); margin: 0; max-width: 34rem; }
+.hinweis b { color: var(--schrift); font-weight: 600; }
+
+#los {
+  margin-top: 1.7rem;
+  font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  color: #150702; background: var(--sand);
+  border: 0; border-radius: 2px;
+  padding: 0.85rem 2.1rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+#los:hover { background: #f2d7ab; }
+#los:active { transform: translateY(1px); }
+#los:focus-visible { outline: 2px solid var(--rost); outline-offset: 3px; }
+#los[disabled] { background: var(--kante); color: var(--gedaempft); cursor: default; }
+
+/* ── Fortschritt ─────────────────────────────────────────────────────────── */
+
+#fortschritt { margin-top: 1.7rem; display: none; }
+#fortschritt.an { display: block; }
+.balken { height: 3px; background: var(--tiefe); border: 1px solid var(--kante); overflow: hidden; }
+.balken i { display: block; height: 100%; width: 0; background: var(--rost); transition: width 0.25s linear; }
+#wort { margin: 0.7rem 0 0; font-size: 0.85rem; color: var(--gedaempft); font-variant-numeric: tabular-nums; }
+
+#fehler {
+  margin-top: 1.4rem; padding: 0.9rem 1.1rem;
+  border: 1px solid #7a2f1e; background: #2a0f08;
+  color: #e8b9a6; font-size: 0.9rem; line-height: 1.5;
+}
+
+/* ── Leinwand ────────────────────────────────────────────────────────────── */
+
+#buehne { display: none; height: 100%; background: #000; }
+#buehne.an { display: block; }
+canvas { display: block; width: 100%; height: 100%; }
+canvas:focus { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .balken i, #los { transition: none; }
+}
+</style>
+
+<div id="karte">
+  <div class="mitte">
+    <h1>Rust &amp; Lead</h1>
+    <p class="unter">Ein Steampunk-Western &mdash; Punkt und Klick</p>
+
+    <div class="linie"></div>
+
+    <ul class="zahlen">
+      <li><div><span class="zahl">4</span><span class="wofuer">Kapitel</span></div></li>
+      <li><div><span class="zahl">13</span><span class="wofuer">gemalte Orte</span></div></li>
+      <li><div><span class="zahl">78</span><span class="wofuer">Hotspots</span></div></li>
+      <li><div><span class="zahl">58 MB</span><span class="wofuer">zu laden</span></div></li>
+    </ul>
+
+    <div class="linie"></div>
+
+    <p class="hinweis">
+      <b>Klicken</b> oder tippen heißt benutzen und hingehen.
+      <b>Rechtsklick</b> &mdash; auf dem Telefon <b>gedrückt halten</b> &mdash; heißt ansehen.
+      Die Inventarleiste fährt von oben ein, wenn der Zeiger den oberen Rand berührt.
+      <b>Tab</b> öffnet das Tagebuch.
+    </p>
+    <p class="hinweis" style="margin-top:0.8rem">
+      Die 58 MB werden erst beim Start geholt und nicht vorher. Am Stück wären es zwei
+      Dateien, die zu groß für diese Seite sind; sie kommen deshalb in sechs Teilen und
+      werden im Browser wieder zusammengesetzt.
+    </p>
+
+    <button id="los" type="button">Spiel starten</button>
+
+    <div id="fortschritt">
+      <div class="balken"><i id="balken"></i></div>
+      <p id="wort">bereit</p>
+    </div>
+
+    <div id="fehler" hidden></div>
+  </div>
+</div>
+
+<div id="buehne"><canvas id="canvas">Dieser Browser kann kein Canvas.</canvas></div>
+
+<script src="index.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // Welche Teile zu welcher Datei gehoeren. Die Reihenfolge ist die Datei.
+  // Warum die Paketteile auf .wasm enden, obwohl nur die Haelfte WebAssembly ist:
+  // Diese Seite darf nur bestimmte Dateiendungen ausliefern, und .wasm ist die einzige
+  // darunter, die binaer unveraendert durchkommt. Gelesen werden sie ohnehin als rohe
+  // Bytes -- der Inhaltstyp spielt dabei keine Rolle.
+  var PLAN = {
+    'index.wasm': ['teile/wasm00.wasm', 'teile/wasm01.wasm', 'teile/wasm02.wasm'],
+    'index.pck':  ['teile/pck00.wasm',  'teile/pck01.wasm',  'teile/pck02.wasm']
+  };
+  var GROESSE = { 'index.wasm': 35376909, 'index.pck': 25514640 };
+  var GESAMT = GROESSE['index.wasm'] + GROESSE['index.pck'];
+
+  var karte = document.getElementById('karte');
+  var buehne = document.getElementById('buehne');
+  var knopf = document.getElementById('los');
+  var kasten = document.getElementById('fortschritt');
+  var balken = document.getElementById('balken');
+  var wort = document.getElementById('wort');
+  var fehlerfeld = document.getElementById('fehler');
+
+  function zeigeFehler(text) {
+    fehlerfeld.textContent = text;
+    fehlerfeld.hidden = false;
+    knopf.disabled = false;
+    knopf.textContent = 'Nochmal versuchen';
+  }
+
+  var geladen = 0;
+  function melde() {
+    var p = Math.min(100, Math.round(geladen / GESAMT * 100));
+    balken.style.width = p + '%';
+    wort.textContent = p + ' % — ' + (geladen / 1048576).toFixed(1) +
+      ' von ' + (GESAMT / 1048576).toFixed(1) + ' MB';
+  }
+
+  // Die Teile holen und zu einer Datei zusammensetzen.
+  function hole(name) {
+    var teile = PLAN[name];
+    var puffer = new Uint8Array(GROESSE[name]);
+    var wo = 0;
+    return teile.reduce(function (kette, pfad) {
+      return kette.then(function () {
+        return fetch(pfad, { cache: 'force-cache' }).then(function (r) {
+          if (!r.ok) { throw new Error('Teil fehlt: ' + pfad + ' (' + r.status + ')'); }
+          return r.arrayBuffer();
+        }).then(function (ab) {
+          var st = new Uint8Array(ab);
+          puffer.set(st, wo);
+          wo += st.length;
+          geladen += st.length;
+          melde();
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      if (wo !== GROESSE[name]) {
+        throw new Error(name + ': ' + wo + ' Byte statt ' + GROESSE[name]);
+      }
+      return puffer;
+    });
+  }
+
+  // Godots Lader holt `index.wasm` und `index.pck` per fetch. Beide liegen hier nicht,
+  // sie stehen schon fertig im Speicher -- also wird fetch abgefangen und bedient. Der
+  // Inhaltstyp muss stimmen: `WebAssembly.instantiateStreaming` nimmt nur
+  // `application/wasm` an und wirft sonst, obwohl die Bytes richtig waeren.
+  var fertig = {};
+  var echtFetch = window.fetch.bind(window);
+  window.fetch = function (eingabe, init) {
+    var url = String(typeof eingabe === 'string' ? eingabe : (eingabe && eingabe.url) || '');
+    for (var name in fertig) {
+      if (Object.prototype.hasOwnProperty.call(fertig, name) && url.indexOf(name) !== -1) {
+        var typ = name.slice(-5) === '.wasm' ? 'application/wasm' : 'application/octet-stream';
+        return Promise.resolve(new Response(fertig[name], {
+          status: 200,
+          headers: { 'Content-Type': typ, 'Content-Length': String(fertig[name].length) }
+        }));
+      }
+    }
+    return echtFetch(eingabe, init);
+  };
+
+  function starten() {
+    knopf.disabled = true;
+    knopf.textContent = 'wird geladen …';
+    fehlerfeld.hidden = true;
+    kasten.classList.add('an');
+    geladen = 0;
+    melde();
+
+    if (typeof Engine === 'undefined') {
+      zeigeFehler('Der Godot-Lader (index.js) wurde nicht geladen.');
+      return;
+    }
+    var fehlt = Engine.getMissingFeatures({ threads: false });
+    if (fehlt.length) {
+      zeigeFehler('Dieser Browser kann das Spiel nicht ausführen. Es fehlt: ' + fehlt.join(', '));
+      return;
+    }
+
+    hole('index.wasm').then(function (w) {
+      fertig['index.wasm'] = w;
+      return hole('index.pck');
+    }).then(function (p) {
+      fertig['index.pck'] = p;
+      wort.textContent = 'wird gestartet …';
+      var motor = new Engine({
+        args: [],
+        canvasResizePolicy: 2,
+        ensureCrossOriginIsolationHeaders: false,
+        executable: 'index',
+        experimentalVK: false,
+        fileSizes: { 'index.pck': GROESSE['index.pck'], 'index.wasm': GROESSE['index.wasm'] },
+        focusCanvas: true,
+        gdextensionLibs: [],
+        canvas: document.getElementById('canvas')
+      });
+      karte.style.display = 'none';
+      buehne.classList.add('an');
+      return motor.startGame({});
+    }).then(function () {
+      document.getElementById('canvas').focus();
+    }).catch(function (e) {
+      karte.style.display = '';
+      buehne.classList.remove('an');
+      zeigeFehler(e && e.message ? e.message : String(e));
+    });
+  }
+
+  knopf.addEventListener('click', starten);
+}());
+</script>

@@ -22,7 +22,28 @@ extends Node3D
 ## Die Welt wird hier gar nicht mehr geladen. Der Titel startet sofort, und die Overworld hat
 ## keinen Sonderzustand mehr zu kennen — die Flagge dafür ist mit diesem Entwurf weggefallen.
 
-const OVERWORLD := preload("res://scenes/Overworld.tscn")
+## Die Action-Welt wird NICHT mit `preload` geholt, und das ist der Unterschied zwischen einem
+## Titelbildschirm und einem leeren Fenster.
+##
+## `preload` laedt beim Laden des SKRIPTS. Fehlt die Szene -- und in der Abenteuer-Fassung
+## fehlt sie, weil ihre 278 MB Modelle nicht mitexportiert werden --, dann laedt nicht die
+## Szene nicht, sondern dieses Skript nicht. Der Titelbildschirm hatte daraufhin keinen
+## einzigen Knopf mehr, „Neues Spiel" eingeschlossen. Eine ausgeschlossene Datei nimmt also
+## das halbe Spiel mit, wenn ein `preload` auf sie zeigt.
+##
+## `load()` beim Klick fragt dagegen erst, wenn jemand es will -- und `_menue()` fragt vorher,
+## ob es ueberhaupt etwas zu wollen gibt.
+const OVERWORLD_PFAD := "res://scenes/Overworld.tscn"
+
+
+## Ist die Action-Fassung in dieser Fassung ueberhaupt dabei?
+static func _action_dabei() -> bool:
+	return ResourceLoader.exists(OVERWORLD_PFAD)
+## Das Punkt-und-Klick-Abenteuer -- seit der Umstellung auf die Bauform von Baphomets Fluch
+## ist DAS das Spiel. Die Action-Fassung bleibt im Menue erreichbar, weil sie fertig ist und
+## niemandem nuetzt, wenn sie nur noch im Versionsverlauf steht.
+const ABENTEUER := preload("res://scenes/Abenteuer.tscn")
+const Welt = preload("res://scripts/Welt.gd")
 const TITELBILD := preload("res://assets/ui/titelbild.webp")
 const SAVE_SLOT: int = 0
 
@@ -124,20 +145,32 @@ func _bau_oberflaeche() -> void:
 func _menue() -> Array:
 	var hat_stand: bool = SaveManager.has_slot(SAVE_SLOT)
 	var eintraege: Array = [
-		["neu", "Neues Spiel", false],
+		["abenteuer", "Neues Spiel", false],
 		["laden", "Spiel laden", not hat_stand],
-		["tutorial", "Tutorial", false],
+		["neu", "Action-Fassung (alt)", false],
+		["tutorial", "Tutorial (Action-Fassung)", false],
 		["einstellungen", "Einstellungen", false],
 		["steuerung", "Steuerung", false],
 		["credits", "Credits", false],
 	]
 	if not OS.has_feature("mobile"):
 		eintraege.append(["beenden", "Beenden", false])
+	# Liegt die Action-Welt nicht im Paket, fliegen ihre beiden Eintraege raus statt
+	# ausgegraut dazustehen. Ausgrauen heisst „gibt es, aber jetzt nicht" -- hier gibt es sie
+	# gar nicht, und ein Knopf, der dort nichts Sinnvolles tut, ist schlimmer als keiner.
+	if not _action_dabei():
+		var ohne: Array = []
+		for e in eintraege:
+			if str(e[0]) != "neu" and str(e[0]) != "tutorial":
+				ohne.append(e)
+		return ohne
 	return eintraege
 
 
 func _gewaehlt(kennung: String) -> void:
 	match kennung:
+		"abenteuer":
+			_abenteuer_starten()
 		"neu":
 			_starten(true, false)
 		"laden":
@@ -148,6 +181,20 @@ func _gewaehlt(kennung: String) -> void:
 			get_tree().quit()
 		_:
 			_blatt_zeigen(kennung)
+
+
+## Ins Abenteuer.
+##
+## Kein Ladebildschirm, und das ist kein Versaeumnis: Die Buehne baut sich aus einer Tabelle
+## auf, nicht aus Gelaendeflicken und Streuung. Was beim Start der Action-Fassung Sekunden
+## dauert, ist hier ein Dictionary-Zugriff -- ein Ladebildschirm waere kuerzer sichtbar, als
+## das Auge braucht, um ihn zu bemerken.
+func _abenteuer_starten() -> void:
+	SaveManager.delete_slot(SAVE_SLOT)
+	GameState.neu_beginnen()
+	Welt.neu()
+	GameState.current_chapter = 1
+	get_tree().change_scene_to_packed(ABENTEUER)
 
 
 ## Ins Spiel. `frisch` setzt den Prolog zurück, `tutorial` schaltet zusätzlich die Hinweistafeln
@@ -178,7 +225,10 @@ func _starten(frisch: bool, tutorial: bool) -> void:
 	# Durchlauf, gezeichnet wird am Ende des zweiten.
 	await get_tree().process_frame
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(OVERWORLD)
+	var welt: PackedScene = load(OVERWORLD_PFAD) as PackedScene
+	if welt == null:
+		return
+	get_tree().change_scene_to_packed(welt)
 
 
 ## Der Ladebildschirm.

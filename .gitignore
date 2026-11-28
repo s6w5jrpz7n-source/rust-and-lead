@@ -35,3 +35,6 @@ __pycache__/
 # gehoert nicht ins Repository: 111 WAVs sind dreistellige Megabyte, und
 # jede Neufassung des Skripts erzeugt sie ohnehin neu.
 docs/hoerspiel_audio/
+
+# Exportierte Fassungen -- gehoeren nicht ins Repo, sie entstehen aus ihm.
+bauen/

@@ -213,6 +213,35 @@ var stollen_startwert: int = 0
 var stollen_rueckkehr: Vector3 = Vector3.ZERO
 
 # ── Roter Faden: Erinnerungs-Walzen & Familien-Bogen (Master-GDD §7.5.12a/b, §8.3) ──
+# ── Punkt-und-Klick-Abenteuer (Welt-Zustand) ──────────────────────────────────
+#
+# Das Adventure braucht einen anderen Zustand als das Action-Spiel: nicht Position und
+# Munition, sondern was man weiss, was man getan hat und wo man schon war. Die sechs Felder
+# hier sind absichtlich simpel gehalten -- Dictionary und Array, JSON-tauglich, vom
+# `SaveManager` ohne Sonderbehandlung speicherbar. Die Logik dazu steht in `Welt.gd`;
+# hier liegt nur die Wahrheit.
+
+## Wo die Figur gerade ist (Kennung aus `OrtDaten.ORTE`).
+var ort: String = "kippe"
+
+## Welt-Flaggen: kennung -> true. Was einmal passiert ist, steht hier und nirgends sonst.
+var flaggen: Dictionary = {}
+
+## Die Gegenstaende im Adventure-Inventar, in Aufnahme-Reihenfolge (Kennungen aus
+## `MissionDaten.GEGENSTAENDE`). Eine Liste und kein Dictionary, weil die Reihenfolge im
+## Inventarfenster die Reihenfolge des Findens sein soll -- man sucht dort nach Erinnerung,
+## nicht nach Alphabet.
+var beutel: Array = []
+
+## Zaehler fuer Missionsschritte: kennung -> Anzahl ("wegelagerer" -> 8).
+var zaehler: Dictionary = {}
+
+## Orte, die schon betreten wurden -- fuer Missionsschritte und fuer die Reisekarte.
+var besucht: Array = []
+
+## Tagebuch-Notizen, die der Held zusammengereimt hat (Kennungen aus `MissionDaten.NOTIZEN`).
+var notizen: Array = []
+
 var memories_found: int = 0        ## 0..MemoryManager.chain_length(); geordnete Erinnerungskette
 var memorials_seen: Array = []     ## ids besuchter Erinnerungspunkte in Providence Cut
 var family_buried: bool = false    ## alle Walzen an den drei Gräbern beigesetzt (16/16)
