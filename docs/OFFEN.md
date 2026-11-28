@@ -24,6 +24,7 @@ ausgespielt und als durchspielbar nachgewiesen (2675 Prüfungen grün).
 | **Figur** | **da** — stehend, Lauf links, Lauf rechts, freigestellt. Im Spiel eingebaut, Maßstab aus dem Standbild. |
 | Portraits `quentin`, `dolores` | **da**, liegen als `assets/ui/portrait_*.webp`. |
 | **NPC-Figuren** (6), **Gegenstands-Sprites** (13), **Portraits** (2) | **alle da und eingesetzt.** Jede Figur ist an ihrem Ort eingemessen, die Gegenstände stehen in der Inventarleiste. |
+| **Symbol und Versionsinfo der .exe** | fehlen. Das setzt `rcedit`, ein Windows-Werkzeug; Godot warnt und exportiert normal weiter. Die .exe trägt bis dahin das Godot-Symbol. |
 | **Vordergrund-Freisteller** | fehlen noch. `bild_vorn` ist eingebaut; solange nichts da ist, spart die Lauffläche den angeschnittenen Vordergrund aus. |
 | **Vordergrund-Freisteller** | fehlen. `bild_vorn` ist eingebaut; solange nichts da ist, spart die Lauffläche den angeschnittenen Vordergrund aus und kostet Bildfläche. |
 | (alt) Hintergrundbilder | ~~fehlen.~~ Das Spiel läuft mit gezeichneten Platzhaltern. Rezeptur in `docs/ABENTEUER.md` §6. **Der ElevenLabs-Verbinder darf zur Zeit keine Bilder erzeugen** („requires additional permissions") — in den Verbinder-Einstellungen auf claude.ai neu verbinden. |

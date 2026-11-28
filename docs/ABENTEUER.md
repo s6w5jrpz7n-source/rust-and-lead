@@ -493,15 +493,40 @@ python3 docs/azure_tts.py --spiel       # rendern nach assets/voice/
 
 ## 9. Spielen
 
-Es gibt noch **keine fertige Programmdatei** — keine `export_presets.cfg`, also auch kein
-`.exe` und kein `.apk`. Gespielt wird aus dem Editor:
+### Fertige Programmdatei
+
+Zwei Vorgaben in `godot/export_presets.cfg`, beide ergeben **eine einzelne .exe** ohne
+Installation und ohne Beidateien:
+
+| Vorgabe | Inhalt | Größe |
+| :-- | :-- | --: |
+| `Windows Abenteuer` | nur das Punkt-und-Klick-Spiel | ~105 MB |
+| `Windows Desktop` | zusätzlich die Action-Fassung | ~532 MB |
+
+```bash
+godot --headless --path godot --export-release "Windows Abenteuer" bauen/RustAndLead.exe
+```
+
+Der Unterschied sind die 278 MB 3D-Modelle und 22 MB Video, die nur die Action-Fassung
+braucht. In der schlanken Fassung verschwinden deren zwei Menüeinträge, statt ausgegraut
+dazustehen — ausgegraut heißt „gibt es, aber jetzt nicht", und hier gibt es sie gar nicht.
+
+**Die Falle dabei, und sie kostete den ganzen Titelbildschirm:** Eine Datei aus dem Export zu
+nehmen reicht nicht, wenn ein `preload` auf sie zeigt. `preload` lädt beim Laden des
+**Skripts** — fehlt das Ziel, lädt nicht die Szene nicht, sondern das ganze Skript nicht. Der
+Titelbildschirm hatte daraufhin keinen einzigen Knopf mehr, „Neues Spiel" eingeschlossen.
+Deshalb holt `TitleScreen.gd` die Action-Welt per `load()` beim Klick und fragt vorher mit
+`ResourceLoader.exists()`, ob es überhaupt etwas zu holen gibt.
+
+Was die exe **nicht** hat: eigenes Symbol und Versionsinfo. Das setzt `rcedit`, ein
+Windows-Werkzeug, das hier nicht läuft. Godot warnt darüber und exportiert normal weiter.
+
+### Oder aus dem Editor
 
 1. Godot **4.3** holen (godotengine.org), es ist ein einzelnes Programm ohne Installation.
 2. Den Ordner `godot/` als Projekt öffnen. Der erste Start importiert alle Bilder und legt
    zusätzlich die Handy-Fassung der Texturen an — das dauert einmalig ein paar Minuten.
 3. **F5**. Der Titelbildschirm kommt, „Neues Spiel" führt ins Abenteuer.
-
-Die Action-Fassung bleibt darunter als „Action-Fassung (alt)" erreichbar.
 
 ## 10. Prüfen
 
@@ -516,6 +541,16 @@ godot --headless --path godot res://tests/TestRunner.tscn
 # Startversuch an den ECHTEN Szenen-Knoten: jeder Hotspot an jedem Ort angesehen und
 # benutzt, echte Mausereignisse durch den Viewport, alle Schlussszenen durchgeklickt.
 godot --headless --path godot res://tools/SpielProbe.tscn
+
+# Dasselbe gegen eine EXPORTIERTE Datei -- auch gegen eine Windows-exe, die hier niemand
+# starten kann. Godot liest das eingebettete Paket direkt aus der ausfuehrbaren Datei.
+# Darum liegen tests/ und tools/ bewusst mit im Paket: ein paar Dutzend Kilobyte Text,
+# und dafuer kann jede Fassung sich selbst nachmessen.
+godot --headless --main-pack bauen/RustAndLead.exe res://tools/SpielProbe.tscn
+
+# Die SUITE in einem Export gibt 3 erwartete Fehlschlaege: drei Tests lesen Quelltext
+# (project.godot, Title.tscn, TitleScreen.gd), und der heisst dort project.binary, .scn
+# und Bytecode. Fuer exportierte Fassungen ist die SpielProbe das richtige Werkzeug.
 
 # Bildschirmfotos (Texturen erscheinen dabei weiss — Grenze des Software-Renderers,
 # kein Fehler im Spiel; gegengeprüft mit icon_gold.png)

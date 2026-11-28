@@ -22,7 +22,23 @@ extends Node3D
 ## Die Welt wird hier gar nicht mehr geladen. Der Titel startet sofort, und die Overworld hat
 ## keinen Sonderzustand mehr zu kennen — die Flagge dafür ist mit diesem Entwurf weggefallen.
 
-const OVERWORLD := preload("res://scenes/Overworld.tscn")
+## Die Action-Welt wird NICHT mit `preload` geholt, und das ist der Unterschied zwischen einem
+## Titelbildschirm und einem leeren Fenster.
+##
+## `preload` laedt beim Laden des SKRIPTS. Fehlt die Szene -- und in der Abenteuer-Fassung
+## fehlt sie, weil ihre 278 MB Modelle nicht mitexportiert werden --, dann laedt nicht die
+## Szene nicht, sondern dieses Skript nicht. Der Titelbildschirm hatte daraufhin keinen
+## einzigen Knopf mehr, „Neues Spiel" eingeschlossen. Eine ausgeschlossene Datei nimmt also
+## das halbe Spiel mit, wenn ein `preload` auf sie zeigt.
+##
+## `load()` beim Klick fragt dagegen erst, wenn jemand es will -- und `_menue()` fragt vorher,
+## ob es ueberhaupt etwas zu wollen gibt.
+const OVERWORLD_PFAD := "res://scenes/Overworld.tscn"
+
+
+## Ist die Action-Fassung in dieser Fassung ueberhaupt dabei?
+static func _action_dabei() -> bool:
+	return ResourceLoader.exists(OVERWORLD_PFAD)
 ## Das Punkt-und-Klick-Abenteuer -- seit der Umstellung auf die Bauform von Baphomets Fluch
 ## ist DAS das Spiel. Die Action-Fassung bleibt im Menue erreichbar, weil sie fertig ist und
 ## niemandem nuetzt, wenn sie nur noch im Versionsverlauf steht.
@@ -139,6 +155,15 @@ func _menue() -> Array:
 	]
 	if not OS.has_feature("mobile"):
 		eintraege.append(["beenden", "Beenden", false])
+	# Liegt die Action-Welt nicht im Paket, fliegen ihre beiden Eintraege raus statt
+	# ausgegraut dazustehen. Ausgrauen heisst „gibt es, aber jetzt nicht" -- hier gibt es sie
+	# gar nicht, und ein Knopf, der dort nichts Sinnvolles tut, ist schlimmer als keiner.
+	if not _action_dabei():
+		var ohne: Array = []
+		for e in eintraege:
+			if str(e[0]) != "neu" and str(e[0]) != "tutorial":
+				ohne.append(e)
+		return ohne
 	return eintraege
 
 
@@ -200,7 +225,10 @@ func _starten(frisch: bool, tutorial: bool) -> void:
 	# Durchlauf, gezeichnet wird am Ende des zweiten.
 	await get_tree().process_frame
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(OVERWORLD)
+	var welt: PackedScene = load(OVERWORLD_PFAD) as PackedScene
+	if welt == null:
+		return
+	get_tree().change_scene_to_packed(welt)
 
 
 ## Der Ladebildschirm.
