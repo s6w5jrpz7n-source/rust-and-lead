@@ -208,6 +208,17 @@ func sagen(texte: Array) -> void:
 		_naechster_satz()
 
 
+## Den Hintergrund neu laden.
+##
+## Gebraucht fuer `bild_wenn`: Setzt ein Gespraech die Flagge, die den zweiten Hintergrund
+## einschaltet, haengt sonst bis zum naechsten Ortswechsel das alte Bild da -- und das
+## waere im Salonwaggon der heile Spiegel, nachdem er zerbrochen ist.
+func bild_auffrischen() -> void:
+	_hintergrund = _bild_laden(_ort)
+	_vordergrund = _bild_laden(_ort, "bild_vorn")
+	queue_redraw()
+
+
 ## Alles Gesagte abbrechen -- wird gebraucht, wenn eine andere Ansicht nach vorn kommt.
 func verstummen() -> void:
 	_saetze = []
@@ -386,7 +397,12 @@ func _ausfuehren(punkt: String, _was: String) -> void:
 		var womit: String = _in_hand
 		_in_hand = ""
 		if MissionDaten.kombinierbar(womit, punkt):
-			_wirkung_zeigen(Welt.wirken(str(p.get("benutzen", ""))))
+			# `benutzen_mit` geht vor: Silas nimmt eine Musikwalze anders entgegen als eine
+			# Konzernrolle, und beides an denselben Hotspot zu haengen hiesse, eines von
+			# beidem waere das falsche.
+			var je_ding: Dictionary = p.get("benutzen_mit", {}) as Dictionary
+			var wirkung: String = str(je_ding.get(womit, p.get("benutzen", "")))
+			_wirkung_zeigen(Welt.wirken(wirkung))
 		else:
 			sagen([_passt_nicht(womit, str(p.get("name", "das")))])
 		queue_redraw()

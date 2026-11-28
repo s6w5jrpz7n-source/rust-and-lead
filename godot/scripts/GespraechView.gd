@@ -286,6 +286,7 @@ const NAMEN: Dictionary = {
 	"quentin": "Quentin Vale",
 	"dolores": "Dolores",
 	"slick": "„Slick“ Sterling",
+	"jack": "Kolben-Jack",
 }
 
 

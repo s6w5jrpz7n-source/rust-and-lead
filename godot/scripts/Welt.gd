@@ -166,6 +166,10 @@ static func wirken(was: Variant) -> String:
 		nehmen(str(w["gegenstand"]))
 	if w.has("flagge"):
 		flagge_setzen(str(w["flagge"]))
+	# Mehrere auf einmal. Gebraucht am Ende eines Kapitels, wo eine Antwort gleichzeitig
+	# einen Weg oeffnet und das Kapitel abhakt.
+	for f in w.get("flaggen", []) as Array:
+		flagge_setzen(str(f))
 	if w.has("einmal"):
 		flagge_setzen(str(w["einmal"]))
 	if w.has("notiz"):
@@ -178,6 +182,11 @@ static func wirken(was: Variant) -> String:
 		GameState.add_xp(int(w["erfahrung"]))
 	if w.has("quest"):
 		mission_annehmen(str(w["quest"]))
+	if bool(w.get("enthuellen", false)) and not GameState.is_revealed:
+		# Der Reveal. Er steht als Wirkung und nicht im Gespraechscode, weil er an GENAU
+		# einer Stelle ausgeloest werden darf und man das dann auch nachlesen kann.
+		GameState.is_revealed = true
+		GameState.reveal_finished.emit()
 	if w.has("verbraucht"):
 		abgeben(str(w["verbraucht"]))
 

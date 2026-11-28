@@ -116,14 +116,15 @@ const TEST_UMFANG: Dictionary = {
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 	"_test_abenteuer_welt": 532,
-	"_test_abenteuer_gespraeche": 487,
-	"_test_abenteuer_missionen": 160,
+	"_test_abenteuer_gespraeche": 611,
+	"_test_abenteuer_missionen": 218,
 	"_test_abenteuer_welt_logik": 22,
-	"_test_abenteuer_kapitel": 36,
-	"_test_abenteuer_bild_und_farbe": 248,
+	"_test_abenteuer_kapitel": 42,
+	"_test_abenteuer_bild_und_farbe": 291,
 	"_test_abenteuer_kapitel1_durchspielen": 30,
 	"_test_abenteuer_sprites": 89,
-	"_test_abenteuer_kapitel2_durchspielen": 27,
+	"_test_abenteuer_kapitel2_durchspielen": 33,
+	"_test_abenteuer_kapitel34_durchspielen": 41,
 }
 
 
@@ -8568,9 +8569,12 @@ func _test_abenteuer_kapitel2_durchspielen() -> void:
 
 	# ── Der Uebergang ─────────────────────────────────────────────────────────
 	_check("Kapitel 2 ist ausgespielt", KapitelDaten.ausgespielt(2))
-	_check("Das letzte ausgespielte Kapitel ist 2", KapitelDaten.letztes_ausgespieltes() == 2,
+	# Nicht auf eine feste Zahl pruefen: Die waechst mit jedem ausgespielten Kapitel, und
+	# ein Test, der beim Fertigwerden rot wird, erzieht nur dazu, ihn zu ignorieren.
+	_check("Es sind mindestens zwei Kapitel ausgespielt",
+		KapitelDaten.letztes_ausgespieltes() >= 2,
 		"%d" % KapitelDaten.letztes_ausgespieltes())
-	for n in [1, 2]:
+	for n in range(1, KapitelDaten.letztes_ausgespieltes() + 1):
 		var sch: Dictionary = KapitelDaten.schluss(int(n))
 		_check("Kapitel %d: Schlussgespraech existiert" % int(n),
 			not GespraechDaten.baum(str(sch.get("gespraech", ""))).is_empty())
@@ -8634,3 +8638,130 @@ func _test_abenteuer_kapitel2_durchspielen() -> void:
 	GameState.quests = quests_vorher
 	GameState.current_chapter = kapitel_vorher
 	GameState.gold = gold_vorher
+
+
+## Kapitel 3 und 4 durchspielen -- bis in den Spiegel.
+##
+## Der letzte Durchlauf-Test, und der einzige, der die Frage beantwortet, auf die es am Ende
+## ankommt: Kommt man vom ersten Bild bis zu dem Moment, in dem der Spieler erfaehrt, was er
+## die ganze Zeit war? Alles andere ist Vorbereitung darauf.
+##
+## Geprueft wird dabei auch das, was man nur hier sieht: dass der Reveal an GENAU einer
+## Antwort haengt, dass er `is_revealed` setzt, und dass der zerschlagene Hintergrund danach
+## gilt.
+func _test_abenteuer_kapitel34_durchspielen() -> void:
+	var quests_vorher: Dictionary = GameState.quests.duplicate(true)
+	var kapitel_vorher: int = GameState.current_chapter
+	var enthuellt_vorher: bool = GameState.is_revealed
+	Welt.neu()
+	GameState.quests = {}
+	GameState.is_revealed = false
+	var fertig: Callable = func(id: String) -> bool: return Welt.mission_fertig(id)
+
+	# ── Kapitel 3: hinunter ───────────────────────────────────────────────────
+	GameState.current_chapter = 3
+	_check("Kapitel 3 hat zwei Straenge", KapitelDaten.missionen(3).size() == 2,
+		str(KapitelDaten.missionen(3)))
+
+	# Der Weg in die Mine oeffnet sich erst, nachdem man mit Licht unten war.
+	var hinab: Dictionary = OrtDaten.punkte_alle("vorschacht")["hinab"] as Dictionary
+	_check("Der Weg in die Mine ist anfangs zu", not Welt.sichtbar(hinab))
+	Welt.wirken("kadaver_pluendern")
+	Welt.wirken("gang_hinab")
+	_check("Nach dem ersten Gang mit Licht ist er offen", Welt.sichtbar(hinab))
+
+	Welt.wirken({"quest": "q_psalm"})
+	Welt.betreten("mine_ebene1")
+	Welt.wirken("psalm_kisten")
+	_check("Die PSALM-Kisten sind von innen geoeffnet", Welt.hat_notiz("psalm"))
+	Welt.betreten("mine_ebene2")
+	Welt.wirken("zeichnung_ansehen")
+	_check("Die Zeichnung steht im Tagebuch", Welt.hat_notiz("familie"))
+	Welt.wirken("hunt_durchsuchen")
+	_check("Die Kinderjacke liegt im Hunt", Welt.im_beutel("kinderjacke"))
+	Welt.betreten("mine_ebene3")
+	Welt.wirken("schacht_lauschen")
+	Welt.wirken("kiste_oeffnen")
+	_check("Die Rolle liegt in der zerdrueckten Kiste", Welt.im_beutel("psalm_rolle"))
+	_check("Und die Dreizehn steht im Tagebuch", Welt.hat_notiz("dreizehn"))
+
+	var ohne_rolle: bool = Welt.flagge("rolle_gezeigt")
+	_check("Silas hat die Rolle noch nicht gesehen", not ohne_rolle)
+	Welt.wirken("rolle_silas")
+	_check("Silas sieht sich die Rolle an", Welt.flagge("rolle_gezeigt"))
+	_check("q_psalm wird fertig gemeldet", "q_psalm" in Welt.missionen_pruefen())
+
+	# Seitenstrang: die Jacke
+	Welt.wirken({"quest": "q_jacke"})
+	Welt.wirken("jacke_dolores")
+	_check("Dolores bekommt die Jacke", Welt.flagge("jacke_abgegeben"))
+	_check("Und behaelt sie", not Welt.im_beutel("kinderjacke"))
+	_check("q_jacke wird fertig gemeldet", "q_jacke" in Welt.missionen_pruefen())
+	_check("Kapitel 3: die Schlussszene geht auf", KapitelDaten.schluss_frei(3, fertig))
+	_check("Sie spielt in der Schmiede", KapitelDaten.schluss_ort(3) == "schmiede")
+
+	# ── Kapitel 4: der Zug ────────────────────────────────────────────────────
+	GameState.current_chapter = 4
+	GameState.quests = {}
+	# Was die Schlussszene von Kapitel 3 ausloest:
+	Welt.wirken({"flaggen": ["zug_bekannt", "kapitel_3_fertig"], "quest": "q_zug", "notiz": "zug"})
+	_check("Der Zug ist bekannt", Welt.flagge("zug_bekannt"))
+	_check("q_zug laeuft", Welt.mission_laeuft("q_zug"))
+
+	# Das Depot ist beleuchtet. Aufspringen geht erst, wenn es dunkel ist.
+	var aufspringen: Dictionary = OrtDaten.punkte_alle("zugdepot")["zug"] as Dictionary
+	_check("Der Sprung auf den Zug ist gesperrt", aufspringen.has("sperre"))
+	_check("und die Sperre nennt die Flagge, die sie loest",
+		str(aufspringen.get("frei", "")) == "lampen_aus")
+	_check("Die Lampen sind noch an", not Welt.flagge("lampen_aus"))
+
+	Welt.wirken("steg_ansehen")
+	_check("Der Steg zeigt, woher das Licht kommt", Welt.flagge("licht_problem"))
+	_check("und vergibt dabei den Auftrag", Welt.mission_laeuft("q_dunkel"))
+	var ohne_schluessel: String = Welt.wirken("wasserturm_oeffnen")
+	_check("Der Wasserturm ohne Schluessel: nur ein Hinweis", ohne_schluessel.contains("Sechskant"))
+	_check("Der Wasserturm ohne Schluessel: nichts passiert", not Welt.flagge("lampen_aus"))
+	Welt.wirken("schrank_oeffnen")
+	_check("Der Sechskantschluessel liegt bei Doc", Welt.im_beutel("kesselschluessel"))
+	Welt.wirken("wasserturm_oeffnen")
+	_check("Das Wasser loescht die Lampen", Welt.flagge("lampen_aus"))
+	_check("q_dunkel wird fertig gemeldet", "q_dunkel" in Welt.missionen_pruefen())
+
+	Welt.betreten("zug_dach")
+	Welt.wirken("siegel_lesen")
+	_check("Der Waggon mit der Dreizehn ist gefunden", Welt.flagge("waggon_dreizehn"))
+	Welt.betreten("spiegel_wagen")
+	_check("q_zug wird fertig gemeldet", "q_zug" in Welt.missionen_pruefen())
+	_check("Kapitel 4: die Schlussszene geht auf", KapitelDaten.schluss_frei(4, fertig))
+	_check("Sie spielt im Salonwaggon", KapitelDaten.schluss_ort(4) == "spiegel_wagen")
+
+	# ── Der Reveal ────────────────────────────────────────────────────────────
+	_check("Vorher ist nichts enthuellt", not GameState.is_revealed)
+	_check("Vorher ist der Spiegel heil", not Welt.flagge("spiegel_zerbrochen"))
+	# Genau die eine Antwort in schluss_k4, an der die Ramme trifft.
+	var treffer: Dictionary = {}
+	for a in GespraechDaten.knoten("schluss_k4", "ramme").get("antworten", []) as Array:
+		var w: Dictionary = (a as Dictionary).get("tut", {}) as Dictionary
+		if bool(w.get("enthuellen", false)):
+			treffer = w
+	_check("In schluss_k4 gibt es genau eine Antwort, die enthuellt", not treffer.is_empty())
+	Welt.wirken(treffer)
+	_check("Der Reveal setzt is_revealed", GameState.is_revealed)
+	_check("und zerschlaegt den Spiegel", Welt.flagge("spiegel_zerbrochen"))
+
+	# Der Hintergrund wechselt daraufhin -- das ist der Zweck von `bild_wenn`.
+	var tausch: Dictionary = OrtDaten.ort("spiegel_wagen").get("bild_wenn", {}) as Dictionary
+	_check("Der Salonwaggon hat einen zweiten Hintergrund", not tausch.is_empty())
+	_check("Er haengt an genau dieser Flagge", str(tausch.get("flagge", "")) == "spiegel_zerbrochen")
+	_check("Und die Datei dafuer ist angemeldet",
+		str(tausch.get("bild", "")).ends_with("spiegel_wagen_zerbrochen.webp"))
+
+	# Nach dem Reveal reden alle anders. Die Probe: Mabel hat enthuellte Zeilen.
+	var vorher: Array = GespraechDaten.saetze("mabel_saloon", "erst", false)
+	var nachher: Array = GespraechDaten.saetze("mabel_saloon", "erst", true)
+	_check("Mabel sagt nach dem Reveal etwas anderes", vorher != nachher)
+
+	Welt.neu()
+	GameState.quests = quests_vorher
+	GameState.current_chapter = kapitel_vorher
+	GameState.is_revealed = enthuellt_vorher

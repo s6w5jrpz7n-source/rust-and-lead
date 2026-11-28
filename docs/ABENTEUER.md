@@ -98,7 +98,36 @@ zwölf vergäße das Umsetzen.
 Hinter dem letzten ausgespielten Kapitel endet das Spiel mit einem ehrlichen Satz statt mit
 einer Tür ins Leere.
 
-### Kapitel 3–12
+### Kapitel 3 — „Die Mine" (ausgespielt)
+
+* **Hauptstrang** `q_psalm` — Drei Ebenen hinunter. Auf Ebene 1 stehen die PSALM-Kisten, und
+  sie sind **von innen** aufgedrückt worden. In der Schatzkammer liegt eine Kinetoskop-Rolle
+  mit einer geprägten Dreizehn, die der Held erkennt, bevor er sie liest.
+* **Seitenstrang** `q_jacke` — Auf Ebene 2 hat ein Kind seine Familie an die Stütze gemalt;
+  der Vater hat Scharniere an den Knien und ist größer als das Haus. Im Hunt daneben liegt
+  seine Jacke. Sie gehört Dolores' Enkel. Wer das gespielt hat, weiß beim Spiegel schon, was
+  er sieht — er hat es nur noch nicht auf sich bezogen.
+* **Schlussszene** „Kupferauge" in der Schmiede: Silas legt die Rolle unter seine Linse, rät
+  ab, und nennt den Zug trotzdem — weil er weiß, dass der Rat nicht angenommen wird.
+
+### Kapitel 4 — „Der Zugüberfall" (ausgespielt)
+
+* **Seitenstrang** `q_dunkel` — Das Depot ist beleuchtet wie eine Bühne. Der Sechskant­schlüssel
+  aus Doc Aris' unterster Schublade (Kapitel 1!) öffnet das Ablassventil des Wasserturms; zwei
+  Kubikmeter Wasser finden die Leitung, und das Depot ist dunkel. Erst dann lässt sich
+  aufspringen.
+* **Hauptstrang** `q_zug` — Auf dem fahrenden Zug das Siegel mit der Dreizehn finden und
+  hineingehen.
+* **Schlussszene** „DER SPIEGEL": Kolben-Jack, die Ramme, die Wand, die Scherben. Es ist die
+  Szene mit den **wenigsten** Wahlmöglichkeiten im ganzen Spiel, und das ist die Form: Hier
+  gibt es nichts zu entscheiden, hier gibt es nur etwas zu begreifen.
+
+Technisch passieren dort zwei Dinge, die sonst nirgends passieren: `enthuellen` setzt
+`GameState.is_revealed`, und `spiegel_zerbrochen` tauscht über `bild_wenn` den Hintergrund.
+Beides hängt an **genau einer** Antwort — an der, bei der die Ramme trifft. Die Testsuite sucht
+diese eine Antwort und prüft, dass es nur sie gibt.
+
+### Kapitel 5–12
 
 Struktur steht in `scripts/KapitelDaten.gd` (Titel, Stränge, Schlussort). Ausgespielt ist
 bisher Kapitel 1; Kapitel 2 hat seinen ersten Ort (`vorschacht`) und seine Rätsel.

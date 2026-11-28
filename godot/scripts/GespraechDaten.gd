@@ -365,7 +365,32 @@ const BAEUME: Dictionary = {
 				],
 				"antworten": [
 					{"sinnbild": "ding:grubenstahl", "text": "Ich hol ihn trotzdem.", "tut": {"quest": "q_grubenstahl", "erfahrung": 25, "notiz": "psalm"}},
+					{"sinnbild": "wissen", "text": "Ich will wissen, was da unten singt.", "ziel": "psalm_frage",
+					 "wenn": "gang_gewesen"},
 					{"text": "Später.", "ziel": "spaeter"},
+				],
+			},
+			"psalm_frage": {
+				"sagt": [
+					"„Dann bist du schon unten gewesen. Und du bist wiedergekommen, das sind schon zwei Dinge, die keiner schafft.“",
+					"„Es gibt drei Ebenen. Auf der dritten war seit elf Jahren keiner, weil auf der zweiten etwas steht, an dem die Leute umdrehen.“",
+					"„Wenn du runtergehst: Nimm dir Zeit für die Stützen. Nicht für die Wände — für die Stützen.“",
+				],
+				"antworten": [
+					{"sinnbild": "frage", "text": "Was steht auf der zweiten Ebene?", "ziel": "zweite_ebene"},
+					{"sinnbild": "ding:oellampe", "text": "Ich gehe runter.",
+					 "tut": {"quest": "q_psalm", "erfahrung": 60}},
+				],
+			},
+			"zweite_ebene": {
+				"sagt": [
+					"„Geh selber hin.“",
+					"„Wenn ich's dir sage, siehst du, was ich gesagt hab. Wenn du's selber siehst, siehst du, was da ist. Das ist nicht dasselbe, und bei dieser Sache ist der Unterschied alles.“",
+				],
+				"antworten": [
+					{"sinnbild": "ding:oellampe", "text": "Ich gehe runter.",
+					 "tut": {"quest": "q_psalm", "erfahrung": 80}},
+					{"sinnbild": "weg", "text": "(Gehen)"},
 				],
 			},
 			"spaeter": {
@@ -752,6 +777,8 @@ const BAEUME: Dictionary = {
 		},
 	},
 
+	# (Dolores' Knoten zur Zeichnung stehen in ihrem Baum weiter unten.)
+
 	# ── SCHLUSSSZENE KAPITEL 2 ───────────────────────────────────────────────────
 	#
 	# "Zaehe Konstitution" (Story-Bibel, Kinoszene 2.2). Doc flickt einen Riss, der nicht
@@ -862,6 +889,227 @@ const BAEUME: Dictionary = {
 		},
 	},
 
+	# ── SCHLUSSSZENE KAPITEL 3 ───────────────────────────────────────────────────
+	#
+	# "Kupferauge" (Story-Bibel, Kinoszene 3.2). Silas legt die Rolle unter seine Linse
+	# und rät dem Helden, sie in den tiefsten Schacht zu werfen. Dann nennt er trotzdem
+	# den Zug -- weil er weiß, dass der Rat nicht angenommen wird, und weil er lieber
+	# will, dass der Junge vorbereitet geht als blind.
+	"schluss_k3": {
+		"person": "silas",
+		"start": "linse",
+		"knoten": {
+			"linse": {
+				"wer": "silas",
+				"sagt": [
+					"(Er klemmt die Rolle unter die Kupferlinse. Das mechanische Auge surrt, Blende auf, Blende zu. Zweimal.)",
+					"„Konzernwachs. Direktoratssiegel. Und eine Chiffre, die meine Linse zum Weinen bringt.“",
+					"(Er legt die Rolle hin. Langsam, wie etwas Totes.)",
+					"„Junge, ich sag dir das als Freund: Wirf das Ding in den tiefsten Schacht und vergiss den Weg dahin.“",
+				],
+				"antworten": [
+					{"sinnbild": "wissen", "text": "Da stand meine Zahl drauf, Silas.", "ziel": "meine_zahl"},
+					{"sinnbild": "frage", "text": "Was hast du gesehen?", "ziel": "gesehen"},
+				],
+			},
+			"gesehen": {
+				"wer": "silas",
+				"sagt": [
+					"„Genug, um dir zu raten, nicht zu fragen. Und zu wenig, um dich davon abzuhalten.“",
+					"„Es ist ein Verzeichnis. Namen tut der Konzern nicht in Wachs. Nummern schon.“",
+				],
+				"antworten": [
+					{"sinnbild": "wissen", "text": "Da stand meine Zahl drauf, Silas.", "ziel": "meine_zahl"},
+				],
+			},
+			"meine_zahl": {
+				"wer": "held",
+				"sagt": [
+					"Frag mich nicht, woher ich das weiß. Ich weiß es einfach.",
+					"(Lange Pause. Die Kupferlinse fixiert mich. Das Menschenauge weicht aus.)",
+				],
+				"antworten": [
+					{"sinnbild": "person:silas", "text": "(Warten, bis er etwas sagt)", "ziel": "zug"},
+				],
+			},
+			"zug": {
+				"wer": "silas",
+				"sagt": [
+					"„… Es gibt einen Zug.“",
+					"„Jeden Monat, Richtung Norden, Waggons versiegelt wie Särge. PSALM-Fracht.“",
+					"„Was immer der Konzern dir genommen hat — wenn es Antworten gibt, fahren sie erster Klasse.“",
+					"(Er nimmt den Hammer wieder auf.)",
+					"„Aber Züge überfällt man nicht, Junge. Züge überlebt man. Höchstens.“",
+				],
+				"antworten": [
+					{"sinnbild": "person:held", "text": "Dann werd ich überleben. Das kann ich anscheinend gut.",
+					 "ziel": "ende"},
+					{"sinnbild": "streit", "text": "Du hättest mir den Zug nicht sagen müssen.", "ziel": "haette_nicht"},
+				],
+			},
+			"haette_nicht": {
+				"wer": "silas",
+				"sagt": [
+					"„Nein.“",
+					"„Du wärst trotzdem gegangen. Nur eben nach Norden, ohne zu wissen wohin, und zwei Wochen später hätte mir jemand erzählt, dass sie dich irgendwo gefunden haben.“",
+					"„Ich kann dich nicht aufhalten. Ich kann dafür sorgen, dass du nicht dumm stirbst. Das ist der ganze Unterschied, den ein alter Mann noch machen kann.“",
+				],
+				"antworten": [
+					{"sinnbild": "person:held", "text": "Dann werd ich überleben. Das kann ich anscheinend gut.",
+					 "ziel": "ende", "tut": {"erfahrung": 80}},
+				],
+			},
+			"ende": {
+				"wer": "silas",
+				"sagt": [
+					"„Das Depot liegt nördlich, am Abzweig vor der Piste. Heute nacht fährt er.“",
+					"(Er sieht mich nicht an, als er es sagt, und er schlägt beim Reden weiter auf das Eisen.)",
+					"„Und Junge — nimm die Lampe mit. Nicht für den Zug. Für danach.“",
+				],
+				"antworten": [
+					{"sinnbild": "ort:zugdepot", "text": "(Zum Depot aufbrechen)",
+					 "tut": {"flaggen": ["zug_bekannt", "kapitel_3_fertig"], "quest": "q_zug",
+						 "notiz": "zug", "erfahrung": 300}},
+				],
+			},
+		},
+	},
+
+	# ── SCHLUSSSZENE KAPITEL 4 — DER SPIEGEL ─────────────────────────────────────
+	#
+	# Die wichtigste Szene des Spiels. Sie ist mit Absicht die Szene mit den WENIGSTEN
+	# Wahlmoeglichkeiten: An drei Stellen entscheidet der Spieler etwas, und zwei davon
+	# aendern nichts am Ausgang. Das ist kein Mangel an Spiel, das ist die Form -- es
+	# gibt hier nichts zu entscheiden, es gibt nur etwas zu begreifen.
+	#
+	# Technisch passieren hier zwei Dinge, die sonst nirgends passieren: `enthuellen`
+	# setzt `GameState.is_revealed`, und `spiegel_zerbrochen` tauscht den Hintergrund.
+	# Beides haengt an genau einer Antwort, naemlich an der, bei der die Ramme trifft.
+	"schluss_k4": {
+		"person": "jack",
+		"start": "jack",
+		"knoten": {
+			"jack": {
+				"wer": "jack",
+				"sagt": [
+					"(Die Schiebetür fliegt auf. Regen und Fahrtwind reißen herein, und im Türrahmen steht zwei Meter Vorarbeiter in Konzerngrau. Wo der rechte Arm sein sollte, zischt eine dampfgetriebene Ramme Überdruck ab.)",
+					"„Ich hab Männer unter Räder fallen sehen und Räder auf Männer!“",
+					"„Aber du bist der Erste, der FREIWILLIG auf meinen Zug steigt!“",
+					"(Die Ramme schnellt einmal vor. WHAM. Der ganze Wagen bebt, und die Karaffen im Gestell singen.)",
+				],
+				"antworten": [
+					{"sinnbild": "ding:psalm_rolle", "text": "Ich will nur einen Waggon. Den mit der Dreizehn.",
+					 "ziel": "erkennt"},
+					{"sinnbild": "streit", "text": "Geh mir aus dem Weg.", "ziel": "weg_da"},
+				],
+			},
+			"weg_da": {
+				"wer": "jack",
+				"sagt": [
+					"„Aus dem Weg!“",
+					"(Er lacht, und das Lachen ist echt.)",
+					"„Weißt du, wie viele mir das gesagt haben? Zwei. Beide liegen unter Kilometer vierzig.“",
+					"„Nun sag schon. Was willst du auf meinem Zug?“",
+				],
+				"antworten": [
+					{"sinnbild": "ding:psalm_rolle", "text": "Ich will nur einen Waggon. Den mit der Dreizehn.",
+					 "ziel": "erkennt"},
+				],
+			},
+			"erkennt": {
+				"wer": "jack",
+				"sagt": [
+					"(Er erstarrt. Zum ersten Mal weicht das Grinsen.)",
+					"(Er kneift die Augen zusammen, tritt einen halben Schritt näher und mustert mein Gesicht im Blitzlicht. Und darin flackert etwas, das wie Erkennen aussieht und wie Aberglaube.)",
+					"„… Nein. Neinneinnein. Dich ham sie doch abgeschrieben.“",
+					"„Dich ham sie in die Wüste —“",
+					"(Er reißt die Ramme hoch. Plötzlich ist Angst in seiner Stimme, und Angst macht ihn laut.)",
+					"„EINHEIT—“",
+				],
+				"antworten": [
+					{"sinnbild": "streit", "text": "Sprich es aus.", "ziel": "ramme"},
+					{"sinnbild": "person:held", "text": "Woher kennst du mich?", "ziel": "ramme"},
+				],
+			},
+			"ramme": {
+				"wer": "jack",
+				"sagt": [
+					"(Er spricht es nicht zu Ende.)",
+					"(Er zündet den Notdruck. Die Ramme fährt mit dem Kreischen von tausend Kesseln aus und trifft mich voll in die Brust.)",
+				],
+				"antworten": [
+					{"sinnbild": "weg", "text": "…", "ziel": "spiegel",
+					 "tut": {"flagge": "spiegel_zerbrochen", "enthuellen": true, "erfahrung": 500}},
+				],
+			},
+			"spiegel": {
+				"wer": "held",
+				"sagt": [
+					"(Ich durchschlage die Wand des Salonwaggons. Holz splittert, der Kartentisch zerbirst, die Kristallgläser hängen im Licht wie gefrorener Regen.)",
+					"(Ich schlittere über das Parkett auf die gegenüberliegende Wand zu. Alles verstummt bis auf ein einzelnes, sauberes mechanisches Ticken, das immer lauter wird.)",
+					"(Es ist meins.)",
+					"(Der Spiegel zerbricht sternförmig, genau vor meinem Gesicht. Ich liege in den Scherben. Ich hebe den Kopf.)",
+					"(Und sehe.)",
+				],
+				"antworten": [
+					{"sinnbild": "wissen", "text": "(Hinsehen)", "ziel": "scherben"},
+				],
+			},
+			"scherben": {
+				"wer": "held",
+				"sagt": [
+					"In einer Scherbe ein Auge, das keins ist: eine glühende Okular-Iris.",
+					"In der nächsten Zähne. Nein — verzahnter Stahl.",
+					"In der dritten Rauch, der aus einem Kiefergelenk sickert.",
+					"Die Haut flackert wie eine schlecht projizierte Kinetoskop-Aufnahme. Darunter ein rauchender, einäugiger Stahlschädel. Zahnräder drehen sich dort, wo ein Kiefer kauen sollte. Öl kocht in den Nähten wie schwarzes Blut.",
+					"Ich bin keine Kreatur aus Fleisch. Ich bin eine Maschine.",
+				],
+				"antworten": [
+					{"sinnbild": "person:held", "text": "Nein. Ich hab doch geblutet.", "ziel": "getraeumt"},
+					{"sinnbild": "streit", "text": "(Die Hand vor das Auge halten)", "ziel": "getraeumt"},
+				],
+			},
+			"getraeumt": {
+				"wer": "held",
+				"sagt": [
+					"(Ich hebe die Hand vor das eine glühende Auge. Die Hand flackert: Haut — Stahl — Haut — Stahl — Stahl.)",
+					"Nein. Nein, ich — ich hab doch geblutet. Ich hab doch …",
+					"(Ich berühre meine Wange. Es klirrt leise.)",
+					"… ich hab doch geträumt.",
+					"(Stille. Dann lache ich. Ein kurzes, kaputtes Lachen, halb Schluchzen, halb Ventil, das Druck ablässt.)",
+					"Wer hat mir mein Gesicht geschuldet … und mit einer Lüge bezahlt?",
+				],
+				"antworten": [
+					{"sinnbild": "person:jack", "text": "(Hinter mir bricht jemand durch die Wand)", "ziel": "jack_zuletzt"},
+				],
+			},
+			"jack_zuletzt": {
+				"wer": "jack",
+				"sagt": [
+					"(Er hinkt. Die Ramme ist leckgeschlagen und zischt im Takt seiner Schritte.)",
+					"„Na. Jetzt weißte's.“",
+					"(Er spuckt Blut.)",
+					"„Weißte was? Ich fahr seit zwanzig Jahren für den Konzern. Und du bist trotzdem der menschlichste Hurensohn, der je auf meinen Zug —“",
+				],
+				"antworten": [
+					{"sinnbild": "person:held", "text": "(Aufstehen)", "ziel": "ende"},
+				],
+			},
+			"ende": {
+				"wer": "held",
+				"sagt": [
+					"(Ich erhebe mich. Zum ersten Mal in voller Silhouette, Rauch aus den Schulterventilen, das eine Auge eine ruhige, orange Glut.)",
+					"(Meine Stimme bricht mitten im Satz von menschlich zu einem doppelten Timbre. Darunter liegt jetzt ein metallischer Resonanzraum.)",
+					"Runter von meinem Zug.",
+				],
+				"antworten": [
+					{"sinnbild": "weg", "text": "(Den Zug nehmen)",
+					 "tut": {"flagge": "kapitel_4_fertig", "erfahrung": 800}},
+				],
+			},
+		},
+	},
+
 	# ── Dolores am Brunnen ───────────────────────────────────────────────────────
 	# Nebenbogen B7. Sie ist blind und erkennt den Helden am Gang — der erste Hinweis
 	# überhaupt, und er kommt von jemandem, dem niemand zuhört.
@@ -901,6 +1149,40 @@ const BAEUME: Dictionary = {
 					{"text": "(Gehen)", "tut": {"notiz": "naht", "erfahrung": 20}},
 				],
 			},
+			"zeichnung_frage": {
+				"sagt": [
+					"„Auf der zweiten Ebene. Links, an der dritten Stütze von der Weiche.“",
+					"„Du brauchst mir nicht zu sagen, was drauf ist. Ich weiß, was drauf ist. Ich hab dem Jungen die Kohle gegeben.“",
+				],
+				"antworten": [
+					{"sinnbild": "frage", "text": "Wer war das Kind?", "ziel": "wer_kind"},
+					{"sinnbild": "streit", "text": "Der Vater auf dem Bild ist kein Mensch.", "ziel": "kein_mensch"},
+				],
+			},
+			"wer_kind": {
+				"sagt": [
+					"„Mein Enkel.“",
+					"„Seine Mutter hat gesungen, bis sie nicht mehr konnte, und danach hat er gesungen, bis sie ihn auch geholt haben. Das war vor elf Jahren.“",
+					"„Wenn du nochmal runtergehst: Im Hunt neben der Stütze liegt seine Jacke. Ich hab sie zweimal geflickt und nie wiedergesehen.“",
+				],
+				"antworten": [
+					{"sinnbild": "ding:kinderjacke", "text": "Ich hole sie dir.",
+					 "tut": {"quest": "q_jacke", "erfahrung": 80}},
+					{"sinnbild": "weg", "text": "(Nichts sagen)", "tut": {"quest": "q_jacke"}},
+				],
+			},
+			"kein_mensch": {
+				"sagt": [
+					"„Nein.“",
+					"„Ein Kind malt, was es sieht, Junge. Es malt nicht, was wahr ist, und es malt nicht, was es glauben soll. Es malt, was dasteht.“",
+					"(Sie dreht den Kopf ein Stück in meine Richtung, und ihre Augen gehen dabei an mir vorbei wie immer.)",
+					"„Und du stehst hier und fragst mich danach.“",
+				],
+				"antworten": [
+					{"sinnbild": "frage", "text": "Wer war das Kind?", "ziel": "wer_kind",
+					 "tut": {"notiz": "naht", "erfahrung": 100}},
+				],
+			},
 			"walze": {
 				"sagt": [
 					"„Drei Walzen. Zwei kann ich, die dritte ist gesprungen und keiner hier kann Stifte setzen.“",
@@ -908,6 +1190,8 @@ const BAEUME: Dictionary = {
 				],
 				"antworten": [
 					{"sinnbild": "person:silas", "text": "Ich frag Silas, ob er Stifte setzen kann.", "tut": {"quest": "q_walze", "erfahrung": 20}},
+					{"sinnbild": "wissen", "text": "Unten in der Mine hat ein Kind seine Familie an die Stütze gemalt.",
+					 "ziel": "zeichnung_frage", "wenn": "zeichnung_gesehen"},
 					{"text": "(Gehen)"},
 				],
 			},

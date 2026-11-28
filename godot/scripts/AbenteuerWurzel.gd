@@ -74,6 +74,7 @@ func _gespraech_oeffnen(baum: String) -> void:
 func _gespraech_schliessen() -> void:
 	_gespraech.visible = false
 	_buehne.set_process_unhandled_input(true)
+	_buehne.bild_auffrischen()
 	# War das die Schlussszene, ist das Kapitel vorbei.
 	if _laeuft_schluss:
 		_laeuft_schluss = false

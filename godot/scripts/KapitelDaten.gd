@@ -96,23 +96,39 @@ const KAPITEL: Dictionary = {
 	3: {
 		"titel": "Die Mine",
 		"akt": 1,
-		"fertig": false,
+		"fertig": true,
 		"ort_start": "vorschacht",
 		"anriss": "Drei Ebenen tief singt etwas. Die Kumpel nennen es den Psalm und gehen nicht mehr runter.",
-		"strang": [],
-		"seiten": [],
-		"schluss": {"ort": "mine_ebene3", "titel": "PSALM", "gespraech": "", "anriss": "In der Schatzkammer steht eine Maschine, die betet."},
+		"strang": ["q_psalm"],
+		# Der Seitenstrang ist hier nicht Beiwerk, sondern die halbe Vorbereitung auf
+		# Kapitel 4: Wer die Zeichnung gesehen und Dolores die Jacke gebracht hat, weiss
+		# beim Spiegel schon, was er sieht -- er hat es nur noch nicht auf sich bezogen.
+		"seiten": ["q_jacke"],
+		# Die Schlussszene steht NICHT in der Mine, obwohl dort die Rolle liegt. Sie steht
+		# bei Silas: Erst wenn jemand das Ding unter seine Kupferlinse legt, wird aus einem
+		# Fund eine Richtung -- und die heisst Norden, Zug, Waggon dreizehn.
+		"schluss": {
+			"ort": "schmiede",
+			"titel": "Kupferauge",
+			"gespraech": "schluss_k3",
+			"anriss": "Silas legt die Rolle unter seine Linse. Was er sagt, klingt wie ein Rat und ist eine Warnung.",
+		},
 	},
 
 	4: {
 		"titel": "Der Zugüberfall",
 		"akt": 1,
-		"fertig": false,
-		"ort_start": "zug_dach",
-		"anriss": "Kolben-Jack überfällt den Nachtzug. Im dritten Waggon hängt ein Spiegel.",
-		"strang": [],
-		"seiten": [],
-		"schluss": {"ort": "spiegel_wagen", "titel": "DER SPIEGEL", "gespraech": "", "anriss": "Die wichtigste Szene des Spiels. Danach ist nichts mehr, wie es war — und der Spieler weiß, was er die ganze Zeit war."},
+		"fertig": true,
+		"ort_start": "zugdepot",
+		"anriss": "Jeden Monat fährt ein Zug nach Norden, die Waggons versiegelt wie Särge. In einem davon steht die Dreizehn.",
+		"strang": ["q_zug"],
+		"seiten": ["q_dunkel"],
+		"schluss": {
+			"ort": "spiegel_wagen",
+			"titel": "DER SPIEGEL",
+			"gespraech": "schluss_k4",
+			"anriss": "Die wichtigste Szene des Spiels. Danach ist nichts mehr, wie es war.",
+		},
 	},
 
 	5: {"titel": "Erwacht", "akt": 2, "fertig": false, "ort_start": "saloon",

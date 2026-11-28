@@ -18,7 +18,8 @@ ausgespielt und als durchspielbar nachgewiesen (2675 Prüfungen grün).
 | Was | Zustand |
 | :-- | :-- |
 | **Hintergrundbilder** (13 Orte) | **alle da und eingemessen.** Kapitel 1–2 (7 Orte) und Kapitel 3–4 (6 Orte, plus der zerschlagene Salonwaggon als Texturtausch). |
-| Kapitel 3 und 4 | Orte stehen und sind verdrahtet, die Rätselteile (PSALM-Kisten, Kinderzeichnung, Rolle mit der Dreizehn, Waggonsiegel) auch. **Es fehlen Missionen, Gespräche und die beiden Schlussszenen.** |
+| Kapitel 1–4 | **ausgespielt und als durchspielbar nachgewiesen** — vom ersten Bild bis zum Reveal im Spiegel. 3506 Prüfungen. |
+| Kapitel 5–12 | nur Gerüst in `KapitelDaten.gd` (Titel, Schlussort). Akt II beginnt mit der Gildenwahl. |
 | (alt) Hintergrundbilder Kapitel 1–2 | **da und eingemessen.** Alle 1280×720, also 1:1 zum Spielrahmen. Fläche, Sperren, Tiefe und jeder Hotspot sind am Bild abgemessen (`tools/EinmessProbe.gd`). |
 | **Figur** | **da** — stehend, Lauf links, Lauf rechts, freigestellt. Im Spiel eingebaut, Maßstab aus dem Standbild. |
 | Portraits `quentin`, `dolores` | **da**, liegen als `assets/ui/portrait_*.webp`. |

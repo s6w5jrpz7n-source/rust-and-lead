@@ -42,6 +42,7 @@ extends RefCounted
 ## | `reden`     | Kennung eines Gespraechs in `GespraechDaten` |
 ## | `nehmen`    | Kennung eines Gegenstands; wandert ins Inventar und der Hotspot verschwindet |
 ## | `benutzen`  | Kennung einer Wirkung; `AbenteuerView` fragt `MissionDaten.wirkung()` |
+## | `benutzen_mit` | {Gegenstand: Wirkung} — was passiert, wenn man DIESEN Gegenstand anwendet. Geht `benutzen` vor |
 ## | `braucht`   | Gegenstand, den man dafuer in der Hand haben muss (sonst sagt die Figur, was fehlt) |
 ## | `sicht`     | Welt-Flagge; ohne sie ist der Hotspot nicht da |
 ## | `weg`       | Welt-Flagge; MIT ihr ist der Hotspot nicht mehr da |
@@ -379,7 +380,7 @@ const ORTE: Dictionary = {
 				"person": "dolores",
 				"ansehen": "Eine alte Frau mit einer Drehorgel, die seit Jahren dieselben drei Walzen spielt. Sie sieht einen an, als kenne sie einen.",
 				"reden": "dolores_platz",
-				"benutzen": "walze_dolores",
+				"benutzen_mit": {"walze": "walze_dolores", "kinderjacke": "jacke_dolores"},
 			},
 		},
 		"ausgaenge": {
@@ -530,7 +531,7 @@ const ORTE: Dictionary = {
 				"person": "silas",
 				"ansehen": "Ein alter Schmied, Lederschurz, Hände wie Werkzeug. Das linke Auge ist aus Kupfer und Glas und sitzt nicht ganz gerade in der Höhle.",
 				"reden": "silas_schmiede",
-				"benutzen": "walze_silas",
+				"benutzen_mit": {"walze": "walze_silas", "psalm_rolle": "rolle_silas"},
 			},
 			"esse": {
 				"name": "Esse",
@@ -890,13 +891,16 @@ const ORTE: Dictionary = {
 				"name": "Wasserturm",
 				"rect": Rect2(0.0, 40.0, 245.0, 430.0),
 				"hin": Vector2(310.0, 645.0),
-				"ansehen": "Ein Wasserturm auf Stelzen, das einzige volle Wasserbecken im Umkreis von zwei Tagesritten. Es gehört dem Konzern, und es ist bewacht.",
+				"ansehen": "Ein Wasserturm auf Stelzen, das einzige volle Wasserbecken im Umkreis von zwei Tagesritten. Darunter sitzt ein Ablassventil mit Sechskant.",
+				"benutzen": "wasserturm_oeffnen",
+				"braucht": "kesselschluessel",
 			},
 			"steg": {
 				"name": "Signalsteg",
 				"rect": Rect2(230.0, 55.0, 590.0, 420.0),
 				"hin": Vector2(640.0, 640.0),
 				"ansehen": "Ein Gittersteg über den Gleisen, Lampen an jedem Mast. Von dort oben sieht man jeden, der hier unten steht.",
+				"benutzen": "steg_ansehen",
 			},
 			"lok": {
 				"name": "Lokomotive",
@@ -918,6 +922,8 @@ const ORTE: Dictionary = {
 				"rect": Rect2(900.0, 300.0, 250.0, 280.0),
 				"hin": Vector2(980.0, 665.0),
 				"ansehen": "Der Zug zieht an. Wer jetzt nicht springt, springt gar nicht.",
+				"sperre": "Der Steg wirft vier Lichtkegel auf die Gleise, und dazwischen bleibt kein Schatten. Wer hier aufspringt, wird dabei gesehen — und wer beim Aufspringen gesehen wird, fährt nicht weit.",
+				"frei": "lampen_aus",
 				"ziel": "zug_dach",
 				"dort": "von_depot",
 			},
