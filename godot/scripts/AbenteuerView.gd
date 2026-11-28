@@ -69,6 +69,7 @@ const SATZ_JE_ZEICHEN: float = 0.045
 signal gespraech_gewuenscht(baum: String)
 signal tagebuch_gewuenscht
 signal kapitel_schluss(nummer: int)
+signal ort_betreten(kennung: String)
 
 # ── Zustand ───────────────────────────────────────────────────────────────────
 
@@ -169,6 +170,9 @@ func betreten(kennung: String, von: String = "") -> void:
 		sagen([str(OrtDaten.ort(kennung).get("name", kennung))])
 	_missionen_pruefen()
 	queue_redraw()
+	# Zuletzt melden, nicht zuerst: Wer darauf hoert, darf davon ausgehen, dass der Ort
+	# fertig aufgebaut ist -- sonst startet die Schlussszene in einen halben Raum hinein.
+	ort_betreten.emit(kennung)
 
 
 ## Das gemalte Bild eines Ortes, oder `null`.

@@ -752,6 +752,116 @@ const BAEUME: Dictionary = {
 		},
 	},
 
+	# ── SCHLUSSSZENE KAPITEL 2 ───────────────────────────────────────────────────
+	#
+	# "Zaehe Konstitution" (Story-Bibel, Kinoszene 2.2). Doc flickt einen Riss, der nicht
+	# blutet, und redet dabei schneller als noetig. Er sagt die Wahrheit nicht -- aber er
+	# sagt sie fast, dreimal, und bricht jedes Mal ab.
+	#
+	# Diese Szene ist die Haelfte der Vorbereitung auf Kapitel 4. Die andere Haelfte war
+	# die Bahre mit den von innen durchgewetzten Riemen; wer beides gesehen hat, ist beim
+	# Spiegel im Zugwaggon nicht ueberrascht, sondern bestaetigt -- und das ist der
+	# staerkere der beiden Schrecken.
+	"schluss_k2": {
+		"person": "doc",
+		"start": "naht",
+		"knoten": {
+			"naht": {
+				"wer": "doc",
+				"sagt": [
+					"„Halt still. Das zieht jetzt.“",
+					"„…“",
+					"„Du blutest nicht. Ein Riss von dieser Länge, quer durch den Unterarm, und es kommt nichts.“",
+				],
+				"antworten": [
+					{"sinnbild": "frage", "text": "Ist das schlecht?", "ziel": "schlecht"},
+					{"sinnbild": "person:held", "text": "Du wunderst dich nicht.", "ziel": "wundert"},
+				],
+			},
+			"schlecht": {
+				"wer": "doc",
+				"sagt": [
+					"„Das ist — nein. Nein, das ist gut. Wer nicht blutet, verblutet nicht.“",
+					"„Zähe Konstitution. Kommt vor. Höhenluft, trockenes Klima, die Leber tut was dazu.“",
+					"„Das ist Unsinn, was ich da sage. Ich höre es selbst.“",
+				],
+				"antworten": [
+					{"sinnbild": "person:held", "text": "Du wunderst dich nicht.", "ziel": "wundert"},
+					{"sinnbild": "streit", "text": "Dann sag etwas, das kein Unsinn ist.", "ziel": "kein_unsinn"},
+				],
+			},
+			"wundert": {
+				"wer": "doc",
+				"sagt": [
+					"„Ich bin Feldscher in einer Stadt, in der die Leute an Maschinen sterben. Ich wundere mich seit elf Jahren nicht mehr.“",
+					"(Er setzt die Nadel neu an. Seine Hände sind vollkommen ruhig, und das ist der Grund, warum mir auffällt, dass seine Stimme es nicht ist.)",
+				],
+				"antworten": [
+					{"sinnbild": "streit", "text": "Dann sag etwas, das kein Unsinn ist.", "ziel": "kein_unsinn"},
+					{"sinnbild": "wissen", "text": "Die Riemen an deiner Bahre sind von innen durchgewetzt.",
+					 "ziel": "riemen", "wenn": "bahre_gesehen"},
+				],
+			},
+			"kein_unsinn": {
+				"wer": "doc",
+				"sagt": [
+					"„Gut.“",
+					"„Es gibt Dinge, die man einem Mann über sich selbst sagen kann, und es gibt Dinge, die er selbst finden muss. Der Unterschied ist nicht, wie wahr sie sind. Der Unterschied ist, was danach von ihm übrig ist.“",
+					"„Fertig. Acht Stiche. Die hättest du auch ohne mich überstanden, und das ist die beunruhigendste Zeile in deiner Akte.“",
+				],
+				"antworten": [
+					{"sinnbild": "wissen", "text": "In meiner Akte.", "ziel": "akte_doc"},
+					{"sinnbild": "weg", "text": "(Den Arm nehmen und gehen)", "ziel": "ende"},
+				],
+			},
+			"riemen": {
+				"wer": "doc",
+				"sagt": [
+					"„…“",
+					"„Ja.“",
+					"„Und du fragst mich das, während ich eine Nadel in deinem Arm habe. Das sagt mehr über dich als über die Riemen.“",
+				],
+				"antworten": [
+					{"sinnbild": "streit", "text": "Wer lag darauf?", "ziel": "wer_lag"},
+					{"sinnbild": "weg", "text": "(Nicht weiter fragen)", "ziel": "ende"},
+				],
+			},
+			"wer_lag": {
+				"wer": "doc",
+				"sagt": [
+					"„Frag mich das nochmal, wenn du es aushältst. Heute hältst du es nicht aus, und ich auch nicht.“",
+					"„Geh schlafen. Morgen kommt der Nachtzug, und die halbe Stadt will mit.“",
+				],
+				"antworten": [
+					{"sinnbild": "weg", "text": "(Gehen)", "ziel": "ende",
+					 "tut": {"notiz": "doc_luegt", "erfahrung": 60}},
+				],
+			},
+			"akte_doc": {
+				"wer": "doc",
+				"sagt": [
+					"„Jeder, den ich flicke, bekommt eine. Papier ist billiger als Erinnerung.“",
+					"„Deine ist dünn. Drei Wochen, und davor nichts. Für einen Mann in deinem Alter ist das keine Akte, das ist ein Anfang.“",
+				],
+				"antworten": [
+					{"sinnbild": "weg", "text": "(Den Arm nehmen und gehen)", "ziel": "ende",
+					 "tut": {"notiz": "einheit7", "erfahrung": 80}},
+				],
+			},
+			"ende": {
+				"wer": "held",
+				"sagt": [
+					"Draußen ist es Nacht geworden. Die Esse bei Silas glüht noch, der Vorschacht steht offen, und irgendwo unter der Stadt singt etwas weiter, dem niemand das Singen beigebracht hat.",
+					"Acht Stiche. Sie haben nicht wehgetan.",
+				],
+				"antworten": [
+					{"sinnbild": "weg", "text": "(Schlafen gehen)",
+					 "tut": {"flagge": "kapitel_2_fertig", "erfahrung": 250}},
+				],
+			},
+		},
+	},
+
 	# ── Dolores am Brunnen ───────────────────────────────────────────────────────
 	# Nebenbogen B7. Sie ist blind und erkennt den Helden am Gang — der erste Hinweis
 	# überhaupt, und er kommt von jemandem, dem niemand zuhört.

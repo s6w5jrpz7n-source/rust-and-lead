@@ -74,7 +74,31 @@ erzählen, das im nächsten Kapitel vorausgesetzt wird.
 * **Schlussszene** „Erster Abend" im Saloon: Mabel zahlt aus, Dolores spielt die gerichtete
   Walze, und draußen hält der Karren, den man geflickt hat — leer, obwohl er beladen war.
 
-### Kapitel 2–12
+### Kapitel 2 — „Sand im Räderwerk" (ausgespielt)
+
+* **Hauptstrang** `q_grubenstahl` — Silas braucht Grubenstahl. Der liegt im Vorschacht, und
+  dort ist es nach zehn Schritten dunkel. Die Grubenlampe steckt im Automatenkadaver auf der
+  **Schrottkippe** — also an dem Ort, an dem man das Spiel begonnen hat und sonst nie wieder
+  hinkommt. Wer sie damals liegengelassen hat, geht den Weg zurück.
+* **Seitenstrang** `q_ratten` — Doc verarztet Bisse statt Wunden. Erst im Brunnen nachsehen,
+  woher sie kommen, dann das Gitter mit dem Brecheisen verkeilen.
+* **Schlussszene** „Zähe Konstitution" im Lazarett: Doc näht acht Stiche in einen Riss, der
+  nicht blutet, und redet dabei schneller als nötig. Er sagt die Wahrheit nicht — aber er
+  sagt sie dreimal fast.
+
+### Wie ein Kapitel endet
+
+Die Schlussszene **startet von selbst**, sobald alle Stränge erledigt sind und der Spieler an
+den richtigen Ort kommt. Sie hängt an keinem Hotspot: Eine Szene, die den Abend beschließt,
+soll man nicht übersehen können. Wenn sie vorbei ist, zählt `AbenteuerWurzel._kapitel_weiter()`
+das Kapitel hoch und setzt den Spieler an den Startort des nächsten — an **einer** Stelle, denn
+verteilt auf zwölf Schlussszenen wäre es zwölfmal leicht anders geschrieben, und eines der
+zwölf vergäße das Umsetzen.
+
+Hinter dem letzten ausgespielten Kapitel endet das Spiel mit einem ehrlichen Satz statt mit
+einer Tür ins Leere.
+
+### Kapitel 3–12
 
 Struktur steht in `scripts/KapitelDaten.gd` (Titel, Stränge, Schlussort). Ausgespielt ist
 bisher Kapitel 1; Kapitel 2 hat seinen ersten Ort (`vorschacht`) und seine Rätsel.

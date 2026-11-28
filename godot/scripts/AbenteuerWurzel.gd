@@ -31,6 +31,7 @@ func _ready() -> void:
 	_buehne.gespraech_gewuenscht.connect(_gespraech_oeffnen)
 	_buehne.tagebuch_gewuenscht.connect(_tagebuch_oeffnen)
 	_buehne.kapitel_schluss.connect(_schluss_angesagt)
+	_buehne.ort_betreten.connect(_ort_betreten)
 	add_child(_buehne)
 
 	_gespraech = GespraechView.new()
@@ -73,6 +74,11 @@ func _gespraech_oeffnen(baum: String) -> void:
 func _gespraech_schliessen() -> void:
 	_gespraech.visible = false
 	_buehne.set_process_unhandled_input(true)
+	# War das die Schlussszene, ist das Kapitel vorbei.
+	if _laeuft_schluss:
+		_laeuft_schluss = false
+		_kapitel_weiter()
+		return
 	# Ein Gespräch kann eine Mission abgeschlossen haben, ohne dass danach etwas angeklickt
 	# wird. Also hier prüfen und nicht erst beim nächsten Klick.
 	for fertig in Welt.missionen_pruefen():
@@ -95,6 +101,55 @@ func _tagebuch_schliessen() -> void:
 ## Das Spiel schiebt den Spieler nicht hin. Es sagt ihm, wohin, und er geht selbst. Das ist der
 ## Unterschied zwischen einem Adventure und einer Abfolge von Zwischensequenzen, und er kostet
 ## genau diese drei Zeilen.
+## Wurde die Schlussszene schon gespielt?
+var _laeuft_schluss: bool = false
+
+
+## Einen Ort betreten -- und pruefen, ob hier das Kapitel endet.
+##
+## Die Schlussszene startet von selbst, sobald alle Straenge erledigt sind und der Spieler an
+## den richtigen Ort kommt. Sie wird NICHT durch Anklicken ausgeloest: Eine Szene, die den
+## Abend beschliesst, soll nicht an einem Hotspot haengen, den man uebersehen kann.
+func _ort_betreten(kennung: String) -> void:
+	var k: int = GameState.current_chapter
+	if kennung != KapitelDaten.schluss_ort(k):
+		return
+	if not KapitelDaten.schluss_frei(k, func(id: String) -> bool: return Welt.mission_fertig(id)):
+		return
+	var marke: String = "schluss_%d_gespielt" % k
+	if Welt.flagge(marke):
+		return
+	var baum: String = str(KapitelDaten.schluss(k).get("gespraech", ""))
+	if baum == "":
+		return
+	Welt.flagge_setzen(marke)
+	_laeuft_schluss = true
+	_gespraech_oeffnen(baum)
+
+
+## Ins naechste Kapitel.
+##
+## Mehr als eine Zahl hochzaehlen ist das nicht -- und genau deshalb steht es an EINER Stelle.
+## Verteilt auf die Schlussszenen waere es zwoelfmal leicht anders geschrieben, und eines der
+## zwoelf vergaesse, den Spieler an den Startort zu setzen.
+func _kapitel_weiter() -> void:
+	var naechstes: int = GameState.current_chapter + 1
+	if naechstes > KapitelDaten.letztes_ausgespieltes():
+		_buehne.sagen([
+			"Hier endet, was bisher gebaut ist.",
+			"Die Geschichte geht bis Kapitel %d weiter — die Kapitel stehen, die Orte noch nicht."
+				% KapitelDaten.anzahl(),
+		])
+		return
+	GameState.current_chapter = naechstes
+	GameState.chapter_changed.emit(naechstes)
+	var ort: String = str(KapitelDaten.kapitel(naechstes).get("ort_start", ""))
+	_buehne.sagen(["Kapitel %d — %s" % [naechstes, KapitelDaten.titel(naechstes)],
+		str(KapitelDaten.kapitel(naechstes).get("anriss", ""))])
+	if ort != "" and ort != GameState.ort:
+		_buehne.betreten(ort)
+
+
 func _schluss_angesagt(nummer: int) -> void:
 	var s: Dictionary = KapitelDaten.schluss(nummer)
 	var ort: String = str(s.get("ort", ""))

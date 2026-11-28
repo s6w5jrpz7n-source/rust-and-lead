@@ -80,7 +80,7 @@ const KAPITEL: Dictionary = {
 	2: {
 		"titel": "Sand im Räderwerk",
 		"akt": 1,
-		"fertig": false,
+		"fertig": true,
 		"ort_start": "platz",
 		"anriss": "Der Konzern sperrt die Wasserstelle. Silas braucht Grubenstahl für die Mauer, Doc braucht die Rohre frei — und beides liegt unter der Stadt.",
 		"strang": ["q_grubenstahl"],

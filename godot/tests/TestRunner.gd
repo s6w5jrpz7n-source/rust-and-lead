@@ -116,13 +116,14 @@ const TEST_UMFANG: Dictionary = {
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
 	"_test_abenteuer_welt": 300,
-	"_test_abenteuer_gespraeche": 435,
+	"_test_abenteuer_gespraeche": 487,
 	"_test_abenteuer_missionen": 137,
 	"_test_abenteuer_welt_logik": 22,
-	"_test_abenteuer_kapitel": 33,
-	"_test_abenteuer_bild_und_farbe": 209,
+	"_test_abenteuer_kapitel": 36,
+	"_test_abenteuer_bild_und_farbe": 224,
 	"_test_abenteuer_kapitel1_durchspielen": 30,
 	"_test_abenteuer_sprites": 85,
+	"_test_abenteuer_kapitel2_durchspielen": 27,
 }
 
 
@@ -8549,3 +8550,87 @@ func _test_abenteuer_sprites() -> void:
 	_check("und nach dem Einstecken nicht mehr", ohne == mit - 1)
 	Welt.neu()
 	GameState.beutel = vorher
+
+
+## Kapitel 2 durchspielen -- und den Uebergang aus Kapitel 1 pruefen.
+##
+## Kapitel 1 war bis hierher eine Sackgasse: Die Schlussszene stand, aber nichts loeste sie
+## aus und nichts zaehlte das Kapitel weiter. Dieser Test deckt beides ab -- erst die
+## Bedingungen, unter denen die Schlussszene aufgeht, dann der zweite Strang bis zu seiner
+## eigenen.
+func _test_abenteuer_kapitel2_durchspielen() -> void:
+	var quests_vorher: Dictionary = GameState.quests.duplicate(true)
+	var kapitel_vorher: int = GameState.current_chapter
+	var gold_vorher: int = GameState.gold
+	Welt.neu()
+	GameState.quests = {}
+	var fertig: Callable = func(id: String) -> bool: return Welt.mission_fertig(id)
+
+	# ── Der Uebergang ─────────────────────────────────────────────────────────
+	_check("Kapitel 2 ist ausgespielt", KapitelDaten.ausgespielt(2))
+	_check("Das letzte ausgespielte Kapitel ist 2", KapitelDaten.letztes_ausgespieltes() == 2,
+		"%d" % KapitelDaten.letztes_ausgespieltes())
+	for n in [1, 2]:
+		var sch: Dictionary = KapitelDaten.schluss(int(n))
+		_check("Kapitel %d: Schlussgespraech existiert" % int(n),
+			not GespraechDaten.baum(str(sch.get("gespraech", ""))).is_empty())
+		_check("Kapitel %d: Schlussort existiert" % int(n),
+			not OrtDaten.ort(str(sch.get("ort", ""))).is_empty())
+		# Der Schlussort muss erreichbar sein, sonst haengt das Kapitel.
+		_check("Kapitel %d: der Schlussort ist ein Ort, den man betreten kann" % int(n),
+			OrtDaten.flaeche(str(sch["ort"])).size() >= 3
+				or not OrtDaten.gehfeld(str(sch["ort"])).is_empty())
+
+	# ── Kapitel 2, Hauptstrang: Grubenstahl ───────────────────────────────────
+	GameState.current_chapter = 2
+	_check("Kapitel 2 hat zwei Straenge", KapitelDaten.missionen(2).size() == 2,
+		str(KapitelDaten.missionen(2)))
+	_check("Kapitel 2: Schluss ist am Anfang zu", not KapitelDaten.schluss_frei(2, fertig))
+
+	Welt.wirken({"quest": "q_grubenstahl"})
+	Welt.wirken("kadaver_pluendern")
+	_check("Die Grubenlampe ist da", Welt.im_beutel("oellampe"))
+	var ohne_licht: String = Welt.wirken("gang_hinab")
+	_check("Der Gang sagt, was fehlt, wenn die Lampe fehlt",
+		ohne_licht == "" or Welt.im_beutel("oellampe"))
+	Welt.betreten("vorschacht")
+	_check("Der Vorschacht zaehlt als besucht", Welt.war_schon("vorschacht"))
+	Welt.wirken("gang_hinab")
+	_check("Unten liegt Grubenstahl", Welt.im_beutel("grubenstahl"))
+	_check("Und der Psalm steht im Tagebuch", Welt.hat_notiz("psalm"))
+	Welt.wirken("esse_benutzen")
+	_check("Silas nimmt den Stahl an", Welt.flagge("q_grubenstahl_abgegeben"))
+	_check("q_grubenstahl wird fertig gemeldet", "q_grubenstahl" in Welt.missionen_pruefen())
+
+	# ── Kapitel 2, Seitenstrang: die Rohre ────────────────────────────────────
+	Welt.wirken({"quest": "q_ratten"})
+	var rohr_frueh: String = Welt.wirken("rohr_zusetzen")
+	_check("Das Rohr ohne Brecheisen: nur ein Hinweis", rohr_frueh.contains("Hebel"))
+	_check("Das Rohr ohne Brecheisen: nichts passiert", not Welt.flagge("rohr_zu"))
+	Welt.wirken("brunnen_steigen")
+	_check("Der Brunnen zeigt, wo sie herkommen", Welt.flagge("brunnen_gesehen"))
+	Welt.nehmen("brecheisen")
+	Welt.wirken("rohr_zusetzen")
+	_check("Das Gitter ist verkeilt", Welt.flagge("rohr_zu"))
+	Welt.wirken({"flagge": "q_ratten_abgegeben"})
+	_check("q_ratten wird fertig gemeldet", "q_ratten" in Welt.missionen_pruefen())
+
+	# ── Die Schlussszene steht offen ──────────────────────────────────────────
+	_check("Kapitel 2: nichts mehr offen", KapitelDaten.offen(2, fertig).is_empty(),
+		str(KapitelDaten.offen(2, fertig)))
+	_check("Kapitel 2: die Schlussszene geht auf", KapitelDaten.schluss_frei(2, fertig))
+	_check("Sie spielt im Lazarett", KapitelDaten.schluss_ort(2) == "lazarett")
+
+	# Die Szene selbst: Sie darf nicht an einer Flagge haengen, die man verpassen kann --
+	# der Weg ueber `riemen` ist bedingt, der ueber `schlecht` nicht.
+	var start: String = str(GespraechDaten.baum("schluss_k2").get("start", ""))
+	_check("schluss_k2 hat einen Startknoten", not GespraechDaten.knoten("schluss_k2", start).is_empty())
+	var offen_ohne_flaggen: Array = GespraechDaten.antworten("schluss_k2", start, false,
+		func(_f: String) -> bool: return false, func(_g: String) -> bool: return false)
+	_check("schluss_k2 ist auch ohne gesetzte Flaggen spielbar", not offen_ohne_flaggen.is_empty(),
+		"sonst steht der Spieler in der Schlussszene vor einer leeren Auswahl")
+
+	Welt.neu()
+	GameState.quests = quests_vorher
+	GameState.current_chapter = kapitel_vorher
+	GameState.gold = gold_vorher
