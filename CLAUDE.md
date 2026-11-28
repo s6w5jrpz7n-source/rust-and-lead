@@ -144,6 +144,13 @@ Jeder hier hat echte Zeit gekostet. Die Liste ist der eigentliche Wert dieser Da
 
 ## Tests
 
+**Drei Schichten, und sie prüfen verschiedene Dinge:**
+`tests/TestRunner.tscn` den Bauplan (Daten, Missionen, Gesprächsbäume) ·
+`tools/SpielProbe.tscn` den **Startversuch** an den echten Szenen-Knoten (jeder Hotspot an
+jedem Ort benutzt, echte Mausereignisse, alle Schlussszenen durchgeklickt) ·
+`tools/EinmessProbe.gd` die Einmessung als Overlay über dem Gemälde. Die Testsuite kann nicht
+sagen, ob sich die Bühne aufbaut, und die Probe nicht, ob die Zahlen stimmen.
+
 19. **Ein Test, der Fundstellen über die ganze Datei vergleicht, prüft das Scrollen.**
     Der Ladebildschirm-Test verglich `q.find("_laden_zeigen()") < q.find("change_scene_to_packed")`.
     Eine zweite Startfunktion weiter oben in der Datei ließ ihn fehlschlagen, ohne dass etwas
@@ -153,22 +160,39 @@ Jeder hier hat echte Zeit gekostet. Die Liste ist der eigentliche Wert dieser Da
     grün, während die Funktion abstürzte — sie bauten sich ihre Daten selbst, statt sie zu
     holen. Tests müssen den **echten** Aufruf machen.
 
+21. **Ein Test, der Eingaben schickt, muss die Koordinaten prüfen, die ankommen.**
+    `get_viewport().push_input(e)` erwartet **Fenster**-Koordinaten und rechnet sie in
+    Viewport-Koordinaten um. Das Projekt steht auf `window/stretch/mode = "canvas_items"`,
+    also gibt es diese Umrechnung: Aus einem Klick auf (755, 575) wurde im Spiel
+    (15100, 11500) — Faktor 20. Der zweite Parameter schaltet sie ab: `push_input(e, true)`.
+
+    Das war die unangenehmste Sorte Testfehler. Er sah aus wie ein Fehler im Spiel („Maus über
+    dem Revolver, Spiel meldet nichts"), und schlimmer: Der Linksklick *schien zu
+    funktionieren*. Die Figur lief los — nur zu einem Punkt weit außerhalb des Bildes, den
+    `naechster_punkt` brav in die Lauffläche zurückholte. Ein grüner Test, der etwas anderes
+    prüfte als sein Name sagt.
+
+22. **Ein Laufweg-Test, der nicht läuft, prüft keinen Laufweg.** Die Probe nahm den *ersten*
+    Hotspot mit `nehmen`, und der lag zufällig in Reichweite des Startpunkts: „hingelaufen in
+    0 Rahmen", grün, ohne die Strecke ein einziges Mal benutzt zu haben. → Den **weitesten**
+    Punkt nehmen und ausdrücklich fehlschlagen, wenn null Rahmen vergehen.
+
 ## Über das Spiel reden
 
-21. **Nichts über das Spiel behaupten, was nicht in dieser Sitzung nachgesehen wurde.**
+23. **Nichts über das Spiel behaupten, was nicht in dieser Sitzung nachgesehen wurde.**
     Zwei falsche Aussagen gingen so raus: dass Praxis und Waffenlager am Nordtor liegen (gilt
     nur für die im Code gebaute Ersatzstadt) und dass die Portraits nie erscheinen (sie
     erscheinen, `DialogBox.show_line` lädt sie).
 
 ## Umgebung
 
-22. **Der Azure-Schlüssel ist ein Passwort.** Nicht ins Repo, nicht in eine Datei im
+24. **Der Azure-Schlüssel ist ein Passwort.** Nicht ins Repo, nicht in eine Datei im
     Projektordner, nicht in den Chat.
 
-23. **`s6w5jrpz7n-source` ist ein Sitzungskonto, nicht das Konto des Nutzers.** Dessen eigener
+25. **`s6w5jrpz7n-source` ist ein Sitzungskonto, nicht das Konto des Nutzers.** Dessen eigener
     GitHub-Name ist `donlocky` und hat auf dieses Repo **keinen Schreibzugriff**.
 
-24. **Was nicht gepusht ist, ist weg.** Ein Commit im Arbeitsordner einer Sitzung überlebt die
+26. **Was nicht gepusht ist, ist weg.** Ein Commit im Arbeitsordner einer Sitzung überlebt die
     Sitzung nicht. Der Commit mit dem gemeinsamen HUD ging so verloren, und diese Datei
     gleich mit.
 

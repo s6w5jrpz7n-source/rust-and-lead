@@ -491,12 +491,31 @@ python3 docs/azure_tts.py --spiel       # rendern nach assets/voice/
 | `scenes/Abenteuer.tscn` | Einstiegsszene |
 | `tools/AbenteuerShot.gd` | Bildschirmfotos der Bühne und der Gespräche |
 
-## 9. Prüfen
+## 9. Spielen
+
+Es gibt noch **keine fertige Programmdatei** — keine `export_presets.cfg`, also auch kein
+`.exe` und kein `.apk`. Gespielt wird aus dem Editor:
+
+1. Godot **4.3** holen (godotengine.org), es ist ein einzelnes Programm ohne Installation.
+2. Den Ordner `godot/` als Projekt öffnen. Der erste Start importiert alle Bilder und legt
+   zusätzlich die Handy-Fassung der Texturen an — das dauert einmalig ein paar Minuten.
+3. **F5**. Der Titelbildschirm kommt, „Neues Spiel" führt ins Abenteuer.
+
+Die Action-Fassung bleibt darunter als „Action-Fassung (alt)" erreichbar.
+
+## 10. Prüfen
+
+Drei Schichten, und sie prüfen ausdrücklich verschiedene Dinge. Die Testsuite kann nicht
+sagen, ob sich die Bühne aufbaut; die Probe nicht, ob die Zahlen stimmen.
 
 ```bash
 # zwei Durchgänge, der erste importiert
 godot --headless --path godot --editor --quit
 godot --headless --path godot res://tests/TestRunner.tscn
+
+# Startversuch an den ECHTEN Szenen-Knoten: jeder Hotspot an jedem Ort angesehen und
+# benutzt, echte Mausereignisse durch den Viewport, alle Schlussszenen durchgeklickt.
+godot --headless --path godot res://tools/SpielProbe.tscn
 
 # Bildschirmfotos (Texturen erscheinen dabei weiss — Grenze des Software-Renderers,
 # kein Fehler im Spiel; gegengeprüft mit icon_gold.png)
