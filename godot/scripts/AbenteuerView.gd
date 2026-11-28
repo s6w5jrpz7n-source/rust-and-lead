@@ -93,6 +93,18 @@ var _druck_wo: Vector2 = Vector2.ZERO
 
 var _hintergrund: Texture2D = null
 
+## Die Vordergrundebene, falls es eine gibt.
+##
+## Ein gemalter Ort in dieser Bauform hat fast immer etwas, das angeschnitten am Bildrand
+## steht -- einen Balken, einen Torbogen, den Anbindepfosten auf dem Stadtplatz. Erst das
+## macht aus einem Bild einen Raum. Technisch ist es ein Problem: Die Figur wird ueber den
+## Hintergrund gezeichnet, liefe also VOR dem Pfosten statt dahinter.
+##
+## Die Loesung ist eine zweite, freigestellte Ebene, die NACH der Figur kommt. Solange es
+## keine gibt, spart die begehbare Flaeche den Vordergrund aus -- das geht, kostet aber
+## Bildflaeche und sieht nie so gut aus.
+var _vordergrund: Texture2D = null
+
 
 func _ready() -> void:
 	set_process(true)
@@ -121,6 +133,7 @@ func betreten(kennung: String, von: String = "") -> void:
 		else (OrtDaten.ort(kennung).get("start", OrtDaten.RAHMEN * 0.5) as Vector2)
 	_ziel = _figur_pos
 	_hintergrund = _bild_laden(kennung)
+	_vordergrund = _bild_laden(kennung, "bild_vorn")
 	if erstes_mal:
 		sagen([str(OrtDaten.ort(kennung).get("name", kennung))])
 	_missionen_pruefen()
@@ -133,8 +146,8 @@ func betreten(kennung: String, von: String = "") -> void:
 ## solange nicht alle Orte gemalt sind, und `load()` schreibt dann bei jedem Ortswechsel eine
 ## Fehlerzeile ins Protokoll. Ein Protokoll voller erwarteter Fehler ist ein Protokoll, in dem
 ## man die unerwarteten nicht mehr sieht.
-func _bild_laden(kennung: String) -> Texture2D:
-	var pfad: String = str(OrtDaten.ort(kennung).get("bild", ""))
+func _bild_laden(kennung: String, feld: String = "bild") -> Texture2D:
+	var pfad: String = str(OrtDaten.ort(kennung).get(feld, ""))
 	if pfad == "" or not ResourceLoader.exists(pfad):
 		return null
 	return load(pfad) as Texture2D
@@ -433,6 +446,8 @@ func _leiste_klick(wo: Vector2) -> void:
 func _draw() -> void:
 	_zeichne_buehne()
 	_zeichne_figur()
+	if _vordergrund != null:
+		draw_texture_rect(_vordergrund, Rect2(Vector2.ZERO, OrtDaten.RAHMEN), false)
 	_zeichne_hotspot_name()
 	_zeichne_satz()
 	_zeichne_leiste()

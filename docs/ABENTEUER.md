@@ -136,6 +136,51 @@ Die Kennung steht im Feld `bild` in `scripts/OrtDaten.gd`.
 > einer je Ort, jeder vollständig und zum direkten Kopieren. Hier unten steht, *warum* sie so
 > aussehen, wie sie aussehen. Wer nur Bilder erzeugen will, braucht nur die andere Datei.
 
+### Das erste gemalte Bild ist da — und es ist jetzt der Maßstab
+
+`godot/assets/orte/platz.webp` (1672×941, exakt 16:9). Es hält sich an die Anweisung: drei
+Tiefenebenen mit angeschnittenem Anbindepfosten unten links, echte Architekturperspektive,
+offener Laufstreifen im unteren Drittel, keine Figuren, keine lesbare Schrift.
+
+Gemessen reicht seine Palette von `#2b1507` (Helligkeit 0,102) bis `#f5b470` (0,752). Der
+hellste Ton trifft `Palette.SANDLICHT` auf drei Stellen genau; **abgesoffene Schatten gibt es
+nicht** — der dunkelste Wert liegt bei 0,10 statt bei den 0,016 des Farbkeils. Das ist genau
+die Richtung „Gaslicht", und es ist gut so.
+
+Ein Unterschied bleibt: Das Bild ist etwas goldener und gesättigter als der aus Titelbild und
+Intro gemessene Keil. **Die weiteren sechs Bilder richten sich nach diesem hier**, nicht nach
+dem abstrakten Keil — Übereinstimmung untereinander zählt mehr als Übereinstimmung mit einer
+Tabelle.
+
+**Der Stadtplatz ist daran eingemessen** (`OrtDaten.ORTE["platz"]`): begehbares Vieleck,
+Sperren für Brunnen, Kinetoskop-Säule und Brettpfosten, Fluchtpunkt, Tiefenstaffelung von
+210 px vorn auf 126 px hinten. Vorher standen dort geratene Zahlen, und sie lagen samt und
+sonders daneben — der Saloon steht links und nicht hinten in der Mitte, das Auftragsbrett ganz
+rechts am Bildrand. **Ein Ort lässt sich nicht einmessen, bevor es ihn gibt.**
+
+Nachprüfen lässt sich das mit `tools/EinmessProbe.gd`: Es zeichnet Fläche, Sperren, Hotspots,
+Standpunkte und die Figur in ihrer vordersten und hintersten Größe als Overlay, das mit ffmpeg
+über das Gemälde gelegt wird. Zwei Fehler sind dabei aufgefallen, die an den Zahlen nicht zu
+sehen waren: Die Figur konnte links zu weit nach hinten laufen und hätte auf der Saloon-Veranda
+gestanden, und unten links lief sie in den Anbindepfosten hinein.
+
+```bash
+xvfb-run -a -s "-screen 0 1280x720x24" godot --rendering-driver opengl3 \
+    --path godot res://tools/EinmessProbe.tscn -- platz
+ffmpeg -i godot/assets/orte/platz.webp -i ~/.local/share/godot/app_userdata/Rust\ \&\ Lead/einmess_platz.png \
+    -filter_complex "[0:v]scale=1280:720,format=rgb24[b];[1:v]format=rgb24[o];[b][o]blend=all_mode=screen" probe.png
+```
+
+### Die Vordergrundebene
+
+Der angeschnittene Vordergrund ist technisch ein Problem: Die Figur wird über den Hintergrund
+gezeichnet, liefe also **vor** dem Anbindepfosten statt dahinter. Richtig gelöst wird das mit
+einer zweiten, freigestellten Ebene (`bild_vorn` im Ort), die nach der Figur gezeichnet wird —
+die ist eingebaut und wartet nur auf die Freisteller. Solange es keine gibt, spart die
+begehbare Fläche den Vordergrund aus; das geht, kostet aber Bildfläche.
+
+Freisteller erzeugen: dasselbe Bild, nur das Vordergrundelement, alles andere durchsichtig.
+
 ### Warum erzeugte Hintergründe billig aussehen
 
 Das ist der Teil, der über die Qualität entscheidet, und er steht vor der Vorlage, weil die

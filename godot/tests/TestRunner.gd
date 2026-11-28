@@ -115,7 +115,7 @@ const TEST_UMFANG: Dictionary = {
 	"_test_klassen_ueber_pfad": 2,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
-	"_test_abenteuer_welt": 243,
+	"_test_abenteuer_welt": 247,
 	"_test_abenteuer_gespraeche": 435,
 	"_test_abenteuer_missionen": 137,
 	"_test_abenteuer_welt_logik": 22,
@@ -7935,8 +7935,10 @@ func _test_abenteuer_welt() -> void:
 		var kennung: String = str(o)
 		var ort: Dictionary = OrtDaten.ort(kennung)
 		_check("Ort %s hat einen Namen" % kennung, str(ort.get("name", "")) != "")
+		# Vieleck ODER Rechtecke -- eingemessene Orte haben nur noch das Vieleck.
 		_check("Ort %s hat eine begehbare Flaeche" % kennung,
-			not (ort.get("gehfeld", []) as Array).is_empty())
+			OrtDaten.flaeche(kennung).size() >= 3
+				or not (ort.get("gehfeld", []) as Array).is_empty())
 		var start: Vector2 = ort.get("start", Vector2.ZERO) as Vector2
 		_check("Ort %s: Startpunkt liegt im Gehfeld" % kennung,
 			OrtDaten.begehbar(kennung, start), "Start %s" % str(start))

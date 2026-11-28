@@ -109,9 +109,18 @@ const BUEHNE_HORIZONT: float = 430.0
 ## Wie klein die Figur hinten und wie gross vorne, wenn ein Ort keine eigene `tiefe` angibt.
 const TIEFE_STANDARD: Array = [430.0, 665.0, 0.74, 1.06]
 
-## Wie viel Groessenunterschied ein Ort hoechstens haben darf (0.5 = 50 %).
-## Darueber kippt es in die Iso-Ansicht zurueck.
-const TIEFE_MAX: float = 0.50
+## Wie viel Groessenunterschied ein Ort hoechstens haben darf (0.8 = 80 %).
+##
+## Dieser Wert ist zweimal gestiegen, und beide Male, weil er geraten war und die Wirklichkeit
+## dagegensprach: erst 0.25 (aus der Annahme "flache Theaterkulisse"), dann 0.50. Am ersten
+## wirklich gemalten Hintergrund eingemessen -- Saloontuer, Lazarettzelt und Schwelle als
+## Massstaebe -- ergibt der Stadtplatz 67 %. Eine Grenze, die das verbietet, verbietet nicht
+## die Iso-Ansicht, sondern das Bild.
+##
+## Die eigentliche Absicherung ist ohnehin eine andere: Die Werte je Ort werden an der
+## gemalten Perspektive eingemessen, nicht geschaetzt. Diese Grenze faengt nur noch den Fall
+## ab, dass jemand die Kamera wieder nach schraeg oben zieht.
+const TIEFE_MAX: float = 0.80
 
 ## Die Orte des ersten Aktes. Reihenfolge ist die Reihenfolge der Geschichte, nicht Alphabet —
 ## wer hier liest, soll den Weg des Spielers sehen.
@@ -252,63 +261,87 @@ const ORTE: Dictionary = {
 		"name": "Rustwater — Platz",
 		"bild": "res://assets/orte/platz.webp",
 		"farben": [Color(0.50, 0.42, 0.32), Color(0.33, 0.29, 0.26), Color(0.21, 0.19, 0.17)],
-		# Der erste eingemessene Ort. Die begehbare Flaeche ist ein Trapez: vorne an der
-		# Rampe ueber die ganze Bildbreite, nach hinten auf gut die Haelfte zusammenlaufend.
-		# Das ist der Platz, in den man HINEINsieht -- nicht eine Bank vor einer bemalten
-		# Wand. Die Werte sind an der Perspektive eingemessen, die das gemalte Bild haben
-		# soll; wenn es da ist, werden sie daran nachgezogen.
+
+		# ── Am gemalten Bild eingemessen, nicht geschaetzt ────────────────────────
+		#
+		# Alles unterhalb kommt aus `assets/orte/platz.webp` (1672x941, exakt 16:9), auf den
+		# Rahmen 1280x720 umgerechnet. Vorher standen hier Zahlen aus der Luft, und sie lagen
+		# samt und sonders daneben: Der Saloon steht links und nicht hinten in der Mitte, das
+		# Auftragsbrett ganz rechts am Bildrand, die Schmiede in der Mitte, das Lazarettzelt
+		# rechts davor. Ein Ort laesst sich nicht einmessen, bevor es ihn gibt.
+		#
+		# Die begehbare Flaeche spart unten links den angeschnittenen Vordergrund aus
+		# (Anbindepfosten mit Seil). Der Grund ist technisch: Die Figur wird UEBER den
+		# Hintergrund gezeichnet, also liefe sie dort vor dem Pfosten statt dahinter. Richtig
+		# geloest waere das mit einer Vordergrundebene (`bild_vorn`), die nach der Figur
+		# gezeichnet wird -- die Fassung dafuer steht, es fehlt nur der Freisteller.
+		# Zweiter Durchgang, nach dem Overlay (tools/EinmessProbe.gd). Der erste liess die
+		# Figur links zu weit nach hinten laufen -- sie haette auf der Saloon-Veranda
+		# gestanden statt davor -- und unten links in den angeschnittenen Anbindepfosten
+		# hinein. Beides war am Zahlenwert nicht zu sehen, nur am Bild.
 		"flaeche": [
-			Vector2(60.0, 668.0), Vector2(1220.0, 668.0),
-			Vector2(980.0, 452.0), Vector2(300.0, 452.0),
+			Vector2(520.0, 713.0), Vector2(1267.0, 713.0), Vector2(1267.0, 533.0),
+			Vector2(1152.0, 443.0), Vector2(896.0, 432.0), Vector2(563.0, 448.0),
+			Vector2(420.0, 500.0), Vector2(250.0, 528.0), Vector2(185.0, 560.0),
+			Vector2(185.0, 620.0), Vector2(330.0, 676.0),
 		],
-		"gehfeld": [Rect2(80.0, 460.0, 1120.0, 210.0)],
-		"flucht": Vector2(640.0, 300.0),
-		"tiefe": [452.0, 668.0, 0.72, 1.06],
+		# Brunnen, Kinetoskop-Saeule und die Pfosten des Auftragsbretts stehen mitten darin.
+		"sperren": [
+			Rect2(563.0, 421.0, 243.0, 97.0),
+			Rect2(141.0, 446.0, 121.0, 87.0),
+			Rect2(1171.0, 414.0, 103.0, 90.0),
+		],
+		"flucht": Vector2(950.0, 330.0),   # an den Fluchtlinien von Veranda und Balkon abgelesen
+		# Eingemessen an drei Massstaeben im Bild: Saloon-Schwingtuer, Lazarettzelt und die
+		# Hoehe der Veranda-Schwelle. Vorn ist eine Figur 210 px hoch, hinten an der
+		# Brunnenlinie noch rund 126 -- also 60 %. Das sind 67 % Spanne, und sie stehen so im
+		# Bild. Siehe `TIEFE_MAX`.
+		"tiefe": [450.0, 713.0, 0.60, 1.00],
 		"start": Vector2(640.0, 600.0),
 		"punkte": {
 			"brunnen": {
 				"name": "Trockener Brunnen",
-				"rect": Rect2(560.0, 470.0, 180.0, 150.0),
-				"hin": Vector2(650.0, 640.0),
-				"ansehen": "Ein Brunnen ohne Wasser. Auf dem Grund liegen Münzen, Knochen und ein Schild: „WASSER WIRD ZUGETEILT. IRON RAIL CONSOLIDATED“.",
+				"rect": Rect2(550.0, 300.0, 256.0, 215.0),
+				"hin": Vector2(680.0, 560.0),
+				"ansehen": "Ein Brunnen aus geschichtetem Stein, Galgen und Eimer darüber. Der Eimer ist trocken bis ins Holz. Am Balken hängt ein Schild: „WASSER WIRD ZUGETEILT. IRON RAIL CONSOLIDATED“.",
 				"benutzen": "brunnen_steigen",
-			},
-			"aushang": {
-				"name": "Auftragsbrett",
-				"rect": Rect2(880.0, 420.0, 150.0, 180.0),
-				"hin": Vector2(950.0, 620.0),
-				"ansehen": "Ein Brett voller Zettel. Kopfgelder, Suchanzeigen, zwei Todesanzeigen, die noch keiner abgenommen hat.",
-				"benutzen": "brett_lesen",
-			},
-			"kinetoskop": {
-				"name": "Kinetoskop-Säule",
-				"rect": Rect2(240.0, 400.0, 130.0, 210.0),
-				"hin": Vector2(300.0, 620.0),
-				"ansehen": "Eine Säule mit Guckloch und Kurbel. Der Konzern wirft hier seine Bilder an die Wand: lachende Arbeiter, saubere Werkhallen. Niemand sieht hin.",
-				"benutzen": "kinetoskop_kurbeln",
-			},
-			"linse": {
-				"name": "Linse der Kinetoskop-Säule",
-				"rect": Rect2(252.0, 430.0, 90.0, 80.0),
-				"hin": Vector2(300.0, 620.0),
-				"ansehen": "Hinter dem Guckloch sitzt eine geschliffene Linse in einer Messingfassung. Sie bündelt den Schein der Projektionslampe zu einem Strahl.",
-				"benutzen": "linse_brechen",
-				"braucht": "brecheisen",
-				"sicht": "kinetoskop_gesehen",
 			},
 			"rohr": {
 				"name": "Gitterrost im Brunnenschacht",
-				"rect": Rect2(590.0, 560.0, 120.0, 70.0),
-				"hin": Vector2(650.0, 648.0),
+				"rect": Rect2(640.0, 395.0, 110.0, 60.0),
+				"hin": Vector2(680.0, 560.0),
 				"ansehen": "Zwei Meter tief sitzt ein Gitterrost vor dem waagerechten Rohr. Dahinter bewegt sich etwas, und es sind zu viele, um sie zu zählen.",
 				"benutzen": "rohr_zusetzen",
 				"braucht": "brecheisen",
 				"sicht": "brunnen_gesehen",
 			},
+			"kinetoskop": {
+				"name": "Kinetoskop-Säule",
+				"rect": Rect2(141.0, 240.0, 121.0, 290.0),
+				"hin": Vector2(300.0, 580.0),
+				"ansehen": "Eine gusseiserne Säule mit Guckloch, Kurbel und dem Zahnrad-Wappen des Konzerns im Fuß. Er wirft hier seine Bilder: lachende Arbeiter, saubere Werkhallen. Niemand sieht hin.",
+				"benutzen": "kinetoskop_kurbeln",
+			},
+			"linse": {
+				"name": "Linse der Kinetoskop-Säule",
+				"rect": Rect2(152.0, 262.0, 70.0, 58.0),
+				"hin": Vector2(300.0, 580.0),
+				"ansehen": "Hinter dem Guckloch sitzt eine geschliffene Linse in einer Messingfassung. Sie bündelt den Schein der Projektionslampe zu einem Strahl.",
+				"benutzen": "linse_brechen",
+				"braucht": "brecheisen",
+				"sicht": "kinetoskop_gesehen",
+			},
+			"aushang": {
+				"name": "Auftragsbrett",
+				"rect": Rect2(1139.0, 170.0, 141.0, 250.0),
+				"hin": Vector2(1110.0, 580.0),
+				"ansehen": "Ein überdachtes Brett voller Zettel, in Lagen übereinander genagelt. Kopfgelder, Suchanzeigen, zwei Todesanzeigen, die noch keiner abgenommen hat.",
+				"benutzen": "brett_lesen",
+			},
 			"dolores": {
 				"name": "Dolores am Brunnenrand",
-				"rect": Rect2(420.0, 480.0, 100.0, 150.0),
-				"hin": Vector2(450.0, 640.0),
+				"rect": Rect2(440.0, 400.0, 95.0, 150.0),
+				"hin": Vector2(480.0, 560.0),
 				"person": "dolores",
 				"ansehen": "Eine alte Frau mit einer Drehorgel, die seit Jahren dieselben drei Walzen spielt. Sie sieht einen an, als kenne sie einen.",
 				"reden": "dolores_platz",
@@ -316,44 +349,44 @@ const ORTE: Dictionary = {
 			},
 		},
 		"ausgaenge": {
-			"raus": {
-				"name": "Tor nach draußen",
-				"rect": Rect2(0.0, 460.0, 80.0, 210.0),
-				"hin": Vector2(165.0, 600.0),
-				"ansehen": "Zurück auf die Piste. Die Wüste wartet, sie hat Zeit.",
-				"ziel": "piste",
-				"dort": "von_platz",
-			},
 			"saloon": {
 				"name": "Gatling-Saloon",
-				"rect": Rect2(620.0, 230.0, 220.0, 200.0),
-				"hin": Vector2(700.0, 470.0),
-				"ansehen": "Ein zweistöckiger Kasten mit Schwingtür. Über dem Eingang hängt ein Gatling-Lauf als Wirtshausschild. Von drinnen Klavier und Gelächter.",
+				"rect": Rect2(326.0, 300.0, 88.0, 120.0),
+				"hin": Vector2(380.0, 530.0),
+				"ansehen": "Ein zweistöckiger Kasten aus Bruchstein und Holz, Balkon über der Veranda, Schwingtür darunter. Über dem Eingang hängt ein Gatling-Lauf als Wirtshausschild.",
 				"ziel": "saloon",
 				"dort": "von_platz",
 			},
 			"schmiede": {
 				"name": "Schmiede",
-				"rect": Rect2(960.0, 250.0, 230.0, 180.0),
-				"hin": Vector2(985.0, 487.0),
-				"ansehen": "Ein offener Schuppen mit Esse. Der Hammerschlag kommt in einem Takt, der sich seit dreißig Jahren nicht geändert hat.",
+				"rect": Rect2(704.0, 236.0, 270.0, 190.0),
+				"hin": Vector2(880.0, 520.0),
+				"ansehen": "Ein offener Schuppen unter Steinschornstein, Esse am Glühen, Amboss davor. Der Hammerschlag kommt in einem Takt, der sich seit dreißig Jahren nicht geändert hat.",
 				"ziel": "schmiede",
-				"dort": "von_platz",
-			},
-			"schacht": {
-				"name": "Weg zum Vorschacht",
-				"rect": Rect2(1180.0, 460.0, 100.0, 210.0),
-				"hin": Vector2(1115.0, 612.0),
-				"ansehen": "Hinter der Schmiede führt ein ausgetretener Pfad zum Schachtkopf. Früher gingen dort morgens vierzig Mann hinunter. Heute steht der Förderkorb oben und niemand daneben.",
-				"ziel": "vorschacht",
 				"dort": "von_platz",
 			},
 			"lazarett": {
 				"name": "Feldlazarett",
-				"rect": Rect2(330.0, 250.0, 200.0, 180.0),
-				"hin": Vector2(420.0, 480.0),
-				"ansehen": "Ein Zelt über einem Steinfundament, davor eine Bahre, die noch nass ist. Ein rotes Kreuz, mit Blut nachgezogen.",
+				"rect": Rect2(986.0, 236.0, 166.0, 182.0),
+				"hin": Vector2(1050.0, 520.0),
+				"ansehen": "Ein Zelt aus schwerem Segeltuch auf einem Steinfundament, Stufen davor, ein rotes Kreuz an der Plane. Die Plane ist an zwei Stellen geflickt und an einer nicht.",
 				"ziel": "lazarett",
+				"dort": "von_platz",
+			},
+			"schacht": {
+				"name": "Weg zum Vorschacht",
+				"rect": Rect2(890.0, 98.0, 225.0, 120.0),
+				"hin": Vector2(980.0, 490.0),
+				"ansehen": "Oben an der Kraterwand steht der Förderturm, und eine Serpentine führt hinauf. Früher gingen dort morgens vierzig Mann hoch. Heute geht die Straße leer.",
+				"ziel": "vorschacht",
+				"dort": "von_platz",
+			},
+			"raus": {
+				"name": "Piste aus der Stadt",
+				"rect": Rect2(330.0, 640.0, 280.0, 80.0),
+				"hin": Vector2(590.0, 698.0),
+				"ansehen": "Am Anbindepfosten vorbei führt die Piste aus der Stadt nach Süden. Die Wüste wartet, sie hat Zeit.",
+				"ziel": "piste",
 				"dort": "von_platz",
 			},
 		},
@@ -625,6 +658,17 @@ static func flaeche(kennung: String) -> PackedVector2Array:
 	return PackedVector2Array()
 
 
+## Flaechen innerhalb des Gehfeldes, die trotzdem nicht betretbar sind.
+##
+## Ein gemalter Ort hat Dinge darin: einen Brunnen, eine Saeule, eine Treppe. Die stehen
+## mitten auf dem Platz, und ohne sie waere die begehbare Flaeche entweder ein Vieleck mit
+## Loechern -- unlesbar und von Hand nicht zu pflegen -- oder die Figur liefe durch den
+## Brunnen hindurch. Rechtecke reichen dafuer: Eine Sperre muss nicht der Silhouette folgen,
+## sie muss nur verhindern, dass die Figur im Stein steht.
+static func sperren(kennung: String) -> Array:
+	return ort(kennung).get("sperren", []) as Array
+
+
 ## Der Fluchtpunkt des Ortes -- woran sich die gemalte Architektur ausrichtet.
 ##
 ## Liegt auf oder nahe der Augenhoehe der Kamera. Wird beim Einmessen des fertigen Bildes
@@ -640,6 +684,9 @@ static func fluchtpunkt(kennung: String) -> Vector2:
 ## Vieleck schlaegt Rechtecke. Ein Ort, der beides hat, ist eingemessen -- dann gilt das
 ## Vieleck, und die Rechtecke sind nur noch Altlast.
 static func begehbar(kennung: String, wo: Vector2) -> bool:
+	for sp in sperren(kennung):
+		if (sp as Rect2).has_point(wo):
+			return false
 	var poly: PackedVector2Array = flaeche(kennung)
 	if poly.size() >= 3:
 		return Geometry2D.is_point_in_polygon(wo, poly)
@@ -656,6 +703,27 @@ static func begehbar(kennung: String, wo: Vector2) -> bool:
 static func naechster_punkt(kennung: String, wo: Vector2) -> Vector2:
 	if begehbar(kennung, wo):
 		return wo
+
+	# Steht der Punkt IN einer Sperre, wird er an deren naechste Kante geschoben -- und ein
+	# Stueck darueber hinaus, weil `Rect2.has_point` die Kante selbst noch als drinnen zaehlt
+	# und die Figur sonst am Brunnenrand klebt.
+	for sp in sperren(kennung):
+		var r2: Rect2 = sp as Rect2
+		if not r2.has_point(wo):
+			continue
+		var kanten: Array = [
+			Vector2(r2.position.x - 1.0, wo.y), Vector2(r2.end.x + 1.0, wo.y),
+			Vector2(wo.x, r2.position.y - 1.0), Vector2(wo.x, r2.end.y + 1.0)]
+		var nah: Vector2 = wo
+		var nah_d: float = INF
+		for k in kanten:
+			var d2: float = (k as Vector2).distance_to(wo)
+			if d2 < nah_d and begehbar(kennung, k as Vector2):
+				nah_d = d2
+				nah = k as Vector2
+		if nah_d < INF:
+			return nah
+
 	var beste: Vector2 = wo
 	var abstand: float = INF
 	var poly: PackedVector2Array = flaeche(kennung)
