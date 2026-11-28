@@ -23,7 +23,8 @@ ausgespielt und als durchspielbar nachgewiesen (2675 Prüfungen grün).
 | (alt) Hintergrundbilder Kapitel 1–2 | **da und eingemessen.** Alle 1280×720, also 1:1 zum Spielrahmen. Fläche, Sperren, Tiefe und jeder Hotspot sind am Bild abgemessen (`tools/EinmessProbe.gd`). |
 | **Figur** | **da** — stehend, Lauf links, Lauf rechts, freigestellt. Im Spiel eingebaut, Maßstab aus dem Standbild. |
 | Portraits `quentin`, `dolores` | **da**, liegen als `assets/ui/portrait_*.webp`. |
-| **NPC-Figuren** (6) und **Gegenstands-Sprites** (11) | **im Spiel angemeldet, Dateien fehlen.** Pfad, Fußpunkt und Größe stehen, die Engine zeichnet sie tiefenrichtig und in der richtigen Reihenfolge, sobald eine Datei da ist. Fertige Prompts: `docs/PROMPTS_FIGUREN.md`. |
+| **NPC-Figuren** (6), **Gegenstands-Sprites** (13), **Portraits** (2) | **alle da und eingesetzt.** Jede Figur ist an ihrem Ort eingemessen, die Gegenstände stehen in der Inventarleiste. |
+| **Vordergrund-Freisteller** | fehlen noch. `bild_vorn` ist eingebaut; solange nichts da ist, spart die Lauffläche den angeschnittenen Vordergrund aus. |
 | **Vordergrund-Freisteller** | fehlen. `bild_vorn` ist eingebaut; solange nichts da ist, spart die Lauffläche den angeschnittenen Vordergrund aus und kostet Bildfläche. |
 | (alt) Hintergrundbilder | ~~fehlen.~~ Das Spiel läuft mit gezeichneten Platzhaltern. Rezeptur in `docs/ABENTEUER.md` §6. **Der ElevenLabs-Verbinder darf zur Zeit keine Bilder erzeugen** („requires additional permissions") — in den Verbinder-Einstellungen auf claude.ai neu verbinden. |
 | **Figurengrafik** | fehlt. Dreiviertelansicht, Lauf links/rechts, ~210 px, durchsichtiger Grund. Solange: Silhouette mit Hut. |

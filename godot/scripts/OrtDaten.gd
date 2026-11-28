@@ -450,7 +450,7 @@ const ORTE: Dictionary = {
 		"punkte": {
 			"mabel": {
 				"sprite": "res://assets/figuren/mabel.webp",
-				"steht": Vector2(250.0, 655.0),
+				"steht": Vector2(430.0, 660.0),
 				"groesse": 0.95,
 				"name": "Mamma „Rusty“ Mabel",
 				"rect": Rect2(150.0, 330.0, 200.0, 300.0),
@@ -475,7 +475,7 @@ const ORTE: Dictionary = {
 			},
 			"gideon": {
 				"sprite": "res://assets/figuren/gideon.webp",
-				"steht": Vector2(930.0, 575.0),
+				"steht": Vector2(822.0, 632.0),
 				"groesse": 1.05,
 				"name": "Gideon Cross",
 				"rect": Rect2(855.0, 400.0, 210.0, 160.0),
