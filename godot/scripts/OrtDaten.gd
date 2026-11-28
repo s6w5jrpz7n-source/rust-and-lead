@@ -142,7 +142,7 @@ const ORTE: Dictionary = {
 			Vector2(545.0, 465.0), Vector2(440.0, 505.0), Vector2(520.0, 600.0),
 		],
 		"sperren": [Rect2(970.0, 555.0, 70.0, 95.0),],
-		"tiefe": [455.0, 715.0, 0.58, 1.00],
+		"tiefe": [455.0, 715.0, 0.87, 1.50],
 		"start": Vector2(760.0, 620.0),
 		"punkte": {
 			"haende": {
@@ -206,7 +206,7 @@ const ORTE: Dictionary = {
 			Vector2(706.0, 402.0), Vector2(620.0, 455.0), Vector2(470.0, 520.0),
 			Vector2(250.0, 600.0),
 		],
-		"tiefe": [402.0, 715.0, 0.58, 1.00],
+		"tiefe": [402.0, 715.0, 0.64, 1.10],
 		"start": Vector2(640.0, 620.0),
 		"punkte": {
 			"karre": {
@@ -309,7 +309,7 @@ const ORTE: Dictionary = {
 		# Hoehe der Veranda-Schwelle. Vorn ist eine Figur 210 px hoch, hinten an der
 		# Brunnenlinie noch rund 126 -- also 60 %. Das sind 67 % Spanne, und sie stehen so im
 		# Bild. Siehe `TIEFE_MAX`.
-		"tiefe": [450.0, 713.0, 0.60, 1.00],
+		"tiefe": [450.0, 713.0, 0.87, 1.45],
 		"start": Vector2(640.0, 600.0),
 		"punkte": {
 			"brunnen": {
@@ -418,7 +418,7 @@ const ORTE: Dictionary = {
 			Vector2(640.0, 580.0), Vector2(520.0, 650.0),
 		],
 		"sperren": [Rect2(885.0, 515.0, 165.0, 205.0), Rect2(1040.0, 580.0, 240.0, 140.0), Rect2(450.0, 525.0, 115.0, 125.0), Rect2(855.0, 425.0, 205.0, 135.0),],
-		"tiefe": [505.0, 700.0, 0.78, 1.30],
+		"tiefe": [505.0, 700.0, 1.09, 1.82],
 		"start": Vector2(700.0, 650.0),
 		"punkte": {
 			"mabel": {
@@ -485,7 +485,7 @@ const ORTE: Dictionary = {
 			Vector2(300.0, 605.0), Vector2(175.0, 650.0),
 		],
 		"sperren": [Rect2(300.0, 565.0, 235.0, 155.0),],
-		"tiefe": [578.0, 715.0, 1.25, 1.60],
+		"tiefe": [578.0, 715.0, 1.50, 1.92],
 		"start": Vector2(640.0, 665.0),
 		"punkte": {
 			"silas": {
@@ -543,7 +543,7 @@ const ORTE: Dictionary = {
 			Vector2(360.0, 680.0),
 		],
 		"sperren": [Rect2(745.0, 600.0, 110.0, 75.0),],
-		"tiefe": [620.0, 715.0, 1.30, 1.55],
+		"tiefe": [620.0, 715.0, 1.76, 2.09],
 		"start": Vector2(620.0, 692.0),
 		"punkte": {
 			"doc": {
@@ -608,7 +608,7 @@ const ORTE: Dictionary = {
 			Vector2(560.0, 605.0), Vector2(420.0, 625.0), Vector2(280.0, 660.0),
 		],
 		"sperren": [Rect2(345.0, 540.0, 180.0, 90.0), Rect2(720.0, 530.0, 165.0, 70.0),],
-		"tiefe": [585.0, 715.0, 1.25, 1.60],
+		"tiefe": [585.0, 715.0, 1.38, 1.76],
 		"start": Vector2(640.0, 672.0),
 		"punkte": {
 			"stollen_dunkel": {

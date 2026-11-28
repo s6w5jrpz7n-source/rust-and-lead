@@ -171,6 +171,36 @@ ffmpeg -i godot/assets/orte/platz.webp -i ~/.local/share/godot/app_userdata/Rust
     -filter_complex "[0:v]scale=1280:720,format=rgb24[b];[1:v]format=rgb24[o];[b][o]blend=all_mode=screen" probe.png
 ```
 
+### Die Figurgröße wird am Bild geprüft, nicht geschätzt
+
+Beim ersten Einmessen habe ich die Tiefenwerte nach Augenmaß gesetzt. Das Ergebnis war in
+jedem Ort zu klein — am Marktplatz um 45 %, in der Schmiede um 20 %. Beim Betrachten fällt es
+auf, beim Rechnen nicht.
+
+**Die Regel: in jedem Bild ein Ding suchen, dessen Größe man kennt, und daran nachrechnen.**
+Brauchbar sind Dinge mit festem Maß, nicht Dinge, die der Maler frei erfunden hat:
+
+| Ort | Bezugsobjekt | Maß |
+| :-- | :-- | :-- |
+| platz | Brunnenring, Saloon-Schwingtür | 0,9 m · 1,1 m |
+| saloon | Fässer an der Theke, Stuhl vorn | 0,9 m · 1,0 m |
+| schmiede | Amboss auf dem Stock — Oberkante gehört auf Hüfthöhe | ~0,85 m |
+| lazarett | Instrumentenschrank | 1,9 m |
+| vorschacht | Förderkorb, Hunt | 2,0 m · 1,0 m |
+| piste | Palisadentor | 2,5 m |
+
+Zwei Fallen dabei:
+
+* **Die Tiefe mitrechnen.** Der Brunnenring schien auf Brusthöhe zu stehen und wirkte deshalb
+  zu hoch — bis man merkt, dass die Figur *vor* dem Brunnen steht und er darum kleiner
+  erscheint. Zwei Bezugsobjekte an verschiedenen Tiefen rechnen, dann stimmt es.
+* **Erzeugte Bilder sind in sich nicht maßstabsgetreu.** In der Schmiede ergaben Esse, Amboss
+  und Werkzeugleiste Faktoren zwischen 1,1 und 1,7. Dann gilt das Ding, das der Spieler
+  unmittelbar neben der Figur sieht — hier der Amboss —, nicht der Mittelwert.
+
+Verglichen wird in einem zusammengesetzten Bild, nicht im Kopf: `ffmpeg` legt die Figur in
+der Größe, die `OrtDaten.groesse_bei()` liefert, auf den Hintergrund.
+
 ### Die Vordergrundebene
 
 Der angeschnittene Vordergrund ist technisch ein Problem: Die Figur wird über den Hintergrund

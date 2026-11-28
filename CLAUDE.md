@@ -131,36 +131,41 @@ Jeder hier hat echte Zeit gekostet. Die Liste ist der eigentliche Wert dieser Da
 16. **Eine Sicht-Flagge, die niemand setzt, lässt eine Figur nie erscheinen.** Dolores stand
     hinter `sicht: "dolores_da"` — und diese Flagge gab es nirgends.
 
-17. **Angefangene Sätze gehören zum alten Ort.** Beim Ortswechsel und beim Öffnen eines
+17. **Figurgröße nie schätzen.** In jedem Hintergrund ein Ding mit bekanntem Maß suchen
+    (Tür, Fass, Amboss, Brunnenring) und nachrechnen — und dabei die Tiefe mitrechnen, sonst
+    täuscht der Augenschein. Beim ersten Durchgang war die Figur in jedem Ort zu klein, am
+    Marktplatz um 45 %. Geprüft wird in einem mit `ffmpeg` zusammengesetzten Bild.
+
+18. **Angefangene Sätze gehören zum alten Ort.** Beim Ortswechsel und beim Öffnen eines
     Gesprächs leeren, sonst steht im Saloon „Die Schrottkippe".
 
 ## Tests
 
-18. **Ein Test, der Fundstellen über die ganze Datei vergleicht, prüft das Scrollen.**
+19. **Ein Test, der Fundstellen über die ganze Datei vergleicht, prüft das Scrollen.**
     Der Ladebildschirm-Test verglich `q.find("_laden_zeigen()") < q.find("change_scene_to_packed")`.
     Eine zweite Startfunktion weiter oben in der Datei ließ ihn fehlschlagen, ohne dass etwas
     kaputt war. → Immer den Rumpf der betroffenen Funktion prüfen, nicht den Dateitext.
 
-19. **Grüne Tests heißen nicht, dass die Funktion stimmt.** Neun Tests zu `orbit_punkte` waren
+20. **Grüne Tests heißen nicht, dass die Funktion stimmt.** Neun Tests zu `orbit_punkte` waren
     grün, während die Funktion abstürzte — sie bauten sich ihre Daten selbst, statt sie zu
     holen. Tests müssen den **echten** Aufruf machen.
 
 ## Über das Spiel reden
 
-20. **Nichts über das Spiel behaupten, was nicht in dieser Sitzung nachgesehen wurde.**
+21. **Nichts über das Spiel behaupten, was nicht in dieser Sitzung nachgesehen wurde.**
     Zwei falsche Aussagen gingen so raus: dass Praxis und Waffenlager am Nordtor liegen (gilt
     nur für die im Code gebaute Ersatzstadt) und dass die Portraits nie erscheinen (sie
     erscheinen, `DialogBox.show_line` lädt sie).
 
 ## Umgebung
 
-21. **Der Azure-Schlüssel ist ein Passwort.** Nicht ins Repo, nicht in eine Datei im
+22. **Der Azure-Schlüssel ist ein Passwort.** Nicht ins Repo, nicht in eine Datei im
     Projektordner, nicht in den Chat.
 
-22. **`s6w5jrpz7n-source` ist ein Sitzungskonto, nicht das Konto des Nutzers.** Dessen eigener
+23. **`s6w5jrpz7n-source` ist ein Sitzungskonto, nicht das Konto des Nutzers.** Dessen eigener
     GitHub-Name ist `donlocky` und hat auf dieses Repo **keinen Schreibzugriff**.
 
-23. **Was nicht gepusht ist, ist weg.** Ein Commit im Arbeitsordner einer Sitzung überlebt die
+24. **Was nicht gepusht ist, ist weg.** Ein Commit im Arbeitsordner einer Sitzung überlebt die
     Sitzung nicht. Der Commit mit dem gemeinsamen HUD ging so verloren, und diese Datei
     gleich mit.
 
