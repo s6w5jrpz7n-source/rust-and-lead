@@ -183,6 +183,14 @@ func betreten(kennung: String, von: String = "") -> void:
 ## man die unerwarteten nicht mehr sieht.
 func _bild_laden(kennung: String, feld: String = "bild") -> Texture2D:
 	var pfad: String = str(OrtDaten.ort(kennung).get(feld, ""))
+	# Ein Ort darf einen zweiten Hintergrund haben, den eine Flagge einschaltet. Gebraucht
+	# fuer den Salonwaggon: heil und zerschlagen, aus derselben Kameraposition. Zwei Orte
+	# daraus zu machen waere einfacher und falsch -- dann waere der Einschlag ein
+	# Szenenwechsel, und die Figur stuende ploetzlich woanders.
+	if feld == "bild":
+		var tausch: Dictionary = OrtDaten.ort(kennung).get("bild_wenn", {}) as Dictionary
+		if not tausch.is_empty() and Welt.flagge(str(tausch.get("flagge", ""))):
+			pfad = str(tausch.get("bild", pfad))
 	if pfad == "" or not ResourceLoader.exists(pfad):
 		return null
 	return load(pfad) as Texture2D

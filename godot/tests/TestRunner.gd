@@ -115,14 +115,14 @@ const TEST_UMFANG: Dictionary = {
 	"_test_klassen_ueber_pfad": 2,
 	"_test_truhen": 37,
 	"_test_anfuehrer": 55,
-	"_test_abenteuer_welt": 300,
+	"_test_abenteuer_welt": 532,
 	"_test_abenteuer_gespraeche": 487,
-	"_test_abenteuer_missionen": 137,
+	"_test_abenteuer_missionen": 160,
 	"_test_abenteuer_welt_logik": 22,
 	"_test_abenteuer_kapitel": 36,
-	"_test_abenteuer_bild_und_farbe": 224,
+	"_test_abenteuer_bild_und_farbe": 248,
 	"_test_abenteuer_kapitel1_durchspielen": 30,
-	"_test_abenteuer_sprites": 85,
+	"_test_abenteuer_sprites": 89,
 	"_test_abenteuer_kapitel2_durchspielen": 27,
 }
 

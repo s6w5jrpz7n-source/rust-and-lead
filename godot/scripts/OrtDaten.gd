@@ -264,6 +264,16 @@ const ORTE: Dictionary = {
 				"ziel": "kippe",
 				"dort": "von_piste",
 			},
+			"depot": {
+				"name": "Weg zum Zugdepot",
+				"rect": Rect2(0.0, 430.0, 170.0, 180.0),
+				"hin": Vector2(205.0, 640.0),
+				"ansehen": "Eine Abzweigung nach Norden, von Schwellen gesäumt. Sie führt zum Zugdepot des Konzerns.",
+				"ziel": "zugdepot",
+				"dort": "von_piste",
+				"sperre": "Nach Norden führt eine Abzweigung, aber ich wüsste nicht, was ich dort sollte. Noch nicht.",
+				"frei": "zug_bekannt",
+			},
 			"tor": {
 				"name": "Stadttor von Rustwater",
 				"rect": Rect2(655.0, 225.0, 250.0, 180.0),
@@ -663,6 +673,15 @@ const ORTE: Dictionary = {
 			},
 		},
 		"ausgaenge": {
+			"hinab": {
+				"name": "Hinab in die Mine",
+				"rect": Rect2(420.0, 360.0, 230.0, 230.0),
+				"hin": Vector2(530.0, 620.0),
+				"ansehen": "Der Gang, in dem ich mit der Lampe war. Dahinter geht es weiter, drei Ebenen tief, und auf jeder wird das Holz schwärzer.",
+				"ziel": "mine_ebene1",
+				"dort": "von_oben",
+				"sicht": "gang_gewesen",
+			},
 			"raus": {
 				"name": "Zurück nach Rustwater",
 				"rect": Rect2(130.0, 600.0, 180.0, 120.0),
@@ -673,6 +692,369 @@ const ORTE: Dictionary = {
 			},
 		},
 	},
+	# ── KAPITEL 3: DIE MINE ───────────────────────────────────────────────────────
+	#
+	# Drei Ebenen abwaerts. Die Bauform ist bei allen dreien dieselbe und bewusst so:
+	# Der Gang flieht nach hinten weg, aber **gelaufen wird nur im vorderen Teil**. Was
+	# dahinter liegt, ist ein Ausgang, kein Weg. Der Grund ist nicht Faulheit, sondern
+	# Mass: Eine Einpunktperspektive wie in Ebene 1 hat zwischen vorn und dem Fluchtpunkt
+	# einen Groessenunterschied von mehr als 400 %. Liefe die Figur bis hinten durch,
+	# muesste sie dort auf ein Zehntel schrumpfen -- und waere nicht mehr anklickbar.
+	# Baphomets Fluch loest das genauso: Man geht ein Stueck, dann schneidet es um.
+	"mine_ebene1": {
+		"name": "Schrott-Mine, Ebene 1",
+		"bild": "res://assets/orte/mine_ebene1.webp",
+		"farben": [Color(0.30, 0.22, 0.14), Color(0.38, 0.27, 0.16), Color(0.22, 0.17, 0.12)],
+		"flaeche": [
+			Vector2(250.0, 715.0), Vector2(1020.0, 715.0), Vector2(960.0, 600.0),
+			Vector2(880.0, 530.0), Vector2(700.0, 520.0), Vector2(540.0, 560.0),
+			Vector2(360.0, 630.0),
+		],
+		"sperren": [Rect2(100.0, 495.0, 520.0, 70.0), Rect2(900.0, 555.0, 330.0, 105.0)],
+		"flucht": Vector2(820.0, 400.0),
+		# Eingemessen an den Konzernkisten links (0,8 m hoch, 160 px bei y=540).
+		"tiefe": [520.0, 715.0, 1.62, 2.48],
+		"start": Vector2(640.0, 660.0),
+		"punkte": {
+			"kisten": {
+				"name": "Konzernkisten",
+				"rect": Rect2(100.0, 270.0, 520.0, 280.0),
+				"hin": Vector2(600.0, 640.0),
+				"ansehen": "Kisten mit dem Zahnrad-Wappen, an der Wand gestapelt und seit Jahren nicht bewegt. Der Stempel ist bis auf fünf Buchstaben verblichen: P S A L M.",
+				"benutzen": "psalm_kisten",
+			},
+			"rohrleitung": {
+				"name": "Wetterrohr",
+				"rect": Rect2(200.0, 0.0, 520.0, 160.0),
+				"hin": Vector2(560.0, 640.0),
+				"ansehen": "Ein Lüftungsrohr unter der Firste, mit Lappen geflickt. Es saugt nicht mehr. Wer hier unten arbeitet, atmet, was da ist.",
+			},
+			"lampe": {
+				"name": "Hängelampe",
+				"rect": Rect2(755.0, 20.0, 110.0, 185.0),
+				"hin": Vector2(720.0, 620.0),
+				"ansehen": "Eine Grubenlampe an der Kette, noch brennend. Jemand hat sie angezündet und ist nicht zurückgekommen, um sie zu löschen.",
+			},
+		},
+		"ausgaenge": {
+			"hoch": {
+				"name": "Zurück zum Schachtkopf",
+				"rect": Rect2(300.0, 650.0, 300.0, 70.0),
+				"hin": Vector2(450.0, 690.0),
+				"ansehen": "Der Weg zurück nach oben, wo es Tageslicht gibt und Leute, die wissen, wie sie heißen.",
+				"ziel": "vorschacht",
+				"dort": "von_mine",
+			},
+			"tiefer": {
+				"name": "Weiter hinab",
+				"rect": Rect2(690.0, 400.0, 180.0, 140.0),
+				"hin": Vector2(760.0, 545.0),
+				"ansehen": "Der Stollen zieht sich nach hinten und fällt dabei ab. Die Schienen laufen mit. Unten wird das Holz schwärzer.",
+				"ziel": "mine_ebene2",
+				"dort": "von_oben",
+			},
+		},
+	},
+
+	# Ebene 2. Hier haengt die Kinderzeichnung, und sie ist der leiseste Hinweis des
+	# ganzen Spiels: eine Familie, mit Kohle an die Stuetzstrebe gemalt, und der Vater
+	# ist kein Mensch. Gezeichnet hat das ein Kind, das seinen Vater so gesehen hat.
+	"mine_ebene2": {
+		"name": "Schrott-Mine, Ebene 2",
+		"bild": "res://assets/orte/mine_ebene2.webp",
+		"farben": [Color(0.26, 0.18, 0.11), Color(0.34, 0.23, 0.13), Color(0.19, 0.14, 0.10)],
+		"flaeche": [
+			Vector2(440.0, 715.0), Vector2(1240.0, 715.0), Vector2(1210.0, 635.0),
+			Vector2(980.0, 620.0), Vector2(760.0, 640.0), Vector2(560.0, 665.0),
+			Vector2(450.0, 695.0),
+		],
+		"sperren": [Rect2(555.0, 520.0, 400.0, 115.0)],
+		"flucht": Vector2(980.0, 330.0),
+		# Eingemessen am Hunt (1,5 m hoch, 280 px bei y=630).
+		"tiefe": [630.0, 715.0, 1.60, 1.90],
+		"start": Vector2(900.0, 680.0),
+		"punkte": {
+			"zeichnung": {
+				"name": "Kinderzeichnung",
+				"rect": Rect2(0.0, 150.0, 430.0, 420.0),
+				"hin": Vector2(470.0, 700.0),
+				"ansehen": "Mit Kohle an die Stütze gemalt, auf Kinderhöhe: eine Sonne, ein Haus, eine Mutter, ein Kind. Und der Vater.\n\nDer Vater hat einen eckigen Kopf mit einer Antenne, Arme aus Gliedern und Scharniere an den Knien. Er ist größer als das Haus. Das Kind hält seine Hand.\n\nEin Kind malt, was es sieht.",
+				"benutzen": "zeichnung_ansehen",
+			},
+			"hunt": {
+				"name": "Entgleister Hunt",
+				"rect": Rect2(555.0, 345.0, 400.0, 290.0),
+				"hin": Vector2(700.0, 690.0),
+				"ansehen": "Ein Förderwagen, von den Schienen gesprungen und liegengelassen. Innen Erz, obenauf eine Jacke. Die Jacke ist zu klein für einen Mann.",
+				"benutzen": "hunt_durchsuchen",
+			},
+			"lampe2": {
+				"name": "Wandlampe",
+				"rect": Rect2(1025.0, 245.0, 70.0, 95.0),
+				"hin": Vector2(1050.0, 672.0),
+				"ansehen": "Eine Lampe am Stempel, Docht fast herunter. Zwischen ihr und der nächsten liegt mehr Dunkel als Licht.",
+			},
+		},
+		"ausgaenge": {
+			"hoch": {
+				"name": "Zurück nach oben",
+				"rect": Rect2(440.0, 650.0, 220.0, 70.0),
+				"hin": Vector2(530.0, 702.0),
+				"ansehen": "Der Weg zurück auf Ebene 1.",
+				"ziel": "mine_ebene1",
+				"dort": "von_unten",
+			},
+			"tiefer": {
+				"name": "Ebene 3",
+				"rect": Rect2(1150.0, 400.0, 130.0, 220.0),
+				"hin": Vector2(1180.0, 668.0),
+				"ansehen": "Hinter dem Verbruch geht es weiter abwärts. Von dort kommt der Ton, den die Kumpel den Psalm nennen.",
+				"ziel": "mine_ebene3",
+				"dort": "von_oben",
+			},
+		},
+	},
+
+	# Ebene 3, die Schatzkammer. Schlussort von Kapitel 3.
+	"mine_ebene3": {
+		"name": "Die Schatzkammer",
+		"bild": "res://assets/orte/mine_ebene3.webp",
+		"farben": [Color(0.33, 0.23, 0.14), Color(0.40, 0.28, 0.17), Color(0.24, 0.18, 0.12)],
+		"flaeche": [
+			Vector2(370.0, 715.0), Vector2(1270.0, 715.0), Vector2(1270.0, 560.0),
+			Vector2(1080.0, 505.0), Vector2(760.0, 495.0), Vector2(520.0, 500.0),
+			Vector2(360.0, 540.0), Vector2(320.0, 640.0),
+		],
+		"sperren": [Rect2(640.0, 470.0, 510.0, 180.0), Rect2(545.0, 560.0, 90.0, 85.0)],
+		"flucht": Vector2(520.0, 320.0),
+		# Eingemessen an der zerdrueckten Kiste (1 m hoch, 220 px bei y=645).
+		"tiefe": [495.0, 715.0, 1.24, 2.14],
+		"start": Vector2(850.0, 675.0),
+		"punkte": {
+			"kiste": {
+				"name": "Zerdrückte Konzernkiste",
+				"rect": Rect2(640.0, 420.0, 510.0, 230.0),
+				"hin": Vector2(830.0, 690.0),
+				"ansehen": "Eine Transportkiste, von oben zerdrückt, der Deckel aufgesprungen. Der Stempel ist noch ganz: PSALM-PROGRAMM — EIGENTUM DER IRON RAIL — ZUGRIFF NUR DIREKTORAT.",
+				"benutzen": "kiste_oeffnen",
+			},
+			"laterne": {
+				"name": "Stehende Laterne",
+				"rect": Rect2(540.0, 475.0, 95.0, 170.0),
+				"hin": Vector2(610.0, 690.0),
+				"ansehen": "Eine Laterne, mitten auf dem Boden abgestellt, noch brennend. Wer sie hingestellt hat, wollte beide Hände frei haben.",
+			},
+			"altkisten": {
+				"name": "Verschüttete Kisten",
+				"rect": Rect2(20.0, 340.0, 370.0, 110.0),
+				"hin": Vector2(430.0, 580.0),
+				"ansehen": "Weitere Kisten, halb unter Geröll, dieselben Stempel. Es waren viele, und sie sind nicht zufällig hier unten.",
+			},
+			"schacht": {
+				"name": "Schwarzer Schacht",
+				"rect": Rect2(415.0, 230.0, 215.0, 175.0),
+				"hin": Vector2(560.0, 525.0),
+				"ansehen": "Ein Loch in der Rückwand, das weiter abwärts führt, als Licht reicht. Tief drinnen glimmt etwas bläulich, in einem Takt. Von dort kommt der Gesang.",
+				"benutzen": "schacht_lauschen",
+			},
+		},
+		"ausgaenge": {
+			"hoch": {
+				"name": "Zurück nach oben",
+				"rect": Rect2(1150.0, 560.0, 130.0, 160.0),
+				"hin": Vector2(1200.0, 665.0),
+				"ansehen": "Der Weg zurück nach Ebene 2 und weiter hinauf ans Licht.",
+				"ziel": "mine_ebene2",
+				"dort": "von_unten",
+			},
+		},
+	},
+
+	# ── KAPITEL 4: DER ZUGUEBERFALL ───────────────────────────────────────────────
+	"zugdepot": {
+		"name": "Iron-Rail-Zugdepot",
+		"bild": "res://assets/orte/zugdepot.webp",
+		"farben": [Color(0.24, 0.18, 0.13), Color(0.32, 0.23, 0.15), Color(0.18, 0.14, 0.11)],
+		"flaeche": [
+			Vector2(250.0, 715.0), Vector2(1180.0, 715.0), Vector2(1120.0, 600.0),
+			Vector2(860.0, 560.0), Vector2(600.0, 548.0), Vector2(380.0, 562.0),
+			Vector2(270.0, 620.0),
+		],
+		"sperren": [Rect2(470.0, 470.0, 105.0, 95.0)],
+		"flucht": Vector2(700.0, 430.0),
+		# Eingemessen an der Lok (rund 4 m hoch, 400 px bei y=580).
+		"tiefe": [548.0, 715.0, 0.86, 1.38],
+		"start": Vector2(640.0, 670.0),
+		"punkte": {
+			"wasserturm": {
+				"name": "Wasserturm",
+				"rect": Rect2(0.0, 40.0, 245.0, 430.0),
+				"hin": Vector2(310.0, 645.0),
+				"ansehen": "Ein Wasserturm auf Stelzen, das einzige volle Wasserbecken im Umkreis von zwei Tagesritten. Es gehört dem Konzern, und es ist bewacht.",
+			},
+			"steg": {
+				"name": "Signalsteg",
+				"rect": Rect2(230.0, 55.0, 590.0, 420.0),
+				"hin": Vector2(640.0, 640.0),
+				"ansehen": "Ein Gittersteg über den Gleisen, Lampen an jedem Mast. Von dort oben sieht man jeden, der hier unten steht.",
+			},
+			"lok": {
+				"name": "Lokomotive",
+				"rect": Rect2(980.0, 180.0, 300.0, 400.0),
+				"hin": Vector2(1080.0, 680.0),
+				"ansehen": "Eine gepanzerte Lok unter Dampf, Feuerbüchse glühend. Sie steht nicht lange — wer mit will, hat nicht die Nacht Zeit.",
+			},
+			"waggons": {
+				"name": "Versiegelte Waggons",
+				"rect": Rect2(600.0, 250.0, 390.0, 330.0),
+				"hin": Vector2(800.0, 645.0),
+				"ansehen": "Güterwagen, die Türen mit Wachs versiegelt wie Särge. Auf einem steht eine Zahl. Sie ist nicht dreizehn, und ich habe nachgesehen.",
+				"benutzen": "waggons_zaehlen",
+			},
+		},
+		"ausgaenge": {
+			"zug": {
+				"name": "Aufspringen",
+				"rect": Rect2(900.0, 300.0, 250.0, 280.0),
+				"hin": Vector2(980.0, 665.0),
+				"ansehen": "Der Zug zieht an. Wer jetzt nicht springt, springt gar nicht.",
+				"ziel": "zug_dach",
+				"dort": "von_depot",
+			},
+			"zurueck": {
+				"name": "Zurück nach Rustwater",
+				"rect": Rect2(250.0, 640.0, 250.0, 80.0),
+				"hin": Vector2(370.0, 692.0),
+				"ansehen": "Der Weg zurück in die Stadt. Von hier ist er lang und er führt nirgendwohin.",
+				"ziel": "platz",
+				"dort": "von_depot",
+			},
+		},
+	},
+
+	"zug_dach": {
+		"name": "Auf dem fahrenden Zug",
+		"bild": "res://assets/orte/zug_dach.webp",
+		"farben": [Color(0.22, 0.16, 0.12), Color(0.31, 0.22, 0.14), Color(0.17, 0.13, 0.10)],
+		"flaeche": [
+			Vector2(300.0, 715.0), Vector2(1000.0, 715.0), Vector2(985.0, 605.0),
+			Vector2(830.0, 520.0), Vector2(640.0, 480.0), Vector2(500.0, 468.0),
+			Vector2(400.0, 505.0), Vector2(310.0, 590.0),
+		],
+		"sperren": [Rect2(615.0, 430.0, 470.0, 140.0)],
+		"flucht": Vector2(430.0, 330.0),
+		# Eingemessen an der Waggontuer (2,5 m hoch, 230 px bei y=430).
+		"tiefe": [470.0, 715.0, 0.88, 1.43],
+		"start": Vector2(640.0, 660.0),
+		"punkte": {
+			"siegel": {
+				"name": "Wachssiegel",
+				"rect": Rect2(640.0, 255.0, 95.0, 95.0),
+				"hin": Vector2(700.0, 505.0),
+				"ansehen": "Ein Siegel aus rotem Wachs, groß wie eine Hand, in den Stahl geklebt. Darin das Zahnrad-Wappen — und eine eingeprägte Zahl.",
+				"benutzen": "siegel_lesen",
+			},
+			"kisten": {
+				"name": "Verzurrte Kisten",
+				"rect": Rect2(615.0, 265.0, 480.0, 300.0),
+				"hin": Vector2(600.0, 645.0),
+				"ansehen": "Kisten unter Ketten, nass und festgezurrt. Sie klappern nicht, wenn der Wagen springt. Was drin ist, ist gepolstert.",
+			},
+			"lok_fern": {
+				"name": "Die Lok, weit vorn",
+				"rect": Rect2(330.0, 230.0, 110.0, 180.0),
+				"hin": Vector2(430.0, 565.0),
+				"ansehen": "Vier Wagen weiter vorn wirft die Feuerbüchse Licht auf den Regen. Dazwischen liegt alles, was zwischen mir und dem Führerstand steht.",
+			},
+			"rand": {
+				"name": "Wagenrand",
+				"rect": Rect2(180.0, 420.0, 230.0, 300.0),
+				"hin": Vector2(385.0, 625.0),
+				"ansehen": "Unter dem Geländer rast die Wüste vorbei, so schnell, dass der Boden keine Steine mehr hat, sondern Striche. Wer hier runterfällt, wird nicht gefunden.",
+			},
+		},
+		"ausgaenge": {
+			"tuer": {
+				"name": "Waggontür",
+				"rect": Rect2(555.0, 175.0, 210.0, 250.0),
+				"hin": Vector2(660.0, 495.0),
+				"ansehen": "Die Schiebetür des versiegelten Wagens. Dahinter ist es trocken, und dahinter ist die Antwort.",
+				"ziel": "spiegel_wagen",
+				"dort": "von_dach",
+			},
+		},
+	},
+
+	# Der Salonwaggon. Hier spielt die wichtigste Szene des Spiels, und deshalb hat der
+	# Ort als einziger ZWEI Hintergruende: einen heilen und einen zerschlagenen, aus
+	# derselben Kameraposition. Getauscht wird ueber `bild_wenn`, nicht ueber einen
+	# zweiten Ort -- sonst waere es ein Szenenwechsel und kein Einschlag.
+	"spiegel_wagen": {
+		"name": "Salonwaggon",
+		"bild": "res://assets/orte/spiegel_wagen.webp",
+		"bild_wenn": {
+			"flagge": "spiegel_zerbrochen",
+			"bild": "res://assets/orte/spiegel_wagen_zerbrochen.webp",
+		},
+		"farben": [Color(0.30, 0.20, 0.12), Color(0.38, 0.26, 0.15), Color(0.21, 0.15, 0.10)],
+		"flaeche": [
+			Vector2(600.0, 715.0), Vector2(1080.0, 715.0), Vector2(1060.0, 600.0),
+			Vector2(1000.0, 585.0), Vector2(860.0, 612.0), Vector2(700.0, 630.0),
+		],
+		"flucht": Vector2(870.0, 300.0),
+		# Die Lauffläche reicht absichtlich NICHT bis vor das Glas, und der Standpunkt am
+		# Spiegel liegt rechts daneben. Grund: Ein gemalter Spiegel hat ein gemaltes
+		# Spiegelbild. Steht die Figur mittig davor, fehlt sie darin -- und das sieht aus
+		# wie ein Fehler, nicht wie eine Andeutung. Dass sie kein Spiegelbild hat, ist der
+		# Inhalt der Szene; der gehört inszeniert und nicht nebenbei verraten.
+		# Eingemessen am Spiegel (2,2 m hoch, 500 px bei y=560).
+		"tiefe": [585.0, 715.0, 2.02, 2.48],
+		"start": Vector2(990.0, 690.0),
+		"punkte": {
+			"spiegel": {
+				"name": "Garderobenspiegel",
+				"rect": Rect2(735.0, 55.0, 245.0, 510.0),
+				"hin": Vector2(1000.0, 650.0),
+				"ansehen": "Ein mannshoher Spiegel in schwerem Messingrahmen, bis zum Boden. Er zeigt den Waggon, die Lampen, den Teppich. Mich zeigt er auch. Ich sehe trotzdem lieber weg.",
+				"benutzen": "spiegel_ansehen",
+			},
+			"kartentisch": {
+				"name": "Kartentisch",
+				"rect": Rect2(0.0, 595.0, 290.0, 125.0),
+				"hin": Vector2(640.0, 702.0),
+				"ansehen": "Grüner Filz, vier Plätze, ein angefangenes Spiel. Drei Blätter liegen offen, eines verdeckt. Niemand hat aufgeräumt, weil niemand damit gerechnet hat, dass es nötig wird.",
+			},
+			"sessel": {
+				"name": "Ohrensessel",
+				"rect": Rect2(535.0, 395.0, 190.0, 235.0),
+				"hin": Vector2(705.0, 655.0),
+				"ansehen": "Leder, am Boden festgeschraubt, damit er bei voller Fahrt nicht wandert. Die Armlehne ist an einer Stelle durchgewetzt. Jemand sitzt hier oft und greift immer gleich an.",
+			},
+			"anrichte": {
+				"name": "Anrichte",
+				"rect": Rect2(1065.0, 435.0, 215.0, 285.0),
+				"hin": Vector2(1035.0, 682.0),
+				"ansehen": "Karaffen aus geschliffenem Glas in einem Gestell, damit sie nicht umfallen. In zweien ist noch etwas. Das hier ist der einzige Ort im Krater, an dem jemand Sorgfalt an Gläser verschwendet.",
+			},
+			"fenster": {
+				"name": "Waggonfenster",
+				"rect": Rect2(0.0, 110.0, 250.0, 330.0),
+				"hin": Vector2(640.0, 695.0),
+				"ansehen": "Regen an der Scheibe, dahinter Schwärze und alle paar Sekunden ein Blitz. Dann sieht man für einen Lidschlag die Wüste, und sie ist leer bis zum Rand.",
+			},
+		},
+		"ausgaenge": {
+			"zurueck": {
+				"name": "Zurück nach draußen",
+				"rect": Rect2(600.0, 640.0, 160.0, 75.0),
+				"hin": Vector2(665.0, 695.0),
+				"ansehen": "Zurück auf den Flachwagen, in den Regen.",
+				"ziel": "zug_dach",
+				"dort": "von_wagen",
+			},
+		},
+	},
+
 }
 
 
